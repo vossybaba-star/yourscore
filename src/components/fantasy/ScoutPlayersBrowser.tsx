@@ -23,6 +23,7 @@ import {
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerProfile } from "@/components/fantasy/PlayerProfile";
+import { PlayerComparison, CompareButton } from "@/components/fantasy/PlayerComparison";
 import { useShortlist } from "@/components/fantasy/useShortlist";
 
 /** The shortlist star: outline when unsaved, filled GOLD when saved. A button in
@@ -93,6 +94,9 @@ export function ScoutPlayersBrowser() {
   const [maxPrice, setMaxPrice] = useState<number>(999);
   const [sort, setSort] = useState<SortKey>("priceHigh");
   const [detailFor, setDetailFor] = useState<number | null>(null);
+  // Comparison: non-null holds the player pre-loaded as side one.
+  const [compareOne, setCompareOne] = useState<number | null>(null);
+  const [comparing, setComparing] = useState(false);
 
   // Shortlist star state, shared with the Shortlist tab + Briefing via the store.
   const shortlist = useShortlist();
@@ -333,6 +337,8 @@ export function ScoutPlayersBrowser() {
                 </span>
               </button>
               <StarButton saved={shortlist.has(p.id)} onToggle={() => toggleStar(p.id)} />
+              <CompareButton label={`Compare ${p.name}`}
+                onClick={() => { setCompareOne(p.id); setComparing(true); }} />
             </div>
           );
         })}
@@ -345,6 +351,11 @@ export function ScoutPlayersBrowser() {
         <Sheet onClose={() => setDetailFor(null)} labelledBy="fantasy-player-profile-name">
           <PlayerProfile playerId={detailFor} onClose={() => setDetailFor(null)} />
         </Sheet>
+      )}
+
+      {/* Comparison — opens with the tapped player already on side one. */}
+      {comparing && (
+        <PlayerComparison initialOneId={compareOne} onClose={() => setComparing(false)} />
       )}
 
       {/* Quiet save confirmation — a single line, self-dismissing. Announced to

@@ -24,6 +24,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerProfile } from "@/components/fantasy/PlayerProfile";
 import { StarButton } from "@/components/fantasy/ScoutPlayersBrowser";
+import { PlayerComparison, CompareButton } from "@/components/fantasy/PlayerComparison";
 import { useShortlist } from "@/components/fantasy/useShortlist";
 
 export function ShortlistView() {
@@ -33,6 +34,8 @@ export function ShortlistView() {
   const [err, setErr] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [detailFor, setDetailFor] = useState<number | null>(null);
+  const [compareOne, setCompareOne] = useState<number | null>(null);
+  const [comparing, setComparing] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -135,6 +138,8 @@ export function ShortlistView() {
             </button>
             {/* Saved → gold star; tapping removes (star-off). */}
             <StarButton saved onToggle={() => void shortlist.remove(p.id)} />
+            <CompareButton label={`Compare ${p.name}`}
+              onClick={() => { setCompareOne(p.id); setComparing(true); }} />
           </div>
         );
       })}
@@ -143,6 +148,10 @@ export function ShortlistView() {
         <Sheet onClose={() => setDetailFor(null)} labelledBy="fantasy-player-profile-name">
           <PlayerProfile playerId={detailFor} onClose={() => setDetailFor(null)} />
         </Sheet>
+      )}
+
+      {comparing && (
+        <PlayerComparison initialOneId={compareOne} onClose={() => setComparing(false)} />
       )}
 
       <Link href="/fantasy/scout/players"

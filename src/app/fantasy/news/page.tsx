@@ -13,6 +13,7 @@
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
 import { SquadUpdate } from "@/components/fantasy/SquadUpdate";
 import { ShortlistPreview } from "@/components/fantasy/ShortlistPreview";
+import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
 import { FantasyMasthead, GOLD, MUTED, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -49,6 +50,9 @@ export default async function ScoutBriefing() {
 
         {/* A compact peek at your saved players — renders nothing when empty. */}
         <ShortlistPreview />
+
+        {/* Entry into side-by-side Player Comparison (opens empty from here). */}
+        <CompareEntry />
 
         {/* The general Scout Report — same for everyone, straight from the feed doc. */}
         <NewsFeed

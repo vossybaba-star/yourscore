@@ -13,9 +13,13 @@
  * - Gold is reserved for state and the one thing that tells you what to DO
  *   (the tip). If everything is gold, nothing is.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { NewsDoubt, NewsInsight, NewsItem, NewsTips } from "@/lib/fantasy/news";
+import { useShortlist } from "@/components/fantasy/useShortlist";
+import {
+  buildRelevanceLookup, type PoolIdentity, type Relevance,
+} from "@/lib/fantasy/scoutRelevance";
 
 // Shared fantasy tokens (mirrored, not imported — shared.tsx is "use client").
 const GOLD = "#ffc233";
@@ -25,6 +29,51 @@ const LINE = "rgba(255,255,255,0.07)";
 const INK = "#eef2f0";
 const MUTED = "#8a948f";
 const CORAL = "#e0653c";
+const AMBER = "#f4a63a";
+
+// ── Scout Report tags ─────────────────────────────────────────────────────────
+
+/** How a card touches THIS reader. Text always present — colour never carries the
+ *  meaning alone. gold = shortlist, teal = your squad (structure), muted = a
+ *  general league item. */
+function RelevanceTag({ rel }: { rel: Relevance }) {
+  const map: Record<Relevance, { text: string; color: string }> = {
+    squad: { text: "In your squad", color: TEAL },
+    shortlist: { text: "On your shortlist", color: GOLD },
+    league: { text: "League update", color: MUTED },
+  };
+  const { text, color } = map[rel];
+  const plain = rel === "league";
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, letterSpacing: "0.03em", padding: "2px 7px", borderRadius: 999,
+      whiteSpace: "nowrap", color, background: plain ? "transparent" : `${color}1e`,
+      border: `1px solid ${plain ? LINE : `${color}55`}`,
+    }}>{text}</span>
+  );
+}
+
+/** Confirmed vs Reported. Only ever "Reported" today — the one confirmation
+ *  level the feed data genuinely distinguishes is that a predicted-XI diff is a
+ *  PREDICTION, not a confirmed fact (news.ts). Amber = reported/doubt; teal would
+ *  mean confirmed. Reported info must never wear the certainty of confirmed. */
+function ConfirmationTag({ level }: { level: "reported" | "confirmed" }) {
+  const confirmed = level === "confirmed";
+  const color = confirmed ? TEAL : AMBER;
+  return (
+    <span title={confirmed ? "Confirmed" : "Reported, not confirmed"}
+      style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: "0.03em", padding: "2px 7px", borderRadius: 999,
+        whiteSpace: "nowrap", color, background: `${color}1e`, border: `1px solid ${color}55`,
+      }}>{confirmed ? "Confirmed" : "Reported"}</span>
+  );
+}
+
+function TagRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>{children}</div>
+  );
+}
 
 /**
  * One editorial card — a named format (Captaincy Call, The Differential, Fixture
@@ -33,10 +82,14 @@ const CORAL = "#e0653c";
  * from a real field; nothing here is invented.
  */
 function EditorialCard({
-  label, accent, heading, sub, body,
-}: { label: string; accent: string; heading: string; sub?: string; body: string }) {
+  label, accent, heading, sub, body, tags,
+}: {
+  label: string; accent: string; heading: string; sub?: string; body: string;
+  tags?: React.ReactNode;
+}) {
   return (
     <section style={{ background: PANEL, border: `1px solid ${accent}55`, borderRadius: 12, padding: 13 }}>
+      {tags && <TagRow>{tags}</TagRow>}
       <div className="font-display" style={{ color: accent, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.11em", marginBottom: 7 }}>
         {label}
       </div>
@@ -102,13 +155,14 @@ function Thumb({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-function ItemCard({ item }: { item: NewsItem }) {
+function ItemCard({ item, rel }: { item: NewsItem; rel?: Relevance }) {
   const p = item.payload;
   const isTweet = item.kind === "tweet";
   return (
     <a href={p.url} target="_blank" rel="noopener noreferrer" style={cardBase} className="ys-card">
       {p.image && <Thumb src={p.image} alt="" />}
       <div style={{ padding: 12 }}>
+        {rel && <TagRow><RelevanceTag rel={rel} /></TagRow>}
         <div
           style={{
             display: "flex", alignItems: "center", gap: 6, marginBottom: 5,
@@ -147,6 +201,34 @@ export function NewsFeed({
   transferItems: NewsItem[];
 }) {
   const [filter, setFilter] = useState<Filter>("all");
+
+  // ── Personalisation layer: one central feed, labelled per reader ──────────
+  // Fetched client-side so the page stays a server component (ISR). All three
+  // reads degrade to nothing — a guest (state 401s) or a failed pool fetch just
+  // means every card reads "League update", never a wrong squad/shortlist claim.
+  const [pool, setPool] = useState<PoolIdentity[] | null>(null);
+  const [squadIds, setSquadIds] = useState<number[]>([]);
+  const shortlist = useShortlist();
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/fantasy/pool", { method: "GET" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { players?: PoolIdentity[] } | null) => { if (live && d?.players) setPool(d.players); })
+      .catch(() => {});
+    fetch("/api/fantasy/state", { method: "GET" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s: { squad?: { picks?: { id: number }[] } | null } | null) => {
+        if (live && s?.squad?.picks) setSquadIds(s.squad.picks.map((p) => p.id));
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
+
+  const rel = useMemo(
+    () => buildRelevanceLookup(pool, squadIds, shortlist.ids),
+    [pool, squadIds, shortlist.ids],
+  );
 
   const hasTips = !!(tips?.captain || tips?.differential || tips?.note);
   const show = useMemo(
@@ -222,17 +304,21 @@ export function NewsFeed({
           one real field: the LLM-grounded tips, the form/fixture insights. */}
       {show.tips && tips?.captain && (
         <EditorialCard label="CAPTAINCY CALL" accent={GOLD}
-          heading={tips.captain.player} body={tips.captain.why} />
+          heading={tips.captain.player} body={tips.captain.why}
+          tags={rel.ready && <RelevanceTag rel={rel.forName(tips.captain.player)} />} />
       )}
       {show.tips && tips?.differential && (
         <EditorialCard label="THE DIFFERENTIAL" accent={TEAL}
-          heading={tips.differential.player} body={tips.differential.why} />
+          heading={tips.differential.player} body={tips.differential.why}
+          tags={rel.ready && <RelevanceTag rel={rel.forName(tips.differential.player)} />} />
       )}
       {show.insights && insights.filter((n) => n.kind === "fixture-swing").map((n, i) => (
-        <EditorialCard key={`sw${i}`} label="FIXTURE SWING" accent={TEAL} heading={n.title} body={n.body} />
+        <EditorialCard key={`sw${i}`} label="FIXTURE SWING" accent={TEAL} heading={n.title} body={n.body}
+          tags={rel.ready && <RelevanceTag rel={rel.forText(`${n.title} ${n.body}`)} />} />
       ))}
       {show.insights && insights.filter((n) => n.kind === "form").map((n, i) => (
-        <EditorialCard key={`fm${i}`} label="WORTH KNOWING" accent={MUTED} heading={n.title} body={n.body} />
+        <EditorialCard key={`fm${i}`} label="WORTH KNOWING" accent={MUTED} heading={n.title} body={n.body}
+          tags={rel.ready && <RelevanceTag rel={rel.forText(`${n.title} ${n.body}`)} />} />
       ))}
       {show.tips && (tips?.note || tips?.draftedAt) && (
         <div style={{ color: MUTED, fontSize: 12, lineHeight: 1.5, padding: "0 2px" }}>
@@ -241,23 +327,35 @@ export function NewsFeed({
         </div>
       )}
 
-      {/* THE RISK — a flagged doubt is a risk to plan around, in the same format. */}
+      {/* THE RISK — a flagged doubt is a risk to plan around, in the same format.
+          A predicted-XI diff is REPORTED, not confirmed — the tag says so, so it
+          never reads with the certainty of a confirmed injury. */}
       {show.doubts && doubts.map((d) => (
         <EditorialCard key={d.smId} label="THE RISK" accent={CORAL}
-          heading={d.name} sub={`(${d.club})`} body={d.reason} />
+          heading={d.name} sub={`(${d.club})`} body={d.reason}
+          tags={<>
+            {rel.ready && <RelevanceTag rel={rel.forName(d.name)} />}
+            <ConfirmationTag level="reported" />
+          </>} />
       ))}
 
       {show.team && (
         <section style={{ display: "grid", gap: 10 }}>
           <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Team news</h2>
-          {teamItems.map((it, i) => <ItemCard key={`t${i}`} item={it} />)}
+          {teamItems.map((it, i) => (
+            <ItemCard key={`t${i}`} item={it}
+              rel={rel.ready ? rel.forText(`${it.payload.title ?? ""} ${it.payload.text ?? ""}`) : undefined} />
+          ))}
         </section>
       )}
 
       {show.transfers && (
         <section style={{ display: "grid", gap: 10 }}>
           <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Transfers &amp; talk</h2>
-          {transferItems.map((it, i) => <ItemCard key={`x${i}`} item={it} />)}
+          {transferItems.map((it, i) => (
+            <ItemCard key={`x${i}`} item={it}
+              rel={rel.ready ? rel.forText(`${it.payload.title ?? ""} ${it.payload.text ?? ""}`) : undefined} />
+          ))}
         </section>
       )}
     </>

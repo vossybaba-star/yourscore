@@ -84,7 +84,7 @@ const GET_PATHS = new Set(["pool", "state", "form", "ledger", "squad-update"]);
 
 export async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, body === undefined
-    ? { method: GET_PATHS.has(path) ? "GET" : "POST" }
+    ? { method: (GET_PATHS.has(path) || path.startsWith("player/")) ? "GET" : "POST" }
     : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(json.error ?? `HTTP ${res.status}`), { status: res.status, code: json.code });
