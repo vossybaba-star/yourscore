@@ -6,7 +6,20 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-29 (**Fantasy squad builder gains "Start Fast" — one-tap starter presets +
+> **Confirmed:** 2026-07-29 (**Fantasy "Scout" research hub shipped to prod, founder-gated.** The Fantasy
+> tab's research area, reached by a persistent `Squad | Scout` sub-tab (`FantasySubNav`) that shows in
+> every state including no-squad, so a manager can research before building. Scout carries its own tabs
+> — Briefing / Players / Shortlist. Facts-not-verdicts throughout: **Squad Update** (FPL availability
+> feed), **Player profiles** + **Players browser**, **Shortlist** (`fantasy_shortlist`, mig 219),
+> side-by-side **Comparison**, named **Scout Report** cards, and the **Scout's Four Picks**
+> (Safe / Form / Value / Scout's Gamble — mechanical selection + a grounded AI copy layer, admin
+> approve→publish via `/api/admin/scout-picks`, `fantasy_scout_picks` mig 220). The **captain tip** is
+> wired into the squad-selection tab (self-hiding, flag `FANTASY_CAPTAIN_ASSIST`). Plus **iOS safe-area
+> fixes** across the Fantasy shells (`page`/`shell` now pad `env(safe-area-inset-top/bottom)`) so the
+> back control clears the status-bar clock and content clears the BottomNav. Merged `scout/hub` →
+> `main` (`73fd010`); migs 219+220 already applied to prod. Still gated by `FANTASY_ALLOWLIST`
+> (vossybaba only); the captain tip stays hidden until `FANTASY_CAPTAIN_ASSIST=1` is set in Vercel.
+> Also today: **Fantasy squad builder gains "Start Fast" — one-tap starter presets +
 > up to 3 core players a shape builds around + flip-with-core — and real SportMonks player faces on
 > every player surface (pitch, chips, add/candidate lists, selling card, profile sheet, planner, hub;
 > ~99% coverage via `pool-faces.json`, monogram fallback). Additive to the monthly-chips game; no
