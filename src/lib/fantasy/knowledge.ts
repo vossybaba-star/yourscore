@@ -30,12 +30,12 @@ export interface KnowledgeRow {
   isMe: boolean;
 }
 
-interface GwRow { gw: number; mode: string; status: string; deadline: string | null; window_start: string }
+interface GwRow { gw: number; mode: string; status: string; deadline: string | null; window_start: string; window_end: string }
 
 /** Which gameweeks belong to the cut. Live rows win outright (the gws[0] trap). */
 async function cutGws(db: Db, cut: KnowledgeCut): Promise<{ gws: number[]; label: string }> {
   const { data } = await db.from("fantasy_gameweeks")
-    .select("gw, mode, status, deadline, window_start").order("gw", { ascending: true });
+    .select("gw, mode, status, deadline, window_start, window_end").order("gw", { ascending: true });
   const all = (data ?? []) as GwRow[];
   const live = all.filter((g) => g.mode === "live");
   const rows = live.length ? live : all;

@@ -17,9 +17,14 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-/** "YYYY-MM" for the Europe/London calendar month a gameweek falls in. */
-export function monthKeyOf(gw: { deadline: string | null; window_start: string }): string {
-  const iso = gw.deadline ?? gw.window_start;
+/** "YYYY-MM" for the Europe/London calendar month a gameweek belongs to — keyed on
+ *  its LAST match (window_end): a gameweek counts to the month it ENDS in (founder
+ *  29 Jul, "a gameweek is just its last game"). A gameweek that straddles a month
+ *  boundary counts entirely to the month of its final game. */
+export function monthKeyOf(gw: { window_end: string }): string {
+  // window_end is a date ("2026-08-24"); pin to noon UTC so the London calendar
+  // month is unambiguous. A full timestamp (if ever passed) is used as-is.
+  const iso = gw.window_end.length <= 10 ? `${gw.window_end}T12:00:00Z` : gw.window_end;
   const parts = LONDON_MONTH.formatToParts(new Date(iso));
   const year = parts.find((p) => p.type === "year")!.value;
   const month = parts.find((p) => p.type === "month")!.value;
@@ -35,7 +40,7 @@ export function monthLabel(key: string): string {
 
 /** Group a list of gameweeks by their month key → the gw numbers in that month. */
 export function groupGwsByMonth(
-  gws: { gw: number; deadline: string | null; window_start: string }[],
+  gws: { gw: number; window_end: string }[],
 ): Map<string, number[]> {
   const byMonth = new Map<string, number[]>();
   for (const gw of gws) {

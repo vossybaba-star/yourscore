@@ -29,10 +29,14 @@ const statVal = (details: SmDetail[], re: RegExp): number => {
   return typeof v === "number" ? v : v === true ? 1 : 0;
 };
 
-/** Aggregate one gameweek's fixtures into per-SM-player match facts.
- *  Doubles simply sum; clean sheet requires 60+ min and zero conceded. */
-export function aggregateFixtures(fixtures: SmFixture[]): Map<number, MatchFacts> {
-  const out = new Map<number, MatchFacts>();
+/** One gameweek's fixtures → for each SM player, ONE MatchFacts PER match they
+ *  appeared in (a single-game week is a one-element list). Kept per-match, not
+ *  pre-summed, so a DOUBLE GAMEWEEK can be scored per fixture and added like FPL:
+ *  the appearance point, clean sheets and defensive contribution then count for
+ *  EACH game, rather than once on the combined totals. Clean sheet requires 60+
+ *  min and zero conceded in that match. */
+export function aggregateFixtures(fixtures: SmFixture[]): Map<number, MatchFacts[]> {
+  const out = new Map<number, MatchFacts[]>();
   for (const fx of fixtures) {
     const teamIds = (fx.participants ?? []).map((p) => p.id);
     const goalsFor = new Map<number, number>();
@@ -47,40 +51,61 @@ export function aggregateFixtures(fixtures: SmFixture[]): Map<number, MatchFacts
       const det = l.details ?? [];
       const mins = statVal(det, /^Minutes Played$/i);
       if (!mins) continue;
-      const cur = out.get(l.player_id) ?? { ...ZERO_FACTS };
-      cur.minutes += mins;
-      cur.goals += statVal(det, /^Goals$/i);
-      cur.assists += statVal(det, /^Assists$/i);
-      cur.yellows += statVal(det, /^Yellowcards$|^Yellow Cards$/i);
-      cur.reds += statVal(det, /^Redcards$|^Red Cards$|^Yellowred Cards$/i);
-      cur.saves += statVal(det, /^Saves$/i);
-      cur.pensSaved += statVal(det, /^Penalties Saved$/i);
-      cur.pensMissed += statVal(det, /^Penalties Missed$/i);
-      cur.ownGoals += statVal(det, /^Own Goals$/i);
+      // A fresh facts object for THIS fixture — one entry per match played.
+      const f: MatchFacts = { ...ZERO_FACTS };
+      f.minutes = mins;
+      f.goals = statVal(det, /^Goals$/i);
+      f.assists = statVal(det, /^Assists$/i);
+      f.yellows = statVal(det, /^Yellowcards$|^Yellow Cards$/i);
+      f.reds = statVal(det, /^Redcards$|^Red Cards$|^Yellowred Cards$/i);
+      f.saves = statVal(det, /^Saves$/i);
+      f.pensSaved = statVal(det, /^Penalties Saved$/i);
+      f.pensMissed = statVal(det, /^Penalties Missed$/i);
+      f.ownGoals = statVal(det, /^Own Goals$/i);
       const conceded = statVal(det, /^Goals Conceded$|^Goalkeeper Goals Conceded$/i);
-      cur.conceded += conceded;
-      if (mins >= 60 && conceded === 0 && teamConceded(l.team_id) === 0) cur.cleanSheet = 1;
+      f.conceded = conceded;
+      if (mins >= 60 && conceded === 0 && teamConceded(l.team_id) === 0) f.cleanSheet = 1;
       const cbit = statVal(det, /^Clearances$/i) + statVal(det, /^Interceptions$/i) +
         statVal(det, /^Tackles$/i) + statVal(det, /^Shots Blocked$|^Blocked Shots$/i);
-      cur.dc += cbit;
-      cur.dcRec += cbit + statVal(det, /^Ball Recovery$/i);
-      out.set(l.player_id, cur);
+      f.dc = cbit;
+      f.dcRec = cbit + statVal(det, /^Ball Recovery$/i);
+      const list = out.get(l.player_id) ?? [];
+      list.push(f);
+      out.set(l.player_id, list);
     }
   }
   return out;
 }
 
-/** Map SM facts onto pool players via baked smId and score them. */
-export function toPlayerScores(facts: Map<number, MatchFacts>, pool: PoolEntry[]): {
+/** Sum per-match facts into one for DISPLAY (the breakdown card + the minutes an
+ *  auto-sub reads). Points are NOT derived from this — they're the sum of each
+ *  match scored on its own (see toPlayerScores). */
+function mergeFacts(list: MatchFacts[]): MatchFacts {
+  const m: MatchFacts = { ...ZERO_FACTS };
+  for (const f of list) {
+    m.minutes += f.minutes; m.goals += f.goals; m.assists += f.assists;
+    m.cleanSheet += f.cleanSheet; m.conceded += f.conceded; m.saves += f.saves;
+    m.pensSaved += f.pensSaved; m.pensMissed += f.pensMissed;
+    m.yellows += f.yellows; m.reds += f.reds; m.ownGoals += f.ownGoals;
+    m.dc += f.dc; m.dcRec += f.dcRec;
+  }
+  return m;
+}
+
+/** Map SM facts onto pool players via baked smId and score them. Points are the
+ *  sum of EACH match scored separately (FPL-style doubles); a single-game week is
+ *  one match, so it's unchanged. `facts` is the merged total, for display. */
+export function toPlayerScores(byPlayer: Map<number, MatchFacts[]>, pool: PoolEntry[]): {
   scores: GwPlayerScore[]; matched: number; unmatchedSmIds: number[];
 } {
   const bySmId = new Map(pool.map((p) => [p.smId, p]));
   const scores: GwPlayerScore[] = [];
   const unmatchedSmIds: number[] = [];
-  facts.forEach((f, smId) => {
+  byPlayer.forEach((list, smId) => {
     const p = bySmId.get(smId);
     if (!p) { unmatchedSmIds.push(smId); return; }
-    scores.push({ playerId: p.id, smId, points: pointsFor(p.pos, f), facts: f });
+    const points = list.reduce((sum, f) => sum + pointsFor(p.pos, f), 0);
+    scores.push({ playerId: p.id, smId, points, facts: mergeFacts(list) });
   });
   return { scores, matched: scores.length, unmatchedSmIds };
 }

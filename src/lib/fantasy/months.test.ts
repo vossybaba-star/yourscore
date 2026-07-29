@@ -2,34 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { groupGwsByMonth, monthKeyOf, monthLabel } from "./months";
 
-// ── monthKeyOf: deadline (Europe/London) ───────────────────────────────────────
-test("monthKeyOf: deadline is bucketed by its Europe/London calendar month", () => {
-  // Plain case, no DST edge: 12 Oct 2026 18:30 UTC — during BST (UTC+1), so
-  // London local is 19:30 on the same calendar day → October either way.
-  assert.equal(
-    monthKeyOf({ deadline: "2026-10-12T18:30:00Z", window_start: "2026-10-10" }),
-    "2026-10",
-  );
+// ── monthKeyOf: the LAST match (window_end), Europe/London ─────────────────────
+test("monthKeyOf: a gameweek is bucketed by its LAST match's calendar month", () => {
+  assert.equal(monthKeyOf({ window_end: "2026-10-24" }), "2026-10");
 });
 
-test("monthKeyOf: month-boundary deadline — UTC instant is still April, but " +
-  "London local (BST, UTC+1) has already crossed into May", () => {
-  // 30 Apr 2026 23:30 UTC + 1h BST offset = 1 May 2026 00:30 London.
-  // Pinned answer: this MUST land in May, not April, or a rescore-safe read of
-  // "this month" would silently miss the gameweek whose deadline crossed
-  // midnight London time.
-  assert.equal(
-    monthKeyOf({ deadline: "2026-04-30T23:30:00Z", window_start: "2026-04-28" }),
-    "2026-05",
-  );
-});
-
-test("monthKeyOf: null deadline falls back to window_start", () => {
-  // Replay/demo rows never set a deadline.
-  assert.equal(
-    monthKeyOf({ deadline: null, window_start: "2026-03-15" }),
-    "2026-03",
-  );
+test("monthKeyOf: a gameweek that ENDS in the next month counts to that month", () => {
+  // Deadline could be 30 Apr, but the last game is 1 May → the gameweek belongs
+  // to May. "A gameweek is just its last game" (founder 29 Jul).
+  assert.equal(monthKeyOf({ window_end: "2026-05-01" }), "2026-05");
+  // ...and one whose last game is 30 Apr stays in April.
+  assert.equal(monthKeyOf({ window_end: "2026-04-30" }), "2026-04");
 });
 
 // ── monthLabel ──────────────────────────────────────────────────────────────
@@ -42,10 +25,10 @@ test("monthLabel: formats a YYYY-MM key as a full month name + year", () => {
 // ── groupGwsByMonth ─────────────────────────────────────────────────────────
 test("groupGwsByMonth: groups gws by month, no gw split across two months", () => {
   const gws = [
-    { gw: 1, deadline: "2026-10-03T18:30:00Z", window_start: "2026-10-01" },
-    { gw: 2, deadline: "2026-10-24T18:30:00Z", window_start: "2026-10-22" },
-    { gw: 3, deadline: "2026-04-30T23:30:00Z", window_start: "2026-04-28" }, // → May, BST
-    { gw: 4, deadline: null, window_start: "2026-03-15" },
+    { gw: 1, window_end: "2026-10-05" },
+    { gw: 2, window_end: "2026-10-26" },
+    { gw: 3, window_end: "2026-05-01" }, // last game 1 May → May
+    { gw: 4, window_end: "2026-03-16" },
   ];
   const byMonth = groupGwsByMonth(gws);
   assert.deepEqual(byMonth.get("2026-10"), [1, 2]);
