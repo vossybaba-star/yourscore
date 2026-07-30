@@ -32,12 +32,16 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function DebatePage({ searchParams }: { searchParams: { pick?: string } }) {
+export default function DebatePage({ searchParams }: { searchParams: { pick?: string; c?: string } }) {
   // ?pick=N — per-side share links ("Vote Crime → …?pick=0"): the option
   // arrives pre-selected, and the vote auto-casts once they're signed in.
   const parsed = Number.parseInt(searchParams?.pick ?? "", 10);
   const pick = Number.isInteger(parsed) && parsed >= 0 && parsed <= 3 ? parsed : null;
   const next = pick !== null ? `/debate?pick=${pick}` : "/debate";
+  // ?c=<commentId> — deep link from a push tap or the inbox: scroll that
+  // comment into view once the thread has loaded. Coexists with ?pick — a
+  // share-link vote and a push deep link never collide server-side.
+  const focusCommentId = typeof searchParams?.c === "string" && searchParams.c ? searchParams.c : null;
   return (
     <main className="min-h-dvh bg-bg">
       <div className="max-w-lg mx-auto px-5 py-8">
@@ -58,7 +62,7 @@ export default function DebatePage({ searchParams }: { searchParams: { pick?: st
           One football debate a day
         </h1>
 
-        <DebateCard withDiscussion signInNext={next} initialPick={pick} />
+        <DebateCard withDiscussion signInNext={next} initialPick={pick} focusCommentId={focusCommentId} />
 
         <p className="font-body text-xs text-text-muted text-center mt-6">
           Think your football knowledge settles it?{" "}

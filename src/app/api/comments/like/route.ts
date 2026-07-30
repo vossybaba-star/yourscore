@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { recordCommentLike, removeCommentLike } from "@/lib/notifications";
+import { recordCommentLike, removeCommentLike, commentDeepLink } from "@/lib/notifications";
 
 // Like/unlike a discussion comment. Idempotent — upsert on like, plain
 // delete on unlike. Comments are world-readable, so existence is checked
@@ -35,9 +35,10 @@ export async function POST(req: NextRequest) {
   // Widened beyond `id` so the notification path below can derive the
   // recipient (user_id) and enforce the pack/debate guard (subject_type) —
   // a like on a fantasy_league comment must write zero notification rows.
+  // `body` is the liked comment's text, used only for the first-like push copy.
   const { data: comment } = await supabase
     .from("comments")
-    .select("id, subject_type, subject_id, user_id")
+    .select("id, subject_type, subject_id, user_id, body")
     .eq("id", commentId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -59,11 +60,12 @@ export async function POST(req: NextRequest) {
   if ((inserted ?? []).length > 0) {
     await recordCommentLike({
       commentId,
+      commentBody: comment.body,
       authorId: comment.user_id,
       actorId: user.id,
       subjectType: comment.subject_type,
       subjectId: comment.subject_id,
-      url: comment.subject_type === "pack" ? "/play" : "/debate",
+      url: commentDeepLink(comment.subject_type, comment.subject_id, commentId),
     });
   }
 

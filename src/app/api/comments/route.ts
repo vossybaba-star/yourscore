@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { commentRejection } from "@/lib/moderation";
-import { createNotification } from "@/lib/notifications";
+import { createNotification, pushCommentReply, commentDeepLink } from "@/lib/notifications";
 
 // comments.parent_id and club_supporters are additive/not yet in the
 // generated src/types/database.ts — same untyped-client cast used across the
@@ -272,8 +272,11 @@ export async function POST(req: NextRequest) {
 
   // Notify the parent's author, never yourself. type is already restricted to
   // pack/debate by SUBJECT_TYPES above. A notification failure must never
-  // fail the reply — createNotification never throws.
+  // fail the reply — createNotification and pushCommentReply never throw.
+  // Inbox write first, then push (stage 3 ordering — a push failure must
+  // never take the inbox row down with it).
   if (parentAuthorId && parentAuthorId !== user.id) {
+    const deepLink = commentDeepLink(type, id, data.id);
     await createNotification({
       userId: parentAuthorId,
       type: "comment_reply",
@@ -281,7 +284,15 @@ export async function POST(req: NextRequest) {
       commentId: data.id,
       subjectType: type,
       subjectId: id,
-      url: type === "pack" ? "/play" : "/debate",
+      url: deepLink,
+    });
+    await pushCommentReply({
+      replyId: data.id,
+      replyBody: body,
+      authorId: parentAuthorId,
+      actorId: user.id,
+      subjectType: type,
+      subjectId: id,
     });
   }
 

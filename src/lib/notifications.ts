@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
+import { notifyUsers } from "@/lib/notify";
 
 /**
  * In-app notification inbox writers (stage 2). Service-role, best-effort —
@@ -13,6 +14,19 @@ import { createServiceClient } from "@/lib/supabase/service";
  */
 
 const NOTIFIABLE_SUBJECT_TYPES = new Set(["pack", "debate"]);
+
+/** Deep-link url for a comment, shared by the inbox row and the push payload.
+ *  debate → /debate?c=<commentId>; pack → /play/pack/<subjectId>?c=<commentId>. */
+export function commentDeepLink(subjectType: string, subjectId: string, commentId: string): string {
+  return subjectType === "pack"
+    ? `/play/pack/${subjectId}?c=${commentId}`
+    : `/debate?c=${commentId}`;
+}
+
+function truncate(text: string, max: number): string {
+  const trimmed = text.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
+}
 
 /** Generic single-row insert — used for comment_reply rows and (via the
  *  crons) broadcast rows. Never throws. */
@@ -45,6 +59,43 @@ export async function createNotification(row: {
     if (error) console.error("[notifications] createNotification insert failed:", error);
   } catch (err) {
     console.error("[notifications] createNotification failed:", err);
+  }
+}
+
+/**
+ * A reply pushes its parent's author — EVERY reply, no throttle, no cap
+ * (founder decision). dedupeKey is per-reply (`comment-reply:<replyId>`), so
+ * only a genuine retry of the same reply insert dedups; two distinct replies
+ * from the same actor to the same parent both push. Never notifies you of
+ * your own reply — call sites already guard that (createNotification's
+ * caller checks parentAuthorId !== user.id before either write).
+ */
+export async function pushCommentReply(opts: {
+  replyId: string;
+  replyBody: string;
+  authorId: string;
+  actorId: string;
+  subjectType: string;
+  subjectId: string;
+}): Promise<void> {
+  try {
+    const svc = createServiceClient() as unknown as SupabaseClient;
+    const { data: actor } = await svc
+      .from("profiles")
+      .select("display_name")
+      .eq("id", opts.actorId)
+      .maybeSingle();
+    const name = (actor?.display_name as string | undefined) || "A player";
+    const deepLink = commentDeepLink(opts.subjectType, opts.subjectId, opts.replyId);
+    await notifyUsers({
+      userIds: [opts.authorId],
+      title: `${name} replied to you`,
+      body: truncate(opts.replyBody, 120),
+      url: deepLink,
+      dedupeKey: `comment-reply:${opts.replyId}`,
+    });
+  } catch (err) {
+    console.error("[notifications] pushCommentReply failed:", err);
   }
 }
 
@@ -88,9 +139,18 @@ export async function upsertBroadcastNotification(row: {
  * count+1, actor swapped to the latest liker, updated_at bumped so it
  * resurfaces as unread and moves to the top. Skips self-likes and anything
  * outside pack/debate (fantasy_league chat is out of scope).
+ *
+ * Push (stage 3): FIRST like only, forever. The inbox row above is an
+ * aggregate that a later unlike can delete and a relike recreate — the push
+ * gate is deliberately separate, riding notification_log's own per-(user,key)
+ * dedupe via notifyUsers, keyed `comment-like:<commentId>`. That log row is
+ * never pruned for comment keys, so once the author has been pushed once,
+ * they're never pushed again for this comment, even if the inbox row is
+ * deleted (count → 0) and later resurrected by a new liker.
  */
 export async function recordCommentLike(opts: {
   commentId: string;
+  commentBody: string;
   authorId: string;
   actorId: string;
   subjectType: string;
@@ -133,6 +193,26 @@ export async function recordCommentLike(opts: {
     }
   } catch (err) {
     console.error("[notifications] recordCommentLike failed:", err);
+  }
+
+  try {
+    const svc = createServiceClient() as unknown as SupabaseClient;
+    const { data: actor } = await svc
+      .from("profiles")
+      .select("display_name")
+      .eq("id", opts.actorId)
+      .maybeSingle();
+    const name = (actor?.display_name as string | undefined) || "A player";
+    const deepLink = commentDeepLink(opts.subjectType, opts.subjectId, opts.commentId);
+    await notifyUsers({
+      userIds: [opts.authorId],
+      title: `${name} liked your comment`,
+      body: truncate(opts.commentBody, 90),
+      url: deepLink,
+      dedupeKey: `comment-like:${opts.commentId}`,
+    });
+  } catch (err) {
+    console.error("[notifications] recordCommentLike push failed:", err);
   }
 }
 

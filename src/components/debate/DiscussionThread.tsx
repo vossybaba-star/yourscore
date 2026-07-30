@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
@@ -47,6 +47,7 @@ export function DiscussionThread({
   canPost = true,
   lockedHint = "Have your say once you've voted",
   embedded = false,
+  focusCommentId = null,
 }: {
   subjectType: "pack" | "debate";
   subjectId: string;
@@ -64,6 +65,11 @@ export function DiscussionThread({
   /** Render as a section INSIDE a parent card (no own frame, just a divider)
    * rather than as its own standalone card. */
   embedded?: boolean;
+  /** Deep-link target (from a push tap or the inbox): once the first `load()`
+   * lands, find this comment, auto-expand its parent if it's a collapsed
+   * reply, scroll it into view, and briefly highlight it. Not found in the
+   * fetched page (pruned/deleted/beyond the 50) → silent no-op. */
+  focusCommentId?: string | null;
 }) {
   const { user } = useUser();
   const router = useRouter();
@@ -72,6 +78,9 @@ export function DiscussionThread({
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [threadLoaded, setThreadLoaded] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const focusedRef = useRef(false);
 
   // Per-parent collapse state and the single open inline reply composer.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -86,9 +95,29 @@ export function DiscussionThread({
     const body = await res.json();
     setComments(body.comments ?? []);
     setTotal(body.total ?? 0);
+    setThreadLoaded(true);
   }, [subjectType, subjectId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Deep-link focus (push tap or inbox row): runs once, after the first
+  // successful load. Not found in the fetched page (beyond the 50, or
+  // deleted+pruned) → silent no-op, no scroll, no error.
+  useEffect(() => {
+    if (!threadLoaded || !focusCommentId || focusedRef.current) return;
+    focusedRef.current = true;
+    const target = comments.find((c) => c.id === focusCommentId);
+    if (!target) return;
+    if (target.parentId) {
+      setExpanded((prev) => new Set(prev).add(target.parentId as string));
+    }
+    const t = setTimeout(() => {
+      document.getElementById(`comment-${target.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightId(target.id);
+      setTimeout(() => setHighlightId(null), 2000);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [threadLoaded, focusCommentId, comments]);
 
   const topLevel = useMemo(() => comments.filter((c) => c.parentId === null), [comments]);
   /** The viewer's own club, learned from any comment of theirs already in the
@@ -217,7 +246,15 @@ export function DiscussionThread({
 
   function renderCommentBody(c: CommentRow, opts: { onReply?: () => void; indent?: boolean } = {}) {
     return (
-      <div key={c.id} id={`comment-${c.id}`} className="flex items-start gap-2.5">
+      <div
+        key={c.id}
+        id={`comment-${c.id}`}
+        className="flex items-start gap-2.5 rounded-lg -mx-1.5 px-1.5 py-1"
+        style={{
+          background: highlightId === c.id ? "rgba(174,234,0,0.10)" : "transparent",
+          transition: "background-color 1s ease",
+        }}
+      >
         <Link href={`/profile/${c.userId}`} className="flex-shrink-0 mt-0.5">
           <PlayerAvatar seed={c.userId} name={c.name} avatarUrl={c.avatarUrl} size={opts.indent ? 24 : 28} ring="rgba(255,255,255,0.12)" />
         </Link>
@@ -259,7 +296,15 @@ export function DiscussionThread({
 
   function renderTombstone(c: CommentRow) {
     return (
-      <div key={c.id} id={`comment-${c.id}`} className="flex items-start gap-2.5">
+      <div
+        key={c.id}
+        id={`comment-${c.id}`}
+        className="flex items-start gap-2.5 rounded-lg -mx-1.5 px-1.5 py-1"
+        style={{
+          background: highlightId === c.id ? "rgba(174,234,0,0.10)" : "transparent",
+          transition: "background-color 1s ease",
+        }}
+      >
         <span className="flex-shrink-0 mt-0.5" style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="font-body text-xs italic" style={{ color: "#586058" }}>Comment deleted</p>
