@@ -20,6 +20,7 @@ const LINE = "rgba(255,255,255,0.07)";
 
 const TABS = [
   { href: "/fantasy/news", label: "Briefing" },
+  { href: "/fantasy/scout/picks", label: "Picks" },
   { href: "/fantasy/scout/players", label: "Players" },
   { href: "/fantasy/scout/shortlist", label: "Shortlist" },
 ] as const;
@@ -30,16 +31,17 @@ export function ScoutTabs({ active }: { active: ScoutTab }) {
   return (
     <nav
       aria-label="Scout"
-      style={{ display: "flex", gap: 4, borderBottom: `1px solid ${LINE}` }}
+      style={{ display: "flex", gap: 2, borderBottom: `1px solid ${LINE}`, overflowX: "auto" }}
     >
       {TABS.map((t) => {
         const on = t.href === active;
         const style: CSSProperties = {
-          padding: "8px 14px",
+          padding: "8px 12px",
           fontSize: 13,
           fontWeight: on ? 600 : 400,
           color: on ? INK : MUTED,
           textDecoration: "none",
+          whiteSpace: "nowrap",
           borderBottom: `2px solid ${on ? TEAL : "transparent"}`,
           marginBottom: -1,
         };
