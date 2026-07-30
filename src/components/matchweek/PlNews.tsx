@@ -13,10 +13,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PlNewsFeed } from "@/components/matchweek/PlNewsFeed";
+import { BriefingTile } from "@/components/matchweek/BriefingTile";
 import type { PlNewsItem } from "@/lib/pl/news";
+import type { PlBriefing } from "@/lib/pl/briefing";
 
 export function PlNews() {
   const [items, setItems] = useState<PlNewsItem[]>([]);
+  const [briefing, setBriefing] = useState<PlBriefing | null>(null);
   const [state, setState] = useState<"loading" | "ready">("loading");
   const now = useMemo(() => Date.now(), []);
 
@@ -26,6 +29,12 @@ export function PlNews() {
       .then((r) => r.json())
       .then((j) => { if (live) { setItems(j.doc?.items ?? []); setState("ready"); } })
       .catch(() => { if (live) setState("ready"); });
+    // Separate fetch, deliberately: the briefing must never be able to hold up
+    // or empty the feed. If it 500s the tab is exactly what it was before.
+    fetch("/api/pl/briefing")
+      .then((r) => r.json())
+      .then((j) => { if (live) setBriefing(j.doc ?? null); })
+      .catch(() => { /* no tile — the feed stands on its own */ });
     return () => { live = false; };
   }, []);
 
@@ -36,7 +45,10 @@ export function PlNews() {
           <p className="font-body text-xs" style={{ color: "#8a948f" }}>Loading the feed…</p>
         </div>
       ) : (
-        <PlNewsFeed items={items} now={now} />
+        <>
+          {briefing && <BriefingTile briefing={briefing} now={now} />}
+          <PlNewsFeed items={items} now={now} />
+        </>
       )}
     </div>
   );
