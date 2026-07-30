@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { BackPill } from "@/components/ui/BackPill";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { Button } from "@/components/ui/Button";
+import { slugify } from "@/lib/utils";
 
 // Standalone public thread page for a quiz pack's comments — the deep-link
 // destination for a pack comment_like/comment_reply push or inbox row
@@ -81,7 +82,12 @@ export default async function PackThreadPage({
           </p>
         )}
 
-        <Button variant="primary" tone="teal" size="md" fullWidth href={`/versus/find?game=quiz&pack=${pack.id}`}>
+        {/* Solo play, not multiplayer matchmaking (founder call): someone who
+            arrives here from a notification or the results screen wants to play
+            the quiz, not be put in a queue for an opponent. `?pid=` is the
+            reliable resolver — slug-only resolution scans published packs and is
+            order-unstable (see challenges/[slug]). */}
+        <Button variant="primary" tone="teal" size="md" fullWidth href={`/challenges/${slugify(pack.name)}?pid=${pack.id}`}>
           PLAY THIS QUIZ →
         </Button>
 
