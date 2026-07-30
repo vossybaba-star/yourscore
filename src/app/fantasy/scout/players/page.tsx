@@ -22,7 +22,7 @@ export default function ScoutPlayers() {
     <>
       <main style={shell}>
         <div style={column}>
-          <FantasyMasthead title="Scout" />
+          <FantasyMasthead />
           <div style={{ color: MUTED, fontSize: 12.5, marginTop: -6 }}>
             Every player, priced and researched. Look before you move.
           </div>

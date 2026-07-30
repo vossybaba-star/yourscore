@@ -18,7 +18,7 @@ export default function ScoutShortlist() {
     <>
       <main style={shell}>
         <div style={column}>
-          <FantasyMasthead title="Scout" />
+          <FantasyMasthead />
           <ScoutTabs active="/fantasy/scout/shortlist" />
           <ShortlistView />
         </div>

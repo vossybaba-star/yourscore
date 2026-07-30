@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Deadline, EMPTY_CONTEXT, ErrorState, fmtM, GOLD, Header, INK,
+  api, Btn, Card, Deadline, EMPTY_CONTEXT, ErrorState, fmtM, GOLD, INK,
   LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
@@ -20,7 +20,7 @@ import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { GameweekBreakdown } from "@/components/fantasy/GameweekBreakdown";
 import { FinalStory } from "@/components/fantasy/FinalStory";
 import CaptainAssistCard from "@/components/fantasy/CaptainAssistCard";
-import { FantasySubNav } from "@/components/fantasy/FantasySubNav";
+import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { pitchName, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -221,8 +221,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     <main style={embedded ? EMBEDDED_PAGE : page}>
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
-        {!embedded && <Header right={<Btn small onClick={() => router.push("/")}>All games</Btn>} />}
-        {!embedded && <FantasySubNav />}
+        {!embedded && <FantasyHeader subtitle="Build your squad, then dig in with the Scout." />}
 
         {/* Hero — the headline the founder rated over anything written for the
             page. The 01-04 explainer that used to sit here moved behind the
@@ -235,9 +234,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           }}>
           <FormationArt />
           <div className="relative">
-            <p className="font-display tracking-widest" style={{ fontSize: 10, color: TEAL, marginBottom: 10 }}>
-              YOURSCORE FANTASY FOOTBALL
-            </p>
             <p className="font-display text-white" style={{ fontSize: 38, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
               <span style={{ display: "block" }}>One transfer.</span>
               <span style={{ display: "block" }}>Earn the rest.</span>
@@ -245,6 +241,16 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             <p className="font-body" style={{ fontSize: 14, color: MUTED, marginTop: 12, maxWidth: "80%", lineHeight: 1.5 }}>
               Everyone gets a move each gameweek. What you know earns you more.
             </p>
+            {/* Real faces, not just line art — the premiums a new manager knows. */}
+            {starterPicks.length >= 3 && (
+              <div style={{ display: "flex", marginTop: 16 }}>
+                {starterPicks.slice(0, 5).map((p, i) => (
+                  <div key={p.id} style={{ marginLeft: i === 0 ? 0 : -12, zIndex: 10 - i }}>
+                    <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={42} ring="#0a1310" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -337,13 +343,13 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   });
   if (err) return (
     <main style={embedded ? EMBEDDED_PAGE : page}>
-      {!embedded && <Header />}
+      {!embedded && <FantasyHeader />}
       <ErrorState message={err} onRetry={() => { setErr(null); refresh(); }} />
     </main>
   );
   if (!state || !squad) return (
     <main style={embedded ? EMBEDDED_PAGE : page}>
-      {!embedded && <Header />}
+      {!embedded && <FantasyHeader />}
       <Loading label="Loading your team">
         {/* Shaped like the hub: hero, the three numbers, the pitch. */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -661,8 +667,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       {/* Squared backdrop — the same fixed grid the 38-0 screens use. */}
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
-      {!embedded && <Header right={<Btn small onClick={() => router.push("/fantasy/leagues")}>Leagues</Btn>} />}
-      {!embedded && <FantasySubNav />}
+      {!embedded && <FantasyHeader subtitle="Your squad, moves and chips for the gameweek." />}
 
       {/* HERO — the you-are-here, sold rather than announced. Gradient wash +
           formation art bleeding off the tile, the house pattern from the PL tab. */}
@@ -899,9 +904,9 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           four across at 375px squeezed "How it works" to one letter per line. */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
         {([
-          // Embedded, the header is gone, so Leagues joins the destinations
-          // rather than floating on a row of its own.
-          ...(embedded ? [{ label: "Leagues", to: "/fantasy/leagues" }] : []),
+          // Leagues lives here now — the old header button it used to sit in was
+          // dropped when the header became the PL-style title + section bar.
+          { label: "Leagues", to: "/fantasy/leagues" },
           { label: KNOWLEDGE_NAME, to: "/fantasy/knowledge" },
           { label: "Plan ahead", to: "/fantasy/plan" },
           { label: "My history", to: "/fantasy/history" },

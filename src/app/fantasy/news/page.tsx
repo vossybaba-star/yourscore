@@ -34,7 +34,7 @@ export default async function ScoutBriefing() {
     <>
     <main style={shell}>
       <div style={column}>
-        <FantasyMasthead title="Scout" />
+        <FantasyMasthead />
         <div style={{ color: MUTED, fontSize: 12.5, marginTop: -6 }}>
           Facts. Not noise. Make better moves.
         </div>

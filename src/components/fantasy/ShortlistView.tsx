@@ -102,7 +102,7 @@ export function ShortlistView() {
           <div key={p.id}
             style={{
               display: "flex", alignItems: "center", gap: 8,
-              padding: "9px 12px", borderRadius: 12,
+              padding: "13px 14px", borderRadius: 14,
               background: PANEL, color: INK, border: `1px solid ${LINE}`,
             }}>
             <button onClick={() => setDetailFor(p.id)}
@@ -112,22 +112,22 @@ export function ShortlistView() {
                 cursor: "pointer", textAlign: "left", flex: 1, minWidth: 0,
                 background: "transparent", color: "inherit", border: "none", padding: 0,
               }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                <PlayerAvatar name={p.name} avatarUrl={faceFor(p.name)} size={36} />
+              <span style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
+                <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={56} />
                 <span style={{ minWidth: 0 }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</span>
+                    <span style={{ fontSize: 16, fontWeight: 700 }}>{p.name}</span>
                     <DoubtFlag reason={ctx.doubts[p.id]} />
                   </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
-                    <Crest club={p.club} size={13} />
-                    <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · {p.pos}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
+                    <Crest club={p.club} size={14} />
+                    <span style={{ fontSize: 12.5, color: MUTED }}>{p.club} · {p.pos}</span>
                     <FixtureRun cells={ctx.fixtures[p.clubId]} max={2} />
                   </span>
                 </span>
               </span>
-              <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 700 }}>£{p.price.toFixed(1)}m</span>
+              <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5, flexShrink: 0 }}>
+                <span style={{ fontSize: 15, fontWeight: 700 }}>£{p.price.toFixed(1)}m</span>
                 <span style={{
                   fontSize: 9.5, fontWeight: 700, letterSpacing: "0.04em", padding: "1px 6px", borderRadius: 999,
                   color: doubtful ? "#E08A6B" : TEAL,

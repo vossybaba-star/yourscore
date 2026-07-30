@@ -69,7 +69,7 @@ export default async function PickDetail({ params }: { params: Promise<{ categor
     <>
       <main style={shell}>
         <div style={column}>
-          <FantasyMasthead title="Scout" />
+          <FantasyMasthead />
           <ScoutTabs active="/fantasy/news" />
 
           <div className="font-display tracking-widest" style={{ fontSize: 11, color: meta.color, letterSpacing: "0.12em", marginTop: 4 }}>
