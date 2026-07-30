@@ -37,6 +37,7 @@ const PREVIEW_KEY = "ys-fantasy-preview";
 export const FANTASY_ALLOWLIST: readonly string[] = [
   "4050ec90-5323-46aa-8dc0-811e0aac701a", // vossybaba — founder
   "312598db-271d-45b1-a81b-12cb026b961f", // x_chichi_x@hotmail.co.uk — founder's partner (30 Jul)
+  "1f719dca-e968-4af1-b1c2-8b0150f2fe1f", // isaacpep00@gmail.com — tester (30 Jul)
 ];
 
 /** Env answer only. Safe on the server; ignores the preview escape hatch. */
