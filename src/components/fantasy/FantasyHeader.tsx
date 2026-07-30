@@ -21,17 +21,18 @@ const TABS = [
   { href: "/fantasy", label: "Squad", match: (p: string) => p === "/fantasy" },
   {
     href: "/fantasy/news",
-    label: "YourScore Scout",
+    label: "Scout",
     match: (p: string) => p.startsWith("/fantasy/news") || p.startsWith("/fantasy/scout"),
   },
+  { href: "/fantasy/leagues", label: "Leagues", match: (p: string) => p.startsWith("/fantasy/leagues") },
 ] as const;
 
 export function FantasyHeader({ subtitle }: { subtitle?: string }) {
   const pathname = usePathname() || "/fantasy";
   return (
     <div style={{ marginBottom: 14 }}>
-      <h1 className="font-display" style={{ fontSize: 30, color: INK, lineHeight: 1, letterSpacing: "-0.01em", margin: 0 }}>
-        FANTASY
+      <h1 className="font-display" style={{ fontSize: 27, color: INK, lineHeight: 1, letterSpacing: "-0.005em", margin: 0 }}>
+        YourScore Fantasy PL
       </h1>
       {subtitle && (
         <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "6px 0 0" }}>{subtitle}</p>

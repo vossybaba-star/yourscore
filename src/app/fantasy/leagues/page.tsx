@@ -6,8 +6,9 @@
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, GOLD, Header, INK, LINE, MUTED, page, PANEL, TEAL, tint,
+  api, Btn, Card, Chip, GOLD, INK, LINE, MUTED, page, PANEL, TEAL, tint,
 } from "@/components/fantasy/shared";
+import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 interface MyLeague {
@@ -83,7 +84,7 @@ export default function LeaguesHome() {
   if (needsAuth) return (
     <>
     <main data-fantasy style={page}>
-      <Header />
+      <FantasyHeader />
       <Card style={{ marginTop: 12 }}>
         <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Sign in to play with friends</div>
         <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
@@ -99,7 +100,7 @@ export default function LeaguesHome() {
   return (
     <>
     <main data-fantasy style={page}>
-      <Header right={<Btn small onClick={() => router.push("/fantasy")}>← My team</Btn>} />
+      <FantasyHeader />
       <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>Leagues</h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
         Create a league, share the code, see who really knows football.

@@ -904,9 +904,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           four across at 375px squeezed "How it works" to one letter per line. */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
         {([
-          // Leagues lives here now — the old header button it used to sit in was
-          // dropped when the header became the PL-style title + section bar.
-          { label: "Leagues", to: "/fantasy/leagues" },
+          // Leagues is a top-level tab in the header now, so it's not a tile here.
           { label: KNOWLEDGE_NAME, to: "/fantasy/knowledge" },
           { label: "Plan ahead", to: "/fantasy/plan" },
           { label: "My history", to: "/fantasy/history" },
