@@ -6,7 +6,6 @@ import Link from "next/link";
 import { BackPill } from "@/components/ui/BackPill";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
-import { coverUrl } from "@/lib/img";
 
 // ── Types (mirrors the /api/club-page/[slug] response) ──────────────────────
 
@@ -101,35 +100,33 @@ const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", 
 /**
  * One card per actual quiz pack, laid out in a horizontal per-category scroller.
  * Each pack carries its own themed `title` (derived from its questions); a volume
- * label is the fallback until the title backfill lands. The team is identified by
- * the club hero at the top of the page, so the card leads with the quiz theme.
+ * label is the fallback until the title backfill lands. The visual is the club
+ * crest (all cards on a club page share it), so the card leads with the crest +
+ * the quiz theme — no per-category poster art (founder call).
  */
-function QuizCard({ pack, category, challengeTo }: { pack: TopicPack; category: string; challengeTo: string | null }) {
-  const emoji = TOPIC_EMOJI[category] ?? "🎲";
+function QuizCard({ pack, crestUrl, challengeTo }: { pack: TopicPack; crestUrl: string | null; challengeTo: string | null }) {
   const label = pack.title?.trim() || `Volume ${ROMAN[pack.volume ?? 1] ?? pack.volume ?? 1}`;
   return (
     <Link
       href={withChallenge(`/challenges/${pack.slug}?pid=${pack.id}`, challengeTo)}
       className="flex-shrink-0 rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
       style={{
-        width: 152,
+        width: 128,
         background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
         border: "1px solid rgba(0,216,192,0.18)",
       }}
     >
-      {/* Poster art when it exists; the emoji is the fallback, never both. Covers are
-          square (1080), CDN-resized via coverUrl so the scroller never ships the original PNG. */}
-      {pack.cover_image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={coverUrl(pack.cover_image, 300) ?? pack.cover_image} alt={label}
-          loading="lazy" decoding="async" className="block w-full h-auto" />
-      ) : (
-        <div className="flex items-center justify-center" style={{ height: 96, background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.12) 0%, transparent 70%)" }}>
-          <span className="text-4xl">{emoji}</span>
-        </div>
-      )}
-      <div className="px-2.5 pt-2 pb-2.5">
-        <p className="font-body text-[13px] font-bold text-white leading-tight line-clamp-2" style={{ minHeight: 34 }}>{label}</p>
+      <div className="flex items-center justify-center" style={{ height: 72, background: "radial-gradient(ellipse at 50% 75%, rgba(0,216,192,0.10) 0%, transparent 70%)" }}>
+        {crestUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={crestUrl} alt="" width={40} height={40}
+            style={{ objectFit: "contain", filter: "drop-shadow(0 3px 8px rgba(0,216,192,0.3))" }} />
+        ) : (
+          <span className="text-3xl">🎲</span>
+        )}
+      </div>
+      <div className="px-2 pt-1.5 pb-2">
+        <p className="font-body text-[13px] font-bold text-white leading-tight line-clamp-2" style={{ minHeight: 32 }}>{label}</p>
         <p className="font-body text-[10px] mt-0.5 mb-1.5" style={{ color: "#8a948f" }}>{pack.question_count} questions</p>
         <div
           className="rounded-md py-1 text-center"
@@ -246,9 +243,9 @@ export default function ClubPage() {
               </p>
               {/* -mx-4 px-4 lets the row bleed to the screen edges so a card can peek past
                   the fold, signalling "scroll for more". */}
-              <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-1" style={{ scrollbarWidth: "none" }}>
+              <div className="flex gap-2.5 overflow-x-auto -mx-4 px-4 pb-1" style={{ scrollbarWidth: "none" }}>
                 {volumes.map((p) => (
-                  <QuizCard key={p.id} pack={p} category={topic.category} challengeTo={challengeTo} />
+                  <QuizCard key={p.id} pack={p} crestUrl={getTeamBadgeUrlSync(data.club.name)} challengeTo={challengeTo} />
                 ))}
               </div>
             </section>
