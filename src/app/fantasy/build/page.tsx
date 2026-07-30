@@ -23,10 +23,17 @@ import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
 import { PRESETS, solvePreset } from "@/lib/fantasy/presets";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { parseTeamId } from "@/lib/fantasy/fplImport";
 
 const BUDGET = 1000;
 const DRAFT_KEY = "ys-fantasy-draft";
 const POS_WORD: Record<Pos, string> = { GK: "keepers", DEF: "defenders", MID: "midfielders", FWD: "forwards" };
+
+interface FplSelection { xi: number[]; bench: number[]; captain: number; vice: number }
+type FplImportResult =
+  | { ready: true; teamName: string; event: number; pickIds: number[]; selection: FplSelection | null;
+      missing: { name: string; pos: string; club: string }[] }
+  | { ready: false; teamName: string; reason: "preseason" | "locked" };
 
 export default function BuildPage() {
   const router = useRouter();
@@ -47,6 +54,13 @@ export default function BuildPage() {
   const [lastPreset, setLastPreset] = useState<string | null>(null);     // last shape loaded, for re-solving after a hand edit
   const [startFastCollapsed, setStartFastCollapsed] = useState(false); // tucked away, never gone
   const [picking, setPicking] = useState<"squad" | "anchor">("squad"); // what the Add list taps into
+  const [fplCollapsed, setFplCollapsed] = useState(true); // tucked away by default, opt in
+  const [fplInput, setFplInput] = useState("");
+  const [fplBusy, setFplBusy] = useState(false);
+  const [fplErr, setFplErr] = useState<string | null>(null);
+  const [fplNotice, setFplNotice] = useState<string | null>(null);
+  const [fplImportedIds, setFplImportedIds] = useState<number[] | null>(null); // the exact 15 we last imported
+  const [fplSelection, setFplSelection] = useState<FplSelection | null>(null); // XI/bench/armband from that import
 
   useEffect(() => {
     api<{ players: ClientPoolPlayer[] }>("pool").then((p) =>
@@ -179,10 +193,52 @@ export default function BuildPage() {
   const openAnchorAdd = () => { setPicking("anchor"); setTab("FWD"); setQ(""); setNotice(null); setView("add"); };
   const firstGap = (): Pos => POS_ORDER.find((pos) => posCount(pos) < QUOTA[pos]) ?? "GK";
 
+  /** Pull a squad in from FPL by team ID. A ready import overwrites `picked`
+   *  outright (same pattern as loading a preset), then leaves the rest of the
+   *  screen alone — the user reviews it like any other squad before confirming. */
+  const runFplImport = async () => {
+    setFplErr(null); setFplNotice(null);
+    const teamId = parseTeamId(fplInput);
+    if (teamId === null) { setFplErr("That does not look like a valid team ID or FPL URL."); return; }
+    setFplBusy(true);
+    try {
+      const res = await api<FplImportResult>("fpl-import", { teamId });
+      if (!res.ready) {
+        setFplImportedIds(null); setFplSelection(null);
+        setFplNotice("FPL squads stay private until the first deadline has passed. Come back once the season has kicked off.");
+        return;
+      }
+      setPicked(res.pickIds);
+      setFplImportedIds(res.pickIds);
+      setFplSelection(res.selection);
+      setAnchors([]); setActivePreset(null); setStartFastCollapsed(true);
+      if (res.missing.length) {
+        const names = res.missing.map((m) => `${m.name} (${m.pos}, ${m.club})`).join(", ");
+        setFplNotice(`${res.missing.length} of 15 could not be matched: ${names}. Fill the gaps and confirm.`);
+      } else {
+        setFplNotice(`Imported ${res.teamName}. Review your squad and confirm.`);
+      }
+    } catch (e) {
+      setFplErr((e as Error).message);
+    } finally {
+      setFplBusy(false);
+    }
+  };
+
   const submit = async () => {
     setBusy(true); setErr(null);
     try {
-      await api("squad", { pickIds: picked });
+      // Only trust the imported XI/bench/captain/vice while `picked` is still
+      // EXACTLY the 15 we imported. Any add or drop since means the shape no
+      // longer matches the squad, so we fall back to pickIds only and let
+      // smartDefaults (src/lib/fantasy/server.ts) work out a fresh XI.
+      const importStillIntact = !!(fplSelection && fplImportedIds
+        && picked.length === fplImportedIds.length
+        && fplImportedIds.every((id) => picked.includes(id)));
+      const payload = importStillIntact
+        ? { pickIds: picked, ...fplSelection }
+        : { pickIds: picked };
+      await api("squad", payload);
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* private mode */ }
       router.push("/fantasy");
     } catch (e) {
@@ -202,6 +258,8 @@ export default function BuildPage() {
   // rebuilding an existing one). It is collapsible, not lockable: a hand edit just
   // tucks it away and the header always brings it back.
   const startFastAvailable = !editing && pool.length > 0;
+  // Same guard as Start fast: only worth offering while building a fresh squad.
+  const fplImportAvailable = !editing && pool.length > 0;
 
   const squadView = (
     <>
@@ -261,6 +319,40 @@ export default function BuildPage() {
               );
             })}
           </div>
+          </>)}
+        </div>
+      )}
+
+      {/* Import your FPL squad — same collapsible pattern as Start fast, tucked
+          away by default since it's opt in, but never a dead end. */}
+      {fplImportAvailable && (
+        <div style={{ marginBottom: 12 }}>
+          <button onClick={() => setFplCollapsed((c) => !c)} aria-expanded={!fplCollapsed}
+            style={{ display: "flex", alignItems: "center", gap: 7, background: "transparent", border: "none",
+              cursor: "pointer", padding: "2px 0", color: INK, marginBottom: fplCollapsed ? 0 : 8 }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700 }}>Import your FPL squad</span>
+            <span style={{ fontSize: 11, color: MUTED }}>{fplCollapsed ? "▾ show" : "▴ hide"}</span>
+          </button>
+
+          {!fplCollapsed && (<>
+            <div style={{ fontSize: 11.5, color: MUTED, marginBottom: 8, lineHeight: 1.4 }}>
+              Already got an FPL squad? Bring it in with your team ID or points page URL.
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input
+                value={fplInput}
+                onChange={(e) => setFplInput(e.target.value)}
+                placeholder="Team ID or your FPL points page URL"
+                aria-label="FPL team ID or URL"
+                style={{ flex: 1, minWidth: 0, boxSizing: "border-box", padding: "11px 12px", borderRadius: 10,
+                  fontSize: 13.5, background: PANEL, color: INK, border: `1px solid ${LINE}`, outline: "none" }}
+              />
+              <Btn small gold disabled={fplBusy} onClick={runFplImport}>
+                {fplBusy ? "Importing…" : "Import"}
+              </Btn>
+            </div>
+            {fplErr && <p style={{ color: "#E08A6B", fontSize: 12, margin: "8px 0 0" }}>{fplErr}</p>}
+            {fplNotice && <p style={{ color: MUTED, fontSize: 12, margin: "8px 0 0", lineHeight: 1.4 }}>{fplNotice}</p>}
           </>)}
         </div>
       )}
