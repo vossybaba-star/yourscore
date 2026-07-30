@@ -33,6 +33,16 @@ export interface FplElement {
   form: string;
   status: string; // "a" available, "i" injured, "d" doubtful, "s" susp, "u" unavailable
   code?: number;
+  // Pre-season, the season totals above are LAST season's until FPL resets them
+  // (see reference: the bootstrap "last season" trap). These extra fields let the
+  // player profile show a real last-season line plus FPL's own forward projection.
+  ep_next?: string;                         // FPL's projected points for the next GW
+  clean_sheets?: number;
+  saves?: number;
+  goals_conceded?: number;
+  bonus?: number;
+  chance_of_playing_next_round?: number | null;
+  news?: string;
 }
 
 export interface FplTeam {
@@ -74,4 +84,20 @@ export async function fetchFplBootstrap(): Promise<FplBootstrap> {
   const res = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/");
   if (!res.ok) throw new Error(`FPL bootstrap-static ${res.status}`);
   return (await res.json()) as FplBootstrap;
+}
+
+/** Cached bootstrap for request-path reads (the player profile). The feed is a
+ *  whole-league blob that changes slowly, so a 6-hour edge cache keeps profile
+ *  opens cheap without hammering FPL. Returns null on any failure — the caller
+ *  degrades to "no last-season line" rather than erroring the profile. */
+export async function fetchFplBootstrapCached(): Promise<FplBootstrap | null> {
+  try {
+    const res = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/", {
+      next: { revalidate: 21600 },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as FplBootstrap;
+  } catch {
+    return null;
+  }
 }

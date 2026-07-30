@@ -14,18 +14,31 @@
  * what it is handed, in order.
  */
 import { useEffect, useState } from "react";
-import { api, Card, Btn, INK, MUTED } from "./shared";
+import { api, Card, Btn, INK, MUTED, TEAL, GOLD } from "./shared";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 
 interface ProfileStat { label: string; value: string; note: string | null }
 interface ProfileFixture { gw: number; oppShort: string; home: boolean; difficulty: "kind" | "medium" | "tough" }
+interface LastSeasonLine {
+  label: string; points: number; minutes: number; goals: number; assists: number;
+  starts: number; perStart: number | null;
+}
+interface Projection {
+  epNext: number | null; form: number | null; ownership: number | null;
+  available: boolean; chance: number | null; news: string | null;
+}
 interface PlayerProfileResponse {
   name: string; club: string; priceTenths: number;
   profile: {
     playerId: number; pos: "GK" | "DEF" | "MID" | "FWD";
+    preseason: boolean;
     minutes: number[]; points: number[];
     seasonPoints: number; perGame: number | null;
     flag: { kind: string; severity: "high" | "medium"; reason: string } | null;
     stats: ProfileStat[];
+    lastSeason: LastSeasonLine | null;
+    projection: Projection | null;
     fixtures: ProfileFixture[];
   };
 }
@@ -110,15 +123,18 @@ export function PlayerProfile({ playerId, onClose, onConsider }: {
 
   return (
     <Card>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div>
-          <div id="fantasy-player-profile-name" style={{ fontSize: 17, fontWeight: 800, color: INK }}>{data.name}</div>
-          <div style={{ fontSize: 12, color: MUTED }}>{data.club} · {p.pos}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
+          <PlayerAvatar name={data.name} avatarUrl={faceUrlById(p.playerId) ?? faceFor(data.name)} size={44} />
+          <div style={{ minWidth: 0 }}>
+            <div id="fantasy-player-profile-name" style={{ fontSize: 17, fontWeight: 800, color: INK }}>{data.name}</div>
+            <div style={{ fontSize: 12, color: MUTED }}>{data.club} · {p.pos}</div>
+          </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: INK }}>£{(data.priceTenths / 10).toFixed(1)}m</div>
           <div style={{ fontSize: 11, color: MUTED }}>
-            {p.seasonPoints} pts{p.perGame !== null ? ` · ${p.perGame} a game` : ""}
+            {p.seasonPoints} pts{p.perGame !== null ? ` · ${p.perGame} a ${p.preseason ? "start" : "game"}` : ""}
           </div>
         </div>
       </div>
@@ -133,16 +149,73 @@ export function PlayerProfile({ playerId, onClose, onConsider }: {
         </div>
       )}
 
-      <Section title="IS HE PLAYING?">
-        <Sparkline values={p.minutes} max={90} label="minutes, most recent last" />
-      </Section>
+      {p.preseason ? (
+        <>
+          {/* Pre-season: no current-season match yet, so the per-GW rows would be
+              empty. Show last season's REAL totals (labelled) + FPL's own forward
+              projection instead — nothing invented, and it flips to live rows the
+              moment GW1 is played. */}
+          {p.lastSeason && (
+            <Section title={`LAST SEASON · ${p.lastSeason.label}`}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                {[
+                  { k: "Points", v: p.lastSeason.points },
+                  { k: "Starts", v: p.lastSeason.starts },
+                  { k: "Goals", v: p.lastSeason.goals },
+                  { k: "Assists", v: p.lastSeason.assists },
+                ].map((c) => (
+                  <div key={c.k} style={{ textAlign: "center", padding: "8px 4px", borderRadius: 8, background: "rgba(159,178,165,0.08)" }}>
+                    <div style={{ fontSize: 19, fontWeight: 800, color: INK, lineHeight: 1 }}>{c.v}</div>
+                    <div style={{ fontSize: 10, color: MUTED, marginTop: 4 }}>{c.k}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>
+                {p.lastSeason.minutes.toLocaleString()} minutes
+                {p.lastSeason.perStart !== null ? ` · ${p.lastSeason.perStart} points a start` : ""}. Per-gameweek form begins at GW1.
+              </div>
+            </Section>
+          )}
 
-      <Section title="IS HE DELIVERING?">
-        <Sparkline values={p.points} max={10} label="points, most recent last" />
-      </Section>
+          {p.projection && (p.projection.epNext !== null || !p.projection.available) && (
+            <Section title="FPL PROJECTION · NEXT GW">
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                {p.projection.epNext !== null && (
+                  <span style={{ fontSize: 22, fontWeight: 800, color: GOLD }}>{p.projection.epNext.toFixed(1)}</span>
+                )}
+                <span style={{ fontSize: 12, color: MUTED }}>
+                  {p.projection.epNext !== null ? "FPL projected points" : "no projection yet"}
+                  {p.projection.ownership !== null ? ` · ${p.projection.ownership.toFixed(1)}% owned` : ""}
+                </span>
+              </div>
+              <div style={{ fontSize: 11.5, marginTop: 6, color: p.projection.available ? TEAL : "#E08A6B" }}>
+                {p.projection.available
+                  ? "Available"
+                  : p.projection.chance !== null
+                    ? `${p.projection.chance}% chance of playing`
+                    : "Flagged by FPL"}
+                {p.projection.news ? ` — ${p.projection.news}` : ""}
+              </div>
+              <div style={{ fontSize: 10.5, color: MUTED, marginTop: 6, fontStyle: "italic" }}>
+                A projection from FPL, not a result. Tips can be wrong.
+              </div>
+            </Section>
+          )}
+        </>
+      ) : (
+        <>
+          <Section title="IS HE PLAYING?">
+            <Sparkline values={p.minutes} max={90} label="minutes, most recent last" />
+          </Section>
+
+          <Section title="IS HE DELIVERING?">
+            <Sparkline values={p.points} max={10} label="points, most recent last" />
+          </Section>
+        </>
+      )}
 
       {p.stats.length > 0 && (
-        <Section title="THE CASE">
+        <Section title={p.preseason ? `THE CASE · ${p.lastSeason?.label ?? "last season"}` : "THE CASE"}>
           {p.stats.map((s) => (
             <div key={s.label} style={{ padding: "5px 0", borderTop: "1px solid rgba(159,178,165,0.12)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 13 }}>

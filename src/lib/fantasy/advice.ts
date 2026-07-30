@@ -284,9 +284,28 @@ export interface ProfileStat {
   note: string | null;
 }
 
+/** Last season's real totals (from FPL bootstrap, whose season stats are the
+ *  PREVIOUS season's until FPL resets them pre-season). Shown, clearly labelled,
+ *  so a player has something real to judge before GW1 has any current data. */
+export interface LastSeasonLine {
+  label: string;        // e.g. "2024/25"
+  points: number; minutes: number; goals: number; assists: number; starts: number;
+  perStart: number | null;
+}
+/** FPL's own forward look for the coming gameweek — a projection, not a stat. */
+export interface Projection {
+  epNext: number | null;      // FPL's projected points for the next GW
+  form: number | null;
+  ownership: number | null;
+  available: boolean; chance: number | null; news: string | null;
+}
+
 export interface PlayerProfile {
   playerId: number;
   pos: FantasyPos;
+  /** True before the player has any current-season appearance: the profile then
+   *  leans on `lastSeason` + `projection` instead of the empty per-GW rows. */
+  preseason: boolean;
   /** Minutes per gameweek, oldest first — the "is he playing" row. */
   minutes: number[];
   /** Points per gameweek, oldest first — the "is he delivering" row. */
@@ -299,7 +318,47 @@ export interface PlayerProfile {
   flag: SquadFlag | null;
   /** Position-appropriate, most valuable first. */
   stats: ProfileStat[];
+  /** Populated pre-season only: last season's real totals, clearly labelled. */
+  lastSeason: LastSeasonLine | null;
+  /** FPL's forward projection + availability, shown pre-season. */
+  projection: Projection | null;
   fixtures: { gw: number; oppShort: string; home: boolean; difficulty: Difficulty }[];
+}
+
+/** Totals for one whole season — enough to build THE CASE without per-GW rows. */
+export interface SeasonTotals {
+  points: number; minutes: number; starts: number;
+  goals: number; assists: number; cleanSheets: number; saves: number; conceded: number;
+}
+
+/** THE CASE, built from last season's totals (pre-season). Mirrors the in-season
+ *  stat semantics but the denominator is `starts` and every line is a real
+ *  last-season number — no projection dressed up as a record, no invented data. */
+function statsFromTotals(pos: FantasyPos, t: SeasonTotals): ProfileStat[] {
+  const n = t.starts;
+  const rate = (x: number) => (n ? x / n : 0);
+  const out: ProfileStat[] = [];
+  const attack: ProfileStat = { label: "Goals and assists", value: `${t.goals}G ${t.assists}A`, note: null };
+  const cs: ProfileStat = {
+    label: "Clean sheets",
+    value: n ? `${t.cleanSheets} in ${n} starts` : "no starts last season",
+    note: n >= 5 && rate(t.cleanSheets) >= 0.4 ? "kept them out more often than not"
+      : n >= 5 && t.cleanSheets === 0 ? "none last season — points came from elsewhere" : null,
+  };
+  if (pos === "GK") {
+    out.push(cs);
+    out.push({
+      label: "Saves", value: n ? `${t.saves} (${rate(t.saves).toFixed(1)} a start)` : "no starts last season",
+      note: n >= 5 && rate(t.saves) >= 3 ? "busy enough to score on saves alone" : null,
+    });
+    out.push({ label: "Goals conceded", value: `${t.conceded}`, note: null });
+  } else if (pos === "DEF") {
+    out.push(cs); out.push(attack);
+  } else {
+    out.push(attack);
+    if (pos === "MID") out.push(cs);
+  }
+  return out;
 }
 
 /** Facts for one gameweek, as stored. */
@@ -329,11 +388,40 @@ export function buildPlayerProfile(args: {
   xg?: number | null;
   flag?: SquadFlag | null;
   fixtures?: NewsTickerCell[];
+  /** Last season's totals — used to build the profile before GW1 has any data. */
+  lastSeasonTotals?: SeasonTotals | null;
+  lastSeasonLabel?: string;
+  projection?: Projection | null;
 }): PlayerProfile {
   const { playerId, pos, recent, flag = null, fixtures = [] } = args;
   const season = args.season ?? recent;
   const apps = appearances(season);
   const seasonPoints = season.reduce((s, r) => s + r.points, 0);
+  const fixtureCells = fixtures.map((c) => ({
+    gw: c.gw, oppShort: c.oppShort, home: c.home, difficulty: c.difficulty,
+  }));
+
+  // Pre-season: no current appearance yet. Lean on last season's real totals
+  // (labelled) + FPL's projection, instead of a row of zeroes reading "no games
+  // yet". Once a current-season appearance exists this branch is skipped.
+  if (apps === 0 && args.lastSeasonTotals) {
+    const t = args.lastSeasonTotals;
+    return {
+      playerId, pos, preseason: true,
+      minutes: [], points: [],
+      seasonPoints: t.points,
+      perGame: t.starts ? Math.round((t.points / t.starts) * 10) / 10 : null,
+      flag,
+      stats: statsFromTotals(pos, t),
+      lastSeason: {
+        label: args.lastSeasonLabel ?? "last season",
+        points: t.points, minutes: t.minutes, goals: t.goals, assists: t.assists,
+        starts: t.starts, perStart: t.starts ? Math.round((t.points / t.starts) * 10) / 10 : null,
+      },
+      projection: args.projection ?? null,
+      fixtures: fixtureCells,
+    };
+  }
 
   const stats: ProfileStat[] = [];
   const goals = sum(season, (f) => f.goals);
@@ -413,15 +501,15 @@ export function buildPlayerProfile(args: {
   }
 
   return {
-    playerId, pos,
+    playerId, pos, preseason: false,
     minutes: recent.map((r) => r.facts.minutes),
     points: recent.map((r) => r.points),
     seasonPoints,
     perGame: apps ? Math.round((seasonPoints / apps) * 10) / 10 : null,
     flag,
     stats,
-    fixtures: fixtures.map((c) => ({
-      gw: c.gw, oppShort: c.oppShort, home: c.home, difficulty: c.difficulty,
-    })),
+    lastSeason: null,
+    projection: args.projection ?? null,
+    fixtures: fixtureCells,
   };
 }

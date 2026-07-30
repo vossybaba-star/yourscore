@@ -1,4 +1,5 @@
 import photoData from "@/data/games/player-photos.json";
+import poolFaces from "@/data/fantasy/pool-faces.json";
 
 /**
  * A player's headshot for the tactical pitch — the SAME verified, licensed
@@ -22,6 +23,15 @@ const PHOTOS = (photoData as { photos: Record<string, string> }).photos ?? {};
 
 function key(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+}
+
+/** The real SportMonks headshot for a POOL ID (~99% coverage, baked by
+ *  scripts/fantasy/build-pool-faces.mjs — the same map pool.ts serves as
+ *  avatarUrl). Prefer this on any surface that has the id; fall back to
+ *  faceFor(name) then the monogram. Client-safe: a plain JSON import. */
+const POOL_FACES = (poolFaces as { faces: Record<string, string> }).faces ?? {};
+export function faceUrlById(id: number): string | undefined {
+  return POOL_FACES[String(id)] ?? undefined;
 }
 
 /** A verified headshot URL for a full player name, or undefined if we don't hold one.

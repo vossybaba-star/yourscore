@@ -26,7 +26,9 @@ import { FORM_WINDOW_GWS, type NewsClubRun, type NewsTickerCell, type NewsDoc } 
 import {
   flagSquad, resolveAvailability, unwrapRead, buildPlayerProfile,
   type AvailabilityInfo, type ProfileGw, type SquadUpdateItem, type SquadUpdateStatus,
+  type SeasonTotals, type Projection,
 } from "./advice";
+import { fetchFplBootstrapCached, type FplBootstrap } from "@/lib/gates/fpl";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -967,14 +969,55 @@ export async function playerProfile(db: Db, userId: string, playerId: number) {
       }).find((f) => f.playerId === playerId) ?? null
     : null;
 
+  // Pre-season (no current-season appearance yet): pull last season's real
+  // totals + FPL's forward projection from bootstrap-static, so the profile
+  // shows something to judge instead of empty "no games yet" rows. pool id ==
+  // FPL element id, so the map is direct. Degrades to null on any fetch failure.
+  const scored = season.filter((r) => r.facts.minutes > 0).length;
+  let lastSeasonTotals: SeasonTotals | null = null;
+  let projection: Projection | null = null;
+  let lastSeasonLabel: string | undefined;
+  if (scored === 0) {
+    const boot = await fetchFplBootstrapCached();
+    const el = boot?.elements.find((e) => e.id === playerId);
+    if (el) {
+      lastSeasonTotals = {
+        points: el.total_points ?? 0, minutes: el.minutes ?? 0, starts: el.starts ?? 0,
+        goals: el.goals_scored ?? 0, assists: el.assists ?? 0,
+        cleanSheets: el.clean_sheets ?? 0, saves: el.saves ?? 0, conceded: el.goals_conceded ?? 0,
+      };
+      lastSeasonLabel = previousSeasonLabel(boot);
+      projection = {
+        epNext: el.ep_next != null ? Number(el.ep_next) : null,
+        form: el.form != null ? Number(el.form) : null,
+        ownership: el.selected_by_percent != null ? Number(el.selected_by_percent) : null,
+        available: el.status === "a",
+        chance: el.chance_of_playing_next_round ?? null,
+        news: el.news ? el.news : null,
+      };
+    }
+  }
+
   return {
     name: p.name, club: p.club, priceTenths: p.priceTenths,
     profile: buildPlayerProfile({
       playerId, pos: p.pos, recent, season,
       flag,
       fixtures: await upcomingFor(db, p.clubId),
+      lastSeasonTotals, lastSeasonLabel, projection,
     }),
   };
+}
+
+/** Derive last season's label ("2024/25") from the bootstrap's first upcoming
+ *  event: its deadline year is the START year of the NEW season, so the totals
+ *  the feed still carries pre-season belong to the season before that. */
+function previousSeasonLabel(boot: FplBootstrap | null): string | undefined {
+  const iso = boot?.events?.[0]?.deadline_time;
+  if (!iso) return undefined;
+  const startYear = new Date(iso).getFullYear();
+  if (!Number.isFinite(startYear)) return undefined;
+  return `${startYear - 1}/${String(startYear).slice(2)}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
