@@ -6,7 +6,19 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-29 (**Fantasy "Scout" research hub shipped to prod, founder-gated.** The Fantasy
+> **Confirmed:** 2026-07-30 (**Scout visual + data pass shipped to prod, founder-gated.** Real SportMonks
+> headshots now render across every Scout surface (Players rows, Comparison, Four Picks, Player profile,
+> Briefing editorial cards) via `avatarUrl`/`faceUrlById` instead of the sparse name-keyed `faceFor`. The
+> **player profile now shows real stats pre-season**: with no current-season match yet, it pulls last
+> season's totals from FPL `bootstrap-static` (labelled e.g. "2025/26") + FPL's `ep_next` projection +
+> availability, and flips to live per-GW rows once GW1 is played (`buildPlayerProfile` gains
+> `preseason`/`lastSeason`/`projection`; pool id == FPL element id). The **Compare picker** gained the full
+> Players-tab filters (position/availability/sort + count) so picking side two keeps the browse. **"Where
+> to start"** is a formation spine (FWD→GK, faces + price). Briefing **Captaincy Call / Differential** cards
+> show the player's headshot (surname match against the pool, single confident match only). The **Sheet**
+> was lifted above the BottomNav (z-60) and both fantasy shells now pad `env(safe-area-inset-top/bottom)`
+> so the back pill clears the status-bar clock and content clears the nav. Commits on `main`: `e4b1dfa`,
+> `250afc4`, `9c9073a`, `c71bdc8`. Previously confirmed 2026-07-29:** Fantasy "Scout" research hub shipped to prod, founder-gated. The Fantasy
 > tab's research area, reached by a persistent `Squad | Scout` sub-tab (`FantasySubNav`) that shows in
 > every state including no-squad, so a manager can research before building. Scout carries its own tabs
 > — Briefing / Players / Shortlist. Facts-not-verdicts throughout: **Squad Update** (FPL availability
