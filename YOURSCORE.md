@@ -685,6 +685,21 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Comment push notifications, deep links, and a public quiz thread page.** Stage 3
+  of 3, no migration. **Push** (native, opt-in respected, via `notifyUsers`): a like pushes only on
+  the **first** like of a comment, forever (dedupe key `comment-like:<commentId>` in
+  `notification_log`, which logs before delivery and is never pruned); **every reply** pushes
+  (`comment-reply:<replyId>`). Unlike-then-relike does NOT push again. No quiet hours. Self actions
+  and `fantasy_league` chat push nothing. **Deep links**: notification rows and push payloads carry
+  `/debate?c=<commentId>` or `/play/pack/<packId>?c=<commentId>`; the thread scrolls that comment to
+  centre, **auto-expands its parent if it is a collapsed reply**, and flashes a highlight that clears
+  after 2s. A missing or deleted target is a silent no-op. Push taps already routed natively
+  (`push.ts` reads `data.url`), so no native change. **New public page `/play/pack/[packId]`** gives a
+  quiz pack's thread its own home (previously threads only existed inside a Lobby), gated on
+  `status = published`, selecting only safe columns and **never `quiz_packs.questions`**; reachable
+  from a "Talk about this quiz" link on the quiz results screen. ⚠️ Known: "Play this quiz" on that
+  page routes to multiplayer matchmaking rather than solo play, and a debate deep link goes stale
+  after midnight since `/debate` only shows the current day's debate.
 - **2026-07-30** — **In-app notification inbox: bell in the home header + `/notifications`** (migration
   222). Stage 2 of 3 on the comment layer. A **bell** sits in the Dashboard header beside the profile
   circle with a lime dot when anything is unread, computed **server-side** inside the home page's
