@@ -181,17 +181,19 @@ export async function ScoutCover() {
             : <text key={i} x="40" y="130" fill={MUTED} fontSize="13" fontFamily="var(--font-dm-sans), sans-serif">Fixtures land soon</text>
         ))}
 
-        {/* player blips — real headshots */}
+        {/* player blips — real headshots, each a link into that player's profile
+            (the Players tab opens the profile sheet from the ?focus id), so a
+            face that looks tappable actually is. */}
         {featured.map((f, i) => {
           const s = SLOTS[i];
           return (
-            <g key={f.id}>
+            <a key={f.id} href={`/fantasy/scout/players?focus=${f.id}`} aria-label={`${f.name} profile`} style={{ cursor: "pointer" }}>
               <circle cx={s.cx} cy={s.cy} r="27" fill="#081310" />
               <image href={f.face} x={s.cx - 24} y={s.cy - 24} width="48" height="48" clipPath={`url(#scoutFace${i})`} preserveAspectRatio="xMidYMid slice" />
               <circle cx={s.cx} cy={s.cy} r="24" fill="none" stroke={TEAL} strokeWidth="2" />
               <text x={s.cx} y={s.cy + 40} fill={INK} fontSize="13.5" fontWeight="700" textAnchor="middle" fontFamily="var(--font-dm-sans), sans-serif">{f.name}</text>
               <text x={s.cx} y={s.cy + 55} fill={MUTED} fontSize="10.5" letterSpacing="1" textAnchor="middle" fontFamily="var(--font-dm-sans), sans-serif">{f.pos}</text>
-            </g>
+            </a>
           );
         })}
       </svg>

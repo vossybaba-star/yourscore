@@ -252,7 +252,7 @@ export function PlayerProfile({ playerId, onClose, onConsider }: {
           color: avail.available ? TEAL : "#E08A6B",
         }}>
           {avail.available ? "Available" : avail.chance !== null ? `${avail.chance}% chance of playing` : "Flagged by FPL"}
-          {avail.news ? ` — ${avail.news}` : ""}
+          {avail.news ? ` · ${avail.news}` : ""}
         </div>
       )}
       {!hasUpdate && (

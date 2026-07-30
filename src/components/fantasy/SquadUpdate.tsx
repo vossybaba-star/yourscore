@@ -19,7 +19,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   api, Card, SectionLabel, Loading, ErrorState,
-  INK, MUTED, PANEL_2, LINE, CORAL, AMBER, LIME, tint,
+  INK, MUTED, PANEL_2, LINE, CORAL, AMBER, LIME, TEAL, tint,
 } from "./shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
@@ -111,13 +111,18 @@ function AllClear() {
 export function SquadUpdate() {
   const [items, setItems] = useState<SquadUpdateItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Signed out (or no session): this block is the ONE personalised thing on an
+  // otherwise public page, so a 401 is expected, not an error. Show a door in,
+  // never a raw "Unauthorized" card.
+  const [signedOut, setSignedOut] = useState(false);
 
   const load = useCallback(async () => {
-    setError(null);
+    setError(null); setSignedOut(false);
     try {
       const res = await api<{ items: SquadUpdateItem[] }>("squad-update");
       setItems(res.items ?? []);
     } catch (e) {
+      if ((e as { status?: number }).status === 401) { setSignedOut(true); return; }
       setError(e instanceof Error ? e.message : "Couldn't load your squad update.");
     }
   }, []);
@@ -127,7 +132,21 @@ export function SquadUpdate() {
   return (
     <section style={{ display: "grid", gap: 10 }}>
       <SectionLabel>SQUAD UPDATE</SectionLabel>
-      {error ? (
+      {signedOut ? (
+        <Card>
+          <div className="font-body" style={{ fontSize: 13.5, color: INK, fontWeight: 600, marginBottom: 4 }}>
+            Track your own squad
+          </div>
+          <p className="font-body" style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
+            Sign in and build a team to get injuries, blank gameweeks and doubts flagged for your fifteen.
+          </p>
+          <a href="/auth/sign-in?next=/fantasy/news" className="font-body"
+            style={{
+              display: "inline-block", background: tint(TEAL, "1e"), border: `1px solid ${tint(TEAL, "66")}`,
+              color: TEAL, fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: 999, textDecoration: "none",
+            }}>Sign in</a>
+        </Card>
+      ) : error ? (
         <ErrorState message={error} onRetry={() => void load()} />
       ) : items === null ? (
         <Loading label="Loading your squad update">

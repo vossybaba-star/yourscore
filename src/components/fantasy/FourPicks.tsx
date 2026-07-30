@@ -154,7 +154,18 @@ export async function FourPicks() {
   } catch {
     picks = [];
   }
-  if (!picks.length) return null; // nothing published — render nothing, don't clutter
+  // Nothing published yet: a quiet one-line teaser rather than a silent gap, so
+  // the feature is discoverable (and its detail route reachable once a set lands).
+  if (!picks.length) return (
+    <section style={{ display: "grid", gap: 8 }}>
+      <SectionLabel>SCOUT&rsquo;S FOUR PICKS</SectionLabel>
+      <Card style={{ padding: 13 }}>
+        <p className="font-body" style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.5 }}>
+          The Scout&rsquo;s four picks land before the deadline: one safe, one in form, one for value, one gamble.
+        </p>
+      </Card>
+    </section>
+  );
 
   const sorted = [...picks].sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category));
 

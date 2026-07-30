@@ -11,6 +11,7 @@
  * the surface is now branded Scout.
  */
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
+import { ScoutCover } from "@/components/fantasy/ScoutCover";
 import { SquadUpdate } from "@/components/fantasy/SquadUpdate";
 import { FourPicks } from "@/components/fantasy/FourPicks";
 import { ShortlistPreview } from "@/components/fantasy/ShortlistPreview";
@@ -35,6 +36,7 @@ export default async function ScoutBriefing() {
     <main style={shell}>
       <div style={column}>
         <FantasyMasthead />
+        <ScoutCover />
         {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
           <div style={{ color: GOLD, fontSize: 12, marginTop: -8, marginBottom: 2 }}>
             GW{doc.gw} deadline · {ukTime(doc.deadline)}

@@ -101,8 +101,7 @@ export default function LeaguesHome() {
     <>
     <main data-fantasy style={page}>
       <FantasyHeader />
-      <h1 style={{ fontSize: 22, margin: "0 0 4px", fontWeight: 700 }}>Leagues</h1>
-      <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
+      <p style={{ fontSize: 13, color: MUTED, margin: "2px 0 14px", lineHeight: 1.5 }}>
         Create a league, share the code, see who really knows football.
       </p>
 

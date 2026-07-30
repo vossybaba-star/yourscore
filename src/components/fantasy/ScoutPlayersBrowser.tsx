@@ -133,6 +133,14 @@ export function ScoutPlayersBrowser() {
     return () => { live = false; };
   }, [reload]);
 
+  // Deep link from the Scout radar cover: /fantasy/scout/players?focus=<id>
+  // opens that player's profile straight away, so a tapped face lands somewhere.
+  useEffect(() => {
+    const f = new URLSearchParams(window.location.search).get("focus");
+    const id = f ? Number(f) : NaN;
+    if (!Number.isNaN(id)) setDetailFor(id);
+  }, []);
+
   // Price bounds for the range selects, from the pool itself (0.5m steps).
   const priceSteps = useMemo(() => {
     if (!pool?.length) return [] as number[];

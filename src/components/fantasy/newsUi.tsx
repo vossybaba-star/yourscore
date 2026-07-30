@@ -10,7 +10,6 @@ import type { CSSProperties } from "react";
 import { createClient } from "@supabase/supabase-js";
 import type { Difficulty, NewsDoc } from "@/lib/fantasy/news";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
-import { ScoutCover } from "@/components/fantasy/ScoutCover";
 
 // These MUST mirror the shared fantasy tokens in shared.tsx. They're re-declared
 // (not imported) because shared.tsx is "use client" and these surfaces are server
@@ -49,21 +48,19 @@ export const column: CSSProperties = {
   maxWidth: 512, margin: "0 auto", display: "grid", gap: 14,
 };
 
-/** The Scout surfaces' top chrome. Renders the shared FantasyHeader (the big
- *  FANTASY title + the `Squad | YourScore Scout` section pills), so switching
- *  from the squad reads as a tab, not a page. `title` (used by the fixtures
- *  ticker, which isn't a Scout sub-tab) renders as a small section heading; the
- *  Scout sub-tab pages pass none — the active pill already names the section. */
+/** The Scout surfaces' top chrome — just the shared FantasyHeader (big FANTASY
+ *  title + Squad | Scout | Leagues pills). The radar ScoutCover is a LANDING
+ *  element and lives only on the Briefing, not on the tool sub-tabs (Players /
+ *  Shortlist), where it pushed the search below the fold. `title` renders a small
+ *  section heading for non-Scout callers (the fixtures ticker). */
 export function FantasyMasthead({ title }: { title?: string }) {
   return (
-    <header style={{ marginBottom: 2 }}>
+    <header style={{ marginBottom: title ? 6 : 2 }}>
       <FantasyHeader />
-      {title ? (
+      {title && (
         <h1 className="font-display" style={{
           color: INK, fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em", margin: "10px 0 0",
         }}>{title}</h1>
-      ) : (
-        <ScoutCover />
       )}
     </header>
   );
