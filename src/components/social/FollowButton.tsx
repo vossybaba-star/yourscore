@@ -24,6 +24,7 @@ export function FollowButton({
   size = "md",
   onChange,
   refreshOnChange = false,
+  initialFollowing,
 }: {
   userId: string;
   size?: "sm" | "md";
@@ -32,21 +33,27 @@ export function FollowButton({
   /** Re-fetch the server component after a toggle so server-rendered counts
    *  (followers/following) update without a manual reload. */
   refreshOnChange?: boolean;
+  /** When a list already knows the viewer's follow state, pass it to skip the
+   *  per-row status fetch (a 50-row list would otherwise fire 50 requests). */
+  initialFollowing?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [state, setState] = useState<FollowState | null>(null);
+  const [state, setState] = useState<FollowState | null>(
+    initialFollowing === undefined ? null : { following: initialFollowing, followsYou: false, self: false },
+  );
   const [busy, setBusy] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
 
   useEffect(() => {
+    if (initialFollowing !== undefined) return; // list already primed the state
     let live = true;
     fetch(`/api/follow?with=${userId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (live && d) setState({ following: d.following, followsYou: d.followsYou, self: d.self }); })
       .catch(() => {});
     return () => { live = false; };
-  }, [userId]);
+  }, [userId, initialFollowing]);
 
   const toggle = useCallback(async () => {
     if (busy || !state) return;

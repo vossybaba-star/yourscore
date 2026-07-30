@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, TEAL, tint, page } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -82,6 +83,7 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
 }
 
 export default function FantasyFeedPage() {
+  const router = useRouter();
   const [scope, setScope] = useState<FeedScope>("following");
   const [events, setEvents] = useState<FeedEvent[] | null>(null);
 
@@ -99,9 +101,15 @@ export default function FantasyFeedPage() {
     <>
       <main data-fantasy style={page}>
         <FantasyHeader />
-        <p style={{ fontSize: 13, color: MUTED, margin: "2px 0 12px", lineHeight: 1.5 }}>
-          The moves your rivals are making. Follow managers to fill your feed.
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, margin: "2px 0 12px" }}>
+          <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.5, margin: 0, flex: 1 }}>
+            The moves your rivals are making. Follow managers to fill your feed.
+          </p>
+          <Link href="/fantasy/feed/discover" style={{
+            flexShrink: 0, padding: "7px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
+            textDecoration: "none", background: tint(TEAL, "22"), color: TEAL, border: `1px solid ${tint(TEAL, "66")}`, whiteSpace: "nowrap",
+          }}>Find managers</Link>
+        </div>
 
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           {(["following", "global"] as FeedScope[]).map((s) => {
@@ -125,6 +133,12 @@ export default function FantasyFeedPage() {
                 ? "Nothing here yet. Follow some managers and their moves show up here."
                 : "No moves yet. Once managers start making transfers and playing chips, they land here."}
             </p>
+            {scope === "following" && (
+              <button onClick={() => router.push("/fantasy/feed/discover")} style={{
+                marginTop: 14, padding: "10px 18px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
+                background: TEAL, color: "#04231f", border: "none",
+              }}>Find managers to follow</button>
+            )}
           </div>
         )}
 

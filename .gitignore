@@ -82,3 +82,4 @@ scripts/data/halftime/
 
 # verification run logs (results live in pl-quiz-verify.jsonl)
 scripts/data/pl-quiz-verify.log
+.tmp-seed/

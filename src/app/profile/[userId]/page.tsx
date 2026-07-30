@@ -215,12 +215,12 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
         {/* Follow (one-way) + counts — sits above the friends/challenge actions. */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex gap-4">
-            <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+            <Link href={`/profile/${userId}/followers`} className="font-body text-sm" style={{ color: "#c7d0cb", textDecoration: "none" }}>
               <b className="text-white">{(followers ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>followers</span>
-            </span>
-            <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+            </Link>
+            <Link href={`/profile/${userId}/following`} className="font-body text-sm" style={{ color: "#c7d0cb", textDecoration: "none" }}>
               <b className="text-white">{(followingCount ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>following</span>
-            </span>
+            </Link>
           </div>
           <FollowButton userId={userId} refreshOnChange />
         </div>

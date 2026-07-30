@@ -331,12 +331,12 @@ export default async function ProfilePage() {
         )}
 
         <div className="flex gap-5 px-1">
-          <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+          <Link href={`/profile/${userId}/followers`} className="font-body text-sm" style={{ color: "#c7d0cb", textDecoration: "none" }}>
             <b className="text-white">{(followerCount ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>followers</span>
-          </span>
-          <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+          </Link>
+          <Link href={`/profile/${userId}/following`} className="font-body text-sm" style={{ color: "#c7d0cb", textDecoration: "none" }}>
             <b className="text-white">{(followingCount ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>following</span>
-          </span>
+          </Link>
         </div>
 
         <MedalShelf medals={medals} footnote={cabinetFootnote} />
