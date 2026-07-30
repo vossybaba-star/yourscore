@@ -685,6 +685,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Instagram-style likes on discussion threads** (migration 100, PR #32). Heart +
+  counter on every comment, across all `DiscussionThread` surfaces (today's debate and quiz-pack
+  threads — shared component, no prop gate). `comment_likes` table (composite PK, self-write RLS,
+  no public read; API aggregates via service role). GET `/api/comments` now returns `likeCount` +
+  `likedByMe` and runs `private,no-store` (was `public,s-maxage=15`) since `likedByMe` is per-user.
+  POST/DELETE `/api/comments/like`, idempotent, rate-limited 30/min. Guest tap on heart bounces to
+  sign-in (same gate as posting). Tally caps at 5000 raw rows/page for now (upgrade path: count RPC).
 - **2026-07-29** — **Fantasy squad builder: "Start Fast" + real player faces.** Two shippable-now
   pieces on top of the Manager's-Matchday board. **(1) Start Fast** kills the cold-start wall: an
   empty squad now shows one-tap **starter presets** (three spend shapes — Stacked attack / Balanced
