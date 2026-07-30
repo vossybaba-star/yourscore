@@ -15,7 +15,7 @@ import { createNotification, pushCommentReply, commentDeepLink } from "@/lib/not
 // batched query. comments has NO FK to profiles (same as league_members) —
 // author info is a second fetch, never an embedded select.
 
-const SUBJECT_TYPES = new Set(["pack", "debate"]);
+const SUBJECT_TYPES = new Set(["pack", "debate", "fantasy_feed"]);
 
 export const fetchCache = "force-no-store"; // live threads — see debate/today/route.ts
 

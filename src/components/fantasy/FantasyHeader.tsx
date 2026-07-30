@@ -24,6 +24,7 @@ const TABS = [
     label: "Scout",
     match: (p: string) => p.startsWith("/fantasy/news") || p.startsWith("/fantasy/scout"),
   },
+  { href: "/fantasy/feed", label: "Feed", match: (p: string) => p.startsWith("/fantasy/feed") },
   { href: "/fantasy/leagues", label: "Leagues", match: (p: string) => p.startsWith("/fantasy/leagues") },
 ] as const;
 

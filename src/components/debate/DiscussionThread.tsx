@@ -49,7 +49,7 @@ export function DiscussionThread({
   embedded = false,
   focusCommentId = null,
 }: {
-  subjectType: "pack" | "debate";
+  subjectType: "pack" | "debate" | "fantasy_feed";
   subjectId: string;
   title?: string;
   accent?: string;
