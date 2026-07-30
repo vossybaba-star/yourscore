@@ -770,7 +770,7 @@ function PlayPageInner() {
               {([
                 { key: "featured", label: "Featured" },
                 { key: "worldcup", label: "World Cup" },
-                { key: "club", label: "Club" },
+                { key: "club", label: "PL Club" },
                 { key: "records", label: "Records" },
                 { key: "build", label: "Build a Quiz" },
               ] as { key: SoloTab; label: string }[]).map((t) => (

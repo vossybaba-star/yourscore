@@ -48,6 +48,9 @@ function blogAsNews(): PlNewsItem[] {
       url: `/blog/${p.slug}`,
       source: "YourScore",
       image: p.ogImage ?? null,
+      // The post's own frontmatter description — so ours read the same in the
+      // half-view sheet as an outlet's standfirst does.
+      summary: p.description || undefined,
       publishedAt: new Date(p.date).toISOString(),
       internal: true,
     }));

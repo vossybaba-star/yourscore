@@ -15,8 +15,8 @@
  * Spending gold on every button is what made it mean nothing.
  */
 import { useCallback, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
-import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { Crest } from "@/components/ui/Crest";
 import { faceFor } from "@/lib/fantasy/faces";
 
 /** Reward only — a score, a winner, rank 1. Never a default button. */
@@ -544,14 +544,13 @@ export function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
-/** Club crest (local /badges/*.png). Silent if a club has no badge mapped. */
-export function Crest({ club, size = 18 }: { club: string; size?: number }) {
-  const src = getTeamBadgeUrlSync(club);
-  if (!src) return <span style={{ width: size, height: size, display: "inline-block" }} aria-hidden />;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" width={size} height={size}
-    style={{ width: size, height: size, objectFit: "contain", flexShrink: 0 }} />;
-}
+/** Club crest (local /badges/*.png). Silent if a club has no badge mapped.
+ *  Moved to src/components/ui/Crest.tsx (comment-replies stage 1, so the
+ *  debate/comment layer can use it without importing this whole file) — kept
+ *  imported + re-exported here (not `export { Crest } from ...`, which would
+ *  only re-export and not bind a local name) so both this file's own use
+ *  above AND every existing external fantasy call site are untouched. */
+export { Crest };
 
 export interface MatchFacts {
   minutes: number; goals: number; assists: number; cleanSheet: number; conceded: number;

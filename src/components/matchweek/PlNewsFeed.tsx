@@ -1,15 +1,19 @@
 "use client";
 
 /**
- * The PL general-news stream — filter chips + article cards.
+ * The PL news stream — filter chips + article cards.
  *
  * A feed you scroll and tap into, not a dashboard. Images carry it (a wall of
- * grey text reads as unfinished); each card is one whole tap target opening the
- * source in a new tab. Teal is the Matchweek accent, used only for the active
- * chip and the source name — restraint keeps it from looking like a casino.
+ * grey text reads as unfinished); each card is one whole tap target. Teal is the
+ * Matchweek accent, used only for the active chip and the source name —
+ * restraint keeps it from looking like a casino.
+ *
+ * A card no longer navigates. It opens the shared NewsSheet over the feed, so
+ * the reader gets the gist without leaving the app; only "Read the full story"
+ * in the sheet sends them to the outlet. The sheet is handed the FILTERED list
+ * and the tapped index, so swiping up walks the stories the chip is showing.
  */
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
@@ -19,6 +23,7 @@ import {
   type PlNewsCategory,
   type PlNewsItem,
 } from "@/lib/pl/news";
+import { NewsSheet, type SheetStory } from "@/components/news/NewsSheet";
 
 const TEAL = "#00d8c0";
 const PANEL = "#141b18";
@@ -48,41 +53,37 @@ function Thumb({ src }: { src: string }) {
   );
 }
 
-function Card({ item, now }: { item: PlNewsItem; now: number }) {
-  const body = (
-    <>
+function Card({ item, now, onOpen }: { item: PlNewsItem; now: number; onOpen: () => void }) {
+  return (
+    <button type="button" onClick={onOpen} style={{ ...cardBase, width: "100%", textAlign: "left", padding: 0, cursor: "pointer" }} className="ys-plcard">
       {item.image && <Thumb src={item.image} />}
       <div style={{ padding: 13 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, fontSize: 11, color: MUTED }}>
           <span style={{ color: TEAL, fontWeight: 600 }}>{item.source}</span>
           <span aria-hidden="true">·</span>
           <span>{ago(item.publishedAt, now)}</span>
-          {item.internal && <span style={{ color: "#3d453f" }}>· Read here</span>}
         </div>
+        {/* Headline only. The standfirst is the sheet's job — printing it here
+            too makes the feed heavy and removes the reason to open anything. */}
         <div style={{ color: INK, fontSize: 14.5, lineHeight: 1.4, fontWeight: 600 }}>{item.title}</div>
       </div>
-    </>
-  );
-
-  // Ours → client-side route, stays in the app. An outlet's → new tab, since
-  // we're sending them to someone else's site.
-  if (item.internal) {
-    return (
-      <Link href={item.url} style={cardBase} className="ys-plcard">
-        {body}
-      </Link>
-    );
-  }
-  return (
-    <a href={item.url} target="_blank" rel="noopener noreferrer" style={cardBase} className="ys-plcard">
-      {body}
-    </a>
+    </button>
   );
 }
 
 export function PlNewsFeed({ items, now }: { items: PlNewsItem[]; now: number }) {
   const [cat, setCat] = useState<PlNewsCategory>("all");
+  // Index into `shown`, not `items` — the sheet walks what the chip is showing.
+  const [open, setOpen] = useState<number | null>(null);
   const shown = useMemo(() => filterByCategory(items, cat, now), [items, cat, now]);
+  const stories = useMemo<SheetStory[]>(
+    () => shown.map((i) => ({
+      id: i.id, title: i.title, url: i.url, source: i.source,
+      timeLabel: ago(i.publishedAt, now), image: i.image,
+      summary: i.summary, internal: i.internal, accent: TEAL,
+    })),
+    [shown, now],
+  );
 
   return (
     <>
@@ -122,8 +123,12 @@ export function PlNewsFeed({ items, now }: { items: PlNewsItem[]; now: number })
         </div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
-          {shown.map((it) => <Card key={it.id} item={it} now={now} />)}
+          {shown.map((it, i) => <Card key={it.id} item={it} now={now} onOpen={() => setOpen(i)} />)}
         </div>
+      )}
+
+      {open !== null && stories[open] && (
+        <NewsSheet stories={stories} index={open} onIndexChange={setOpen} onClose={() => setOpen(null)} />
       )}
     </>
   );

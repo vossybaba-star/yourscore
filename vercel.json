@@ -11,6 +11,10 @@
     { "path": "/api/cron/halftime-watchdog", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/club-gameweek", "schedule": "20 * * * *" },
     { "path": "/api/cron/pl-news", "schedule": "7,37 * * * *" },
-    { "path": "/api/cron/gameday-publish", "schedule": "0 8,9 * * *" }
+    { "path": "/api/cron/gameday-publish", "schedule": "0 8,9 * * *" },
+    { "path": "/api/cron/daily-debate-push", "schedule": "30 7 * * *" },
+    { "path": "/api/cron/daily-debate-push", "schedule": "30 8 * * *" },
+    { "path": "/api/cron/daily-game-push", "schedule": "30 11 * * *" },
+    { "path": "/api/cron/daily-game-push", "schedule": "30 12 * * *" }
   ]
 }

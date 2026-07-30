@@ -58,6 +58,7 @@ export function DebateCard({
   signInNext = "/debate",
   initialPick = null,
   withSignUpPitch = true,
+  focusCommentId = null,
 }: {
   /** Render the debate's own comment thread beneath the card. On by default —
    * pass false only where another thread already owns the page (quiz room). */
@@ -71,6 +72,9 @@ export function DebateCard({
    * card is the whole visit (the public /debate landing). Pass false inside the
    * app — they're already here, and it would flash while the session loads. */
   withSignUpPitch?: boolean;
+  /** Deep-link target from a push tap or inbox row (/debate?c=<id>) — passed
+   * straight through to the embedded thread. */
+  focusCommentId?: string | null;
 }) {
   const { user } = useUser();
   const [data, setData] = useState<TodayPayload | null>(null);
@@ -221,6 +225,7 @@ export function DebateCard({
           signInNext={signInNext}
           canPost={voted}
           lockedHint="Vote first, then have your say"
+          focusCommentId={focusCommentId}
         />
       )}
 

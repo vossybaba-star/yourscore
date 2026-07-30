@@ -685,6 +685,118 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Comment push notifications, deep links, and a public quiz thread page.** Stage 3
+  of 3, no migration. **Push** (native, opt-in respected, via `notifyUsers`): a like pushes only on
+  the **first** like of a comment, forever (dedupe key `comment-like:<commentId>` in
+  `notification_log`, which logs before delivery and is never pruned); **every reply** pushes
+  (`comment-reply:<replyId>`). Unlike-then-relike does NOT push again. No quiet hours. Self actions
+  and `fantasy_league` chat push nothing. **Deep links**: notification rows and push payloads carry
+  `/debate?c=<commentId>` or `/play/pack/<packId>?c=<commentId>`; the thread scrolls that comment to
+  centre, **auto-expands its parent if it is a collapsed reply**, and flashes a highlight that clears
+  after 2s. A missing or deleted target is a silent no-op. Push taps already routed natively
+  (`push.ts` reads `data.url`), so no native change. **New public page `/play/pack/[packId]`** gives a
+  quiz pack's thread its own home (previously threads only existed inside a Lobby), gated on
+  `status = published`, selecting only safe columns and **never `quiz_packs.questions`**; reachable
+  from a "Talk about this quiz" link on the quiz results screen. "Play this quiz" goes to **solo**
+  play (`/challenges/<slug>?pid=<packId>`), not multiplayer matchmaking. A debate deep link whose
+  comment belongs to an older debate lands cleanly on the **current day's** debate (the page always
+  renders today's; the missing target is a silent no-op, verified: 200, no errors, nothing leaked).
+- **2026-07-30** — **PL News: a half-view sheet instead of a browser tab, and a feed that is
+  actually PL.** Tapping a card in Matchweek → PL → News no longer punts the reader out to the
+  outlet. It opens **`PlNewsSheet`** over the feed: hero image, source and time, headline, and the
+  outlet's own standfirst, with **Read the full story** (the only thing that leaves the app) and
+  **Share**. **Swipe up for the next story, swipe down to close**; the sheet walks the list as the
+  active chip filters it. On the pull-in side: **two new desks** (Sky Sports' PL feed, The Standard)
+  alongside BBC and Guardian, every item now carries the feed's `<description>` as **`summary`**
+  (free — it was being fetched and thrown away, so no model cost), and a **`isPremierLeague` gate at
+  the ingest** keeps the PL tab to PL stories (was: all football, World Cup and Scottish Prem
+  included). Two bugs fixed on the way — a Sky `pubDate` of "…BST" threw on `.toISOString()` and
+  silently killed that whole source, and numeric entities went unrendered ("&#163;51m"). (§7)
+- **2026-07-30** — **The half-view sheet is now shared, and the Fantasy feed uses it too.**
+  `PlNewsSheet` became **`src/components/news/NewsSheet.tsx`**, fed a neutral `SheetStory` shape so
+  each feed maps its own items and keeps its own clock. Fantasy news cards were still links straight
+  out to a browser tab — the exact thing the PL feed had just stopped doing — and now open the same
+  sheet. **Tweets** get the treatment too: gold handle and accent (as everywhere else a tweet
+  appears), the text set as body copy rather than a headline, and a **"Read on X"** primary button.
+  Swiping stays **inside the section you tapped** (team news vs transfers) — sliding from one into
+  the other mid-swipe reads as a bug. (§7)
+- **2026-07-30** — **PL News reads NINE desks, and feed parsing moves to `src/lib/rss.ts`.** Added
+  **FootballLondon, Football365, Sports Mole, Sport Witness and SPORTbible** to BBC, Guardian, Sky
+  and the Standard. Three things had to be built for them: **Atom support** (SPORTbible publish
+  `<entry>` from `index.rss`, not `<item>`, and the old parser silently returned zero for it), an
+  **image fallback to the first real `<img>` in `content:encoded`** (WordPress desks ship no media
+  tags, so they rendered as walls of text), and a **`requireCategory`** filter (SPORTbible run NBA
+  and UFC through the same feed). A **per-desk cap of 8** stops Sports Mole's ~148 items a pull from
+  owning the feed. Measured live: **40 items, 38 with an image, 40 with a summary**, all nine desks
+  represented, and every image host verified to load in-browser. `scripts/pl-news-ingest.mjs` now
+  **imports the real source list and gate from `src/`** (node strips the types) instead of carrying
+  hand-synced copies that had already drifted. **Goal.com and FootballTransfers.com publish no feed
+  at all** and were left out — they would need scraping. (§7)
+- **2026-07-30** — **Fantasy desks feed the fantasy river, not PL news.** **Fantasy Football Scout**
+  and **FantasyFootball247** land in `fantasy_news_items` (topic `general` → "Transfers & talk") via
+  a new `ingestFantasyRss` called from the existing hourly `/api/cron/fantasy-news` — no new cron,
+  no new trust boundary. They stay OUT of PL news on purpose: that feed is general football, tips
+  and price talk belong to the Fantasy tab. Rows carry the story's **own publish time** (defaulting
+  to `now()` would stamp a three-day-old post as "just now") and a **14-day cutoff** drops the May
+  and June posts still sitting in FF247's feed. Note: **Fantasy Football Scout's RSS carries no
+  image in any field**, so their cards are text-only — nothing to fix in code, the data isn't
+  there. (§7)
+- **2026-07-30** — **In-app notification inbox: bell in the home header + `/notifications`** (migration
+  222). Stage 2 of 3 on the comment layer. A **bell** sits in the Dashboard header beside the profile
+  circle with a lime dot when anything is unread, computed **server-side** inside the home page's
+  existing `Promise.all` (no client fetch, no pop-in; the home screen is the most-hit surface).
+  **Comment likes notify the author aggregated per comment** ("Dan and 1 other liked your comment" —
+  one upserted row per comment carrying a count and the latest actor); **replies notify per reply**.
+  A new like resurfaces the row as unread; **an unlike never does**. You are never notified about your
+  own action, and `fantasy_league` chat generates nothing. **The two daily pushes (Today's Game 12:30,
+  Today's Debate 08:30) now also write ONE broadcast inbox row each** — stored once with `user_id`
+  null, visible to ALL users including web users who cannot receive push, never fanned out (10,206
+  profiles vs 266 device tokens: a fan-out would be 20,412 rows a day). Read state is a **single
+  `profiles.notifications_read_at` timestamp** — opening the page marks everything read in one write,
+  no per-row bookkeeping; broadcasts age out of the page at 30 days. Notification writes are
+  fire-and-forget and can never fail a like or a reply. RLS: read your own rows plus broadcasts, and
+  no write policy at all (service role only). ⚠️ Known, not fixed: a lost-update race can leave
+  `like_count` off by one when two people like in the same instant (upgrade path is an atomic
+  increment RPC). Stage 3 (push for likes/replies, deep-link to a comment with scroll and highlight)
+  is NOT built.
+- **2026-07-30** — **Club page rebuilt as per-category quiz carousels; Quiz "Club" tab → "PL Club".**
+  Going into a club (`/club/[slug]`) used to show four *topic* tiles that hid the actual quizzes behind
+  a bottom sheet of "Quiz 1 / Quiz 2 / Quiz 3" — poor discoverability. It now renders **one section per
+  category** (History & Honours / Legends / Modern Era / Rivalries), each a **horizontal scroller of the
+  real quiz packs**, selectable directly; the volume sheet is gone. Cards use the **club crest** (no
+  per-category poster art) on **smaller tiles**, led by a **themed title**. Those titles were backfilled
+  into `quiz_packs.title` for all **98** club topic packs, each derived from 2–3 of the pack's own
+  questions (e.g. *The Invincibles Era*, *The Merseyside Derby*, *Henry & the Greats*; generic mixes get
+  functional names like *Club Essentials* / *Seasons & Stats*). `/api/club-page/[slug]` now returns
+  `title`; a "Volume I/II" label is the fallback. The Quiz Solo sub-tab set is now **Featured / World Cup
+  / PL Club / Records / Build a Quiz**. Also this window: nav glow on the Play + Fantasy tabs, and the
+  `/play` pack grid went 3-up (Featured club cards keep their "Premier League 2025/26" theme; the PL Club
+  grid is crest + OPEN only).
+- **2026-07-30** — **Discussion threads become conversations: replies, collapse, and club crests**
+  (migration 221). Stage 1 of 3. **Replies** are Instagram-shaped and **exactly two levels** — a flat
+  tier under each top-level comment; replying to a reply lands in that same tier. Depth is guaranteed
+  by a DB trigger (`comments_validate_reply`), not UI convention: a reply-to-a-reply, a reply to a
+  soft-deleted comment, or a reply crossing subjects all fail at the database with 23514, and the API
+  mirrors each as a clean 400. **Collapse** applies to replies only — 2 shown, then "View N more
+  replies" (top-level list is never collapsed). **Club crest** sits between the commenter's name and
+  the timestamp, read LIVE from `club_supporters` (latest row per user, one batched query — never
+  stamped onto the comment row, so a club change updates old comments); no club renders nothing, no
+  placeholder. Replying is **auth-gated only, NOT vote-gated** (founder call): on the debate card an
+  un-voted signed-in user can reply even while the top-level composer stays locked. A soft-deleted
+  parent that still has replies renders as a "Comment deleted" tombstone **in its chronological
+  position**, replies intact, carrying no identifying fields (not even `userId`). `Crest` extracted to
+  `src/components/ui/Crest.tsx` (`fantasy/shared.tsx` re-exports it). Replies share the existing 8/min
+  comment bucket. Lands on BOTH surfaces (today's debate + quiz packs) via the shared component.
+  ⚠️ Known, not fixed: account deletion still hard-deletes other users' replies via the `auth.users` +
+  `parent_id` cascades; the 500-reply and 50-top-level page caps can truncate very large threads.
+  Stages 2–3 (notifications for likes/replies; deep-link to a comment) are NOT built.
+- **2026-07-30** — **Instagram-style likes on discussion threads** (migration 100, PR #32). Heart +
+  counter on every comment, across all `DiscussionThread` surfaces (today's debate and quiz-pack
+  threads — shared component, no prop gate). `comment_likes` table (composite PK, self-write RLS,
+  no public read; API aggregates via service role). GET `/api/comments` now returns `likeCount` +
+  `likedByMe` and runs `private,no-store` (was `public,s-maxage=15`) since `likedByMe` is per-user.
+  POST/DELETE `/api/comments/like`, idempotent, rate-limited 30/min. Guest tap on heart bounces to
+  sign-in (same gate as posting). Tally caps at 5000 raw rows/page for now (upgrade path: count RPC).
 - **2026-07-29** — **Fantasy squad builder: "Start Fast" + real player faces.** Two shippable-now
   pieces on top of the Manager's-Matchday board. **(1) Start Fast** kills the cold-start wall: an
   empty squad now shows one-tap **starter presets** (three spend shapes — Stacked attack / Balanced

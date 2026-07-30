@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import Image from "next/image";
@@ -102,6 +102,9 @@ export interface DashboardData {
   /** The Gameday tile's fixture — a known supporter's round-1 fixture, else null
    *  (SeasonSection defaults to Arsenal v Coventry). */
   gamedayFixture: { home: string; away: string } | null;
+  /** Server-computed so the bell + its dot render with the rest of the page —
+   *  no client fetch, no pop-in. */
+  unreadNotifications: boolean;
 }
 
 const DASH_ANIM = `
@@ -596,10 +599,24 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { displayName, rank, dayStreak, weekDots, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion, gamedayFixture } = data;
+  const { displayName, rank, dayStreak, weekDots, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
 
   // Don't recommend the pack that's already the hero.
   const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
+
+  // Deep-link from a daily push: /?focus=today|debate scrolls that home card
+  // into view so a tap lands the player right on the game / debate to act on.
+  useEffect(() => {
+    const focus = new URLSearchParams(window.location.search).get("focus");
+    const id = focus === "debate" ? "todays-debate" : focus === "today" ? "todays-game" : null;
+    if (!id) return;
+    // Small delay lets the hero + cards lay out before we scroll (avoids landing
+    // short when images above shift the layout in).
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -612,6 +629,16 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <Image src="/logo.png" alt="YourScore" width={95} height={28} priority style={{ height: 28, width: "auto" }} />
           <div className="flex items-center gap-3">
+            <Link href="/notifications" aria-label={unreadNotifications ? "Notifications, unread" : "Notifications"} className="relative w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.1)" }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#eef2f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {unreadNotifications && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: LIME, boxShadow: "0 0 0 1.5px #0a0a0f" }} />
+              )}
+            </Link>
             <Link href="/profile" className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-sm transition-opacity hover:opacity-80"
               style={{ background: "linear-gradient(135deg, #1a2f4a, #3a423d)", color: LIME, border: "1.5px solid rgba(174,234,0,0.25)" }}>
               {(displayName || "?")[0].toUpperCase()}
@@ -638,10 +665,10 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* 3. Today's Game — THE single hero, playable or done+share. The
             onboarding tour's final step points here (data-tour). */}
-        <div data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
+        <div id="todays-game" data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
 
         {/* Today's debate — one tap, daily habit (moved here from Versus) */}
-        <div className="d-4">
+        <div id="todays-debate" className="d-4">
           <DebateCard signInNext="/" withSignUpPitch={false} />
         </div>
 

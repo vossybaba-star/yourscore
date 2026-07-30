@@ -1441,6 +1441,13 @@ export default function ChallengePage() {
             📸 SHARE YOUR RESULT
           </Button>
 
+          {/* Front door to the pack's standalone thread page — while the
+              result's fresh, this is the only route to that page besides a
+              push/inbox deep link. */}
+          <Button variant="ghost" tone="teal" size="md" fullWidth href={`/play/pack/${pack.id}`}>
+            💬 TALK ABOUT THIS QUIZ
+          </Button>
+
           {/* Timing stats */}
           <div className="rounded-2xl p-5 bg-surface"
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
