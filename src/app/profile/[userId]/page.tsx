@@ -9,6 +9,7 @@ import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { fantasyAllowed } from "@/lib/fantasy/flag";
 import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
 import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
+import { FollowButton } from "@/components/social/FollowButton";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -153,6 +154,15 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
 
   const name = profile.display_name ?? "Player";
 
+  // Follow graph counts (public) — one-way follows, separate from friends.
+  // user_follows post-dates the generated Database types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const followRel = () => (db as any).from("user_follows");
+  const [{ count: followers }, { count: followingCount }] = await Promise.all([
+    followRel().select("*", { count: "exact", head: true }).eq("followee_id", userId),
+    followRel().select("*", { count: "exact", head: true }).eq("follower_id", userId),
+  ]);
+
   // Their fantasy squads by gameweek — gated on the viewer so it stays dark until
   // Fantasy launches (env flip), then it's public like the rest of the profile.
   const fantasy = fantasyAllowed(user?.id)
@@ -202,8 +212,21 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
           </div>
         </div>
 
+        {/* Follow (one-way) + counts — sits above the friends/challenge actions. */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex gap-4">
+            <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+              <b className="text-white">{(followers ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>followers</span>
+            </span>
+            <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+              <b className="text-white">{(followingCount ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>following</span>
+            </span>
+          </div>
+          <FollowButton userId={userId} refreshOnChange />
+        </div>
+
         {/* Connect: add friend (hides itself when you already are) + challenge */}
-        <AddFriendCard userId={userId} displayName={name} />
+        <AddFriendCard userId={userId} displayName={name} showFollow={false} />
         <div className="flex gap-2">
           <Link href={`/versus/quiz?to=${userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: TEAL, color: "#04231f" }}>
             CHALLENGE THEM

@@ -49,6 +49,15 @@ export default async function ProfilePage() {
     ? await loadProfileTeams(createServiceClient(), userId)
     : { teams: [], players: [] };
 
+  // Your follow-graph counts (one-way follows, separate from friends).
+  // user_follows post-dates the generated Database types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const followSvc = createServiceClient() as any;
+  const [{ count: followerCount }, { count: followingCount }] = await Promise.all([
+    followSvc.from("user_follows").select("*", { count: "exact", head: true }).eq("followee_id", userId),
+    followSvc.from("user_follows").select("*", { count: "exact", head: true }).eq("follower_id", userId),
+  ]);
+
   // Several of these columns/RPCs post-date the generated types.
   const sb = supabase as any;
   const since = streakCutoff();
@@ -320,6 +329,15 @@ export default async function ProfilePage() {
             compact
           />
         )}
+
+        <div className="flex gap-5 px-1">
+          <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+            <b className="text-white">{(followerCount ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>followers</span>
+          </span>
+          <span className="font-body text-sm" style={{ color: "#c7d0cb" }}>
+            <b className="text-white">{(followingCount ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>following</span>
+          </span>
+        </div>
 
         <MedalShelf medals={medals} footnote={cabinetFootnote} />
 

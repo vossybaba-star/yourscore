@@ -15,6 +15,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/hooks/useUser";
+import { FollowButton } from "@/components/social/FollowButton";
 
 type FriendStatus =
   | "loading"
@@ -31,9 +32,13 @@ interface AddFriendCardProps {
   displayName: string;
   /** Optional context line above the prompt, e.g. "Great game with Marcus!" */
   context?: string;
+  /** Show the one-way Follow button alongside the friend prompt. Default true —
+   *  the follow layer rides this shared card onto every game surface. Set false
+   *  where a dedicated Follow control already exists (e.g. the profile header). */
+  showFollow?: boolean;
 }
 
-export function AddFriendCard({ userId, displayName, context }: AddFriendCardProps) {
+export function AddFriendCard({ userId, displayName, context, showFollow = true }: AddFriendCardProps) {
   const { user } = useUser();
   const [status, setStatus] = useState<FriendStatus>("loading");
   const [busy, setBusy] = useState(false);
@@ -75,59 +80,59 @@ export function AddFriendCard({ userId, displayName, context }: AddFriendCardPro
     setBusy(false);
   }
 
-  if (!user || status === "loading" || status === "dismissed" || status === "friends") {
-    return null;
-  }
-
-  if (status === "pending_sent") {
-    return (
+  // The mutual-friend card, which self-hides in several states. Follow is layered
+  // on independently below, so a hidden friend card never hides Follow.
+  const isPendingReceived = status === "pending_received";
+  const friendCard =
+    !user || status === "loading" || status === "dismissed" || status === "friends" ? null
+    : status === "pending_sent" ? (
       <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(174,234,0,0.05)", border: "1px solid rgba(174,234,0,0.18)" }}>
         <p className="font-body text-sm text-center" style={{ color: "#aeea00" }}>
           Friend request sent to {displayName} ✓
         </p>
       </div>
-    );
-  }
-
-  const isPendingReceived = status === "pending_received";
-
-  return (
-    <div className="rounded-2xl p-4" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
-      {context && (
-        <p className="font-body text-center mb-1" style={{ fontSize: 12, color: "#8a948f" }}>
-          {context}
+    ) : (
+      <div className="rounded-2xl p-4" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.18)" }}>
+        {context && (
+          <p className="font-body text-center mb-1" style={{ fontSize: 12, color: "#8a948f" }}>
+            {context}
+          </p>
+        )}
+        <p className="font-body text-center mb-3" style={{ fontSize: 14, color: "#e8e8f0" }}>
+          {isPendingReceived
+            ? `${displayName} sent you a friend request 👋`
+            : `Add ${displayName} as a friend?`}
         </p>
-      )}
-      <p className="font-body text-center mb-3" style={{ fontSize: 14, color: "#e8e8f0" }}>
-        {isPendingReceived
-          ? `${displayName} sent you a friend request 👋`
-          : `Add ${displayName} as a friend?`}
-      </p>
-      <div className="flex gap-2">
-        <button
-          onClick={send}
-          disabled={busy}
-          className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm transition-all disabled:opacity-50"
-          style={{
-            background: "rgba(174,234,0,0.2)",
-            border: "1px solid rgba(174,234,0,0.35)",
-            color: "#aeea00",
-          }}
-        >
-          {busy ? "…" : isPendingReceived ? "Accept ✓" : "Add friend +"}
-        </button>
-        <button
-          onClick={() => setStatus("dismissed")}
-          className="flex-1 rounded-xl py-2.5 font-body text-sm"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "#8a948f",
-          }}
-        >
-          Not now
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={send}
+            disabled={busy}
+            className="flex-1 rounded-xl py-2.5 font-body font-semibold text-sm transition-all disabled:opacity-50"
+            style={{ background: "rgba(174,234,0,0.2)", border: "1px solid rgba(174,234,0,0.35)", color: "#aeea00" }}
+          >
+            {busy ? "…" : isPendingReceived ? "Accept ✓" : "Add friend +"}
+          </button>
+          <button
+            onClick={() => setStatus("dismissed")}
+            className="flex-1 rounded-xl py-2.5 font-body text-sm"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a948f" }}
+          >
+            Not now
+          </button>
+        </div>
       </div>
+    );
+
+  if (!showFollow) return friendCard;
+
+  // Follow (self-hides for your own account / resolves auth on tap) rides on top;
+  // the friend card sits below when there's one to show.
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-end">
+        <FollowButton userId={userId} size="sm" />
+      </div>
+      {friendCard}
     </div>
   );
 }
