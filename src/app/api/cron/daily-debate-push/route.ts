@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyUsers } from "@/lib/notify";
+import { upsertBroadcastNotification } from "@/lib/notifications";
 import { todaysDebate, ukToday } from "@/lib/debate";
 
 // Service-role reads must never be pinned by Vercel's data cache — see CLAUDE.md §4.
@@ -58,6 +59,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ enabled: true, targeted: 0, note: "no active debate" });
   }
 
+  const day = ukToday();
+  const debateTitle = "Today's debate 🗣️";
+  const debateBody = `${debate.question} Vote and see how fans are split.`;
+
+  // Inbox row for EVERYONE (stage 2), including web users with zero push
+  // targets — so this must land before the opted-in early-return below.
+  // Upserted against the dedupe_key unique index: a DST double-fire or retry
+  // for the same day still leaves exactly one row. Wrapped so push always
+  // proceeds regardless of this succeeding.
+  try {
+    await upsertBroadcastNotification({
+      type: "daily_debate",
+      title: debateTitle,
+      body: debateBody,
+      url: HOME_DEBATE_URL,
+      dedupeKey: `daily-debate-push:${day}`,
+    });
+  } catch (err) {
+    console.error("[daily-debate-push] inbox broadcast failed:", err);
+  }
+
   // Everyone opted in. notifyUsers re-confirms opt-in, narrows to iOS device
   // tokens, and dedupes per (user, key) — safe to fire twice.
   const { data: optedIn } = await svc
@@ -69,11 +91,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ enabled: true, targeted: 0, note: "no opted-in users" });
   }
 
-  const day = ukToday();
   const { targeted } = await notifyUsers({
     userIds,
-    title: "Today's debate 🗣️",
-    body: `${debate.question} Vote and see how fans are split.`,
+    title: debateTitle,
+    body: debateBody,
     url: HOME_DEBATE_URL,
     dedupeKey: `daily-debate-push:${day}`,
   });

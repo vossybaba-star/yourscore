@@ -161,6 +161,10 @@ export default async function RootPage({
   // the visible day streak at ~45 — raise STREAK_WINDOW_DAYS to change it.
   const streakCutoff = libStreakCutoff();
 
+  // Bell dot lookback: broadcasts (user_id null) older than this never count
+  // as unread, matching the /notifications page's own 30-day cap.
+  const notificationsSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
   const [
     { data: profile },
     { data: rankRows },
@@ -172,8 +176,12 @@ export default async function RootPage({
     { data: h2hRows },
     { data: packPool },
     { data: wcRunDays },
+    { data: latestNotification },
   ] = await Promise.all([
-    supabase.from("profiles").select("display_name, total_score").eq("id", userId).single(),
+    // notifications_read_at post-dates the generated types (migration 222) —
+    // sb (untyped) rather than the strongly-typed supabase client, same
+    // reason as every other post-dated column in this function.
+    sb.from("profiles").select("display_name, total_score, notifications_read_at").eq("id", userId).single(),
     // Unified rank (two-track) — same RPC the profile uses; gives rank + chase gap.
     sb.rpc("get_yourscore_rank", { p_user_id: userId }),
     supabase.rpc("get_my_league_standings", { p_user_id: userId, p_limit: 20 }),
@@ -239,7 +247,26 @@ export default async function RootPage({
       .eq("user_id", userId)
       .gte("created_at", streakCutoff)
       .limit(500),
+    // Bell dot: the single most-recently-updated relevant row (mine, or a
+    // broadcast within the lookback). Compared against
+    // profile.notifications_read_at below — fetching just the one row here
+    // (rather than a pre-filtered count) keeps this query independent of the
+    // profile query's result, so both run genuinely in parallel.
+    sb
+      .from("notifications")
+      .select("updated_at")
+      .or(`user_id.eq.${userId},and(user_id.is.null,created_at.gt.${notificationsSince})`)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
+  // ── Unread notifications dot ────────────────────────────────────────────────
+  const notificationsReadAt: string | null = profile?.notifications_read_at ?? null;
+  const unreadNotifications = Boolean(
+    latestNotification?.updated_at &&
+      (!notificationsReadAt || new Date(latestNotification.updated_at) > new Date(notificationsReadAt)),
+  );
 
   // ── Rank (from get_yourscore_rank) ──────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -424,6 +451,7 @@ export default async function RootPage({
     todaysGame,
     todaysGameCompletion,
     gamedayFixture,
+    unreadNotifications,
   };
 
   return <Dashboard data={data} />;

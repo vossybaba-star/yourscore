@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyUsers } from "@/lib/notify";
+import { upsertBroadcastNotification } from "@/lib/notifications";
 import { resolveTodaysGame, londonDateISO, type TodaysGame } from "@/lib/daily-game";
 
 // Service-role reads must never be pinned by Vercel's data cache — see CLAUDE.md §4.
@@ -101,6 +102,23 @@ export async function GET(req: NextRequest) {
   // Resolve today's game exactly as the Home hero does, then build the copy.
   const game = await resolveTodaysGame(svc, day);
   const { title, body, url } = buildDailyGameCopy(game);
+
+  // Inbox row for EVERYONE (stage 2), including web users with zero push
+  // targets — so this must land before the opted-in early-return below.
+  // Upserted against the dedupe_key unique index: a DST double-fire or retry
+  // for the same day still leaves exactly one row. Wrapped so push always
+  // proceeds regardless of this succeeding.
+  try {
+    await upsertBroadcastNotification({
+      type: "daily_game",
+      title,
+      body,
+      url,
+      dedupeKey: `daily-game-push:${day}`,
+    });
+  } catch (err) {
+    console.error("[daily-game-push] inbox broadcast failed:", err);
+  }
 
   // Everyone opted in. notifyUsers re-confirms opt-in, narrows to iOS device
   // tokens, and dedupes per (user, key) — so this is safe to fire twice.

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { commentRejection } from "@/lib/moderation";
+import { createNotification } from "@/lib/notifications";
 
 // comments.parent_id and club_supporters are additive/not yet in the
 // generated src/types/database.ts — same untyped-client cast used across the
@@ -243,11 +244,14 @@ export async function POST(req: NextRequest) {
   // Validate the parent via service role and return a clean 400 for the
   // user-facing cases the DB trigger also guards (belt-and-braces — the
   // trigger is the structural backstop, this is the friendly error path).
+  // user_id is fetched here too — the reply author it belongs to is the
+  // notification recipient below, so no second lookup after insert.
+  let parentAuthorId: string | null = null;
   if (parentId) {
     const svc = createServiceClient() as unknown as SupabaseClient;
     const { data: parent } = await svc
       .from("comments")
-      .select("id, parent_id, subject_type, subject_id, deleted_at")
+      .select("id, parent_id, subject_type, subject_id, deleted_at, user_id")
       .eq("id", parentId)
       .maybeSingle();
     if (!parent) return NextResponse.json({ error: "That comment doesn't exist anymore" }, { status: 400 });
@@ -256,6 +260,7 @@ export async function POST(req: NextRequest) {
     if (parent.subject_type !== type || parent.subject_id !== id) {
       return NextResponse.json({ error: "That comment isn't part of this thread" }, { status: 400 });
     }
+    parentAuthorId = parent.user_id;
   }
 
   const { data, error } = await (supabase as unknown as SupabaseClient)
@@ -264,6 +269,21 @@ export async function POST(req: NextRequest) {
     .select("id, created_at")
     .single();
   if (error || !data) return NextResponse.json({ error: "Could not post — try again" }, { status: 500 });
+
+  // Notify the parent's author, never yourself. type is already restricted to
+  // pack/debate by SUBJECT_TYPES above. A notification failure must never
+  // fail the reply — createNotification never throws.
+  if (parentAuthorId && parentAuthorId !== user.id) {
+    await createNotification({
+      userId: parentAuthorId,
+      type: "comment_reply",
+      actorId: user.id,
+      commentId: data.id,
+      subjectType: type,
+      subjectId: id,
+      url: type === "pack" ? "/play" : "/debate",
+    });
+  }
 
   return NextResponse.json({ id: data.id, createdAt: data.created_at, parentId });
 }
