@@ -685,6 +685,24 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Discussion threads become conversations: replies, collapse, and club crests**
+  (migration 221). Stage 1 of 3. **Replies** are Instagram-shaped and **exactly two levels** — a flat
+  tier under each top-level comment; replying to a reply lands in that same tier. Depth is guaranteed
+  by a DB trigger (`comments_validate_reply`), not UI convention: a reply-to-a-reply, a reply to a
+  soft-deleted comment, or a reply crossing subjects all fail at the database with 23514, and the API
+  mirrors each as a clean 400. **Collapse** applies to replies only — 2 shown, then "View N more
+  replies" (top-level list is never collapsed). **Club crest** sits between the commenter's name and
+  the timestamp, read LIVE from `club_supporters` (latest row per user, one batched query — never
+  stamped onto the comment row, so a club change updates old comments); no club renders nothing, no
+  placeholder. Replying is **auth-gated only, NOT vote-gated** (founder call): on the debate card an
+  un-voted signed-in user can reply even while the top-level composer stays locked. A soft-deleted
+  parent that still has replies renders as a "Comment deleted" tombstone **in its chronological
+  position**, replies intact, carrying no identifying fields (not even `userId`). `Crest` extracted to
+  `src/components/ui/Crest.tsx` (`fantasy/shared.tsx` re-exports it). Replies share the existing 8/min
+  comment bucket. Lands on BOTH surfaces (today's debate + quiz packs) via the shared component.
+  ⚠️ Known, not fixed: account deletion still hard-deletes other users' replies via the `auth.users` +
+  `parent_id` cascades; the 500-reply and 50-top-level page caps can truncate very large threads.
+  Stages 2–3 (notifications for likes/replies; deep-link to a comment) are NOT built.
 - **2026-07-30** — **Instagram-style likes on discussion threads** (migration 100, PR #32). Heart +
   counter on every comment, across all `DiscussionThread` surfaces (today's debate and quiz-pack
   threads — shared component, no prop gate). `comment_likes` table (composite PK, self-write RLS,
