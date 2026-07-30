@@ -57,7 +57,17 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
   }, [liked, ev.id]);
 
   const shareSquad = useCallback(async () => {
-    const url = `${window.location.origin}/profile/${ev.actorId}`;
+    // Mint a share CARD for this manager's squad (an /s/<id> link that unfurls to
+    // the fantasy-squad image), then hand it to the native share sheet.
+    let url = `${window.location.origin}/profile/${ev.actorId}`;
+    try {
+      const res = await fetch("/api/fantasy/share", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "squad", userId: ev.actorId }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d?.url) url = `${window.location.origin}${d.url}`;
+    } catch { /* fall back to the profile link */ }
     const data = { title: `${ev.actorName}'s squad`, text: `${ev.actorName}'s YourScore Fantasy squad`, url };
     try {
       if (navigator.share) await navigator.share(data);

@@ -685,6 +685,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Feed share cards + Instagram-compact comments.** (1) **Share any manager's
+  squad from the feed** — the Share button mints a squad share CARD (`/api/fantasy/share` now
+  accepts a `userId`, so it builds the card for that manager, not just the caller; resolves to the
+  existing `/s/<id>` + `/api/og/fantasy-squad`). Squads are public, so this is fine. (2) **Comments
+  are now Instagram-style**: composer moved to the BOTTOM as a compact "Add a comment…" pill (was a
+  bulky top input that pushed the thread off screen), tighter per-row padding + spacing, so several
+  comments fit on screen and posting keeps the thread in view (`DiscussionThread`).
+
 - **2026-07-30** — **Feed + squad-tab polish pass.** (1) **squad_complete feed tiles now render the
   real pitch board** — formation rows + **club crests** on each marker (new `PlayerMarker` crest,
   `SquadBoard` passes `club`), captain gold-ringed; payload carries xi+bench+captain+vice.
