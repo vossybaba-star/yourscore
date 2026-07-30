@@ -33,6 +33,8 @@ import type { PlNewsItem } from "./news";
 const MODEL = "claude-sonnet-5";
 /** Only today's news. A briefing leading on yesterday isn't a briefing. */
 const WINDOW_MS = 24 * 3_600_000;
+/** How much of each standfirst the model gets to work from. */
+const BRIEFING_SUMMARY_MAX = 420;
 
 const SYSTEM = `You compile a football news briefing from articles other outlets published today.
 
@@ -50,6 +52,12 @@ RULES, in order of importance:
 4. British English. No em dashes anywhere. Say "friend", never "mate".
 5. A bullet is ONE sentence, under 130 characters, plain and factual. No hype, no
    questions, no exclamation marks, no opinions on what it means.
+5b. Each bullet also gets a "detail": ONE more sentence, under 150 characters,
+   carrying what the bullet had to leave out — the fee, the contract length, who
+   else is involved, what happens next, the quote's substance. It must ADD
+   information, never restate the bullet in other words. If the article genuinely
+   says nothing beyond the bullet, return an EMPTY STRING for detail. An empty
+   detail is correct and expected; a padded one is a failure.
 6. In each bullet, wrap the parts a reader scans for in **double asterisks**: the
    people and clubs, and the thing that actually happened. Two or three marked
    runs per bullet, never more, and never the whole sentence. Examples:
@@ -92,7 +100,9 @@ export async function buildBriefing(
   now = new Date(),
 ): Promise<BriefingResult> {
   const date = londonDate(now);
-  const { items } = await fetchPlNews();
+  // Longer standfirsts than the news feed keeps: the model has to get a bullet
+  // AND a line of detail out of each one, and it can only use what we hand it.
+  const { items } = await fetchPlNews({ summaryMax: BRIEFING_SUMMARY_MAX });
   const fresh = items.filter(
     (i) => now.getTime() - new Date(i.publishedAt).getTime() <= WINDOW_MS,
   );
@@ -130,6 +140,7 @@ export async function buildBriefing(
         // Rejected → the outlet's own words, with the names marked by us so a
         // fallback bullet doesn't sit in the list as the one flat paragraph.
         bullet: usable ? capBold(candidate) : autoBold(item.summary ?? item.title),
+        detail: pickDetail(compiled.details[idx], plainBullet(candidate), tokens),
         desks,
       };
     });
@@ -160,8 +171,66 @@ export async function buildBriefing(
   return { briefing, issue: compiled.ok ? undefined : compiled.reason, rejected };
 }
 
+/**
+ * The second line, or nothing.
+ *
+ * Dropped rather than shown when it fails grounding, when it's too short to be
+ * worth a line, or when it mostly repeats the bullet. That last check matters
+ * most: asked for extra detail the model will always produce a sentence, and a
+ * restatement dressed as new information is worse than a bullet standing alone —
+ * the reader spends attention on it and gets nothing back.
+ *
+ * There is no fallback here on purpose. The bullet can fall back to the outlet's
+ * standfirst because that text exists; a detail we cannot ground has no honest
+ * substitute, so it simply doesn't render.
+ */
+function pickDetail(
+  raw: string | undefined,
+  bulletPlain: string,
+  tokens: { words: Set<string>; numbers: Set<string> },
+): string | undefined {
+  const detail = cleanField(raw);
+  // The model marks emphasis here too, unasked. Strip it for every check —
+  // grounding, length, and the repetition test all reason about words, and
+  // `**Newcastle**` must not read as a different word from `Newcastle`.
+  const plain = plainBullet(detail);
+  if (plain.length < 25) return undefined;
+  if (!isProseGrounded(plain, tokens)) return undefined;
+  if (addsNothing(plain, bulletPlain)) return undefined;
+  // Two marked runs, not three: the second line is supporting text, and matching
+  // the bullet's weight would flatten the difference between them.
+  return capBold(detail, 2);
+}
+
+/** A detail has to carry at least this many substantial words the bullet
+ *  didn't. Three is what separated the real ones from the restatements on a
+ *  live pull; two let a pure echo through. */
+const MIN_NEW_WORDS = 3;
+
+/**
+ * True when the detail is the bullet's own words back again.
+ *
+ * Measured as NEW substantial words, not as an overlap ratio. The ratio version
+ * couldn't do the job: on a live briefing a pure restatement ("Chelsea and
+ * Manchester City have both made contact over the Scottish striker") scored 0.60
+ * and a genuinely useful line ("Elliott called his loan spell at Villa 'tough'
+ * and wants to enjoy his football again") scored 0.50 — no threshold separates
+ * those. What actually differs is that the second one introduces words like
+ * "spell", "wants" and "football" while the first introduces only "have", "both"
+ * and "made". Counting new words of five letters or more finds that directly,
+ * and short filler words never reach the bar.
+ */
+function addsNothing(detail: string, bullet: string): boolean {
+  const substantial = (s: string) =>
+    new Set(s.toLowerCase().match(/\b[a-z']{5,}\b/g) ?? []);
+  const inBullet = substantial(bullet);
+  let fresh = 0;
+  substantial(detail).forEach((w) => { if (!inBullet.has(w)) fresh++; });
+  return fresh < MIN_NEW_WORDS;
+}
+
 type Compiled =
-  | { ok: true; subhead: string; bullets: string[] }
+  | { ok: true; subhead: string; bullets: string[]; details: string[] }
   | { ok: false; reason: string };
 
 async function compile(stories: StoryInput[]): Promise<Compiled> {
@@ -176,8 +245,13 @@ async function compile(stories: StoryInput[]): Promise<Compiled> {
       properties: {
         subhead: { type: "string" },
         bullets: { type: "array", items: { type: "string" } },
+        details: {
+          type: "array",
+          items: { type: "string" },
+          description: "One per bullet, same order. Empty string where the article adds nothing.",
+        },
       },
-      required: ["subhead", "bullets"],
+      required: ["subhead", "bullets", "details"],
     },
   };
 
@@ -206,10 +280,13 @@ async function compile(stories: StoryInput[]): Promise<Compiled> {
     const json = await res.json();
     const block = (json.content ?? []).find((c: { type: string }) => c.type === "tool_use");
     if (!block) return { ok: false, reason: "no tool_use in response" };
-    const input = block.input as { subhead?: string; bullets?: string[] };
+    const input = block.input as { subhead?: string; bullets?: string[]; details?: string[] };
     if (!input.subhead || !Array.isArray(input.bullets)) return { ok: false, reason: "malformed output" };
     if (input.bullets.length !== stories.length) return { ok: false, reason: "bullet count mismatch" };
-    return { ok: true, subhead: input.subhead, bullets: input.bullets };
+    // A short details array is survivable — the missing ones simply render
+    // without a second line. A short bullets array is not.
+    const details = Array.isArray(input.details) ? input.details : [];
+    return { ok: true, subhead: input.subhead, bullets: input.bullets, details };
   } catch (err) {
     return { ok: false, reason: err instanceof Error ? err.message : String(err) };
   }

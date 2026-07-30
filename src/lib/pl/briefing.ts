@@ -30,6 +30,15 @@ export interface BriefingStory {
    * a share text — and only the page has to know about the emphasis.
    */
   bullet: string;
+  /**
+   * A second line under the bullet: the bit of context the headline leaves out.
+   *
+   * Optional and often absent, on purpose. It only exists when the outlet's own
+   * standfirst carried something beyond what the bullet already said — padding
+   * it with a restatement would make every story look equally substantial, and
+   * inventing the extra detail is the one thing this feature cannot do.
+   */
+  detail?: string;
   /** How many separate desks ran this story — why it made the cut. */
   desks: number;
 }

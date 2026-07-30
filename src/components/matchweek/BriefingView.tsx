@@ -100,11 +100,34 @@ export function BriefingView({ briefing }: { briefing: PlBriefing | null }) {
               >
                 {i + 1}
               </span>
-              <span style={{ color: "#c9d1cc", fontSize: 15, lineHeight: 1.55 }}>
-                {bulletSegments(s.bullet).map((seg, j) =>
-                  seg.bold
-                    ? <strong key={j} style={{ color: INK, fontWeight: 700 }}>{seg.text}</strong>
-                    : <span key={j}>{seg.text}</span>,
+              <span style={{ display: "block", minWidth: 0 }}>
+                <span style={{ color: "#c9d1cc", fontSize: 15, lineHeight: 1.55 }}>
+                  {bulletSegments(s.bullet).map((seg, j) =>
+                    seg.bold
+                      ? <strong key={j} style={{ color: INK, fontWeight: 700 }}>{seg.text}</strong>
+                      : <span key={j}>{seg.text}</span>,
+                  )}
+                </span>
+
+                {/* The second line. Absent whenever the article added nothing
+                    beyond the bullet — see pickDetail. Set quieter and a size
+                    down so it reads as supporting the line above, not competing
+                    with it, and so a story WITHOUT one doesn't look unfinished. */}
+                {s.detail && (
+                  <span style={{
+                    display: "block", marginTop: 6,
+                    color: "#8f9a94", fontSize: 13.5, lineHeight: 1.5,
+                  }}>
+                    {/* Same parser as the bullet — the model marks emphasis here
+                        too, and unparsed markers would render as literal
+                        asterisks on the page. Bold here is a shade lighter than
+                        the bullet's so the hierarchy survives. */}
+                    {bulletSegments(s.detail).map((seg, j) =>
+                      seg.bold
+                        ? <strong key={j} style={{ color: "#c9d1cc", fontWeight: 600 }}>{seg.text}</strong>
+                        : <span key={j}>{seg.text}</span>,
+                    )}
+                  </span>
                 )}
               </span>
             </span>

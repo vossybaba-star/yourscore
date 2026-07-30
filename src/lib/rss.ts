@@ -39,7 +39,7 @@ export interface RssSource {
   requireCategory?: string;
 }
 
-/** Roughly three lines on a phone. */
+/** Roughly three lines on a phone — what the half-view sheet shows whole. */
 const SUMMARY_MAX = 200;
 const BBC_TARGET_WIDTH = 976;
 
@@ -142,22 +142,27 @@ export function parseDate(raw: string): string {
  * actually wants. WordPress desks append "The post X appeared first on Y". Tags
  * collapse to a SPACE, not to nothing: `</p><p>` with no space glues two
  * sentences into one word.
+ *
+ * `max` is a caller's choice, not a property of the feed. The news sheet wants
+ * ~200 characters because it renders the standfirst whole; the briefing wants
+ * more, because the model has to compress it into a headline bullet AND a line
+ * of detail underneath, and it can only work from what we hand it.
  */
-export function summarise(raw: string): string | undefined {
+export function summarise(raw: string, max = SUMMARY_MAX): string | undefined {
   const html = decode(raw)
     .replace(/<ul>[\s\S]*?<\/ul>/gi, " ")
     .replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, " ");
   let text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   text = text.replace(/\s*The post .*?appeared first on .*$/i, "").trim();
   if (text.length < 20) return undefined; // a stub is worse than no body at all
-  if (text.length <= SUMMARY_MAX) return text;
-  const cut = text.slice(0, SUMMARY_MAX);
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
   return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[,.;:]$/, "")}…`;
 }
 
 /** RSS `<item>` or Atom `<entry>` → items. Pure, so it can be tested on a
  *  cached feed without touching the network. */
-export function parseFeed(xml: string, source: RssSource): RssItem[] {
+export function parseFeed(xml: string, source: RssSource, summaryMax?: number): RssItem[] {
   const rss = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g)).map((m) => m[1]);
   const blocks = rss.length
     ? rss
@@ -189,7 +194,7 @@ export function parseFeed(xml: string, source: RssSource): RssItem[] {
       url,
       source: source.name,
       image: pickImage(block),
-      summary: desc ? summarise(desc) : undefined,
+      summary: desc ? summarise(desc, summaryMax) : undefined,
       publishedAt: date ? parseDate(strip(date)) : new Date().toISOString(),
     });
   }
@@ -206,9 +211,9 @@ export function parseFeed(xml: string, source: RssSource): RssItem[] {
  */
 export async function fetchFeeds(
   sources: RssSource[],
-  opts: { keep?: (item: RssItem) => boolean; perSource?: number; max?: number } = {},
+  opts: { keep?: (item: RssItem) => boolean; perSource?: number; max?: number; summaryMax?: number } = {},
 ): Promise<{ items: RssItem[]; sources: Record<string, number | string> }> {
-  const { keep = () => true, perSource = Infinity, max = 40 } = opts;
+  const { keep = () => true, perSource = Infinity, max = 40, summaryMax } = opts;
   const report: Record<string, number | string> = {};
   const all: RssItem[] = [];
 
@@ -222,7 +227,7 @@ export async function fetchFeeds(
           cache: "no-store",
         });
         if (!res.ok) throw new Error(`${res.status}`);
-        const kept = parseFeed(await res.text(), src)
+        const kept = parseFeed(await res.text(), src, summaryMax)
           .filter(keep)
           .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
           .slice(0, perSource);
