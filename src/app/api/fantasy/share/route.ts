@@ -1,6 +1,7 @@
 import { withFantasyUser } from "../_lib";
 import { HttpError } from "@/lib/fantasy/server";
-import { enginePool } from "@/lib/fantasy/pool";
+import { enginePool, gwPrices } from "@/lib/fantasy/pool";
+import { faceUrlById } from "@/lib/fantasy/faces";
 
 export const fetchCache = "force-no-store";
 
@@ -67,10 +68,16 @@ export async function POST(req: Request) {
         .select("gw").eq("mode", "live").neq("status", "final")
         .order("gw", { ascending: true }).limit(1).maybeSingle();
 
-      // "GK~Raya~Arsenal|DEF~Saliba~Arsenal|…" — the same tilde/pipe shape every
-      // other share payload in this table uses.
+      // The share card draws the REAL pitch (portraits + crests + price), so bake
+      // each player's headshot and live price into the chunk. Live price off this
+      // gameweek's snapshot, so the per-player prices agree with the "spent" total;
+      // a player with no snapshot keeps his seed price. Shape: "POS~Name~Club~face~priceTenths".
+      const priceOf = gw ? await gwPrices(db, gw.gw) : new Map<number, number>();
       payload.fsq = "1";
-      payload.fxi = xi.map((p) => `${p.pos}~${p.name}~${p.club}`).join("|");
+      payload.fxi = xi.map((p) => {
+        const pt = priceOf.get(p.id) ?? p.priceTenths;
+        return `${p.pos}~${p.name}~${p.club}~${faceUrlById(p.id) ?? ""}~${pt}`;
+      }).join("|");
       payload.fcapn = nameOf.get(squad.captain) ?? "";
       payload.fval = String(1000 - (squad.bank_tenths ?? 0));
       if (gw) payload.fgw1 = String(gw.gw);
