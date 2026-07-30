@@ -23,16 +23,21 @@ interface PackRow {
   id: string;
   name: string;
   title: string | null;
-  question_count: number;
+  question_count: number | null;
   status: string;
 }
 
+/** Published packs only. This page is PUBLIC, and drafts exist (Gameday packs
+ *  are drafted before their fixture) — surfacing one would leak an unpublished
+ *  title and offer a Play link the quiz API refuses. Mirrors the gate on the
+ *  other public surfaces (api/challenges/pack, the home page). */
 async function loadPack(packId: string): Promise<PackRow | null> {
   const svc = createServiceClient();
   const { data } = await svc
     .from("quiz_packs")
     .select(PACK_COLS)
     .eq("id", packId)
+    .eq("status", "published")
     .maybeSingle();
   return (data as unknown as PackRow) ?? null;
 }
@@ -41,8 +46,10 @@ export async function generateMetadata({ params }: { params: { packId: string } 
   const pack = await loadPack(params.packId).catch(() => null);
   const label = pack ? (pack.title ?? pack.name) : "This quiz";
   return {
-    title: pack ? `${label} — talk about it on YourScore` : "Quiz discussion — YourScore",
-    description: "Talk about this quiz — see what other players thought and have your say.",
+    // No dashes in any user-facing copy, and metadata IS user facing: it lands
+    // in the browser tab, share previews and search results.
+    title: pack ? `${label} on YourScore` : "Quiz discussion on YourScore",
+    description: "Talk about this quiz. See what other players thought and have your say.",
   };
 }
 
@@ -68,9 +75,11 @@ export default async function PackThreadPage({
         </div>
 
         <h1 className="font-display text-2xl text-white leading-tight mb-1">{label}</h1>
-        <p className="font-body text-xs mb-6" style={{ color: "#586058" }}>
-          {pack.question_count} question{pack.question_count === 1 ? "" : "s"}
-        </p>
+        {pack.question_count != null && (
+          <p className="font-body text-xs mb-6" style={{ color: "#586058" }}>
+            {pack.question_count} question{pack.question_count === 1 ? "" : "s"}
+          </p>
+        )}
 
         <Button variant="primary" tone="teal" size="md" fullWidth href={`/versus/find?game=quiz&pack=${pack.id}`}>
           PLAY THIS QUIZ →

@@ -81,6 +81,9 @@ export function DiscussionThread({
   const [threadLoaded, setThreadLoaded] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const focusedRef = useRef(false);
+  /** Latest comments, readable from the deep-link effect without making that
+   *  effect depend on (and re-run for) every comments change. */
+  const commentsRef = useRef<CommentRow[]>([]);
 
   // Per-parent collapse state and the single open inline reply composer.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -99,25 +102,37 @@ export function DiscussionThread({
   }, [subjectType, subjectId]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { commentsRef.current = comments; }, [comments]);
 
   // Deep-link focus (push tap or inbox row): runs once, after the first
   // successful load. Not found in the fetched page (beyond the 50, or
   // deleted+pruned) → silent no-op, no scroll, no error.
+  //
+  // `comments` is deliberately NOT a dep and is read through a ref. It used to
+  // be one, and that silently killed the whole feature: any second load or
+  // optimistic update landing inside the 400ms window re-ran this effect, the
+  // cleanup cleared the pending timer, and the already-set guard then blocked
+  // any reschedule — so no scroll and no highlight, ever. React StrictMode's
+  // double-invoked effects made that the normal case in dev.
   useEffect(() => {
     if (!threadLoaded || !focusCommentId || focusedRef.current) return;
+    const target = commentsRef.current.find((c) => c.id === focusCommentId);
+    if (!target) {
+      focusedRef.current = true; // genuinely absent: don't keep re-looking
+      return;
+    }
     focusedRef.current = true;
-    const target = comments.find((c) => c.id === focusCommentId);
-    if (!target) return;
     if (target.parentId) {
       setExpanded((prev) => new Set(prev).add(target.parentId as string));
     }
+    let clearHighlight: ReturnType<typeof setTimeout> | undefined;
     const t = setTimeout(() => {
       document.getElementById(`comment-${target.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
       setHighlightId(target.id);
-      setTimeout(() => setHighlightId(null), 2000);
+      clearHighlight = setTimeout(() => setHighlightId(null), 2000);
     }, 400);
-    return () => clearTimeout(t);
-  }, [threadLoaded, focusCommentId, comments]);
+    return () => { clearTimeout(t); if (clearHighlight) clearTimeout(clearHighlight); };
+  }, [threadLoaded, focusCommentId]);
 
   const topLevel = useMemo(() => comments.filter((c) => c.parentId === null), [comments]);
   /** The viewer's own club, learned from any comment of theirs already in the

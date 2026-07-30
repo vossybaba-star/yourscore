@@ -18,14 +18,19 @@ const NOTIFIABLE_SUBJECT_TYPES = new Set(["pack", "debate"]);
 /** Deep-link url for a comment, shared by the inbox row and the push payload.
  *  debate → /debate?c=<commentId>; pack → /play/pack/<subjectId>?c=<commentId>. */
 export function commentDeepLink(subjectType: string, subjectId: string, commentId: string): string {
-  return subjectType === "pack"
-    ? `/play/pack/${subjectId}?c=${commentId}`
-    : `/debate?c=${commentId}`;
+  if (subjectType === "pack") return `/play/pack/${subjectId}?c=${commentId}`;
+  if (subjectType === "debate") return `/debate?c=${commentId}`;
+  // Unreachable today (callers guard on pack|debate), but never mint a
+  // confident-looking debate link for a subject that is not a debate.
+  return "/";
 }
 
+/** Truncate by CHARACTER, not UTF-16 unit: slicing mid surrogate pair would put
+ *  a lone surrogate in a push body and render as mojibake on the lock screen. */
 function truncate(text: string, max: number): string {
   const trimmed = text.trim();
-  return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
+  const chars = Array.from(trimmed); // Array.from, not spread: no downlevelIteration needed
+  return chars.length > max ? `${chars.slice(0, max).join("")}…` : trimmed;
 }
 
 /** Generic single-row insert — used for comment_reply rows and (via the
