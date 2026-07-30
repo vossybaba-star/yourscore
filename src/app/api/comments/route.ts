@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { commentRejection } from "@/lib/moderation";
 
-// Discussion threads on quiz packs and debates. One flat thread per subject,
-// newest first, 280-char comments. comments has NO FK to profiles (same as
-// league_members) — author info is a second fetch, never an embedded select.
+// comments.parent_id and club_supporters are additive/not yet in the
+// generated src/types/database.ts — same untyped-client cast used across the
+// halftime/club-fan workstream (src/lib/clubs/query.ts) for this exact reason.
+
+// Discussion threads on quiz packs and debates. Two-level (IG-style) replies:
+// newest 50 TOP-LEVEL comments, plus every live reply under those 50 in one
+// batched query. comments has NO FK to profiles (same as league_members) —
+// author info is a second fetch, never an embedded select.
 
 const SUBJECT_TYPES = new Set(["pack", "debate"]);
 
@@ -14,16 +20,26 @@ export const fetchCache = "force-no-store"; // live threads — see debate/today
 
 export interface CommentRow {
   id: string;
+  parentId: string | null;
   userId: string;
   name: string;
   avatarUrl: string | null;
+  /** club_supporters.club for the commenter's latest season row, or null if
+   *  they have none — the client renders no crest (and no placeholder) then. */
+  club: string | null;
   body: string;
   createdAt: string;
   likeCount: number;
   likedByMe: boolean;
+  /** A top-level comment that was deleted but still has live replies beneath
+   *  it. Rendered as a muted "Comment deleted" row: no avatar link, no like,
+   *  no reply button, no crest — replies stay intact. Never true for a reply
+   *  (a deleted reply is just dropped, same as before). */
+  deleted?: boolean;
 }
 
-/** GET /api/comments?type=pack|debate&id=<uuid> — newest 50 + total. */
+/** GET /api/comments?type=pack|debate&id=<uuid> — newest 50 top-level + all
+ *  their live replies + total. */
 export async function GET(req: NextRequest) {
   const type = req.nextUrl.searchParams.get("type") ?? "";
   const id = req.nextUrl.searchParams.get("id") ?? "";
@@ -31,8 +47,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing type or id" }, { status: 400 });
   }
 
-  // Unauthenticated + two service-role queries per call on three hot screens —
-  // rate-limit per IP so an anonymous loop can't amplify Supabase IO.
+  // Unauthenticated + several service-role queries per call on three hot
+  // screens — rate-limit per IP so an anonymous loop can't amplify Supabase IO.
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const { ok } = await rateLimitDistributed(`comments-get:${ip}`, 30, 60_000);
   if (!ok) {
@@ -42,23 +58,89 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const svc = createServiceClient();
-  const { data: rows, count } = await svc
+  const svc = createServiceClient() as unknown as SupabaseClient;
+
+  // `total` is decoupled from pagination: ALL live rows (top-level + replies)
+  // for the subject, via a head-only count. Optimistic insert/delete on the
+  // client does total±1 to match this exactly.
+  const totalPromise = svc
     .from("comments")
-    .select("id, user_id, body, created_at", { count: "exact" })
+    .select("id", { count: "exact", head: true })
     .eq("subject_type", type)
     .eq("subject_id", id)
-    .is("deleted_at", null)
+    .is("deleted_at", null);
+
+  // Top-level page WITHOUT the deleted filter — a deleted parent with live
+  // replies must still surface as a tombstone. Pruning of deleted-with-no-
+  // replies happens below, in JS, as an explicit branch.
+  const topPromise = svc
+    .from("comments")
+    .select("id, user_id, body, created_at, deleted_at")
+    .eq("subject_type", type)
+    .eq("subject_id", id)
+    .is("parent_id", null)
     .order("created_at", { ascending: false })
     .limit(50);
 
-  const userIds = Array.from(new Set((rows ?? []).map((r) => r.user_id)));
-  const { data: profiles } = userIds.length
-    ? await svc.from("profiles").select("id, display_name, avatar_url").in("id", userIds)
-    : { data: [] };
-  const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+  const [{ count: total }, { data: topRows }] = await Promise.all([totalPromise, topPromise]);
 
-  const commentIds = (rows ?? []).map((r) => r.id);
+  type TopRow = { id: string; user_id: string; body: string; created_at: string; deleted_at: string | null };
+  type ReplyRow = { id: string; parent_id: string; user_id: string; body: string; created_at: string };
+
+  const topIds = (topRows ?? []).map((r) => r.id);
+  const { data: replyRows } = topIds.length
+    ? await svc
+        .from("comments")
+        .select("id, parent_id, user_id, body, created_at")
+        .in("parent_id", topIds)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true })
+        .limit(500)
+    : { data: [] as ReplyRow[] };
+  const replies: ReplyRow[] = replyRows ?? [];
+
+  const repliesByParent = new Map<string, ReplyRow[]>();
+  for (const r of replies) {
+    const list = repliesByParent.get(r.parent_id) ?? [];
+    list.push(r);
+    repliesByParent.set(r.parent_id, list);
+  }
+
+  // Explicit prune branch: a deleted top-level row with zero live replies is
+  // dropped entirely (today's behaviour). One with live replies survives as
+  // a tombstone.
+  const liveTop: TopRow[] = [];
+  const tombstoneTop: TopRow[] = [];
+  for (const r of (topRows ?? []) as TopRow[]) {
+    if (!r.deleted_at) {
+      liveTop.push(r);
+    } else if ((repliesByParent.get(r.id)?.length ?? 0) > 0) {
+      tombstoneTop.push(r);
+    }
+    // else: deleted, no replies — pruned, matches pre-replies behaviour.
+  }
+
+  const userIds = Array.from(new Set([
+    ...liveTop.map((r) => r.user_id),
+    ...replies.map((r) => r.user_id),
+  ]));
+  const [{ data: profiles }, { data: supporterRows }] = await Promise.all([
+    userIds.length
+      ? svc.from("profiles").select("id, display_name, avatar_url").in("id", userIds)
+      : Promise.resolve({ data: [] as { id: string; display_name: string | null; avatar_url: string | null }[] }),
+    userIds.length
+      ? svc.from("club_supporters").select("user_id, club, season_id").in("user_id", userIds).order("season_id", { ascending: false })
+      : Promise.resolve({ data: [] as { user_id: string; club: string; season_id: number }[] }),
+  ]);
+  const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
+  // First row per user wins — rows are ordered season_id desc, so that's the
+  // latest season's club (see brief: don't use currentSeasonId(), it can null).
+  const clubById = new Map<string, string>();
+  for (const s of supporterRows ?? []) {
+    if (!clubById.has(s.user_id)) clubById.set(s.user_id, s.club);
+  }
+
+  const commentIds = [...liveTop.map((r) => r.id), ...replies.map((r) => r.id)];
   const countById = new Map<string, number>();
   const likedIds = new Set<string>();
   if (commentIds.length) {
@@ -84,25 +166,48 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const comments: CommentRow[] = (rows ?? []).map((r) => ({
+  const liveRow = (r: { id: string; user_id: string; body: string; created_at: string }, parentId: string | null): CommentRow => ({
     id: r.id,
+    parentId,
     userId: r.user_id,
-    name: byId.get(r.user_id)?.display_name ?? "A player",
-    avatarUrl: byId.get(r.user_id)?.avatar_url ?? null,
+    name: profileById.get(r.user_id)?.display_name ?? "A player",
+    avatarUrl: profileById.get(r.user_id)?.avatar_url ?? null,
+    club: clubById.get(r.user_id) ?? null,
     body: r.body,
     createdAt: r.created_at,
     likeCount: countById.get(r.id) ?? 0,
     likedByMe: likedIds.has(r.id),
-  }));
+  });
+
+  const comments: CommentRow[] = [
+    ...liveTop.map((r) => liveRow(r, null)),
+    ...tombstoneTop.map((r) => ({
+      id: r.id,
+      parentId: null,
+      userId: r.user_id,
+      name: "",
+      avatarUrl: null,
+      club: null,
+      body: "",
+      createdAt: r.created_at,
+      likeCount: 0,
+      likedByMe: false,
+      deleted: true,
+    })),
+    ...replies.map((r) => liveRow(r, r.parent_id as string)),
+  ];
+
   // likedByMe is per-user, so this response must never be shared across
   // users by an edge/CDN cache (which keys on URL, not cookie).
   return NextResponse.json(
-    { comments, total: count ?? comments.length },
+    { comments, total: total ?? comments.length },
     { headers: { "cache-control": "private, no-store" } },
   );
 }
 
-/** POST /api/comments { subjectType, subjectId, body } */
+/** POST /api/comments { subjectType, subjectId, body, parentId? } — parentId
+ *  makes this a reply. Replies share the same 8/min bucket as top-level
+ *  posts, and are auth-gated only (never canPost-gated — see DiscussionThread). */
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -115,20 +220,39 @@ export async function POST(req: NextRequest) {
   const type = typeof payload?.subjectType === "string" ? payload.subjectType : "";
   const id = typeof payload?.subjectId === "string" ? payload.subjectId : "";
   const body = typeof payload?.body === "string" ? payload.body.trim() : "";
+  const parentId = typeof payload?.parentId === "string" && payload.parentId ? payload.parentId : null;
   if (!SUBJECT_TYPES.has(type) || !id) return NextResponse.json({ error: "Missing subject" }, { status: 400 });
   if (!body || body.length > 280) return NextResponse.json({ error: "Comments are 1–280 characters" }, { status: 400 });
 
   const rejection = commentRejection(body);
   if (rejection) return NextResponse.json({ error: rejection }, { status: 400 });
 
-  const { data, error } = await supabase
+  // Validate the parent via service role and return a clean 400 for the
+  // user-facing cases the DB trigger also guards (belt-and-braces — the
+  // trigger is the structural backstop, this is the friendly error path).
+  if (parentId) {
+    const svc = createServiceClient() as unknown as SupabaseClient;
+    const { data: parent } = await svc
+      .from("comments")
+      .select("id, parent_id, subject_type, subject_id, deleted_at")
+      .eq("id", parentId)
+      .maybeSingle();
+    if (!parent) return NextResponse.json({ error: "That comment doesn't exist anymore" }, { status: 400 });
+    if (parent.parent_id) return NextResponse.json({ error: "Replies are only one level deep" }, { status: 400 });
+    if (parent.deleted_at) return NextResponse.json({ error: "Can't reply to a deleted comment" }, { status: 400 });
+    if (parent.subject_type !== type || parent.subject_id !== id) {
+      return NextResponse.json({ error: "That comment isn't part of this thread" }, { status: 400 });
+    }
+  }
+
+  const { data, error } = await (supabase as unknown as SupabaseClient)
     .from("comments")
-    .insert({ subject_type: type, subject_id: id, user_id: user.id, body })
+    .insert({ subject_type: type, subject_id: id, user_id: user.id, body, parent_id: parentId })
     .select("id, created_at")
     .single();
   if (error || !data) return NextResponse.json({ error: "Could not post — try again" }, { status: 500 });
 
-  return NextResponse.json({ id: data.id, createdAt: data.created_at });
+  return NextResponse.json({ id: data.id, createdAt: data.created_at, parentId });
 }
 
 /** DELETE /api/comments { id } — soft-delete your own comment. */
