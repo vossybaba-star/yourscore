@@ -21,7 +21,7 @@ import {
   Card, SectionLabel, Crest, INK, MUTED, PANEL_2, LINE, TEAL, LIME, GOLD,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { faceFor } from "@/lib/fantasy/faces";
+import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 import { OwnedBadge } from "@/components/fantasy/OwnedBadge";
 
 /** The one new accent the plan allows — Scout's Gamble. */
@@ -98,7 +98,7 @@ function PickCard({ pick }: { pick: ResolvedScoutPick }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 10 }}>
-          <PlayerAvatar name={pick.player.name} avatarUrl={faceFor(pick.player.name)} size={40} />
+          <PlayerAvatar name={pick.player.name} avatarUrl={faceUrlById(pick.player.id) ?? faceFor(pick.player.name)} size={40} />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div className="font-body" style={{ color: INK, fontSize: 15, fontWeight: 700, lineHeight: 1.15 }}>
               {pick.player.name}

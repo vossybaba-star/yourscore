@@ -24,7 +24,7 @@ import {
   api, Crest, DoubtFlag, EMPTY_CONTEXT, FixtureRun, Btn,
   INK, LINE, MUTED, PANEL, PANEL_2, TEAL, AMBER, tint,
   Sheet, SectionLabel,
-  type ClientPoolPlayer, type FantasyContext, type Difficulty, type ContextFixture,
+  type ClientPoolPlayer, type FantasyContext, type Difficulty, type ContextFixture, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
@@ -305,6 +305,31 @@ const selectStyle: CSSProperties = {
   background: PANEL, color: INK, border: `1px solid ${LINE}`, outline: "none", width: "100%",
 };
 
+type PickSort = "priceHigh" | "priceLow" | "name";
+type PickAvail = "all" | "available" | "doubtful";
+
+/** Chip row — same visual language as the Players tab's filter chips. */
+function Chips<T extends string>({ value, onChange, opts }: {
+  value: T; onChange: (v: T) => void; opts: { v: T; label: string }[];
+}) {
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {opts.map((o) => {
+        const on = o.v === value;
+        return (
+          <button key={o.v} onClick={() => onChange(o.v)}
+            style={{
+              padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+              background: on ? tint(TEAL, "1e") : PANEL,
+              color: on ? TEAL : MUTED,
+              border: `1px solid ${on ? tint(TEAL, "66") : LINE}`,
+            }}>{o.label}</button>
+        );
+      })}
+    </div>
+  );
+}
+
 function PlayerPicker({ pool, ctx, slot, onCancel, onPick }: {
   pool: ClientPoolPlayer[];
   ctx: FantasyContext;
@@ -313,13 +338,27 @@ function PlayerPicker({ pool, ctx, slot, onCancel, onPick }: {
   onPick: (id: number) => void;
 }) {
   const [q, setQ] = useState("");
+  const [pos, setPos] = useState<Pos | "ALL">("ALL");
+  const [avail, setAvail] = useState<PickAvail>("all");
+  const [sort, setSort] = useState<PickSort>("priceHigh");
   const needle = q.trim().toLowerCase();
   const rows = useMemo(() => {
-    const filtered = pool.filter((p) =>
-      !needle || p.name.toLowerCase().includes(needle) || p.club.toLowerCase().includes(needle));
-    filtered.sort((a, b) => (b.price - a.price) || a.name.localeCompare(b.name));
-    return filtered.slice(0, 80);
-  }, [pool, needle]);
+    const filtered = pool.filter((p) => {
+      if (pos !== "ALL" && p.pos !== pos) return false;
+      if (avail !== "all") {
+        const doubtful = !!ctx.doubts[p.id];
+        if (avail === "available" && doubtful) return false;
+        if (avail === "doubtful" && !doubtful) return false;
+      }
+      if (needle && !(p.name.toLowerCase().includes(needle) || p.club.toLowerCase().includes(needle))) return false;
+      return true;
+    });
+    filtered.sort((a, b) =>
+      sort === "name" ? a.name.localeCompare(b.name)
+        : sort === "priceLow" ? (a.price - b.price) || a.name.localeCompare(b.name)
+        : (b.price - a.price) || a.name.localeCompare(b.name));
+    return filtered.slice(0, 120);
+  }, [pool, ctx, needle, pos, avail, sort]);
 
   return (
     <div>
@@ -341,6 +380,23 @@ function PlayerPicker({ pool, ctx, slot, onCancel, onPick }: {
         autoFocus
         style={{ ...selectStyle, marginBottom: 10 }}
       />
+      {/* Same browsing controls as the Players tab, so picking side two keeps the
+          filtered experience instead of dropping back to a bare search. */}
+      <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
+        <Chips value={pos} onChange={setPos} opts={[
+          { v: "ALL", label: "All" }, { v: "GK", label: "GK" }, { v: "DEF", label: "DEF" },
+          { v: "MID", label: "MID" }, { v: "FWD", label: "FWD" },
+        ]} />
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+          <Chips value={avail} onChange={setAvail} opts={[
+            { v: "all", label: "All" }, { v: "available", label: "Available" }, { v: "doubtful", label: "Doubtful" },
+          ]} />
+          <Chips value={sort} onChange={setSort} opts={[
+            { v: "priceHigh", label: "£ high" }, { v: "priceLow", label: "£ low" }, { v: "name", label: "A–Z" },
+          ]} />
+        </div>
+        <div style={{ fontSize: 11.5, color: MUTED }}>{rows.length} player{rows.length === 1 ? "" : "s"}</div>
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {!rows.length && (
           <p style={{ fontSize: 13, color: MUTED, margin: "4px 0" }}>No players match that search.</p>
