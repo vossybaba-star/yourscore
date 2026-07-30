@@ -23,6 +23,7 @@ const TABS = [
   { href: "/fantasy/scout/picks", label: "Picks" },
   { href: "/fantasy/scout/players", label: "Players" },
   { href: "/fantasy/scout/shortlist", label: "Shortlist" },
+  { href: "/fantasy/scout/squad", label: "Your Squad" },
 ] as const;
 
 export type ScoutTab = (typeof TABS)[number]["href"];

@@ -12,9 +12,6 @@
  */
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
 import { ScoutCover } from "@/components/fantasy/ScoutCover";
-import { SquadUpdate } from "@/components/fantasy/SquadUpdate";
-import { ShortlistPreview } from "@/components/fantasy/ShortlistPreview";
-import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
 import { FantasyMasthead, GOLD, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -26,6 +23,13 @@ export const metadata = {
   description:
     "Facts, not noise, for your YourScore fantasy squad: team news, availability and the moves worth knowing.",
 };
+
+/** Hide feed items older than ten days — a stale source must never read as today's
+ *  news. Empty beats misleading. */
+const MAX_ITEM_AGE_MS = 10 * 24 * 60 * 60 * 1000;
+function fresh<T extends { createdAt: string }>(items?: T[]): T[] {
+  return (items ?? []).filter((i) => Date.now() - new Date(i.createdAt).getTime() < MAX_ITEM_AGE_MS);
+}
 
 export default async function ScoutBriefing() {
   const doc = await loadFeedDoc();
@@ -44,24 +48,20 @@ export default async function ScoutBriefing() {
 
         <ScoutTabs active="/fantasy/news" />
 
-        {/* Personalised, facts-only: YOUR squad first. */}
-        <SquadUpdate />
+        {/* Briefing is general news only now (founder, 30 Jul): Squad Update
+            moved to the "Your Squad" tab, the shortlist peek is gone (it lives on
+            the Shortlist tab), and Compare moved to the Players tab. */}
 
-        {/* Four Picks moved to their own Picks tab (founder, 30 Jul). */}
-
-        {/* A compact peek at your saved players — renders nothing when empty. */}
-        <ShortlistPreview />
-
-        {/* Entry into side-by-side Player Comparison (opens empty from here). */}
-        <CompareEntry />
-
-        {/* The general Scout Report — same for everyone, straight from the feed doc. */}
+        {/* The general Scout Report. Stale-item guard (founder, 30 Jul): the
+            team-news source stopped feeding on 14 Jul, so anything older than ten
+            days is hidden rather than shown as if it were current. Better an empty
+            section than 16-day-old "news". (The dead ingest still needs fixing.) */}
         <NewsFeed
           tips={doc?.tips}
           doubts={doc?.teamNews?.doubts ?? []}
           insights={doc?.insights?.items ?? []}
-          teamItems={doc?.teamNews?.items ?? []}
-          transferItems={doc?.transfers?.items ?? []}
+          teamItems={fresh(doc?.teamNews?.items)}
+          transferItems={fresh(doc?.transfers?.items)}
         />
       </div>
     </main>

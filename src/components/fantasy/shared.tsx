@@ -367,13 +367,17 @@ export type Difficulty = "kind" | "medium" | "tough";
 export interface ContextFixture {
   gw: number; opp: string; oppShort: string; home: boolean; difficulty: Difficulty;
 }
+/** FPL availability letter: a=available, d=doubt, i=injured, s=suspended, u=unavailable. */
+export type FplStatus = "a" | "d" | "i" | "s" | "u";
 export interface FantasyContext {
   gw: number;
   fixtures: Record<number, ContextFixture[]>;
   doubts: Record<number, string>;
+  /** pool id → FPL status letter (absent = available). The real injury signal. */
+  status: Record<number, FplStatus>;
   teamNewsAt: string | null;
 }
-export const EMPTY_CONTEXT: FantasyContext = { gw: 0, fixtures: {}, doubts: {}, teamNewsAt: null };
+export const EMPTY_CONTEXT: FantasyContext = { gw: 0, fixtures: {}, doubts: {}, status: {}, teamNewsAt: null };
 
 /** Difficulty as colour. Deliberately desaturated: this sits behind three-letter
  *  opponent codes on a dark ground, and a saturated traffic-light row would shout

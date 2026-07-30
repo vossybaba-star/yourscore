@@ -101,9 +101,30 @@ export default function LeaguesHome() {
     <>
     <main data-fantasy style={page}>
       <FantasyHeader />
-      <p style={{ fontSize: 13, color: MUTED, margin: "2px 0 14px", lineHeight: 1.5 }}>
-        Create a league, share the code, see who really knows football.
-      </p>
+
+      {/* Month one is the headline: the August competition carries the prize, so
+          it leads the Leagues tab (founder, 30 Jul). Gold = a thing you win. */}
+      <div style={{
+        borderRadius: 16, padding: 18, marginBottom: 16, position: "relative", overflow: "hidden",
+        background: `linear-gradient(140deg, ${tint(GOLD, "22")}, ${tint(GOLD, "05")})`,
+        border: `1px solid ${tint(GOLD, "55")}`,
+      }}>
+        <div className="font-display" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: GOLD, marginBottom: 7 }}>
+          MONTH ONE · THE PRIZE IS LIVE
+        </div>
+        <div className="font-display text-white" style={{ fontSize: 30, lineHeight: 0.95, letterSpacing: "-0.01em" }}>
+          AUGUST COMPETITION
+        </div>
+        <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "11px 0 0", lineHeight: 1.55, maxWidth: "92%" }}>
+          Every gameweek this month feeds one table. Finish top of the August standings to win the month one prize.
+          It resets in September, so a slow start never buries your season.
+        </p>
+        <button onClick={() => router.push("/fantasy/rules")} className="font-body"
+          style={{
+            marginTop: 14, background: GOLD, color: "#1a1204", border: "none", borderRadius: 999,
+            padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
+          }}>How it works</button>
+      </div>
 
       {/* A returning manager came to look at a table, not to fill in a form. When
           they already have leagues, those go first and the setup cards drop

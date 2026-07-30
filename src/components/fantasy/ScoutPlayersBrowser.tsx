@@ -59,6 +59,7 @@ const AVAIL_TABS = [
   { key: "all", label: "All" },
   { key: "available", label: "Available" },
   { key: "doubtful", label: "Doubtful" },
+  { key: "injured", label: "Injured" },
 ] as const;
 type Avail = (typeof AVAIL_TABS)[number]["key"];
 
@@ -183,9 +184,12 @@ export function ScoutPlayersBrowser() {
       if (club !== "ALL" && p.club !== club) return false;
       if (p.price < minPrice || p.price > maxPrice) return false;
       if (avail !== "all") {
-        const doubtful = !!ctx.doubts[p.id];
-        if (avail === "available" && doubtful) return false;
-        if (avail === "doubtful" && !doubtful) return false;
+        const st = ctx.status[p.id];
+        const out = st === "i" || st === "s" || st === "u";
+        const doubt = st === "d";
+        if (avail === "available" && (out || doubt)) return false;
+        if (avail === "doubtful" && !doubt) return false;
+        if (avail === "injured" && !out) return false;
       }
       if (needle && !(p.name.toLowerCase().includes(needle) || p.club.toLowerCase().includes(needle))) return false;
       return true;
@@ -303,7 +307,11 @@ export function ScoutPlayersBrowser() {
           </p>
         )}
         {rows.map((p) => {
-          const doubtful = !!ctx.doubts[p.id];
+          const st = ctx.status[p.id];
+          const isOut = st === "i" || st === "s" || st === "u";
+          const isDoubt = st === "d";
+          const availWarn = isOut || isDoubt;
+          const availLabel = isOut ? "OUT" : isDoubt ? "DOUBT" : "FIT";
           return (
             // Row is a flex CONTAINER (not itself a button) so the profile button
             // and the star button can sit side by side — no nested buttons.
@@ -338,10 +346,10 @@ export function ScoutPlayersBrowser() {
                   <span style={{ fontSize: 13.5, fontWeight: 700 }}>£{p.price.toFixed(1)}m</span>
                   <span style={{
                     fontSize: 9.5, fontWeight: 700, letterSpacing: "0.04em", padding: "1px 6px", borderRadius: 999,
-                    color: doubtful ? "#E08A6B" : TEAL,
-                    border: `1px solid ${doubtful ? "#B85C38" : tint(TEAL, "55")}`,
-                    background: doubtful ? "rgba(184,92,56,0.10)" : tint(TEAL, "12"),
-                  }}>{doubtful ? "DOUBT" : "FIT"}</span>
+                    color: availWarn ? "#E08A6B" : TEAL,
+                    border: `1px solid ${availWarn ? "#B85C38" : tint(TEAL, "55")}`,
+                    background: availWarn ? "rgba(184,92,56,0.10)" : tint(TEAL, "12"),
+                  }}>{availLabel}</span>
                 </span>
               </button>
               <StarButton saved={shortlist.has(p.id)} onToggle={() => toggleStar(p.id)} />

@@ -12,6 +12,7 @@
  */
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
 import { ScoutPlayersBrowser } from "@/components/fantasy/ScoutPlayersBrowser";
+import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { FantasyMasthead, MUTED, column, shell } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
@@ -27,6 +28,8 @@ export default function ScoutPlayers() {
             Every player, priced and researched. Look before you move.
           </div>
           <ScoutTabs active="/fantasy/scout/players" />
+          {/* Compare lives with the players now (founder, 30 Jul). */}
+          <CompareEntry />
           <ScoutPlayersBrowser />
         </div>
       </main>

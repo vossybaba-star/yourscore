@@ -18,7 +18,7 @@ import {
   loadPublishedScoutPicks, type ResolvedScoutPick, type ScoutCategory, type Db,
 } from "@/lib/fantasy/scoutPicks";
 import {
-  Card, SectionLabel, Crest, INK, MUTED, PANEL_2, LINE, TEAL, LIME, GOLD,
+  Card, SectionLabel, Crest, INK, MUTED, PANEL, TEAL, LIME, GOLD,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
@@ -56,92 +56,50 @@ function serviceClient(): Db {
   );
 }
 
-function Badge({ text, color }: { text: string; color: string }) {
-  return (
-    <span className="font-display tracking-widest" style={{
-      fontSize: 10.5, fontWeight: 700, color, letterSpacing: "0.1em",
-    }}>{text}</span>
-  );
-}
-
-function Chip({ text, color = MUTED }: { text: string; color?: string }) {
-  return (
-    <span className="font-body rounded-md whitespace-nowrap" style={{
-      fontSize: 10.5, fontWeight: 600, padding: "2px 7px",
-      color, background: PANEL_2, border: `1px solid ${color === MUTED ? LINE : tint(color, "44")}`,
-    }}>{text}</span>
-  );
-}
-
-function fixtureLabel(fx: ResolvedScoutPick["fixture"]): string | null {
-  if (!fx.length) return null;
-  return fx.map((f) => `${f.home ? "vs" : "@"} ${f.opponent}`).join(" · ");
-}
-
+/** One pick as a 2x2 grid tile — portrait-forward so it feels personal (founder,
+ *  30 Jul): a big coloured category heading, a big ringed headshot, the name and
+ *  one headline fact. The full case (all reasons + the risk) is a tap away on the
+ *  detail page. */
 function PickCard({ pick }: { pick: ResolvedScoutPick }) {
   const meta = CATEGORY[pick.category];
   const price = (pick.player.priceTenths / 10).toFixed(1);
-  const fx = fixtureLabel(pick.fixture);
-  const cold = pick.signal === "fpl_ep_next_cold_start";
-  const showOwnership = (pick.category === "value" || pick.category === "gamble")
-    && pick.facts.ownershipPercent != null;
+  const firstReason = pick.reasons[0];
 
   return (
     <Link href={`/fantasy/scout/picks/${pick.category}`} style={{ textDecoration: "none" }}>
-      <Card style={{ padding: 13, borderColor: tint(meta.color, "33") }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <Badge text={meta.label} color={meta.color} />
-          <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            {pick.isBackup && <Chip text="Backup pick" color={MUTED} />}
-            {cold && <Chip text="FPL projection" color={MUTED} />}
-          </span>
+      <Card style={{
+        padding: "14px 11px 12px", height: "100%", borderColor: tint(meta.color, "55"),
+        background: `linear-gradient(180deg, ${tint(meta.color, "12")}, ${PANEL})`,
+        display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
+      }}>
+        <span className="font-display" style={{ fontSize: 13.5, fontWeight: 800, letterSpacing: "0.06em", color: meta.color }}>
+          {meta.label}
+        </span>
+
+        <div style={{ marginTop: 11 }}>
+          <PlayerAvatar name={pick.player.name} avatarUrl={faceUrlById(pick.player.id) ?? faceFor(pick.player.name)} size={68} ring={meta.color} priority />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 11, marginTop: 10 }}>
-          <PlayerAvatar name={pick.player.name} avatarUrl={faceUrlById(pick.player.id) ?? faceFor(pick.player.name)} size={40} />
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div className="font-body" style={{ color: INK, fontSize: 15, fontWeight: 700, lineHeight: 1.15 }}>
-              {pick.player.name}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
-              <Crest club={pick.player.club} size={13} />
-              <span className="font-body" style={{ color: MUTED, fontSize: 12 }}>
-                {pick.player.club} · {pick.player.pos}
-              </span>
-            </div>
-          </div>
-          <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-            <span className="font-body" style={{ color: INK, fontSize: 14, fontWeight: 700 }}>£{price}m</span>
-            <OwnedBadge playerId={pick.player.id} />
+        <div className="font-body" style={{ color: INK, fontSize: 15.5, fontWeight: 700, lineHeight: 1.15, marginTop: 9 }}>
+          {pick.player.name}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 4 }}>
+          <Crest club={pick.player.club} size={13} />
+          <span className="font-body" style={{ color: MUTED, fontSize: 11.5 }}>
+            {pick.player.pos} · £{price}m
           </span>
         </div>
+        <div style={{ marginTop: 5 }}><OwnedBadge playerId={pick.player.id} /></div>
 
-        {(fx || showOwnership) && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-            {fx && <Chip text={fx} color={MUTED} />}
-            {showOwnership && (
-              <Chip text={`${pick.facts.ownershipPercent!.toFixed(1)}% (FPL ownership)`} color={MUTED} />
-            )}
-          </div>
+        {firstReason && (
+          <p className="font-body" style={{ color: INK, fontSize: 12.5, lineHeight: 1.4, margin: "9px 0 0", opacity: 0.92 }}>
+            {firstReason}
+          </p>
         )}
 
-        <ul style={{ margin: "10px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 5 }}>
-          {pick.reasons.map((r, i) => (
-            <li key={i} className="font-body" style={{ color: INK, fontSize: 13, lineHeight: 1.4, display: "flex", gap: 7 }}>
-              <span style={{ color: meta.color, flexShrink: 0 }}>›</span>
-              <span>{r}</span>
-            </li>
-          ))}
-        </ul>
-
-        {pick.risk && (
-          <div className="font-body" style={{
-            color: MUTED, fontSize: 12.5, lineHeight: 1.4, marginTop: 8,
-            paddingTop: 8, borderTop: `1px solid ${LINE}`,
-          }}>
-            <span style={{ color: PURPLE, fontWeight: 700 }}>The risk: </span>{pick.risk}
-          </div>
-        )}
+        <span className="font-body" style={{ marginTop: "auto", paddingTop: 10, fontSize: 11.5, fontWeight: 600, color: meta.color }}>
+          See the case ›
+        </span>
       </Card>
     </Link>
   );
@@ -170,9 +128,11 @@ export async function FourPicks() {
   const sorted = [...picks].sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category));
 
   return (
-    <section style={{ display: "grid", gap: 10 }}>
+    <section style={{ display: "grid", gap: 8 }}>
       <SectionLabel>SCOUT&rsquo;S FOUR PICKS</SectionLabel>
-      {sorted.map((p) => <PickCard key={p.category} pick={p} />)}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {sorted.map((p) => <PickCard key={p.category} pick={p} />)}
+      </div>
     </section>
   );
 }

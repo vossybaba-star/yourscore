@@ -23,6 +23,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clubKey } from "./clubKey";
 import { fantasyPool } from "./pool";
+import { resolveAvailability, type FplStatus } from "./advice";
 import type { Difficulty, NewsClubRun, NewsDoc, NewsDoubt } from "./news";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,6 +49,10 @@ export interface FantasyContext {
   /** pool id → why this player is a doubt. Absent = no known concern, which is
    *  NOT the same as "fit" — see the caveat the UI has to carry. */
   doubts: Record<number, string>;
+  /** pool id → FPL availability letter from the latest snapshot (a/d/i/s/u).
+   *  This is the real injury signal (the feed doc's doubts are often empty).
+   *  Absent = available. Lets the Players browser filter injured/doubtful. */
+  status: Record<number, FplStatus>;
   /** When the underlying team-news snapshot was taken, so the UI can be honest
    *  about how old a doubt is. */
   teamNewsAt: string | null;
@@ -78,7 +83,32 @@ export async function fantasyContext(db: Db): Promise<FantasyContext> {
     .from("fantasy_news_feed").select("doc")
     .order("gw", { ascending: false }).limit(1).maybeSingle();
   const doc = (data?.doc ?? null) as NewsDoc | null;
-  if (!doc) return { gw: 0, fixtures: {}, doubts: {}, teamNewsAt: null };
+
+  // Availability status from the latest FPL snapshot (snapshot player_id == pool
+  // id). This is the real injury signal; the feed doc's teamNews.doubts is often
+  // empty. Best-effort — a failure means an empty map, never a wrong "fit".
+  const status: Record<number, FplStatus> = {};
+  try {
+    const latest = await db.from("fantasy_fpl_snapshot").select("captured_at")
+      .eq("is_rehearsal", false).order("captured_at", { ascending: false }).limit(1);
+    const cutoff = (latest.data as { captured_at: string }[] | null)?.[0]?.captured_at;
+    if (cutoff) {
+      const snap = await db.from("fantasy_fpl_snapshot")
+        .select("player_id, status, chance_of_playing_next_round, news")
+        .eq("captured_at", cutoff).eq("is_rehearsal", false).range(0, 9999);
+      const rows = (snap.data ?? []) as {
+        player_id: number; status: string | null;
+        chance_of_playing_next_round: number | null; news: string | null;
+      }[];
+      const avail = resolveAvailability(rows.map((r) => ({
+        playerId: r.player_id, status: r.status,
+        chance: r.chance_of_playing_next_round, news: r.news,
+      })));
+      if (avail) avail.forEach((info, id) => { status[id] = info.status; });
+    }
+  } catch { /* availability is best-effort */ }
+
+  if (!doc) return { gw: 0, fixtures: {}, doubts: {}, status, teamNewsAt: null };
 
   // SportMonks club name → its fixture run.
   const runByKey = new Map<string, NewsClubRun>();
@@ -107,7 +137,7 @@ export async function fantasyContext(db: Db): Promise<FantasyContext> {
   if (unmapped.length) {
     // Loud, and empty. Half a ticker is indistinguishable from a correct one.
     console.error(`[fantasy-context] no fixture run for: ${unmapped.join(", ")} — serving no fixtures`);
-    return { gw: doc.gw, fixtures: {}, doubts: {}, teamNewsAt: doc.teamNews?.updatedAt ?? null };
+    return { gw: doc.gw, fixtures: {}, doubts: {}, status, teamNewsAt: doc.teamNews?.updatedAt ?? null };
   }
 
   // Doubts arrive keyed by SportMonks id; the client speaks pool ids.
@@ -122,6 +152,7 @@ export async function fantasyContext(db: Db): Promise<FantasyContext> {
     gw: doc.gw,
     fixtures,
     doubts,
+    status,
     teamNewsAt: doc.teamNews?.updatedAt ?? null,
   };
 }
