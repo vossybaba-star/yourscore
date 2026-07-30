@@ -685,6 +685,24 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **In-app notification inbox: bell in the home header + `/notifications`** (migration
+  222). Stage 2 of 3 on the comment layer. A **bell** sits in the Dashboard header beside the profile
+  circle with a lime dot when anything is unread, computed **server-side** inside the home page's
+  existing `Promise.all` (no client fetch, no pop-in; the home screen is the most-hit surface).
+  **Comment likes notify the author aggregated per comment** ("Dan and 1 other liked your comment" —
+  one upserted row per comment carrying a count and the latest actor); **replies notify per reply**.
+  A new like resurfaces the row as unread; **an unlike never does**. You are never notified about your
+  own action, and `fantasy_league` chat generates nothing. **The two daily pushes (Today's Game 12:30,
+  Today's Debate 08:30) now also write ONE broadcast inbox row each** — stored once with `user_id`
+  null, visible to ALL users including web users who cannot receive push, never fanned out (10,206
+  profiles vs 266 device tokens: a fan-out would be 20,412 rows a day). Read state is a **single
+  `profiles.notifications_read_at` timestamp** — opening the page marks everything read in one write,
+  no per-row bookkeeping; broadcasts age out of the page at 30 days. Notification writes are
+  fire-and-forget and can never fail a like or a reply. RLS: read your own rows plus broadcasts, and
+  no write policy at all (service role only). ⚠️ Known, not fixed: a lost-update race can leave
+  `like_count` off by one when two people like in the same instant (upgrade path is an atomic
+  increment RPC). Stage 3 (push for likes/replies, deep-link to a comment with scroll and highlight)
+  is NOT built.
 - **2026-07-30** — **Club page rebuilt as per-category quiz carousels; Quiz "Club" tab → "PL Club".**
   Going into a club (`/club/[slug]`) used to show four *topic* tiles that hid the actual quizzes behind
   a bottom sheet of "Quiz 1 / Quiz 2 / Quiz 3" — poor discoverability. It now renders **one section per
