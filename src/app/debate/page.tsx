@@ -14,18 +14,26 @@ export const fetchCache = "force-no-store"; // today's debate rotates daily — 
 
 export async function generateMetadata(): Promise<Metadata> {
   const debate = await todaysDebate(createServiceClient()).catch(() => null);
-  const title = debate ? `${debate.question} — settle it on YourScore` : "Today's debate — YourScore";
+  const title = debate ? `${debate.question} · Settle it on YourScore` : "Today's debate · YourScore";
   // Versioned image URL: X/socials cache the card IMAGE by its URL, so a
   // same-URL image goes stale when the debate changes (bit us on day one).
   // Stamped with the debate id too, so even a mid-day schedule swap mints a
   // fresh URL. The OG route ignores the query.
   const img = `/api/og/debate?v=${ukToday()}-${debate?.id.slice(0, 8) ?? "none"}`;
+  // The DESTINATION url X caches its card against. /debate is the same string
+  // every day, so X keeps showing whatever it first scraped there (a cold-render
+  // miss = a permanent blank for a week). Stamping the canonical with today's UK
+  // date mints a fresh URL each day, so a new post is a fresh scrape — and every
+  // share sheet / crawler that reads og:url gets the dated link automatically.
+  const shareUrl = `https://yourscore.app/debate?d=${ukToday()}`;
   return {
     title,
     description: "One football debate a day. Vote, see the community split, argue it out.",
+    alternates: { canonical: shareUrl },
     openGraph: {
       title,
       description: "One football debate a day. Vote, see the split, argue it out.",
+      url: shareUrl,
       images: [{ url: img, width: 1200, height: 630 }],
     },
     twitter: { card: "summary_large_image" },

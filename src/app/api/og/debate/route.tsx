@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 
           <span style={{ display: "flex", fontSize: qSize, fontWeight: 900, color: "#fff", lineHeight: 1.14, marginTop: 22 }}>{question}</span>
 
-          <span style={{ display: "flex", fontSize: 22, color: "#8a948f", marginTop: 12 }}>Tap one — that&apos;s your vote, done.</span>
+          <span style={{ display: "flex", fontSize: 22, color: "#8a948f", marginTop: 12 }}>Tap one, that&apos;s your vote.</span>
 
           <div style={{ display: "flex", flexDirection: "column", marginTop: 26, gap: 14 }}>
             {options.map((label, i) => (

@@ -149,13 +149,13 @@ export function DebateCard({
       <p className="px-5 pt-1 pb-1 font-display text-xl text-white leading-tight">{debate.question}</p>
       {!voted && (
         <p className="px-5 pb-3 font-body text-[11px]" style={{ color: "#8a948f" }}>
-          Tap one — that&rsquo;s your vote, done.
+          Tap one, that&rsquo;s your vote.
         </p>
       )}
       {/* The payoff for voting: where the room stands right now */}
       {voted && (
         <p className="px-5 pb-3 font-body text-[11px]" style={{ color: "#8a948f" }}>
-          The split so far —
+          The split so far
         </p>
       )}
 
