@@ -695,9 +695,12 @@ Confirmed preamble above and the referenced section.
   `profiles.is_seed`): real auth users, realistic handles + avatars, a legal £100m squad each (real
   engine/preset solver), webbed into a follow graph (~386 edges), light feed activity (transfers/
   chips, ~41 events) — **NO fabricated points/ranks** (standings fill honestly from GW1). Every seed
-  is `is_seed`, excludable from prizes/analytics; `seed-users.sh --teardown` wipes them in one go.
-  ⚠️ At GW1, decide whether `is_seed` accounts show in the global standings (their squads score
-  naturally) — exclude from prizes regardless.
+  is `is_seed`, excludable from prizes/analytics; `seed-users.sh --teardown` wipes them in one go,
+  `--rename` re-handles them in place. Names are realistic careless-signup handles (adam766, beardo,
+  dave186, josh, kalvin21 — modelled on real usernames, not copies), not banter. **Seeds are
+  EXCLUDED from the competitive standings** (mig 230 rebuilt `fantasy_global_standings` +
+  `fantasy_rank_jumps` to inner-join `profiles` and drop `is_seed`), so they never rank against real
+  managers or claim prizes; they stay social (followable, in the feed) only.
 - **2026-07-30** — **Fantasy social suite + a one-way follow layer.** Four surfaces (migs 224–226):
   (1) **Weekly teams on profiles** — a "Fantasy XI by gameweek" section on own + public profiles,
   a gameweek-chip selector over a read-only SquadBoard; "This week" is the live team (public on

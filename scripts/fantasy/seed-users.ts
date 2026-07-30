@@ -24,6 +24,7 @@ import { solvePreset, PRESETS, type PresetPlayer } from "../../src/lib/fantasy/p
 
 const DRY = process.argv.includes("--dry");
 const TEARDOWN = process.argv.includes("--teardown");
+const RENAME = process.argv.includes("--rename"); // re-handle existing seeds in place
 const countArg = process.argv.indexOf("--count");
 const COUNT = countArg >= 0 ? Number(process.argv[countArg + 1]) : 50;
 const SEED_DOMAIN = "seed.yourscore.app";
@@ -41,19 +42,38 @@ const rnd = mulberry32(20260730);
 const pick = <T>(arr: T[]): T => arr[Math.floor(rnd() * arr.length)];
 const shuffle = <T>(arr: T[]): T[] => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-// 50 plausible manager handles — a mix of names and terrace banter, no real people.
-const NAMES = [
-  "Gaffer Greg", "Tactics Tom", "Sunday League Sam", "Big Sam's Brolly", "Xabi's Apprentice",
-  "The Fourth Official", "Row Z Rovers", "Parked The Bus", "Tekkers Terry", "Cattenaccio Carl",
-  "Vintage Vialli", "Half And Half Harry", "Prime Pirlo", "Regista Rob", "Gegenpress Gary",
-  "Total Football Tony", "The Twelfth Man", "Fantasy Phil", "Wildcard Wendy", "Bench Boost Ben",
-  "Captain Armband", "Differential Dan", "Template Tim", "Set Piece Steve", "Trap Door Trev",
-  "The Assistant Ref", "Corner Flag Colin", "Nutmeg Nadia", "Screamer Sean", "Worldie Will",
-  "Cruyff Turn Chris", "Panenka Pete", "Rabona Ray", "Cheeky Chip Chloe", "Last Minute Lisa",
-  "Extra Time Ed", "Penalty Box Priya", "Wing Back Wes", "False Nine Fin", "Holding Mid Mo",
-  "Overlap Olly", "Counter Attack Kat", "High Line Hugh", "Low Block Lou", "Press Trigger Pat",
-  "Six Yard Sid", "Halfway Line Hal", "Injury Time Ivy", "Golden Boot Gabe", "Clean Sheet Cleo",
+// Realistic sign-up handles — the way people actually name themselves without much
+// thought. Modelled on our own real usernames (harleysims, stevo123uk, oje17,
+// dcgjones, spenny, efc, Nick, hallowedbeef): mostly lowercase, name + numbers,
+// initials, the odd capitalised first name or club tag. NOT copies of real users.
+const FIRST = [
+  "jack", "tom", "sam", "dan", "ben", "harry", "josh", "luke", "adam", "ryan", "kyle", "connor",
+  "jake", "callum", "lewis", "aaron", "nathan", "reece", "charlie", "george", "oli", "will", "matt",
+  "rob", "dave", "steve", "chris", "alex", "jamie", "scott", "sean", "kai", "finn", "leo", "noah",
+  "jude", "mason", "cole", "drew", "marcus", "liam", "owen", "joe", "max", "elliot", "rio", "tyler",
+  "spencer", "beau", "kalvin", "raz", "russ", "nick", "greg", "phil", "ash", "jef", "moey", "harls",
 ];
+const SUR = ["jones", "smith", "walker", "hughes", "benham", "sims", "melding", "pezzella", "qnnz", "h", "b", "tp", "rl", "s"];
+const TAG = ["uk", "ldn", "efc", "cfc", "afc", "lfc", "mufc", "thfc", "07", "9", "10", "21", "88"];
+const WORD = ["hallowedbeef", "sixtimes", "triplej", "ghostrl", "pumpinjumpin", "hardo", "beardo", "argo", "lesquared", "dubz", "sheffieldgunner", "theviewingcentre"];
+
+function makeHandles(n: number): string[] {
+  const out = new Set<string>();
+  let guard = 0;
+  while (out.size < n && guard++ < n * 40) {
+    const r = rnd();
+    let h: string;
+    if (r < 0.30) h = pick(FIRST) + (rnd() < 0.6 ? String(1 + Math.floor(rnd() * 999)) : Math.floor(rnd() * 3000 + 1980));
+    else if (r < 0.48) h = pick(FIRST);                                        // plain lowercase name
+    else if (r < 0.62) h = pick(FIRST) + pick(SUR);                            // name + surname/initials
+    else if (r < 0.74) { const f = pick(FIRST); h = f.charAt(0).toUpperCase() + f.slice(1); } // Capitalised
+    else if (r < 0.86) h = pick(FIRST) + pick(TAG);                            // name + club/place tag
+    else if (r < 0.93) { const f = pick(FIRST); h = f + f.slice(-1).repeat(1 + Math.floor(rnd() * 2)); } // doubled letter
+    else h = pick(WORD) + (rnd() < 0.4 ? String(Math.floor(rnd() * 99)) : ""); // the odd word handle
+    if (h.length >= 2 && h.length <= 18) out.add(h);
+  }
+  return Array.from(out);
+}
 
 interface PoolFile { players: { id: number; smId: number; name: string; club: string; clubId: number; pos: PoolPlayer["pos"]; price: number }[] }
 
@@ -82,6 +102,21 @@ async function main() {
     return;
   }
 
+  // Rename: re-handle existing seeds in place (keeps their ids, squads, follow
+  // graph and feed events intact) — for when the naming style changes.
+  if (RENAME) {
+    const { data: seeds } = await db.from("profiles").select("id").eq("is_seed", true);
+    const ids = ((seeds ?? []) as { id: string }[]).map((s) => s.id);
+    const handles = makeHandles(ids.length);
+    console.log(`${DRY ? "[DRY] " : ""}Renaming ${ids.length} seeds…`);
+    for (let i = 0; i < ids.length; i++) {
+      if (DRY) { if (i < 8) console.log(`  ${ids[i].slice(0, 8)} → ${handles[i]}`); continue; }
+      await db.from("profiles").update({ display_name: handles[i], username: null }).eq("id", ids[i]);
+    }
+    console.log(DRY ? "[DRY] sample above." : "Rename done.");
+    return;
+  }
+
   const poolFile = JSON.parse(readFileSync(join(process.cwd(), "src/data/fantasy/pool.json"), "utf8")) as PoolFile;
   const pool: PoolPlayer[] = poolFile.players.map((p) => ({
     id: p.id, smId: p.smId, name: p.name, club: p.club, clubId: p.clubId, pos: p.pos,
@@ -91,13 +126,14 @@ async function main() {
   const premiums = shuffle(pool.filter((p) => p.priceTenths >= 90)).map((p) => p.id); // anchor candidates for variety
   const nameById = new Map(pool.map((p) => [p.id, p.name]));
 
-  const n = Math.min(COUNT, NAMES.length);
+  const n = COUNT;
+  const handles = makeHandles(n);
   console.log(`${DRY ? "[DRY] " : ""}Seeding ${n} users…`);
 
   const created: { id: string; name: string; squadOk: boolean }[] = [];
 
   for (let i = 0; i < n; i++) {
-    const name = NAMES[i];
+    const name = handles[i];
     const email = `seed-${i}-${Math.floor(rnd() * 1e6)}@${SEED_DOMAIN}`;
     const avatar = `/avatars/fan-${String((i % 16) + 1).padStart(2, "0")}.webp`;
 
@@ -135,7 +171,7 @@ async function main() {
 
     const createdAt = new Date(Date.now() - Math.floor(rnd() * 20 + 1) * 864e5).toISOString();
     const { error: pErr } = await db.from("profiles").upsert({
-      id: uid, display_name: name, username: name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 20) + i,
+      id: uid, display_name: name, username: null,
       avatar_url: avatar, is_seed: true, source: "seed", notifications_opt_in: false, created_at: createdAt,
     });
     if (pErr) console.error(`  ! profile failed for ${name}: ${pErr.message}`);
