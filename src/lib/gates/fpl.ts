@@ -15,7 +15,7 @@ export interface FplBootstrap {
   elements: FplElement[];
   teams: FplTeam[];
   /** Gameweeks — the first event's deadline year tells us which season the feed serves. */
-  events?: { id: number; name: string; deadline_time: string }[];
+  events?: { id: number; name: string; deadline_time: string; is_current?: boolean; is_next?: boolean }[];
 }
 
 export interface FplElement {
@@ -36,12 +36,16 @@ export interface FplElement {
   // Pre-season, the season totals above are LAST season's until FPL resets them
   // (see reference: the bootstrap "last season" trap). These extra fields let the
   // player profile show a real last-season line plus FPL's own forward projection.
+  ep_this?: string;                         // FPL's projected points for the current GW
   ep_next?: string;                         // FPL's projected points for the next GW
   clean_sheets?: number;
   saves?: number;
   goals_conceded?: number;
   bonus?: number;
+  chance_of_playing_this_round?: number | null;
   chance_of_playing_next_round?: number | null;
+  transfers_in_event?: number;
+  transfers_out_event?: number;
   news?: string;
 }
 
