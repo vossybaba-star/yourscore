@@ -685,6 +685,19 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Club page rebuilt as per-category quiz carousels; Quiz "Club" tab → "PL Club".**
+  Going into a club (`/club/[slug]`) used to show four *topic* tiles that hid the actual quizzes behind
+  a bottom sheet of "Quiz 1 / Quiz 2 / Quiz 3" — poor discoverability. It now renders **one section per
+  category** (History & Honours / Legends / Modern Era / Rivalries), each a **horizontal scroller of the
+  real quiz packs**, selectable directly; the volume sheet is gone. Cards use the **club crest** (no
+  per-category poster art) on **smaller tiles**, led by a **themed title**. Those titles were backfilled
+  into `quiz_packs.title` for all **98** club topic packs, each derived from 2–3 of the pack's own
+  questions (e.g. *The Invincibles Era*, *The Merseyside Derby*, *Henry & the Greats*; generic mixes get
+  functional names like *Club Essentials* / *Seasons & Stats*). `/api/club-page/[slug]` now returns
+  `title`; a "Volume I/II" label is the fallback. The Quiz Solo sub-tab set is now **Featured / World Cup
+  / PL Club / Records / Build a Quiz**. Also this window: nav glow on the Play + Fantasy tabs, and the
+  `/play` pack grid went 3-up (Featured club cards keep their "Premier League 2025/26" theme; the PL Club
+  grid is crest + OPEN only).
 - **2026-07-30** — **Discussion threads become conversations: replies, collapse, and club crests**
   (migration 221). Stage 1 of 3. **Replies** are Instagram-shaped and **exactly two levels** — a flat
   tier under each top-level comment; replying to a reply lands in that same tier. Depth is guaranteed
