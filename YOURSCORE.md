@@ -685,6 +685,22 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Fantasy social suite + a one-way follow layer.** Four surfaces (migs 224–226):
+  (1) **Weekly teams on profiles** — a "Fantasy XI by gameweek" section on own + public profiles,
+  a gameweek-chip selector over a read-only SquadBoard; "This week" is the live team (public on
+  submit), numbered chips are the immutable `fantasy_deadline_squad` snapshots, GW total once
+  scored. (2) **Global standings** on the league tab — rank every fantasy player, month the hero
+  (shown by NAME, e.g. "August"), Season/This-week toggles; `fantasy_global_standings` RPC
+  (mig 224) aggregates in SQL past the 1000-row cap, returns top N + your row. (3) **Follow
+  layer, LIVE app-wide (NOT gated)** — one-way `user_follows` (mig 225), coexists with the mutual
+  `friendships` system (friends = play together, follow = spectate/feed); `FollowButton` rides
+  the shared `AddFriendCard` onto every game surface (opt-out `showFollow`); follower/following
+  counts + Follow on profiles; `/api/follow`. (4) **Activity feed** (`/fantasy/feed`, new FEED
+  nav tab) — Following/Global tabs of interesting moves; `fantasy_feed_events` + `fantasy_feed_likes`
+  (mig 226), `comments.subject_type` gains `'fantasy_feed'` so each move reuses the like/comment/
+  reply stack. Emitted on transfers + chip plays; **big-haul + rank-jump emitters DEFERRED** (need
+  the live scoring path, only fire from GW1 — own careful add + GW1 test). Surfaces 1/2/4 are
+  founder-gated (dark until launch); the follow layer is live now.
 - **2026-07-30** — **Comment push notifications, deep links, and a public quiz thread page.** Stage 3
   of 3, no migration. **Push** (native, opt-in respected, via `notifyUsers`): a like pushes only on
   the **first** like of a comment, forever (dedupe key `comment-like:<commentId>` in
