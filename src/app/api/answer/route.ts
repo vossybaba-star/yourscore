@@ -80,13 +80,20 @@ export async function POST(request: NextRequest) {
     const db2 = createServiceClient();
     const { data: roomData } = await db2
       .from("rooms")
-      .select("questions_json")
+      .select("questions_json, answers_json")
       .eq("id", event.room_id)
       .single();
     const qs = Array.isArray(roomData?.questions_json) ? roomData.questions_json : [];
-    // questions_json is an untyped Json array; cast to read answer/difficulty
-    const q = qs[(event.sequence_number as number) - 1] as { answer: string; difficulty?: string } | undefined;
-    if (q) question = { answer: q.answer, difficulty: q.difficulty ?? "medium" };
+    const idx = (event.sequence_number as number) - 1;
+    // questions_json is an untyped Json array; cast to read difficulty
+    const q = qs[idx] as { answer?: string; difficulty?: string } | undefined;
+    // Answers live in answers_json (server-only). Fall back to an inline answer for
+    // rooms created before the split — those snapshots still carry it.
+    const answerKey = Array.isArray(roomData?.answers_json) ? roomData.answers_json : null;
+    const answer = (answerKey?.[idx] as string | undefined) ?? q?.answer;
+    if (answer !== undefined && answer !== null) {
+      question = { answer: String(answer), difficulty: q?.difficulty ?? "medium" };
+    }
   }
 
   if (!question) {

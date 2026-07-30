@@ -96,11 +96,31 @@ export async function POST(req: NextRequest) {
   const now = new Date();
   const closesAt = new Date(now.getTime() + QUESTION_DURATION_MS);
 
+  // Split the answers out of the snapshot before storing it. `questions_json` is
+  // readable by the anon key (the play page reads it to render the question), so
+  // an answer left in it hands every player the answer key for their own live
+  // game. Answers go to `answers_json`, which is withheld from anon/authenticated
+  // by column grants and only ever read server-side (see /api/answer).
+  //
+  // Shadow lobbies reuse an already-stripped questions_json copied from the source
+  // room, so there are no answers to extract — leave their answers_json (copied
+  // alongside at creation) untouched rather than overwriting it with blanks.
+  const rows = questions as Array<Record<string, unknown>>;
+  const hasAnswers = rows.some((q) => q && q.answer !== undefined);
+  const answers = hasAnswers ? rows.map((q) => String(q?.answer ?? "")) : null;
+  const publicQuestions = rows.map((q) => {
+    if (!q || q.answer === undefined) return q;
+    const rest = { ...q };
+    delete rest.answer;
+    return rest;
+  });
+
   // Update room: store questions, mark live, set first question pointer
   const { error: updateErr } = await sb
     .from("rooms")
     .update({
-      questions_json: questions as unknown as Json,
+      questions_json: publicQuestions as unknown as Json,
+      ...(answers ? { answers_json: answers as unknown as Json } : {}),
       status: "live",
       current_question_idx: 0,
       question_started_at: now.toISOString(),
