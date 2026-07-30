@@ -253,7 +253,7 @@ function IdentityHead({ side, onRemove, onReplace }: {
   return (
     <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 11 }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7, textAlign: "center" }}>
-        <PlayerAvatar name={p.name} avatarUrl={faceFor(p.name)} size={52} />
+        <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={52} />
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, lineHeight: 1.15 }}>{p.name}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 3 }}>
@@ -355,7 +355,7 @@ function PlayerPicker({ pool, ctx, slot, onCancel, onPick }: {
                 background: PANEL, color: INK, border: `1px solid ${LINE}`,
               }}>
               <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                <PlayerAvatar name={p.name} avatarUrl={faceFor(p.name)} size={34} />
+                <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={34} />
                 <span style={{ minWidth: 0 }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</span>

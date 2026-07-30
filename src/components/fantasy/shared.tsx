@@ -243,8 +243,12 @@ export function Sheet({ onClose, labelledBy, children }: {
   return (
     <div onClick={onClose}
       style={{
-        position: "fixed", inset: 0, zIndex: 40, background: "rgba(4,8,6,0.72)",
-        display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 14,
+        // Above the BottomNav (z-50) — at z-40 the fixed nav rendered OVER the
+        // sheet and clipped its bottom controls. Bottom padding clears the
+        // home-indicator safe area so the last row isn't under the gesture bar.
+        position: "fixed", inset: 0, zIndex: 60, background: "rgba(4,8,6,0.72)",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        padding: "14px 14px calc(14px + env(safe-area-inset-bottom)) 14px",
       }}>
       <div
         ref={ref}

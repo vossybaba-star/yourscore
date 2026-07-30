@@ -313,7 +313,7 @@ export function ScoutPlayersBrowser() {
                   background: "transparent", color: "inherit", border: "none", padding: 0,
                 }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                  <PlayerAvatar name={p.name} avatarUrl={faceFor(p.name)} size={36} />
+                  <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={36} />
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 14, fontWeight: 600 }}>{p.name}</span>
