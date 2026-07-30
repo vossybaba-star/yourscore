@@ -75,6 +75,19 @@ export default function RulesPage() {
   const router = useRouter();
   const money = (tenths: number) => `£${(tenths / 10).toFixed(1)}m`;
 
+  // The game as a journey, in the order you actually meet it — the tutorial the
+  // reference tables below back up. Numbers come from the engine's constants.
+  const STEPS: { title: string; body: string }[] = [
+    { title: "Build your squad", body: `Pick ${SQUAD_SIZE} players for ${money(BUDGET_TENTHS)}, no more than ${MAX_PER_CLUB} from any one club. Rebuild as often as you like until your first gameweek locks.` },
+    { title: "Name your captain", body: "One player wears the armband and scores double. If he doesn't play, it passes to your vice-captain." },
+    { title: "Beat the deadline", body: "Lock your team before the first match of the gameweek. Miss it and your team simply plays as it stands." },
+    { title: "Prove you know your football", body: `Play the ${KNOWLEDGE_NAME} round — eleven questions a gameweek. Everyone gets ${BASELINE_CREDITS_PER_GW} free transfer; right answers earn you more.` },
+    { title: "Bank your moves", body: `Transfers you earn this gameweek apply to the next one, banking up to ${CREDIT_CAP}. Go beyond what you hold and each extra move costs points.` },
+    { title: "Play a chip", body: "One chip a month, your pick of three: Triple Captain, Bench Boost or Insight. It can't return until you've used the other two." },
+    { title: "Score on the real matches", body: "Every point traces to something that happened on the pitch — goals, assists, clean sheets, minutes. No panel decides your bonus." },
+    { title: "Climb the tables", body: `Your running season total, a fresh competition every month, and any leagues you join. Level on points, the better round record wins — ${KNOWLEDGE_NAME} is the tiebreak.` },
+  ];
+
   const Cell = ({ v }: { v: number | null }) => (
     <td style={{
       textAlign: "center", padding: "9px 3px", borderTop: `1px solid ${LINE}`,
@@ -97,9 +110,37 @@ export default function RulesPage() {
       <Header exit={{ label: "Fantasy", onClick: () => router.push("/fantasy") }} />
       <h1 style={{ fontSize: 24, margin: "0 0 4px", fontWeight: 700 }}>How it works</h1>
       <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 4px", lineHeight: 1.5 }}>
-        Every number below is read straight from the scoring engine, so this page and the game can
-        never disagree.
+        The whole game, start to finish. Every number is read straight from the scoring engine, so
+        this page and the game can never disagree.
       </p>
+
+      {/* The chronological walkthrough — the journey top to bottom, before the
+          reference tables that spell each step out in full. */}
+      <div style={{ marginTop: 18 }}>
+        {STEPS.map((s, i) => {
+          const lastStep = i === STEPS.length - 1;
+          return (
+            <div key={i} style={{ display: "flex", gap: 13, position: "relative", paddingBottom: lastStep ? 0 : 18 }}>
+              {!lastStep && (
+                <div aria-hidden style={{ position: "absolute", left: 16, top: 34, bottom: 0, width: 2, background: tint(TEAL, "22") }} />
+              )}
+              <div style={{
+                flexShrink: 0, width: 33, height: 33, borderRadius: 999, zIndex: 1,
+                background: tint(TEAL, "16"), border: `1px solid ${tint(TEAL, "55")}`, color: TEAL,
+                display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14,
+              }}>{i + 1}</div>
+              <div style={{ paddingTop: 4, minWidth: 0 }}>
+                <div className="font-display" style={{ fontSize: 15.5, fontWeight: 700, color: INK, lineHeight: 1.2 }}>{s.title}</div>
+                <div style={{ fontSize: 13, color: MUTED, marginTop: 4, lineHeight: 1.5 }}>{s.body}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="font-display tracking-widest" style={{ fontSize: 11.5, color: MUTED, margin: "30px 0 2px" }}>
+        THE DETAIL
+      </div>
 
       <Section title="SCORING">
         <Card>
