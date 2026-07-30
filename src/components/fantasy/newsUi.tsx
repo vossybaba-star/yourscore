@@ -10,6 +10,7 @@ import type { CSSProperties } from "react";
 import { createClient } from "@supabase/supabase-js";
 import type { Difficulty, NewsDoc } from "@/lib/fantasy/news";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
+import { ScoutCover } from "@/components/fantasy/ScoutCover";
 
 // These MUST mirror the shared fantasy tokens in shared.tsx. They're re-declared
 // (not imported) because shared.tsx is "use client" and these surfaces are server
@@ -55,12 +56,14 @@ export const column: CSSProperties = {
  *  Scout sub-tab pages pass none — the active pill already names the section. */
 export function FantasyMasthead({ title }: { title?: string }) {
   return (
-    <header style={{ marginBottom: title ? 6 : 2 }}>
+    <header style={{ marginBottom: 2 }}>
       <FantasyHeader />
-      {title && (
+      {title ? (
         <h1 className="font-display" style={{
           color: INK, fontSize: 22, fontWeight: 700, letterSpacing: "-0.01em", margin: "10px 0 0",
         }}>{title}</h1>
+      ) : (
+        <ScoutCover />
       )}
     </header>
   );

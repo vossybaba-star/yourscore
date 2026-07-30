@@ -16,7 +16,7 @@ import { FourPicks } from "@/components/fantasy/FourPicks";
 import { ShortlistPreview } from "@/components/fantasy/ShortlistPreview";
 import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
-import { FantasyMasthead, GOLD, MUTED, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
+import { FantasyMasthead, GOLD, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 export const revalidate = 300;
@@ -35,11 +35,8 @@ export default async function ScoutBriefing() {
     <main style={shell}>
       <div style={column}>
         <FantasyMasthead />
-        <div style={{ color: MUTED, fontSize: 12.5, marginTop: -6 }}>
-          Facts. Not noise. Make better moves.
-        </div>
         {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
-          <div style={{ color: GOLD, fontSize: 12, marginTop: -4 }}>
+          <div style={{ color: GOLD, fontSize: 12, marginTop: -8, marginBottom: 2 }}>
             GW{doc.gw} deadline · {ukTime(doc.deadline)}
           </div>
         )}
