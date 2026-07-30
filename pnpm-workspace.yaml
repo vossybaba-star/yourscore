@@ -1,5 +1,10 @@
 allowBuilds:
   '@sentry/cli': true
-  core-js: set this to true or false
+  # false = do not run its postinstall. core-js's is only a funding notice, so
+  # nothing is lost. This was left as the literal placeholder string "set this
+  # to true or false", which pnpm treats as undecided: every `pnpm install`
+  # then ended in ERR_PNPM_IGNORED_BUILDS, and because `pnpm run <script>`
+  # shells out to install for its deps check, `pnpm build` failed outright.
+  core-js: false
   sharp: true
   unrs-resolver: true
