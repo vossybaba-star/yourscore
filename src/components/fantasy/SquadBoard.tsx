@@ -56,7 +56,7 @@ export function SquadBoard(props: SquadBoardProps) {
   const byId = new Map(players.map((p) => [p.id, p]));
   const posOf = new Map<number, FantasyPos>(players.map((p) => [p.id, p.pos]));
 
-  const Marker = ({ id, onBench, crowd }: { id: number; onBench: boolean; crowd: number }) => {
+  const Marker = ({ id, onBench, crowd, flipUp }: { id: number; onBench: boolean; crowd: number; flipUp?: boolean }) => {
     const p = byId.get(id);
     const selected = selectedId === id;
     const ld = live[id];
@@ -95,7 +95,9 @@ export function SquadBoard(props: SquadBoardProps) {
       <div style={outer}>
         {control}
         {renderMenu && menuFor === id && (
-          <div style={{ position: "absolute", zIndex: 5, top: "105%", ...(onBench ? { right: 0 } : { left: 0 }) }}>
+          // Bottom-row / low-bench players open the menu UPWARD so a tall menu
+          // doesn't run off the bottom of the screen; everyone else opens down.
+          <div style={{ position: "absolute", zIndex: 5, ...(flipUp ? { bottom: "105%" } : { top: "105%" }), ...(onBench ? { right: 0 } : { left: 0 }) }}>
             {renderMenu(id, { onBench })}
           </div>
         )}
@@ -151,18 +153,24 @@ export function SquadBoard(props: SquadBoardProps) {
   const bench = props.bench ?? [];
   const rows = xiRows(xi, posOf);
   return (
-    <div className="rounded-2xl relative overflow-hidden" style={{ border: `1px solid ${LINE}` }}>
+    // No `overflow-hidden` here: the art and dugout round their own outer corners
+    // (below), so an open player menu can spill past the pitch edge instead of
+    // being clipped mid-list. Corners are rounded per-part to keep the seam square.
+    <div className="rounded-2xl relative" style={{ border: `1px solid ${LINE}` }}>
       <div style={{ display: "flex", alignItems: "stretch" }}>
-        <PitchSurface>
-          {rows.map((row) => (
+        <PitchSurface round={bench.length > 0 ? "left" : "all"}>
+          {rows.map((row, ri) => (
             <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 4, flexWrap: "nowrap" }}>
-              {row.ids.map((id) => <Marker key={id} id={id} onBench={false} crowd={row.ids.length} />)}
+              {/* The bottom half of the pitch (defence + keeper) opens its menu
+                  upward — a downward menu there runs off the bottom of the card. */}
+              {row.ids.map((id) => <Marker key={id} id={id} onBench={false} crowd={row.ids.length} flipUp={ri >= rows.length - 2} />)}
             </div>
           ))}
         </PitchSurface>
         {bench.length > 0 && (
           <BenchStrip>
-            {bench.map((id) => <Marker key={id} id={id} onBench crowd={1} />)}
+            {/* Lower dugout slots open upward for the same reason. */}
+            {bench.map((id, bi) => <Marker key={id} id={id} onBench crowd={1} flipUp={bi >= bench.length - 2} />)}
           </BenchStrip>
         )}
       </div>

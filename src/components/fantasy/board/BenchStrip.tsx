@@ -13,6 +13,8 @@ export function BenchStrip({ children }: { children: ReactNode }) {
     <div style={{
       width: DUGOUT_W, flexShrink: 0, padding: "8px 5px",
       borderLeft: `1px dashed ${tint(TEAL, "26")}`, background: "rgba(0,0,0,0.28)",
+      // The card no longer clips this strip, so round its own outer corners.
+      borderRadius: "0 16px 16px 0",
       display: "flex", flexDirection: "column", gap: 5,
     }}>
       <div className="font-display tracking-widest"
