@@ -19,6 +19,8 @@ export type FeedType =
   | "transfer" | "captain" | "chip" | "haul" | "rank_jump"
   | "squad_complete" | "squad_update" | "shortlist_add";
 export type FeedScope = "following" | "global";
+export type FeedSort = "recent" | "top";
+export interface FeedResult { events: FeedEvent[]; followingCount: number }
 
 export interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
 
@@ -47,6 +49,8 @@ export interface FeedEvent {
   board?: FeedBoard | null;
   /** A single player's portrait for shortlist/squad_update tiles. */
   player?: FeedFace | null;
+  /** The shortlisted/added player's pool id, so the tile can open their profile. */
+  playerId?: number | null;
 }
 
 const CHIP_LABEL: Record<string, string> = {
@@ -143,26 +147,28 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
 }
 
 export async function loadFeed(
-  db: Db, viewerId: string | null, scope: FeedScope, limit = 30,
-): Promise<FeedEvent[]> {
-  // Following = actors the viewer follows; global = everyone.
-  let actorFilter: string[] | null = null;
-  if (scope === "following") {
-    if (!viewerId) return [];
+  db: Db, viewerId: string | null, scope: FeedScope, sort: FeedSort = "recent", limit = 30,
+): Promise<FeedResult> {
+  // Who the viewer follows — drives the "Following" filter AND whether the
+  // Following tab should exist at all (no follows → global only).
+  let followeeIds: string[] = [];
+  if (viewerId) {
     const { data: follows } = await db.from("user_follows").select("followee_id").eq("follower_id", viewerId);
-    const ids = ((follows ?? []) as { followee_id: string }[]).map((f) => f.followee_id);
-    if (!ids.length) return [];
-    actorFilter = ids;
+    followeeIds = ((follows ?? []) as { followee_id: string }[]).map((f) => f.followee_id);
   }
+  const followingCount = followeeIds.length;
+  if (scope === "following" && followingCount === 0) return { events: [], followingCount };
 
+  // "Top" ranks by engagement, so pull a wider recent window then sort in memory.
+  const fetchLimit = sort === "top" ? Math.min(200, limit * 6) : limit;
   let q = db.from("fantasy_feed_events")
     .select("id, actor_id, type, gw, payload, created_at")
-    .order("created_at", { ascending: false }).limit(limit);
-  if (actorFilter) q = q.in("actor_id", actorFilter);
+    .order("created_at", { ascending: false }).limit(fetchLimit);
+  if (scope === "following") q = q.in("actor_id", followeeIds);
   const { data: rows } = await q;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const events = (rows ?? []) as any[];
-  if (!events.length) return [];
+  if (!events.length) return { events: [], followingCount };
 
   const eventIds = events.map((e) => e.id as string);
   const actorIds = Array.from(new Set(events.map((e) => e.actor_id as string)));
@@ -199,13 +205,14 @@ export async function loadFeed(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (commentRows ?? []).forEach((c: any) => commentCount.set(c.subject_id, (commentCount.get(c.subject_id) ?? 0) + 1));
 
-  return events.map((e) => {
+  const mapped: FeedEvent[] = events.map((e) => {
     const type = e.type as FeedType;
     const payload = (e.payload ?? {}) as Record<string, unknown>;
     // squad_complete tiles render the real pitch board; shortlist/squad_update
     // tiles show the one player's portrait.
     let board: FeedBoard | undefined;
     let player: FeedFace | null | undefined;
+    let playerId: number | undefined;
     if (type === "squad_complete" && Array.isArray(payload.xi)) {
       const xi = payload.xi as number[];
       const bench = Array.isArray(payload.bench) ? (payload.bench as number[]) : [];
@@ -216,7 +223,8 @@ export async function loadFeed(
         vice: payload.vice != null ? Number(payload.vice) : undefined,
       };
     } else if ((type === "shortlist_add" || type === "squad_update") && payload.player != null) {
-      player = faceOf(Number(payload.player));
+      playerId = Number(payload.player);
+      player = faceOf(playerId);
     }
     return {
       id: e.id,
@@ -232,6 +240,15 @@ export async function loadFeed(
       commentCount: commentCount.get(e.id) ?? 0,
       board,
       player,
+      playerId,
     };
   });
+
+  // "Top" = most engaged first (likes + comments), recency as the tiebreak.
+  if (sort === "top") {
+    mapped.sort((a, b) =>
+      (b.likeCount + b.commentCount) - (a.likeCount + a.commentCount)
+      || Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  }
+  return { events: mapped.slice(0, limit), followingCount };
 }

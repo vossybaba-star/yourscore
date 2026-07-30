@@ -9,7 +9,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { INK, LINE, MUTED, PANEL, TEAL, tint, page } from "@/components/fantasy/shared";
+import { INK, LINE, MUTED, PANEL, TEAL, tint, page, Sheet } from "@/components/fantasy/shared";
+import { PlayerProfile } from "@/components/fantasy/PlayerProfile";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
@@ -24,8 +25,9 @@ interface FeedEvent {
   id: string; actorId: string; actorName: string; actorAvatar: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   likeCount: number; likedByMe: boolean; commentCount: number;
-  board?: FeedBoard | null; player?: FeedFace | null;
+  board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
 }
+type FeedSort = "recent" | "top";
 
 function timeAgo(iso: string): string {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -42,6 +44,7 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
   const [liked, setLiked] = useState(ev.likedByMe);
   const [likes, setLikes] = useState(ev.likeCount);
   const [open, setOpen] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState(false);
 
   const toggleLike = useCallback(async () => {
     const next = !liked;
@@ -103,12 +106,23 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
         </div>
       )}
 
-      {/* Shortlist / squad-update tiles show the one player. */}
+      {/* Shortlist / squad-update tiles show the one player — tap to open their
+          profile (the scout player sheet). */}
       {ev.player && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}` }}>
+        <button
+          onClick={() => ev.playerId != null && setPlayerOpen(true)}
+          disabled={ev.playerId == null}
+          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`, cursor: ev.playerId != null ? "pointer" : "default" }}>
           <PlayerAvatar name={ev.player.name} avatarUrl={ev.player.avatarUrl} size={40} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
-        </div>
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
+          {ev.playerId != null && <span style={{ color: MUTED, fontSize: 18 }}>›</span>}
+        </button>
+      )}
+
+      {playerOpen && ev.playerId != null && (
+        <Sheet onClose={() => setPlayerOpen(false)} labelledBy="fantasy-player-profile-name">
+          <PlayerProfile playerId={ev.playerId} onClose={() => setPlayerOpen(false)} />
+        </Sheet>
       )}
 
       <div style={{ display: "flex", gap: 16, marginTop: 12, paddingLeft: 2 }}>
@@ -137,18 +151,45 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
 
 export default function FantasyFeedPage() {
   const router = useRouter();
+  // SSR-safe defaults (no window read here, or hydration mismatches); the URL is
+  // restored in the mount effect below so back from a profile keeps the view.
   const [scope, setScope] = useState<FeedScope>("following");
+  const [sort, setSort] = useState<FeedSort>("recent");
   const [events, setEvents] = useState<FeedEvent[] | null>(null);
+  const [followingCount, setFollowingCount] = useState<number | null>(null);
 
+  // Restore scope+sort from the URL once on mount.
   useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("scope") === "global") setScope("global");
+    if (p.get("sort") === "top") setSort("top");
+  }, []);
+
+  // Keep scope+sort in the URL, so pressing back from a player/manager profile
+  // returns to the SAME view (and Next restores the scroll position) instead of
+  // resetting to the default tab.
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const u = new URL(window.location.href);
+      u.searchParams.set("scope", scope); u.searchParams.set("sort", sort);
+      window.history.replaceState(null, "", u);
+    }
     let live = true;
     setEvents(null);
-    fetch(`/api/fantasy/feed?scope=${scope}`)
-      .then((r) => (r.ok ? r.json() : { events: [] }))
-      .then((d) => { if (live) setEvents(d.events ?? []); })
+    fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}`)
+      .then((r) => (r.ok ? r.json() : { events: [], followingCount: 0 }))
+      .then((d) => {
+        if (!live) return;
+        setFollowingCount(d.followingCount ?? 0);
+        // Not following anyone → there is no Following tab; show Global.
+        if ((d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return; }
+        setEvents(d.events ?? []);
+      })
       .catch(() => { if (live) setEvents([]); });
     return () => { live = false; };
-  }, [scope]);
+  }, [scope, sort]);
+
+  const showScopeTabs = (followingCount ?? 0) > 0;
 
   return (
     <>
@@ -164,15 +205,32 @@ export default function FantasyFeedPage() {
           }}>Find managers</Link>
         </div>
 
-        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-          {(["following", "global"] as FeedScope[]).map((s) => {
-            const active = scope === s;
+        {/* Following / Global — only when the viewer actually follows someone. */}
+        {showScopeTabs && (
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            {(["following", "global"] as FeedScope[]).map((s) => {
+              const active = scope === s;
+              return (
+                <button key={s} onClick={() => setScope(s)} style={{
+                  flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
+                  border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
+                }}>{s === "following" ? "Following" : "Global"}</button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Sort — Recent or Top (most engaged), like the old Instagram. */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginBottom: 12 }}>
+          {(["recent", "top"] as FeedSort[]).map((s) => {
+            const active = sort === s;
             return (
-              <button key={s} onClick={() => setScope(s)} style={{
-                flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
-                border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
-              }}>{s === "following" ? "Following" : "Global"}</button>
+              <button key={s} onClick={() => setSort(s)} style={{
+                padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                background: active ? tint(TEAL, "18") : "transparent", color: active ? TEAL : MUTED,
+                border: `1px solid ${active ? tint(TEAL, "55") : LINE}`,
+              }}>{s === "recent" ? "Recent" : "Top"}</button>
             );
           })}
         </div>

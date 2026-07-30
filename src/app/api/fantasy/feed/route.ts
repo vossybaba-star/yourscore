@@ -3,12 +3,13 @@
  *  the service client resolves the follow graph, profiles, and reaction counts. */
 import type { NextRequest } from "next/server";
 import { withFantasyUser } from "@/app/api/fantasy/_lib";
-import { loadFeed, type FeedScope } from "@/lib/fantasy/feed";
+import { loadFeed, type FeedScope, type FeedSort } from "@/lib/fantasy/feed";
 
 export const fetchCache = "force-no-store";
 
 export async function GET(req: NextRequest) {
-  const raw = new URL(req.url).searchParams.get("scope");
-  const scope: FeedScope = raw === "global" ? "global" : "following";
-  return withFantasyUser("feed", (db, userId) => loadFeed(db, userId, scope).then((events) => ({ events })));
+  const sp = new URL(req.url).searchParams;
+  const scope: FeedScope = sp.get("scope") === "global" ? "global" : "following";
+  const sort: FeedSort = sp.get("sort") === "top" ? "top" : "recent";
+  return withFantasyUser("feed", (db, userId) => loadFeed(db, userId, scope, sort));
 }

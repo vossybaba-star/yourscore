@@ -685,6 +685,17 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Feed UX fixes.** (1) **Back from a profile returns to the same view** — scope +
+  sort live in the feed URL (`?scope=&sort=`, kept via `history.replaceState`), so back restores
+  the tab (and Next restores scroll) instead of dumping you on Following. (2) **No Following tab
+  when you follow nobody** — the feed API returns `followingCount`; 0 → only Global shows (and a
+  following-scope request falls back to global). (3) **Sort: Recent or Top** — Top ranks by
+  engagement (likes + comments), like old IG; feed API `sort` param, in-memory rank over a wider
+  window. (4) **Shortlist tiles open the player** — tap the player on a shortlist/squad-update tile
+  to open the scout `PlayerProfile` sheet (feed carries the player's pool id). Also fixed a
+  hydration mismatch (don't read `window` in a `useState` initializer — restore the URL in a mount
+  effect).
+
 - **2026-07-30** — **Feed share cards + Instagram-compact comments.** (1) **Share any manager's
   squad from the feed** — the Share button mints a squad share CARD (`/api/fantasy/share` now
   accepts a `userId`, so it builds the card for that manager, not just the caller; resolves to the
