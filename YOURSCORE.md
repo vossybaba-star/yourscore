@@ -6,7 +6,20 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-30 (**Scout visual + data pass shipped to prod, founder-gated.** Real SportMonks
+> **Confirmed:** 2026-07-30 (**Fantasy nav + UX overhaul shipped to prod, founder-gated.** The Fantasy tab
+> now wears a PL-style header — a big **"YourScore Fantasy PL"** title + a segmented **Squad ｜ Scout ｜
+> Leagues** section bar (`FantasyHeader`), rendered identically on the hub and every Scout page so
+> switching reads as a tab, not a page jump (retired the old wordmark Header + the Scout back-pill
+> masthead; **Leagues is now a top tab**, not a tile). The **Scout page has a cover** — a teal-on-pitch
+> tactical **radar** (`ScoutCover`): rings/crosshair/rotating sweep/blips, the four face blips are the
+> live most-owned players (real headshots), NEXT FIXTURES is the top club's real run, "YourScore Scout"
+> heading overlaid. The **player profile is tabbed** — Overview / Fixtures / Stats / Updates. **How It
+> Works** is now a chronological numbered walkthrough (Build → Captain → Deadline → Prove-you-know-football
+> → Bank moves → Chip → Score → Tables) over the engine-backed reference tables. The no-squad **hero**
+> dropped its redundant eyebrow and gained real premium faces; the **Shortlist** rows are bigger with real
+> headshots; the **Sheet** clears the BottomNav; both shells pad the iOS safe-area insets. Commits on
+> `main`: `e4b1dfa`, `250afc4`, `9c9073a`, `c71bdc8`, `693b1f6`, `153b531`, `725844b`, `e1dfaf3`.
+> Previously confirmed 2026-07-30:** **Scout visual + data pass shipped to prod, founder-gated.** Real SportMonks
 > headshots now render across every Scout surface (Players rows, Comparison, Four Picks, Player profile,
 > Briefing editorial cards) via `avatarUrl`/`faceUrlById` instead of the sparse name-keyed `faceFor`. The
 > **player profile now shows real stats pre-season**: with no current-season match yet, it pulls last

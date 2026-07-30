@@ -16840,13 +16840,13 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/leagues/page.tsx": {
-    "mtime": 1785329203.753099,
-    "ast_hash": "ea969628643f0fbc58572e5b9c7a9268",
+    "mtime": 1785395841.8372707,
+    "ast_hash": "9b06a9bd0557249fa4555ffd0a03eff4",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/news/page.tsx": {
-    "mtime": 1785357130.9429326,
-    "ast_hash": "7977c8657b68aae33535a09bbf5d4477",
+    "mtime": 1785397512.814435,
+    "ast_hash": "75befd73184b6325fce575a0b0d7fdc0",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/page.tsx": {
@@ -16865,23 +16865,23 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/rules/page.tsx": {
-    "mtime": 1785329203.7544067,
-    "ast_hash": "d42d20608b077d7b6509436a040092aa",
+    "mtime": 1785396742.2390096,
+    "ast_hash": "f85b7fefb1acacdd1f4319ec6012cdb9",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/scout/picks/[category]/page.tsx": {
-    "mtime": 1785358008.6780646,
-    "ast_hash": "bf5cfc7fda713002343c209d86f13853",
+    "mtime": 1785394977.1032643,
+    "ast_hash": "450172734a0690fbbe71e2867bd3785f",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/scout/players/page.tsx": {
-    "mtime": 1785339677.2050714,
-    "ast_hash": "311a2643ad72ede4360b0d3acb3ad5d3",
+    "mtime": 1785394977.1018746,
+    "ast_hash": "265910c9d5dcc5480c05d3cd2179f0c2",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/scout/shortlist/page.tsx": {
-    "mtime": 1785346850.44921,
-    "ast_hash": "2c03425834710877101c2aabda0e1d10",
+    "mtime": 1785394977.1024692,
+    "ast_hash": "e611eab0873a6261109a465f75480688",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/app/fantasy/transfers/page.tsx": {
@@ -17445,13 +17445,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/FantasyHub.tsx": {
-    "mtime": 1785392627.5593503,
-    "ast_hash": "8b95e09aac164e973970bb8c9393367f",
-    "semantic_hash": ""
-  },
-  "/Users/zchukwumah/yourscore-scout/src/components/fantasy/FantasySubNav.tsx": {
-    "mtime": 1785364042.9782665,
-    "ast_hash": "a7f337036456bb2c772067adcc7d8b51",
+    "mtime": 1785395857.8622003,
+    "ast_hash": "1a6626bfb97664a58dcbf1ca0fdba98c",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/FantasyTeaser.tsx": {
@@ -17510,8 +17505,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/PlayerProfile.tsx": {
-    "mtime": 1785391224.9225743,
-    "ast_hash": "e0e3ee864df88ffab0b3afa7c83381eb",
+    "mtime": 1785396275.1604307,
+    "ast_hash": "ee6ed8a6491463e273a447224e2453d6",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/ScoutPlayersBrowser.tsx": {
@@ -17530,8 +17525,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/ShortlistView.tsx": {
-    "mtime": 1785348900.1988451,
-    "ast_hash": "ae3b4470699488991c711dc3b7dd3212",
+    "mtime": 1785395130.4178448,
+    "ast_hash": "eb87d807f94319510ba79f40d11d8d27",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/SquadBoard.tsx": {
@@ -17555,8 +17550,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/newsUi.tsx": {
-    "mtime": 1785363147.618437,
-    "ast_hash": "5322c8af5c22f1f805bff54cf175f787",
+    "mtime": 1785397429.3059099,
+    "ast_hash": "ee5f0886cb7aebb507c41842af049ee9",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/src/components/fantasy/shared.tsx": {
@@ -19660,8 +19655,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/YOURSCORE.md": {
-    "mtime": 1785393121.9592626,
-    "ast_hash": "4eac841168cfbe167f68a21b4b7f1952",
+    "mtime": 1785399729.837217,
+    "ast_hash": "ac54f7c26116e4d58fd857fb9ed7ab4f",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-scout/content/blog/50-premier-league-quiz-questions.mdx": {
@@ -22117,6 +22112,16 @@
   "/Users/zchukwumah/yourscore-scout/scripts/data/gif-cache/ys13735531.mp4": {
     "mtime": 1785329203.518889,
     "ast_hash": "f86daed1e1fe4f62489735db3970b52a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-scout/src/components/fantasy/FantasyHeader.tsx": {
+    "mtime": 1785395793.6571505,
+    "ast_hash": "e123692fe2378c3a16fd0236b32e1dfb",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-scout/src/components/fantasy/ScoutCover.tsx": {
+    "mtime": 1785399470.401138,
+    "ast_hash": "82a687e6ba9d44243cc378ab06b3e897",
     "semantic_hash": ""
   }
 }
