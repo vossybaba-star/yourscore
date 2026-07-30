@@ -38,6 +38,7 @@ import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { deadlineComms, monthWinnerComms, resultComms } from "./comms";
 import { gamedayEarn } from "./gameday-credit";
 import { interpretHoldRead } from "./ops-diff";
+import { tryEmitScoringFeed } from "./feed";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
 // `Json`, which fights every SquadPick/MatchFacts read and write in this file.
@@ -341,6 +342,10 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
     all.push(...((data ?? []) as { user_id: string; round_done_at: string | null }[]));
   }
   await db.from("fantasy_gameweeks").update({ status: "final" }).eq("gw", gw.gw);
+
+  // Activity feed: the gameweek is settled, so surface the big hauls and rank
+  // jumps. Idempotent + fail-open — it must never block or break settlement.
+  await tryEmitScoringFeed(db, gw.gw);
 
   // Settlement — the N → N+1 hand-off. For the gameweek now opening, every
   // manager who had an entry gets: their baseline transfer (everyone, including

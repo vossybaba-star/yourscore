@@ -52,6 +52,52 @@ export async function tryEmitFeedEvent(
   try { await emitFeedEvent(db, actorId, type, gw, payload); } catch { /* feed is best-effort */ }
 }
 
+// Thresholds for the settled-gameweek events. Deliberately conservative and
+// TUNABLE — calibrate against the real spread once GW1 has scored (a haul floor
+// that fires for a third of managers, or a jump floor no one clears, is noise).
+const HAUL_THRESHOLD = 80;       // a standout gameweek total
+const RANK_JUMP_MIN = 100;       // places climbed on the global table
+const MAX_PER_TYPE = 25;         // cap events per type per gw, so a feed isn't a wall
+
+/**
+ * Emit the settle-time feed events for a scored gameweek: big hauls (a standout
+ * total) and big rank jumps (climbed the global table). Idempotent — it emits at
+ * most once per gameweek, so a re-run of finalise (which batches and re-enters)
+ * never duplicates. Rank jumps need a prior gameweek, so none fire at GW1.
+ */
+export async function emitScoringFeedEvents(db: Db, gw: number): Promise<{ hauls: number; jumps: number }> {
+  // Emit-once guard: if this gw already has settle-time events, do nothing.
+  const { data: existing } = await db.from("fantasy_feed_events")
+    .select("id").eq("gw", gw).in("type", ["haul", "rank_jump"]).limit(1);
+  if (existing && existing.length) return { hauls: 0, jumps: 0 };
+
+  // Hauls — a filtered read, so the result set is only the managers who hauled.
+  const { data: hauls } = await db.from("fantasy_entries")
+    .select("user_id, points").eq("gw", gw).gte("points", HAUL_THRESHOLD)
+    .order("points", { ascending: false }).limit(MAX_PER_TYPE);
+  const haulRows = ((hauls ?? []) as { user_id: string; points: number }[])
+    .map((h) => ({ actor_id: h.user_id, type: "haul", gw, payload: { points: h.points } }));
+
+  // Rank jumps — SQL RPC returns only the climbers (>= floor); none before GW2.
+  let jumpRows: { actor_id: string; type: string; gw: number; payload: Record<string, unknown> }[] = [];
+  if (gw >= 2) {
+    const { data: jumps } = await db.rpc("fantasy_rank_jumps", { p_gw: gw, p_min_jump: RANK_JUMP_MIN });
+    jumpRows = ((jumps ?? []) as { user_id: string; jump: number; after_rank: number }[])
+      .slice(0, MAX_PER_TYPE)
+      .map((j) => ({ actor_id: j.user_id, type: "rank_jump", gw, payload: { places: Number(j.jump), rank: Number(j.after_rank) } }));
+  }
+
+  const all = [...haulRows, ...jumpRows];
+  if (all.length) await db.from("fantasy_feed_events").insert(all);
+  return { hauls: haulRows.length, jumps: jumpRows.length };
+}
+
+/** Best-effort settle-time emit — never breaks the finalise it hangs off. */
+export async function tryEmitScoringFeed(db: Db, gw: number): Promise<void> {
+  try { await emitScoringFeedEvents(db, gw); }
+  catch (e) { console.error(`[feed:scoring] gw ${gw}`, e); }
+}
+
 function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: number | null, nameOf: (id: number) => string): string {
   switch (type) {
     case "transfer": {

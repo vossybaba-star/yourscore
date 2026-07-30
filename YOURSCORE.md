@@ -698,9 +698,12 @@ Confirmed preamble above and the referenced section.
   counts + Follow on profiles; `/api/follow`. (4) **Activity feed** (`/fantasy/feed`, new FEED
   nav tab) — Following/Global tabs of interesting moves; `fantasy_feed_events` + `fantasy_feed_likes`
   (mig 226), `comments.subject_type` gains `'fantasy_feed'` so each move reuses the like/comment/
-  reply stack. Emitted on transfers + chip plays; **big-haul + rank-jump emitters DEFERRED** (need
-  the live scoring path, only fire from GW1 — own careful add + GW1 test). Surfaces 1/2/4 are
-  founder-gated (dark until launch); the follow layer is live now.
+  reply stack. Emitted on transfers + chip plays now; **big hauls + rank jumps** emit at settle
+  time from `finaliseGameweek` (idempotent + fail-open) — hauls via a filtered read (>= 80 pts),
+  rank jumps via the `fantasy_rank_jumps` RPC (mig 227, global rank before vs after the gw,
+  climbers only; none at GW1). Thresholds (haul 80, jump 100 places, cap 25/type) are TUNABLE —
+  calibrate against the real spread after GW1. Surfaces 1/2/4 are founder-gated (dark until
+  launch); the follow layer is live now.
 - **2026-07-30** — **Comment push notifications, deep links, and a public quiz thread page.** Stage 3
   of 3, no migration. **Push** (native, opt-in respected, via `notifyUsers`): a like pushes only on
   the **first** like of a comment, forever (dedupe key `comment-like:<commentId>` in
