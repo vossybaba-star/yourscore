@@ -91,6 +91,13 @@ export function DiscussionThread({
   useEffect(() => { load(); }, [load]);
 
   const topLevel = useMemo(() => comments.filter((c) => c.parentId === null), [comments]);
+  /** The viewer's own club, learned from any comment of theirs already in the
+   *  thread — so an optimistic row carries the right crest with no extra
+   *  request. Null until one exists (crest then appears on the next load). */
+  const myClub = useMemo(
+    () => (user ? comments.find((c) => c.userId === user.id && c.club)?.club ?? null : null),
+    [comments, user],
+  );
   const repliesByParent = useMemo(() => {
     const map = new Map<string, CommentRow[]>();
     for (const c of comments) {
@@ -118,7 +125,7 @@ export function DiscussionThread({
       if (!res.ok) { setError(out.error ?? "Could not post"); return; }
       setDraft("");
       setComments((prev) => [
-        { id: out.id, parentId: null, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: null, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
+        { id: out.id, parentId: null, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
         ...prev,
       ]);
       setTotal((t) => t + 1);
@@ -152,7 +159,7 @@ export function DiscussionThread({
       if (!res.ok) { setReplyError(out.error ?? "Could not post"); return; }
       setComments((prev) => [
         ...prev,
-        { id: out.id, parentId, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: null, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
+        { id: out.id, parentId, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
       ]);
       setTotal((t) => t + 1);
       // Your own reply is always visible, even if the parent already had 2+
@@ -166,7 +173,19 @@ export function DiscussionThread({
   }
 
   async function remove(id: string) {
-    setComments((prev) => prev.filter((c) => c.id !== id));
+    // Mirror the server's prune-vs-tombstone rule optimistically. Dropping the
+    // row outright would orphan its replies — they'd stay in state but never
+    // render (rendering walks top-level), so the whole sub-thread would appear
+    // to vanish until a reload brought it back as a tombstone.
+    setComments((prev) => {
+      const hasLiveReplies = prev.some((c) => c.parentId === id);
+      if (!hasLiveReplies) return prev.filter((c) => c.id !== id);
+      return prev.map((c) =>
+        c.id === id
+          ? { ...c, deleted: true, userId: "", name: "", avatarUrl: null, club: null, body: "", likeCount: 0, likedByMe: false }
+          : c,
+      );
+    });
     setTotal((t) => Math.max(0, t - 1));
     await fetch("/api/comments", {
       method: "DELETE",
@@ -339,7 +358,13 @@ export function DiscussionThread({
 
               {(visibleReplies.length > 0 || replyingTo === c.id) && (
                 <div className="pl-[38px] space-y-2">
-                  {visibleReplies.map((r) => renderCommentBody(r, { onReply: () => startReply(c.id), indent: true }))}
+                  {/* No Reply affordance under a tombstone: the parent is
+                      soft-deleted, so the server rejects any reply to it
+                      (400) — offering the button would be a dead end. */}
+                  {visibleReplies.map((r) => renderCommentBody(r, {
+                    onReply: c.deleted ? undefined : () => startReply(c.id),
+                    indent: true,
+                  }))}
                   {!isExpanded && hiddenCount > 0 && (
                     <button
                       onClick={() => toggleExpanded(c.id)}

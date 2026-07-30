@@ -108,17 +108,19 @@ export async function GET(req: NextRequest) {
 
   // Explicit prune branch: a deleted top-level row with zero live replies is
   // dropped entirely (today's behaviour). One with live replies survives as
-  // a tombstone.
-  const liveTop: TopRow[] = [];
-  const tombstoneTop: TopRow[] = [];
+  // a tombstone. ONE ordered pass — the client renders top-level in array
+  // order, so tombstones must keep their created_at position in the thread
+  // rather than being grouped at the end.
+  const topOrdered: { row: TopRow; deleted: boolean }[] = [];
   for (const r of (topRows ?? []) as TopRow[]) {
     if (!r.deleted_at) {
-      liveTop.push(r);
+      topOrdered.push({ row: r, deleted: false });
     } else if ((repliesByParent.get(r.id)?.length ?? 0) > 0) {
-      tombstoneTop.push(r);
+      topOrdered.push({ row: r, deleted: true });
     }
     // else: deleted, no replies — pruned, matches pre-replies behaviour.
   }
+  const liveTop = topOrdered.filter((t) => !t.deleted).map((t) => t.row);
 
   const userIds = Array.from(new Set([
     ...liveTop.map((r) => r.user_id),
@@ -129,12 +131,15 @@ export async function GET(req: NextRequest) {
       ? svc.from("profiles").select("id, display_name, avatar_url").in("id", userIds)
       : Promise.resolve({ data: [] as { id: string; display_name: string | null; avatar_url: string | null }[] }),
     userIds.length
-      ? svc.from("club_supporters").select("user_id, club, season_id").in("user_id", userIds).order("season_id", { ascending: false })
+      ? svc.from("club_supporters").select("user_id, club, season_id").in("user_id", userIds).order("season_id", { ascending: false }).limit(1000)
       : Promise.resolve({ data: [] as { user_id: string; club: string; season_id: number }[] }),
   ]);
   const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
-  // First row per user wins — rows are ordered season_id desc, so that's the
+  // First row per user wins — rows are ordered season_id DESC, so that's the
   // latest season's club (see brief: don't use currentSeasonId(), it can null).
+  // The explicit 1000 matches PostgREST's hard response cap: because the order
+  // is season_id desc, a truncation drops the OLDEST rows first — exactly the
+  // ones this loop would discard anyway — so the "latest per user" answer holds.
   const clubById = new Map<string, string>();
   for (const s of supporterRows ?? []) {
     if (!clubById.has(s.user_id)) clubById.set(s.user_id, s.club);
@@ -144,14 +149,15 @@ export async function GET(req: NextRequest) {
   const countById = new Map<string, number>();
   const likedIds = new Set<string>();
   if (commentIds.length) {
-    // Known scale ceiling: capped at 5000 like rows per response — fine for a
-    // 50-comment page today, but if per-comment likes get huge this tally
-    // should move to a count RPC instead of pulling raw rows.
+    // Known scale ceiling: PostgREST caps a response at 1000 rows no matter
+    // what .limit() says, so this tally undercounts once a page of comments
+    // holds >1000 likes between them. Fine at today's volumes; the upgrade
+    // path is a count RPC (or a per-comment aggregate), not a bigger limit.
     const { data: likeRows } = await svc
       .from("comment_likes")
       .select("comment_id")
       .in("comment_id", commentIds)
-      .limit(5000);
+      .limit(1000);
     for (const l of likeRows ?? []) {
       countById.set(l.comment_id, (countById.get(l.comment_id) ?? 0) + 1);
     }
@@ -161,7 +167,7 @@ export async function GET(req: NextRequest) {
         .select("comment_id")
         .in("comment_id", commentIds)
         .eq("user_id", user.id)
-        .limit(5000);
+        .limit(1000);
       for (const l of mine ?? []) likedIds.add(l.comment_id);
     }
   }
@@ -179,21 +185,28 @@ export async function GET(req: NextRequest) {
     likedByMe: likedIds.has(r.id),
   });
 
+  // Top-level emitted in query order (created_at desc), tombstones inline in
+  // their real position. A tombstone carries NO identifying fields — not even
+  // userId — so a soft-deleted comment can't be attributed to its author from
+  // the response payload.
   const comments: CommentRow[] = [
-    ...liveTop.map((r) => liveRow(r, null)),
-    ...tombstoneTop.map((r) => ({
-      id: r.id,
-      parentId: null,
-      userId: r.user_id,
-      name: "",
-      avatarUrl: null,
-      club: null,
-      body: "",
-      createdAt: r.created_at,
-      likeCount: 0,
-      likedByMe: false,
-      deleted: true,
-    })),
+    ...topOrdered.map(({ row, deleted }) =>
+      deleted
+        ? {
+            id: row.id,
+            parentId: null,
+            userId: "",
+            name: "",
+            avatarUrl: null,
+            club: null,
+            body: "",
+            createdAt: row.created_at,
+            likeCount: 0,
+            likedByMe: false,
+            deleted: true,
+          }
+        : liveRow(row, null),
+    ),
     ...replies.map((r) => liveRow(r, r.parent_id as string)),
   ];
 
