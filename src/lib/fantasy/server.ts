@@ -256,7 +256,7 @@ export async function createSquad(db: Db, userId: string, body: {
   if (existing) await db.from("fantasy_entries").delete().eq("user_id", userId).eq("gw", gw.gw);
   // Activity feed: the pre-season move that matters is finalising your squad. Only
   // on the FIRST build (not every tweak), so it never spams; the tile shows the XI.
-  if (!existing) await tryEmitFeedEvent(db, userId, "squad_complete", null, { xi: sel.xi, captain: sel.captain });
+  if (!existing) await tryEmitFeedEvent(db, userId, "squad_complete", null, { xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice });
   return getState(db, userId);
 }
 

@@ -10,7 +10,7 @@ import { GOLD, INK, MUTED, tint } from "@/components/fantasy/shared";
  * count the engine already tracks — this is presentation, not a new mechanic.
  */
 export function MovesBank({
-  held, cap, roundEarns, chipsHeld = 0,
+  held, cap, roundEarns, chips = [],
 }: {
   /** Transfer credits in hand (engine `squad.credits`). */
   held: number;
@@ -18,8 +18,8 @@ export function MovesBank({
   cap: number;
   /** True while this week's knowledge round can still earn more. */
   roundEarns?: boolean;
-  /** Chip tokens held — shown as a small aside, they spend on a separate track. */
-  chipsHeld?: number;
+  /** The chip powers held for the squad — shown by name so it's clear what you've got. */
+  chips?: string[];
 }) {
   const filled = Math.max(0, Math.min(cap, held));
   return (
@@ -29,7 +29,7 @@ export function MovesBank({
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span className="font-display" style={{ letterSpacing: "0.13em", fontSize: 12, color: GOLD, textTransform: "uppercase" }}>
-          Moves Bank
+          Transfer Bank
         </span>
         <span className="font-display" style={{ fontSize: 14, color: GOLD, fontVariantNumeric: "tabular-nums" }}>
           {filled} / {cap}
@@ -50,13 +50,19 @@ export function MovesBank({
           ? <>No moves banked yet. <b style={{ color: INK, fontWeight: 600 }}>Right answers in the round earn transfers.</b></>
           : <><b style={{ color: INK, fontWeight: 600 }}>{filled} free move{filled === 1 ? "" : "s"}</b> in hand, earned from knowledge rounds.{roundEarns ? " Play this week's round to earn more." : ""}</>}
       </p>
-      {chipsHeld > 0 && (
-        <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 7,
-          border: `1px solid ${tint(GOLD, "33")}`, borderRadius: 999, padding: "4px 10px" }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: GOLD }} />
-          <span className="font-body" style={{ fontSize: 11, color: MUTED }}>
-            {chipsHeld} chip{chipsHeld === 1 ? "" : "s"} to play
+      {chips.length > 0 && (
+        <div style={{ marginTop: 12, borderTop: `1px solid ${tint(GOLD, "22")}`, paddingTop: 11 }}>
+          <span className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.08em", color: MUTED, textTransform: "uppercase" }}>
+            Your chips
           </span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7 }}>
+            {chips.map((c) => (
+              <span key={c} className="font-body" style={{
+                fontSize: 11.5, fontWeight: 600, color: GOLD, padding: "4px 10px", borderRadius: 999,
+                background: tint(GOLD, "12"), border: `1px solid ${tint(GOLD, "44")}`,
+              }}>{c}</span>
+            ))}
+          </div>
         </div>
       )}
     </div>

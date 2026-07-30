@@ -12,16 +12,19 @@ import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, TEAL, tint, page } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { SquadBoard } from "@/components/fantasy/SquadBoard";
+import type { BoardPlayer } from "@/lib/fantasy/board";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 type FeedScope = "following" | "global";
 interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
+interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number; vice?: number }
 interface FeedEvent {
   id: string; actorId: string; actorName: string; actorAvatar: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   likeCount: number; likedByMe: boolean; commentCount: number;
-  faces?: FeedFace[]; player?: FeedFace | null;
+  board?: FeedBoard | null; player?: FeedFace | null;
 }
 
 function timeAgo(iso: string): string {
@@ -53,6 +56,15 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
     } catch { setLiked(!next); setLikes((n) => n + (next ? -1 : 1)); }
   }, [liked, ev.id]);
 
+  const shareSquad = useCallback(async () => {
+    const url = `${window.location.origin}/profile/${ev.actorId}`;
+    const data = { title: `${ev.actorName}'s squad`, text: `${ev.actorName}'s YourScore Fantasy squad`, url };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else await navigator.clipboard.writeText(url);
+    } catch { /* user cancelled the share sheet */ }
+  }, [ev.actorId, ev.actorName]);
+
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12, marginBottom: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -66,17 +78,18 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
         </div>
       </div>
 
-      {/* Squad-complete tiles show the XI, captain ringed gold. */}
-      {ev.faces && ev.faces.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-          {ev.faces.map((f, i) => (
-            <div key={i} style={{ width: 44, textAlign: "center" }}>
-              <PlayerAvatar name={f.name} avatarUrl={f.avatarUrl} size={40} ring={f.captain ? GOLD : undefined} />
-              <div style={{ fontSize: 9, color: f.captain ? GOLD : MUTED, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {f.captain ? "(C) " : ""}{f.name.split(" ").pop()}
-              </div>
-            </div>
-          ))}
+      {/* Squad-complete tiles render the real pitch board — positions + crests,
+          exactly like the squad picker, captain ringed gold. */}
+      {ev.board && ev.board.xi.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <SquadBoard
+            mode="complete"
+            players={ev.board.players}
+            xi={ev.board.xi}
+            bench={ev.board.bench}
+            captain={ev.board.captain}
+            vice={ev.board.vice}
+          />
         </div>
       )}
 
@@ -95,6 +108,12 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
         <button onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: open ? TEAL : MUTED, fontSize: 13, fontWeight: 600 }}>
           <span style={{ fontSize: 14 }}>💬</span>{ev.commentCount > 0 ? ev.commentCount : "Comment"}
         </button>
+        {/* Share someone else's finished squad. */}
+        {ev.board && (
+          <button onClick={shareSquad} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
+            <span style={{ fontSize: 14 }}>↗</span>Share
+          </button>
+        )}
       </div>
 
       {open && (

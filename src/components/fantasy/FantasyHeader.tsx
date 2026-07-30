@@ -49,7 +49,7 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
               className="font-display"
               style={{
                 flex: 1, textAlign: "center", padding: "9px 6px", borderRadius: 12,
-                fontSize: 13.5, fontWeight: 700, letterSpacing: "0.01em", textDecoration: "none",
+                fontSize: 16, fontWeight: 700, letterSpacing: "0.01em", textDecoration: "none",
                 background: on ? TEAL : "transparent", color: on ? "#062018" : MUTED,
                 whiteSpace: "nowrap",
               }}>

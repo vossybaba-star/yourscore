@@ -10,6 +10,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clientPool } from "./pool";
+import { pitchName, type BoardPlayer } from "./board";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -20,6 +21,15 @@ export type FeedType =
 export type FeedScope = "following" | "global";
 
 export interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
+
+/** A squad_complete tile renders as the real pitch board — positions + crests. */
+export interface FeedBoard {
+  players: BoardPlayer[];
+  xi: number[];
+  bench: number[];
+  captain?: number;
+  vice?: number;
+}
 
 export interface FeedEvent {
   id: string;
@@ -33,8 +43,8 @@ export interface FeedEvent {
   likeCount: number;
   likedByMe: boolean;
   commentCount: number;
-  /** The XI faces for a squad_complete tile (captain marked). */
-  faces?: FeedFace[];
+  /** The squad, as a pitch board, for a squad_complete tile. */
+  board?: FeedBoard | null;
   /** A single player's portrait for shortlist/squad_update tiles. */
   player?: FeedFace | null;
 }
@@ -122,9 +132,9 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
     case "rank_jump":
       return `climbed ${Number(payload.places).toLocaleString()} places${gw ? ` in GW${gw}` : ""}`;
     case "squad_complete":
-      return "finalised their squad";
+      return "selected their squad";
     case "squad_update":
-      return payload.player != null ? `added ${nameOf(Number(payload.player))} to their squad` : "reshaped their squad";
+      return payload.player != null ? `brought ${nameOf(Number(payload.player))} into their squad` : "changed their squad around";
     case "shortlist_add":
       return `shortlisted ${nameOf(Number(payload.player))}`;
     default:
@@ -157,10 +167,15 @@ export async function loadFeed(
   const eventIds = events.map((e) => e.id as string);
   const actorIds = Array.from(new Set(events.map((e) => e.actor_id as string)));
 
-  // Player resolver — name for the sentence, face for the tile.
-  const poolById = new Map(clientPool().players.map((p) => [p.id, { name: p.name, avatarUrl: p.avatarUrl ?? null }]));
+  // Player resolver — name for the sentence, face for the portrait, board marker
+  // (pos + club + face) for the squad_complete pitch.
+  const poolById = new Map(clientPool().players.map((p) => [p.id, p]));
   const nameOf = (id: number) => poolById.get(id)?.name ?? `#${id}`;
   const faceOf = (id: number): FeedFace => ({ name: poolById.get(id)?.name ?? `#${id}`, avatarUrl: poolById.get(id)?.avatarUrl ?? null });
+  const markerOf = (id: number): BoardPlayer => {
+    const p = poolById.get(id);
+    return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: p?.pos ?? "MID", club: p?.club, avatarUrl: p?.avatarUrl ?? null };
+  };
 
   const [{ data: profs }, { data: likeRows }, { data: commentRows }] = await Promise.all([
     db.from("profiles").select("id, display_name, avatar_url").in("id", actorIds),
@@ -187,13 +202,19 @@ export async function loadFeed(
   return events.map((e) => {
     const type = e.type as FeedType;
     const payload = (e.payload ?? {}) as Record<string, unknown>;
-    // squad_complete tiles show the XI faces (captain marked); shortlist/squad_update
+    // squad_complete tiles render the real pitch board; shortlist/squad_update
     // tiles show the one player's portrait.
-    let faces: FeedFace[] | undefined;
+    let board: FeedBoard | undefined;
     let player: FeedFace | null | undefined;
     if (type === "squad_complete" && Array.isArray(payload.xi)) {
-      const cap = Number(payload.captain);
-      faces = (payload.xi as number[]).slice(0, 11).map((id) => ({ ...faceOf(id), captain: id === cap }));
+      const xi = payload.xi as number[];
+      const bench = Array.isArray(payload.bench) ? (payload.bench as number[]) : [];
+      board = {
+        players: [...xi, ...bench].map(markerOf),
+        xi, bench,
+        captain: payload.captain != null ? Number(payload.captain) : undefined,
+        vice: payload.vice != null ? Number(payload.vice) : undefined,
+      };
     } else if ((type === "shortlist_add" || type === "squad_update") && payload.player != null) {
       player = faceOf(Number(payload.player));
     }
@@ -209,7 +230,7 @@ export async function loadFeed(
       likeCount: likeCount.get(e.id) ?? 0,
       likedByMe: likedByMe.has(e.id),
       commentCount: commentCount.get(e.id) ?? 0,
-      faces,
+      board,
       player,
     };
   });

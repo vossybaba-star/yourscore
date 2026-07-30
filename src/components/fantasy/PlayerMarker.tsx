@@ -1,6 +1,7 @@
 "use client";
 
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { Crest } from "@/components/ui/Crest";
 import { GOLD, AMBER, INK, MUTED } from "@/components/fantasy/shared";
 
 /**
@@ -16,13 +17,15 @@ import { GOLD, AMBER, INK, MUTED } from "@/components/fantasy/shared";
  * the calm state is the default.
  */
 export function PlayerMarker({
-  name, label, avatarUrl, size = 34, isCaptain = false, isVice = false, doubt, datum, dim = false,
+  name, label, avatarUrl, club, size = 34, isCaptain = false, isVice = false, doubt, datum, dim = false,
 }: {
   /** Full name — seeds the monogram fallback. */
   name: string;
   /** What shows under the face (a surname, usually). */
   label: string;
   avatarUrl?: string | null;
+  /** Club name — draws a small crest on the marker so the pitch reads by team. */
+  club?: string;
   size?: number;
   isCaptain?: boolean;
   isVice?: boolean;
@@ -38,6 +41,15 @@ export function PlayerMarker({
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, opacity: dim ? 0.85 : 1, minWidth: 0, width: "100%" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
         <PlayerAvatar name={name} avatarUrl={avatarUrl} size={size} ring={ring} />
+        {club && (
+          <span aria-hidden style={{
+            position: "absolute", bottom: -3, left: -3, width: size * 0.42, height: size * 0.42,
+            minWidth: 14, minHeight: 14, borderRadius: "50%", background: "#0a1710",
+            border: "1.5px solid #0a1710", display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Crest club={club} size={size * 0.42} />
+          </span>
+        )}
         {(isCaptain || isVice) && (
           <span aria-hidden style={{
             position: "absolute", top: -4, right: -4, width: badge, height: badge, borderRadius: "50%",

@@ -685,6 +685,19 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Feed + squad-tab polish pass.** (1) **squad_complete feed tiles now render the
+  real pitch board** — formation rows + **club crests** on each marker (new `PlayerMarker` crest,
+  `SquadBoard` passes `club`), captain gold-ringed; payload carries xi+bench+captain+vice.
+  (2) Copy "finalised" → **"selected their squad"** (pre-season = filled the spaces, nothing to
+  submit). (3) **Share** button on squad tiles (native share of the manager's profile). (4) Seed
+  avatars: ~72% now null (monogram) — an all-avatars roster read as fake. (5) **Squad-tab hero**
+  dropped the "already entered, nothing to submit" copy for "Change your team… play the weekly quiz
+  to earn transfers" + a tappable **"Earn transfers by playing the weekly quiz"** explainer tile →
+  `/fantasy/rules`. (6) **"Move Bank" → "Transfer Bank"**, and it now lists the three chip powers
+  (Triple Captain / Bench Boost / Insight) by name. (7) **Chips tile** gold-tinted + **not playable
+  pre-GW1** ("unlock once gameweek 1 kicks off"). (8) Fantasy nav **tab titles bigger** (13.5→16,
+  pills unchanged).
+
 - **2026-07-30** — **Feed activity is now PRE-SEASON, with faces.** The season hasn't started, so
   nobody's making transfers or playing chips — they're building teams. New feed event types (mig
   231): **`squad_complete`** (finalised their squad — the tile renders the XI as player headshots,

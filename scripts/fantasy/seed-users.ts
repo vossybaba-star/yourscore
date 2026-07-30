@@ -82,13 +82,13 @@ const whenIso = () => new Date(Date.now() - Math.floor(rnd() * 12 * 864e5)).toIS
  *  squad, add a player, shortlist someone. NO transfers/chips (the season hasn't
  *  started). squad_complete carries the XI so the tile can show it. */
 function makePreseasonEvents(
-  entries: { id: string; xi?: number[]; captain?: number }[],
+  entries: { id: string; xi?: number[]; bench?: number[]; captain?: number; vice?: number }[],
   pool: PoolPlayer[],
 ): { actor_id: string; type: string; gw: number | null; payload: Record<string, unknown>; created_at: string }[] {
   const events: ReturnType<typeof makePreseasonEvents> = [];
   for (const e of entries) {
     if (e.xi && e.xi.length && rnd() < 0.85)
-      events.push({ actor_id: e.id, type: "squad_complete", gw: null, payload: { xi: e.xi, captain: e.captain ?? null }, created_at: whenIso() });
+      events.push({ actor_id: e.id, type: "squad_complete", gw: null, payload: { xi: e.xi, bench: e.bench ?? [], captain: e.captain ?? null, vice: e.vice ?? null }, created_at: whenIso() });
     const shortlists = Math.floor(rnd() * 3); // 0-2 shortlisted players
     for (let s = 0; s < shortlists; s++)
       events.push({ actor_id: e.id, type: "shortlist_add", gw: null, payload: { player: pick(pool).id }, created_at: whenIso() });
@@ -154,10 +154,10 @@ async function main() {
   if (REFEED) {
     const { data: seeds } = await db.from("profiles").select("id").eq("is_seed", true);
     const ids = ((seeds ?? []) as { id: string }[]).map((s) => s.id);
-    const { data: squads } = await db.from("fantasy_squads").select("user_id, xi, captain").in("user_id", ids);
+    const { data: squads } = await db.from("fantasy_squads").select("user_id, xi, bench, captain, vice").in("user_id", ids);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const squadOf = new Map((squads ?? []).map((s: any) => [s.user_id, { xi: s.xi as number[], captain: s.captain as number }]));
-    const events = makePreseasonEvents(ids.map((id) => ({ id, xi: squadOf.get(id)?.xi, captain: squadOf.get(id)?.captain })), pool);
+    const squadOf = new Map((squads ?? []).map((s: any) => [s.user_id, { xi: s.xi as number[], bench: s.bench as number[], captain: s.captain as number, vice: s.vice as number }]));
+    const events = makePreseasonEvents(ids.map((id) => ({ id, xi: squadOf.get(id)?.xi, bench: squadOf.get(id)?.bench, captain: squadOf.get(id)?.captain, vice: squadOf.get(id)?.vice })), pool);
     console.log(`${DRY ? "[DRY] " : ""}Refeeding ${ids.length} seeds → ${events.length} pre-season events`);
     if (!DRY) {
       await db.from("fantasy_feed_events").delete().in("actor_id", ids); // likes cascade (mig 226)
@@ -172,12 +172,15 @@ async function main() {
   const handles = makeHandles(n);
   console.log(`${DRY ? "[DRY] " : ""}Seeding ${n} users…`);
 
-  const created: { id: string; name: string; squadOk: boolean; xi?: number[]; captain?: number }[] = [];
+  const created: { id: string; name: string; squadOk: boolean; xi?: number[]; bench?: number[]; captain?: number; vice?: number }[] = [];
 
   for (let i = 0; i < n; i++) {
     const name = handles[i];
     const email = `seed-${i}-${Math.floor(rnd() * 1e6)}@${SEED_DOMAIN}`;
-    const avatar = `/avatars/fan-${String((i % 16) + 1).padStart(2, "0")}.webp`;
+    // Most real signups never set an avatar, so most seeds shouldn't either — an
+    // all-avatars roster reads as fake. ~28% get one; the rest fall back to the
+    // gradient-monogram like a real no-avatar account.
+    const avatar = rnd() < 0.28 ? `/avatars/fan-${String((i % 16) + 1).padStart(2, "0")}.webp` : null;
 
     // Build a valid squad: a preset shape + 1-2 premium anchors for variety.
     const shape = PRESETS[i % PRESETS.length];
@@ -223,7 +226,7 @@ async function main() {
       if (sErr) console.error(`  ! squad row failed for ${name}: ${sErr.message}`);
     }
 
-    created.push({ id: uid, name, squadOk, xi: row?.xi as number[] | undefined, captain: row?.captain as number | undefined });
+    created.push({ id: uid, name, squadOk, xi: row?.xi as number[] | undefined, bench: row?.bench as number[] | undefined, captain: row?.captain as number | undefined, vice: row?.vice as number | undefined });
     process.stdout.write(".");
   }
   process.stdout.write("\n");
@@ -249,7 +252,7 @@ async function main() {
   // Pre-season feed activity — finalised squads (tile shows the XI), shortlisted
   // players, the odd squad reshuffle. NO transfers/chips: the season hasn't started.
   const events = makePreseasonEvents(
-    created.filter((c) => !c.id.startsWith("dry-")).map((c) => ({ id: c.id, xi: c.xi, captain: c.captain })),
+    created.filter((c) => !c.id.startsWith("dry-")).map((c) => ({ id: c.id, xi: c.xi, bench: c.bench, captain: c.captain, vice: c.vice })),
     pool,
   );
   const { error: eErr } = await db.from("fantasy_feed_events").insert(events);
