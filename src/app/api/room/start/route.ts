@@ -99,11 +99,12 @@ export async function POST(req: NextRequest) {
   // Split the answers out of the snapshot before storing it. `questions_json` is
   // readable by the anon key (the play page reads it to render the question), so
   // an answer left in it hands every player the answer key for their own live
-  // game. Answers go to `answers_json`, which is withheld from anon/authenticated
-  // by column grants and only ever read server-side (see /api/answer).
+  // game. Answers go to the `room_answers` table, which has RLS on with no policy
+  // and no grants to anon/authenticated, so it is only ever read with the service
+  // role (see /api/answer).
   //
   // Shadow lobbies reuse an already-stripped questions_json copied from the source
-  // room, so there are no answers to extract — leave their answers_json (copied
+  // room, so there are no answers to extract — leave their room_answers row (written
   // alongside at creation) untouched rather than overwriting it with blanks.
   const rows = questions as Array<Record<string, unknown>>;
   const hasAnswers = rows.some((q) => q && q.answer !== undefined);

@@ -218,11 +218,13 @@ async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promis
     });
     questionCount = (questionsJson as unknown[]).length;
   } else {
-    const { data: src } = await db
-      .from("rooms").select("questions_json, answers_json, question_count").eq("id", run.sourceRoomId).maybeSingle();
+    const [{ data: src }, { data: srcKey }] = await Promise.all([
+      db.from("rooms").select("questions_json, question_count").eq("id", run.sourceRoomId).maybeSingle(),
+      db.from("room_answers").select("answers").eq("room_id", run.sourceRoomId).maybeSingle(),
+    ]);
     if (!src?.questions_json) return null;
     questionsJson = src.questions_json;
-    answersJson = src.answers_json ?? undefined;
+    answersJson = srcKey?.answers ?? undefined;
     questionCount = src.question_count ?? 10;
   }
 
