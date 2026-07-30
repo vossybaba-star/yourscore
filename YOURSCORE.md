@@ -697,9 +697,10 @@ Confirmed preamble above and the referenced section.
   (`push.ts` reads `data.url`), so no native change. **New public page `/play/pack/[packId]`** gives a
   quiz pack's thread its own home (previously threads only existed inside a Lobby), gated on
   `status = published`, selecting only safe columns and **never `quiz_packs.questions`**; reachable
-  from a "Talk about this quiz" link on the quiz results screen. ⚠️ Known: "Play this quiz" on that
-  page routes to multiplayer matchmaking rather than solo play, and a debate deep link goes stale
-  after midnight since `/debate` only shows the current day's debate.
+  from a "Talk about this quiz" link on the quiz results screen. "Play this quiz" goes to **solo**
+  play (`/challenges/<slug>?pid=<packId>`), not multiplayer matchmaking. A debate deep link whose
+  comment belongs to an older debate lands cleanly on the **current day's** debate (the page always
+  renders today's; the missing target is a silent no-op, verified: 200, no errors, nothing leaked).
 - **2026-07-30** — **In-app notification inbox: bell in the home header + `/notifications`** (migration
   222). Stage 2 of 3 on the comment layer. A **bell** sits in the Dashboard header beside the profile
   circle with a lime dot when anything is unread, computed **server-side** inside the home page's
