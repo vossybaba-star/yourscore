@@ -21,6 +21,7 @@ import {
   buildRelevanceLookup, type PoolIdentity, type Relevance,
 } from "@/lib/fantasy/scoutRelevance";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { NewsSheet, type SheetStory } from "@/components/news/NewsSheet";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 
 /** Normalise a name for surname matching: strip accents/punctuation, lowercase. */
@@ -171,11 +172,20 @@ function Thumb({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-function ItemCard({ item, rel }: { item: NewsItem; rel?: Relevance }) {
+/**
+ * One article or tweet.
+ *
+ * It no longer links out. Tapping opens the shared NewsSheet over the feed —
+ * same half-view the PL news feed uses — so the reader gets the gist without
+ * being dumped onto someone else's site, and leaving is a deliberate second tap.
+ */
+function ItemCard({ item, rel, onOpen }: { item: NewsItem; rel?: Relevance; onOpen: () => void }) {
   const p = item.payload;
   const isTweet = item.kind === "tweet";
   return (
-    <a href={p.url} target="_blank" rel="noopener noreferrer" style={cardBase} className="ys-card">
+    <button type="button" onClick={onOpen}
+      style={{ ...cardBase, width: "100%", textAlign: "left", padding: 0, cursor: "pointer" }}
+      className="ys-card">
       {p.image && <Thumb src={p.image} alt="" />}
       <div style={{ padding: 12 }}>
         {rel && <TagRow><RelevanceTag rel={rel} /></TagRow>}
@@ -203,8 +213,27 @@ function ItemCard({ item, rel }: { item: NewsItem; rel?: Relevance }) {
           {isTweet ? p.text : p.title}
         </div>
       </div>
-    </a>
+    </button>
   );
+}
+
+/** A feed item in the shape the shared sheet reads. A tweet is body copy, not a
+ *  headline, and keeps the gold that marks it as a tweet everywhere else. */
+function toStory(item: NewsItem, i: number): SheetStory {
+  const p = item.payload;
+  const isTweet = item.kind === "tweet";
+  return {
+    id: `${item.createdAt}-${i}`,
+    title: (isTweet ? p.text : p.title) ?? "",
+    url: p.url ?? "",
+    source: (isTweet ? p.handle : p.source) ?? "",
+    timeLabel: ago(item.createdAt),
+    image: p.image ?? null,
+    summary: isTweet ? undefined : p.summary,
+    accent: isTweet ? GOLD : TEAL,
+    readLabel: isTweet ? "Read on X" : "Read the full story",
+    bodyStyle: isTweet ? "quote" : "headline",
+  };
 }
 
 export function NewsFeed({
@@ -217,6 +246,14 @@ export function NewsFeed({
   transferItems: NewsItem[];
 }) {
   const [filter, setFilter] = useState<Filter>("all");
+
+  // Which section the open sheet is walking. Tracked per section rather than
+  // over one merged list so swiping up stays inside the section you tapped —
+  // sliding from team news into transfers mid-swipe reads as a bug.
+  const [open, setOpen] = useState<{ section: "team" | "transfers"; index: number } | null>(null);
+  const teamStories = useMemo(() => teamItems.map(toStory), [teamItems]);
+  const transferStories = useMemo(() => transferItems.map(toStory), [transferItems]);
+  const openStories = open?.section === "team" ? teamStories : transferStories;
 
   // ── Personalisation layer: one central feed, labelled per reader ──────────
   // Fetched client-side so the page stays a server component (ISR). All three
@@ -380,7 +417,7 @@ export function NewsFeed({
         <section style={{ display: "grid", gap: 10 }}>
           <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Team news</h2>
           {teamItems.map((it, i) => (
-            <ItemCard key={`t${i}`} item={it}
+            <ItemCard key={`t${i}`} item={it} onOpen={() => setOpen({ section: "team", index: i })}
               rel={rel.ready ? rel.forText(`${it.payload.title ?? ""} ${it.payload.text ?? ""}`) : undefined} />
           ))}
         </section>
@@ -390,10 +427,19 @@ export function NewsFeed({
         <section style={{ display: "grid", gap: 10 }}>
           <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Transfers &amp; talk</h2>
           {transferItems.map((it, i) => (
-            <ItemCard key={`x${i}`} item={it}
+            <ItemCard key={`x${i}`} item={it} onOpen={() => setOpen({ section: "transfers", index: i })}
               rel={rel.ready ? rel.forText(`${it.payload.title ?? ""} ${it.payload.text ?? ""}`) : undefined} />
           ))}
         </section>
+      )}
+
+      {open && openStories[open.index] && (
+        <NewsSheet
+          stories={openStories}
+          index={open.index}
+          onIndexChange={(index) => setOpen({ section: open.section, index })}
+          onClose={() => setOpen(null)}
+        />
       )}
     </>
   );

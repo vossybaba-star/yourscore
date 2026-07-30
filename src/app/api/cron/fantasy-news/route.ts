@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyUsers } from "@/lib/notify";
 import { buildNewsDoc } from "@/lib/fantasy/news";
+import { ingestFantasyRss } from "@/lib/fantasy/rssRiver";
 
 /**
  * Hourly cron: rebuild the fantasy news feed (docs/fantasy-news-hub-spec.md).
@@ -35,8 +36,20 @@ export async function GET(req: NextRequest) {
   const force = req.nextUrl.searchParams.get("force") === "1";
 
   const db = createServiceClient();
+
+  // Pull the fantasy desks into the editorial river BEFORE the doc is built —
+  // buildNewsDoc reads fantasy_news_items for the "Transfers & talk" section, so
+  // running it after would leave today's articles waiting an hour for the next
+  // cron. Never fatal: a desk being down must not cost us the whole rebuild.
+  let river: Awaited<ReturnType<typeof ingestFantasyRss>> | { error: string };
+  try {
+    river = await ingestFantasyRss(db);
+  } catch (err) {
+    river = { error: err instanceof Error ? err.message : String(err) };
+  }
+
   const doc = await buildNewsDoc(db, new Date(), { force });
-  if (!doc) return NextResponse.json({ ok: true, skipped: "no open gameweek" });
+  if (!doc) return NextResponse.json({ ok: true, skipped: "no open gameweek", river });
 
   let nudged = 0;
   if (process.env.FANTASY_NEWS_PUSH_ENABLED === "true" && doc.deadline) {
@@ -59,6 +72,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     ok: true, gw: doc.gw,
+    river,
     sections: {
       fixtures: doc.fixtures.runs.length,
       predicted: doc.teamNews.predicted.length,
