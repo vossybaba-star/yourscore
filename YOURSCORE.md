@@ -731,6 +731,21 @@ Confirmed preamble above and the referenced section.
   the ingest** keeps the PL tab to PL stories (was: all football, World Cup and Scottish Prem
   included). Two bugs fixed on the way — a Sky `pubDate` of "…BST" threw on `.toISOString()` and
   silently killed that whole source, and numeric entities went unrendered ("&#163;51m"). (§7)
+- **2026-07-30** — **Daily Briefing: the day's five biggest PL stories, as links** (migration 228,
+  `pl_briefings`, one row per London date). A tile sits above the news feed — "DAILY BRIEFING ·
+  Today" over a compiled subhead like *"Guimaraes set for Arsenal, Real Madrid eye Rodri and more"* —
+  and opens **`/matchweek/briefing`**: the subhead, five numbered bullets, then the five source
+  articles with their own thumbnails and outbound links. **We publish no reporting of our own**, and
+  that is enforced, not just intended: the model may only compress the outlets' headlines and
+  standfirsts, and every proper noun and number in a bullet must trace back to **that story's own**
+  payload (reusing `isProseGrounded` from the fantasy tips) or it is replaced with the outlet's words
+  verbatim. `rejected` in the cron response counts those replacements — it fired on the first live
+  run, correctly. **"Biggest" is measured, not guessed:** stories are clustered by shared names and
+  ranked by **how many separate desks ran them**, which the nine-desk feed made possible. New cron
+  `/api/cron/pl-briefing` at 06:40 UTC; safe to re-run (upsert by date). Two bugs caught on the first
+  live run: cluster entity sets grew by union, so one cluster became a magnet that swallowed eight
+  desks and led the briefing on the *Football Daily* podcast (seeds are now fixed); and the model
+  ignored the subhead length limit (90 chars), so `tidySubhead` now trims to whole hooks. (§7)
 - **2026-07-30** — **The half-view sheet is now shared, and the Fantasy feed uses it too.**
   `PlNewsSheet` became **`src/components/news/NewsSheet.tsx`**, fed a neutral `SheetStory` shape so
   each feed maps its own items and keeps its own clock. Fantasy news cards were still links straight

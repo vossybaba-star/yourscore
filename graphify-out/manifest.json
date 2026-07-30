@@ -25660,8 +25660,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-plnews/src/components/matchweek/PlNews.tsx": {
-    "mtime": 1785414455.048285,
-    "ast_hash": "6f26c1821dc3a2177fda15460177f71c",
+    "mtime": 1785430188.5883193,
+    "ast_hash": "2c3f39fe5ba697ba0257a76179b2765f",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-plnews/src/components/matchweek/PlNewsFeed.tsx": {
@@ -27620,8 +27620,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-plnews/vercel.json": {
-    "mtime": 1785412033.6703956,
-    "ast_hash": "88b0bb4eaa5f223f02f5691fa5005aa7",
+    "mtime": 1785430100.5709963,
+    "ast_hash": "ef99bc0fc4e3b95abd349d3080d82fe3",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-plnews/.agents/skills/blender-mcp/SKILL.md": {
@@ -27680,8 +27680,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-plnews/YOURSCORE.md": {
-    "mtime": 1785415565.2449749,
-    "ast_hash": "f1395269f3735e3a1a6e342493a39f54",
+    "mtime": 1785430784.3155243,
+    "ast_hash": "a4d99c80d60df3479cd570620f95c030",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/yourscore-plnews/content/blog/50-premier-league-quiz-questions.mdx": {
@@ -30137,6 +30137,46 @@
   "/Users/zchukwumah/yourscore-plnews/scripts/data/gif-cache/ys13735531.mp4": {
     "mtime": 1785412033.2282925,
     "ast_hash": "f86daed1e1fe4f62489735db3970b52a",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/src/app/api/cron/pl-briefing/route.ts": {
+    "mtime": 1785430074.6573741,
+    "ast_hash": "d0e1bf73431cc3c83a27d0f44f2afc52",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/src/app/api/pl/briefing/route.ts": {
+    "mtime": 1785430060.8866065,
+    "ast_hash": "e84bb96e9f4423a8a23944b1228a4f29",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/src/app/matchweek/briefing/page.tsx": {
+    "mtime": 1785430132.210319,
+    "ast_hash": "e255548821f6ba415f8d4283dd194257",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/src/components/matchweek/BriefingTile.tsx": {
+    "mtime": 1785430122.726374,
+    "ast_hash": "36ab757047f659bf3c603de737a833ae",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/src/components/matchweek/BriefingView.tsx": {
+    "mtime": 1785430624.4407504,
+    "ast_hash": "bc930c5427be5b4c8725fb1070e6cb41",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/src/lib/pl/briefing.ts": {
+    "mtime": 1785430379.657646,
+    "ast_hash": "43940ef34cd00b8b61bcca2b2fc098be",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/src/lib/pl/briefingBuild.ts": {
+    "mtime": 1785430391.6391225,
+    "ast_hash": "492fc81d7ca42499d014b5fac0f2c868",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/yourscore-plnews/supabase/migrations/227_pl_briefings.sql": {
+    "mtime": 1785430051.8900545,
+    "ast_hash": "a219665f11c13ce2b7570d806001dfbe",
     "semantic_hash": ""
   }
 }
