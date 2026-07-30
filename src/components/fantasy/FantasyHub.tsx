@@ -492,6 +492,14 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
    *  the old behaviour; live opens the round with the gameweek. */
   const roundOpen = !isDemo || !preseason;
 
+  /** The knowledge round is a LIVE-GAMEWEEK thing. In a live pre-season — squad
+   *  picking, before the first deadline — it isn't available yet: the round opens
+   *  with the gameweek. So the hub shows no "play the round" CTAs pre-season and
+   *  leads on squad selection instead (founder, 30 Jul). `roundOpen` still gates
+   *  the chips card, which IS shown pre-season ("chips unlock when GW1 kicks off"),
+   *  so the two are kept distinct. Replay and the live in-season keep the round. */
+  const roundPlayable = roundOpen && !preseason;
+
   /** THE PRE-DEADLINE CHECK.
    *
    *  Everything the game knew about your team going wrong, it kept to itself: a
@@ -556,7 +564,8 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     }
 
     // The round is the game's own differentiator, and it expires with the deadline.
-    if (!roundDone && roundOpen) {
+    // Not pre-season though — there's no round to play yet, so no nag about it.
+    if (!roundDone && roundPlayable) {
       out.push({
         tone: "info",
         text: entry && entry.round.answered > 0
@@ -595,7 +604,12 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     // action left this week, so offering one would be an invitation to break
     // something. The live panel below carries the interest instead.
     : phase === "live" || phase === "locked" ? null
-    : !roundDone && roundOpen ? playRound
+    // Live pre-season is squad-selection time: no round to play yet, and nothing
+    // to lock (the season locks at the deadline). The pitch and the "Edit my
+    // squad" button below carry it — a top CTA here would be the play-round button
+    // the founder pulled, or a duplicate edit button.
+    : preseason && !isDemo ? null
+    : !roundDone && roundPlayable ? playRound
     : isDemo
       ? (preseason
         ? { label: "Lock in my squad", note: "You can still change it until you lock.", onClick: lock }
@@ -857,7 +871,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           this fantasy game ours. The two money figures sit beside it. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
         <MovesBank held={squad.credits} cap={CREDIT_CAP}
-          roundEarns={!roundDone && roundOpen} chips={CHIP_META.map((c) => c.label)} />
+          roundEarns={!roundDone && roundPlayable} chips={CHIP_META.map((c) => c.label)} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
           {([
             { label: "In the bank", value: fmtM(squad.bankTenths) },
@@ -940,7 +954,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         ))}
       </div>
 
-      {phase === "open" && !roundDone && roundOpen && (
+      {phase === "open" && !roundDone && roundPlayable && (
         <Card style={{ marginBottom: 12, border: `1px solid ${tint(TEAL, "44")}`, background: `linear-gradient(150deg, ${tint(TEAL, "0e")}, ${PANEL})` }}>
           <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
             THIS WEEK&apos;S ROUND IS OPEN
