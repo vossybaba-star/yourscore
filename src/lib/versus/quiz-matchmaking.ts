@@ -164,14 +164,20 @@ async function insertBotSeatLobby(
       question_count: extras.questionCount, pack_id: extras.packId, category_filter: null,
       difficulty_filter: "mixed", current_question_idx: 0,
       ...(extras.questionsJson !== undefined ? { questions_json: extras.questionsJson } : {}),
-      // Answer key is stored apart from the anon-readable snapshot (see room/start).
-      ...(extras.answersJson !== undefined ? { answers_json: extras.answersJson } : {}),
       ...(extras.shadow ? { shadow: extras.shadow } : {}),
     }).select("id, code").maybeSingle();
     if (data) room = data;
     else if (error && !`${error.message}`.toLowerCase().includes("duplicate")) throw new Error(error.message);
   }
   if (!room) throw new Error("Could not start the match — try again");
+
+  // Answer key is stored apart from the anon-readable snapshot (see room/start).
+  if (extras.answersJson !== undefined) {
+    const { error: keyErr } = await db
+      .from("room_answers")
+      .upsert({ room_id: room.id, answers: extras.answersJson as never }, { onConflict: "room_id" });
+    if (keyErr) throw new Error(keyErr.message);
+  }
 
   const { error: memberErr } = await db.from("room_members").insert([
     { room_id: room.id, user_id: userId },

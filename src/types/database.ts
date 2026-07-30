@@ -4269,6 +4269,32 @@ export type Database = {
           },
         ]
       }
+      room_answers: {
+        Row: {
+          answers: Json
+          created_at: string
+          room_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          room_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_answers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_members: {
         Row: {
           id: string

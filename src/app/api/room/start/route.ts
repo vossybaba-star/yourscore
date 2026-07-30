@@ -115,12 +115,20 @@ export async function POST(req: NextRequest) {
     return rest;
   });
 
+  // The key goes to room_answers (service-role only) BEFORE the room goes live,
+  // so a question can never fire without a gradeable answer behind it.
+  if (answers) {
+    const { error: keyErr } = await sb
+      .from("room_answers")
+      .upsert({ room_id: roomId, answers: answers as unknown as Json }, { onConflict: "room_id" });
+    if (keyErr) return NextResponse.json({ error: keyErr.message }, { status: 500 });
+  }
+
   // Update room: store questions, mark live, set first question pointer
   const { error: updateErr } = await sb
     .from("rooms")
     .update({
       questions_json: publicQuestions as unknown as Json,
-      ...(answers ? { answers_json: answers as unknown as Json } : {}),
       status: "live",
       current_question_idx: 0,
       question_started_at: now.toISOString(),
