@@ -629,7 +629,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <Image src="/logo.png" alt="YourScore" width={95} height={28} priority style={{ height: 28, width: "auto" }} />
           <div className="flex items-center gap-3">
-            <Link href="/notifications" aria-label="Notifications" className="relative w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+            <Link href="/notifications" aria-label={unreadNotifications ? "Notifications, unread" : "Notifications"} className="relative w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
               style={{ background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.1)" }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#eef2f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />

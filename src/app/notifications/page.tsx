@@ -134,7 +134,7 @@ export default async function NotificationsPage() {
 
   const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: profile }, { data: rows }] = await Promise.all([
+  const [{ data: profile }, { data: rows, error: rowsError }] = await Promise.all([
     svc.from("profiles").select("notifications_read_at").eq("id", userId).maybeSingle(),
     svc
       .from("notifications")
@@ -178,7 +178,17 @@ export default async function NotificationsPage() {
   );
 
   // ── Mark everything read — ONE write, no per-row state ──────────────────────
-  await svc.from("profiles").update({ notifications_read_at: new Date().toISOString() }).eq("id", userId);
+  // Gated on the fetch having actually succeeded: a transient select error
+  // would otherwise render an empty inbox AND clear the badge, silently
+  // burying notifications the user never saw. Wrapped so a failed marker
+  // write degrades to "still unread" instead of 500ing the page.
+  if (!rowsError) {
+    try {
+      await svc.from("profiles").update({ notifications_read_at: new Date().toISOString() }).eq("id", userId);
+    } catch (err) {
+      console.error("[notifications] mark-read failed:", err);
+    }
+  }
 
   return (
     <main className="min-h-dvh bg-bg pb-28">

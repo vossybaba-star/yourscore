@@ -43,21 +43,29 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (!comment) return NextResponse.json({ error: "That comment is gone" }, { status: 404 });
 
-  const { error } = await supabase
+  // `.select()` tells us whether a row was actually INSERTED. With
+  // ignoreDuplicates a re-POST (double tap, client retry) is a no-op and
+  // returns [], so gating on this is what stops a replay inflating the
+  // aggregate count and resurfacing the author's notification every time.
+  const { data: inserted, error } = await supabase
     .from("comment_likes")
-    .upsert({ comment_id: commentId, user_id: user.id }, { onConflict: "comment_id,user_id", ignoreDuplicates: true });
+    .upsert({ comment_id: commentId, user_id: user.id }, { onConflict: "comment_id,user_id", ignoreDuplicates: true })
+    .select("comment_id");
   if (error) return NextResponse.json({ error: "Could not save" }, { status: 500 });
 
-  // Never fail the like on a notification error — recordCommentLike never
-  // throws, and itself skips self-likes and non pack/debate subjects.
-  await recordCommentLike({
-    commentId,
-    authorId: comment.user_id,
-    actorId: user.id,
-    subjectType: comment.subject_type,
-    subjectId: comment.subject_id,
-    url: comment.subject_type === "pack" ? "/play" : "/debate",
-  });
+  // Only a genuinely NEW like notifies. Never fail the like on a notification
+  // error — recordCommentLike never throws, and itself skips self-likes and
+  // non pack/debate subjects.
+  if ((inserted ?? []).length > 0) {
+    await recordCommentLike({
+      commentId,
+      authorId: comment.user_id,
+      actorId: user.id,
+      subjectType: comment.subject_type,
+      subjectId: comment.subject_id,
+      url: comment.subject_type === "pack" ? "/play" : "/debate",
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -81,16 +89,24 @@ export async function DELETE(req: NextRequest) {
     .maybeSingle();
   if (!comment) return NextResponse.json({ error: "That comment is gone" }, { status: 404 });
 
-  const { error } = await supabase
+  // `.select()` tells us whether a row was actually DELETED. A replayed
+  // DELETE removes nothing and returns [], so gating on this stops a retry
+  // decrementing twice and destroying a row other people's likes still feed.
+  const { data: deleted, error } = await supabase
     .from("comment_likes")
     .delete()
     .eq("comment_id", commentId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("comment_id");
   if (error) return NextResponse.json({ error: "Could not save" }, { status: 500 });
 
-  // Decrement (or delete once count hits 0). Never bumps updated_at — an
-  // already-read notification must never resurface from an unlike.
-  await removeCommentLike({ commentId });
+  // Decrement only for a like that actually COUNTED. A self-like never created
+  // a notification, so removing one must not decrement — otherwise the author
+  // un-self-liking wipes a notification that other people's likes are feeding.
+  // Never bumps updated_at: an already-read notification must not resurface.
+  if ((deleted ?? []).length > 0 && comment.user_id !== user.id) {
+    await removeCommentLike({ commentId });
+  }
 
   return NextResponse.json({ ok: true });
 }
