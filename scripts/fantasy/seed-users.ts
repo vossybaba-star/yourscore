@@ -25,6 +25,7 @@ import { solvePreset, PRESETS, type PresetPlayer } from "../../src/lib/fantasy/p
 const DRY = process.argv.includes("--dry");
 const TEARDOWN = process.argv.includes("--teardown");
 const RENAME = process.argv.includes("--rename"); // re-handle existing seeds in place
+const REFEED = process.argv.includes("--refeed"); // regenerate existing seeds' feed activity
 const countArg = process.argv.indexOf("--count");
 const COUNT = countArg >= 0 ? Number(process.argv[countArg + 1]) : 50;
 const SEED_DOMAIN = "seed.yourscore.app";
@@ -73,6 +74,28 @@ function makeHandles(n: number): string[] {
     if (h.length >= 2 && h.length <= 18) out.add(h);
   }
   return Array.from(out);
+}
+
+const whenIso = () => new Date(Date.now() - Math.floor(rnd() * 12 * 864e5)).toISOString();
+
+/** Pre-season activity — what managers actually do before GW1: finalise their
+ *  squad, add a player, shortlist someone. NO transfers/chips (the season hasn't
+ *  started). squad_complete carries the XI so the tile can show it. */
+function makePreseasonEvents(
+  entries: { id: string; xi?: number[]; captain?: number }[],
+  pool: PoolPlayer[],
+): { actor_id: string; type: string; gw: number | null; payload: Record<string, unknown>; created_at: string }[] {
+  const events: ReturnType<typeof makePreseasonEvents> = [];
+  for (const e of entries) {
+    if (e.xi && e.xi.length && rnd() < 0.85)
+      events.push({ actor_id: e.id, type: "squad_complete", gw: null, payload: { xi: e.xi, captain: e.captain ?? null }, created_at: whenIso() });
+    const shortlists = Math.floor(rnd() * 3); // 0-2 shortlisted players
+    for (let s = 0; s < shortlists; s++)
+      events.push({ actor_id: e.id, type: "shortlist_add", gw: null, payload: { player: pick(pool).id }, created_at: whenIso() });
+    if (rnd() < 0.4) // some reshaped their squad
+      events.push({ actor_id: e.id, type: "squad_update", gw: null, payload: { player: pick(pool).id }, created_at: whenIso() });
+  }
+  return events;
 }
 
 interface PoolFile { players: { id: number; smId: number; name: string; club: string; clubId: number; pos: PoolPlayer["pos"]; price: number }[] }
@@ -126,11 +149,30 @@ async function main() {
   const premiums = shuffle(pool.filter((p) => p.priceTenths >= 90)).map((p) => p.id); // anchor candidates for variety
   const nameById = new Map(pool.map((p) => [p.id, p.name]));
 
+  // Refeed: swap existing seeds' feed activity for pre-season events (finalised
+  // squads, shortlists) — for when the activity model changes.
+  if (REFEED) {
+    const { data: seeds } = await db.from("profiles").select("id").eq("is_seed", true);
+    const ids = ((seeds ?? []) as { id: string }[]).map((s) => s.id);
+    const { data: squads } = await db.from("fantasy_squads").select("user_id, xi, captain").in("user_id", ids);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const squadOf = new Map((squads ?? []).map((s: any) => [s.user_id, { xi: s.xi as number[], captain: s.captain as number }]));
+    const events = makePreseasonEvents(ids.map((id) => ({ id, xi: squadOf.get(id)?.xi, captain: squadOf.get(id)?.captain })), pool);
+    console.log(`${DRY ? "[DRY] " : ""}Refeeding ${ids.length} seeds → ${events.length} pre-season events`);
+    if (!DRY) {
+      await db.from("fantasy_feed_events").delete().in("actor_id", ids); // likes cascade (mig 226)
+      const { error } = await db.from("fantasy_feed_events").insert(events);
+      if (error) console.error(`  ! insert: ${error.message}`);
+    }
+    console.log(DRY ? "[DRY] no writes." : "Refeed done.");
+    return;
+  }
+
   const n = COUNT;
   const handles = makeHandles(n);
   console.log(`${DRY ? "[DRY] " : ""}Seeding ${n} users…`);
 
-  const created: { id: string; name: string; squadOk: boolean }[] = [];
+  const created: { id: string; name: string; squadOk: boolean; xi?: number[]; captain?: number }[] = [];
 
   for (let i = 0; i < n; i++) {
     const name = handles[i];
@@ -181,7 +223,7 @@ async function main() {
       if (sErr) console.error(`  ! squad row failed for ${name}: ${sErr.message}`);
     }
 
-    created.push({ id: uid, name, squadOk });
+    created.push({ id: uid, name, squadOk, xi: row?.xi as number[] | undefined, captain: row?.captain as number | undefined });
     process.stdout.write(".");
   }
   process.stdout.write("\n");
@@ -204,24 +246,12 @@ async function main() {
   const { error: fErr } = await db.from("user_follows").upsert(follows, { onConflict: "follower_id,followee_id" });
   console.log(fErr ? `  ! follows: ${fErr.message}` : `Follow edges: ${follows.length}`);
 
-  // Light feed activity — ~60% make 1-2 moves (transfer or chip), spread over the
-  // past week. NO points, NO ranks. Plausible content, nothing fabricated as a result.
-  const CHIPS = ["triple_captain", "bench_boost", "insight"];
-  const events: { actor_id: string; type: string; gw: number | null; payload: Record<string, unknown>; created_at: string }[] = [];
-  for (const c of realIds) {
-    if (rnd() > 0.6) continue;
-    const moves = 1 + Math.floor(rnd() * 2);
-    for (let m = 0; m < moves; m++) {
-      const when = new Date(Date.now() - Math.floor(rnd() * 6 * 864e5)).toISOString();
-      if (rnd() < 0.7) {
-        const inId = pick(pool).id, outId = pick(pool).id;
-        if (inId === outId) continue;
-        events.push({ actor_id: c, type: "transfer", gw: null, payload: { in: inId, out: outId }, created_at: when });
-      } else {
-        events.push({ actor_id: c, type: "chip", gw: null, payload: { chip: pick(CHIPS) }, created_at: when });
-      }
-    }
-  }
+  // Pre-season feed activity — finalised squads (tile shows the XI), shortlisted
+  // players, the odd squad reshuffle. NO transfers/chips: the season hasn't started.
+  const events = makePreseasonEvents(
+    created.filter((c) => !c.id.startsWith("dry-")).map((c) => ({ id: c.id, xi: c.xi, captain: c.captain })),
+    pool,
+  );
   const { error: eErr } = await db.from("fantasy_feed_events").insert(events);
   console.log(eErr ? `  ! feed: ${eErr.message}` : `Feed events: ${events.length}`);
   void nameById; // reserved for future richer payloads

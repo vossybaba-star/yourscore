@@ -14,8 +14,12 @@ import { clientPool } from "./pool";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
 
-export type FeedType = "transfer" | "captain" | "chip" | "haul" | "rank_jump";
+export type FeedType =
+  | "transfer" | "captain" | "chip" | "haul" | "rank_jump"
+  | "squad_complete" | "squad_update" | "shortlist_add";
 export type FeedScope = "following" | "global";
+
+export interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
 
 export interface FeedEvent {
   id: string;
@@ -29,6 +33,10 @@ export interface FeedEvent {
   likeCount: number;
   likedByMe: boolean;
   commentCount: number;
+  /** The XI faces for a squad_complete tile (captain marked). */
+  faces?: FeedFace[];
+  /** A single player's portrait for shortlist/squad_update tiles. */
+  player?: FeedFace | null;
 }
 
 const CHIP_LABEL: Record<string, string> = {
@@ -113,6 +121,12 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
       return `hauled ${Number(payload.points)} points${gw ? ` in GW${gw}` : ""}`;
     case "rank_jump":
       return `climbed ${Number(payload.places).toLocaleString()} places${gw ? ` in GW${gw}` : ""}`;
+    case "squad_complete":
+      return "finalised their squad";
+    case "squad_update":
+      return payload.player != null ? `added ${nameOf(Number(payload.player))} to their squad` : "reshaped their squad";
+    case "shortlist_add":
+      return `shortlisted ${nameOf(Number(payload.player))}`;
     default:
       return "made a move";
   }
@@ -143,9 +157,10 @@ export async function loadFeed(
   const eventIds = events.map((e) => e.id as string);
   const actorIds = Array.from(new Set(events.map((e) => e.actor_id as string)));
 
-  // Player-name resolver for the sentence.
-  const poolById = new Map(clientPool().players.map((p) => [p.id, p.name]));
-  const nameOf = (id: number) => poolById.get(id) ?? `#${id}`;
+  // Player resolver — name for the sentence, face for the tile.
+  const poolById = new Map(clientPool().players.map((p) => [p.id, { name: p.name, avatarUrl: p.avatarUrl ?? null }]));
+  const nameOf = (id: number) => poolById.get(id)?.name ?? `#${id}`;
+  const faceOf = (id: number): FeedFace => ({ name: poolById.get(id)?.name ?? `#${id}`, avatarUrl: poolById.get(id)?.avatarUrl ?? null });
 
   const [{ data: profs }, { data: likeRows }, { data: commentRows }] = await Promise.all([
     db.from("profiles").select("id, display_name, avatar_url").in("id", actorIds),
@@ -169,17 +184,33 @@ export async function loadFeed(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (commentRows ?? []).forEach((c: any) => commentCount.set(c.subject_id, (commentCount.get(c.subject_id) ?? 0) + 1));
 
-  return events.map((e) => ({
-    id: e.id,
-    actorId: e.actor_id,
-    actorName: profById.get(e.actor_id)?.display_name ?? "A manager",
-    actorAvatar: profById.get(e.actor_id)?.avatar_url ?? null,
-    type: e.type as FeedType,
-    gw: e.gw ?? null,
-    sentence: sentenceFor(e.type as FeedType, e.payload ?? {}, e.gw ?? null, nameOf),
-    createdAt: e.created_at,
-    likeCount: likeCount.get(e.id) ?? 0,
-    likedByMe: likedByMe.has(e.id),
-    commentCount: commentCount.get(e.id) ?? 0,
-  }));
+  return events.map((e) => {
+    const type = e.type as FeedType;
+    const payload = (e.payload ?? {}) as Record<string, unknown>;
+    // squad_complete tiles show the XI faces (captain marked); shortlist/squad_update
+    // tiles show the one player's portrait.
+    let faces: FeedFace[] | undefined;
+    let player: FeedFace | null | undefined;
+    if (type === "squad_complete" && Array.isArray(payload.xi)) {
+      const cap = Number(payload.captain);
+      faces = (payload.xi as number[]).slice(0, 11).map((id) => ({ ...faceOf(id), captain: id === cap }));
+    } else if ((type === "shortlist_add" || type === "squad_update") && payload.player != null) {
+      player = faceOf(Number(payload.player));
+    }
+    return {
+      id: e.id,
+      actorId: e.actor_id,
+      actorName: profById.get(e.actor_id)?.display_name ?? "A manager",
+      actorAvatar: profById.get(e.actor_id)?.avatar_url ?? null,
+      type,
+      gw: e.gw ?? null,
+      sentence: sentenceFor(type, payload, e.gw ?? null, nameOf),
+      createdAt: e.created_at,
+      likeCount: likeCount.get(e.id) ?? 0,
+      likedByMe: likedByMe.has(e.id),
+      commentCount: commentCount.get(e.id) ?? 0,
+      faces,
+      player,
+    };
+  });
 }

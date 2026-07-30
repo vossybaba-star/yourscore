@@ -16,10 +16,12 @@ import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 type FeedScope = "following" | "global";
+interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
 interface FeedEvent {
   id: string; actorId: string; actorName: string; actorAvatar: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   likeCount: number; likedByMe: boolean; commentCount: number;
+  faces?: FeedFace[]; player?: FeedFace | null;
 }
 
 function timeAgo(iso: string): string {
@@ -64,7 +66,29 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 16, marginTop: 10, paddingLeft: 2 }}>
+      {/* Squad-complete tiles show the XI, captain ringed gold. */}
+      {ev.faces && ev.faces.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+          {ev.faces.map((f, i) => (
+            <div key={i} style={{ width: 44, textAlign: "center" }}>
+              <PlayerAvatar name={f.name} avatarUrl={f.avatarUrl} size={40} ring={f.captain ? GOLD : undefined} />
+              <div style={{ fontSize: 9, color: f.captain ? GOLD : MUTED, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {f.captain ? "(C) " : ""}{f.name.split(" ").pop()}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Shortlist / squad-update tiles show the one player. */}
+      {ev.player && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}` }}>
+          <PlayerAvatar name={ev.player.name} avatarUrl={ev.player.avatarUrl} size={40} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 16, marginTop: 12, paddingLeft: 2 }}>
         <button onClick={toggleLike} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: liked ? GOLD : MUTED, fontSize: 13, fontWeight: 600 }}>
           <span style={{ fontSize: 15 }}>{liked ? "♥" : "♡"}</span>{likes > 0 && likes}
         </button>

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { HttpError } from "@/lib/fantasy/server";
+import { tryEmitFeedEvent } from "@/lib/fantasy/feed";
 import { withFantasyUser } from "../_lib";
 
 // Authed + founder-gated + service-role, exactly like the sibling routes.
@@ -34,10 +35,15 @@ export async function POST(req: NextRequest) {
   const playerId = Number(body.playerId);
   return withFantasyUser("shortlist-add", async (db, userId) => {
     if (!Number.isInteger(playerId)) throw new HttpError(400, "playerId required", "bad-request");
+    // Was it already saved? Only a genuinely new star is a feed-worthy move (a
+    // re-star is idempotent and must not spam the feed).
+    const { data: had } = await db.from("fantasy_shortlist")
+      .select("player_id").eq("user_id", userId).eq("player_id", playerId).maybeSingle();
     const { error } = await db
       .from("fantasy_shortlist")
       .upsert({ user_id: userId, player_id: playerId }, { onConflict: "user_id,player_id" });
     if (error) throw new HttpError(500, error.message);
+    if (!had) await tryEmitFeedEvent(db, userId, "shortlist_add", null, { player: playerId });
     return { ok: true };
   });
 }

@@ -685,6 +685,17 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Feed activity is now PRE-SEASON, with faces.** The season hasn't started, so
+  nobody's making transfers or playing chips — they're building teams. New feed event types (mig
+  231): **`squad_complete`** (finalised their squad — the tile renders the XI as player headshots,
+  captain ringed gold), **`squad_update`** (added a player), **`shortlist_add`** (shortlisted a
+  player — tile shows the portrait). Real emitters wired: `squad_complete` on first squad finalise
+  (`createSquad`, `!existing` only, no spam), `shortlist_add` on a genuinely-new shortlist star.
+  `feed.ts` resolves payload player-ids → faces off the pool. The 50 seed managers were re-fed to
+  pre-season activity (`seed-users.sh --refeed`): squad_complete (40) + shortlist_add (43) +
+  squad_update (19), no transfers/chips. transfer/captain/chip/haul/rank_jump types stay — they come
+  alive at GW1.
+
 - **2026-07-30** — **Cold-start: 50 seed managers + follower/following lists + a feed discover door.**
   Two UX-walk gaps closed and the follow graph bootstrapped. (1) **Follower/following counts are now
   tappable** → `/profile/[id]/followers` + `/following` list pages (`FollowList` + `/api/follow/list`);
