@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import Image from "next/image";
@@ -601,6 +601,20 @@ export function Dashboard({ data }: { data: DashboardData }) {
   // Don't recommend the pack that's already the hero.
   const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
 
+  // Deep-link from a daily push: /?focus=today|debate scrolls that home card
+  // into view so a tap lands the player right on the game / debate to act on.
+  useEffect(() => {
+    const focus = new URLSearchParams(window.location.search).get("focus");
+    const id = focus === "debate" ? "todays-debate" : focus === "today" ? "todays-game" : null;
+    if (!id) return;
+    // Small delay lets the hero + cards lay out before we scroll (avoids landing
+    // short when images above shift the layout in).
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <style>{DASH_ANIM}</style>
@@ -638,10 +652,10 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         {/* 3. Today's Game — THE single hero, playable or done+share. The
             onboarding tour's final step points here (data-tour). */}
-        <div data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
+        <div id="todays-game" data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
 
         {/* Today's debate — one tap, daily habit (moved here from Versus) */}
-        <div className="d-4">
+        <div id="todays-debate" className="d-4">
           <DebateCard signInNext="/" withSignUpPitch={false} />
         </div>
 
