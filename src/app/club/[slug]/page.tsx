@@ -6,7 +6,6 @@ import Link from "next/link";
 import { BackPill } from "@/components/ui/BackPill";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
-import { coverUrl } from "@/lib/img";
 
 // ── Types (mirrors the /api/club-page/[slug] response) ──────────────────────
 
@@ -21,7 +20,10 @@ interface TopicPack {
   id: string;
   slug: string;
   name: string;
+  /** Themed quiz title, derived from the pack's own questions. Null → volume label. */
+  title?: string | null;
   question_count: number;
+  volume?: number;
   /** Poster art (scripts/club-pages/gen-topic-covers.mjs). Null → emoji fallback. */
   cover_image?: string | null;
 }
@@ -91,75 +93,51 @@ function SeasonCard({ club, pack, challengeTo }: { club: string; pack: SeasonPac
   );
 }
 
-// ── Topic card ────────────────────────────────────────────────────────────
+// ── Quiz card (carousel item) ───────────────────────────────────────────────
+
+const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
 
 /**
- * ONE card per topic, always four cards. Rendering a card per volume looked fine at two
- * packs and broke down at eleven: Arsenal's page became four identical gold trophies in a
- * row with Legends, Modern Era and Rivalries pushed under two screens of scrolling. Depth
- * is a number on the card now, and the volumes live one tap away in a sheet.
+ * One card per actual quiz pack, laid out in a horizontal per-category scroller.
+ * Each pack carries its own themed `title` (derived from its questions); a volume
+ * label is the fallback until the title backfill lands. The visual is the club
+ * crest (all cards on a club page share it), so the card leads with the crest +
+ * the quiz theme — no per-category poster art (founder call).
  */
-function TopicCard({
-  topic, pack, count = 1, onOpenVolumes, challengeTo,
-}: {
-  topic: Topic;
-  pack?: TopicPack & { volume?: number };
-  count?: number;
-  onOpenVolumes?: () => void;
-  challengeTo: string | null;
-}) {
-  const emoji = TOPIC_EMOJI[topic.category] ?? "🎲";
-  const heading = topic.label;
-  const subLabel = count > 1 ? `${count} quizzes` : `${pack?.question_count ?? 15} questions`;
-
-  // A topic with no pack is not rendered at all — the page only offers what it can deal.
-  // The caller filters these out; this is a defensive guard, not a visible state.
-  if (!pack) return null;
-
-  const inner = (
-    <div className="flex flex-col">
-      {/* Poster art when it exists; the emoji is the fallback, never both. Covers are
-          square (1080), CDN-resized via coverUrl so a grid never ships the original PNG. */}
-      {pack?.cover_image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={coverUrl(pack.cover_image, 220) ?? pack.cover_image} alt={heading}
-          loading="lazy" decoding="async" className="block w-full h-auto" />
-      ) : null}
-      <div className="px-4 py-5 flex flex-col items-center text-center">
-      {!pack?.cover_image && <span className="text-3xl mb-2">{emoji}</span>}
-      <p className="font-body text-sm font-bold text-white mb-1">{heading}</p>
-      <p className="font-body text-xs mb-3" style={{ color: "#8a948f" }}>{subLabel}</p>
-      <div
-        className="rounded-xl py-1.5 px-3 text-center"
-        style={{
-          background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
-          border: "1px solid rgba(0,216,192,0.3)",
-        }}
-      >
-        <span className="font-display text-xs tracking-widest text-teal">{count > 1 ? "CHOOSE →" : "PLAY →"}</span>
-      </div>
-      </div>
-    </div>
-  );
-
-  const shell = "block w-full rounded-3xl overflow-hidden transition-all duration-150 active:scale-[0.96]";
-  const shellStyle = {
-    background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
-    border: "1px solid rgba(0,216,192,0.18)",
-  };
-
-  // More than one quiz in this topic: pick which one, rather than guessing for them.
-  if (count > 1) {
-    return (
-      <button type="button" onClick={onOpenVolumes} className={shell} style={shellStyle}>
-        {inner}
-      </button>
-    );
-  }
-
+function QuizCard({ pack, crestUrl, challengeTo }: { pack: TopicPack; crestUrl: string | null; challengeTo: string | null }) {
+  const label = pack.title?.trim() || `Volume ${ROMAN[pack.volume ?? 1] ?? pack.volume ?? 1}`;
   return (
-    <Link href={withChallenge(`/challenges/${pack.slug}?pid=${pack.id}`, challengeTo)} className={shell} style={shellStyle}>
-      {inner}
+    <Link
+      href={withChallenge(`/challenges/${pack.slug}?pid=${pack.id}`, challengeTo)}
+      className="flex-shrink-0 rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.96]"
+      style={{
+        width: 128,
+        background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
+        border: "1px solid rgba(0,216,192,0.18)",
+      }}
+    >
+      <div className="flex items-center justify-center" style={{ height: 72, background: "radial-gradient(ellipse at 50% 75%, rgba(0,216,192,0.10) 0%, transparent 70%)" }}>
+        {crestUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={crestUrl} alt="" width={40} height={40}
+            style={{ objectFit: "contain", filter: "drop-shadow(0 3px 8px rgba(0,216,192,0.3))" }} />
+        ) : (
+          <span className="text-3xl">🎲</span>
+        )}
+      </div>
+      <div className="px-2 pt-1.5 pb-2">
+        <p className="font-body text-[13px] font-bold text-white leading-tight line-clamp-2" style={{ minHeight: 32 }}>{label}</p>
+        <p className="font-body text-[10px] mt-0.5 mb-1.5" style={{ color: "#8a948f" }}>{pack.question_count} questions</p>
+        <div
+          className="rounded-md py-1 text-center"
+          style={{
+            background: "linear-gradient(135deg, rgba(0,216,192,0.18) 0%, rgba(255,120,0,0.12) 100%)",
+            border: "1px solid rgba(0,216,192,0.3)",
+          }}
+        >
+          <span className="font-display text-[10px] tracking-wide text-teal">PLAY →</span>
+        </div>
+      </div>
     </Link>
   );
 }
@@ -174,8 +152,6 @@ export default function ClubPage() {
   const [data, setData] = useState<ClubPageData | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
-  // Which topic's volume list is open in the sheet (null = closed).
-  const [sheetTopic, setSheetTopic] = useState<Topic | null>(null);
 
   useEffect(() => {
     if (!slug) return;
@@ -257,74 +233,26 @@ export default function ClubPage() {
 
           <SeasonCard club={data.club.name} pack={data.seasonPack} challengeTo={challengeTo} />
 
-          {/* Only topics this club can actually deal. A card promising a quiz that does not
-              exist is clutter, and with cover art on every card an empty one is worse. The
-              heading goes too when nothing qualifies, rather than leaving a bare label. */}
-          {availableTopics.length > 0 && (
-          <>
-          <p className="font-body text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#586058" }}>
-            Topics
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {availableTopics.map(({ topic, volumes }) => (
-              <TopicCard
-                key={topic.category}
-                topic={topic}
-                pack={volumes[0]}
-                count={volumes.length}
-                onOpenVolumes={() => setSheetTopic(topic)}
-                challengeTo={challengeTo}
-              />
-            ))}
-          </div>
-          </>
-          )}
+          {/* One section per category the club can actually deal — a header plus a
+              horizontal scroller of the real quizzes in that category. Categories with
+              no packs are dropped, so no section ever promises a quiz that doesn't exist. */}
+          {availableTopics.map(({ topic, volumes }) => (
+            <section key={topic.category} className="mb-6">
+              <p className="font-body text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#8a948f" }}>
+                <span className="mr-1">{TOPIC_EMOJI[topic.category] ?? "🎲"}</span>{topic.label}
+              </p>
+              {/* -mx-4 px-4 lets the row bleed to the screen edges so a card can peek past
+                  the fold, signalling "scroll for more". */}
+              <div className="flex gap-2.5 overflow-x-auto -mx-4 px-4 pb-1" style={{ scrollbarWidth: "none" }}>
+                {volumes.map((p) => (
+                  <QuizCard key={p.id} pack={p} crestUrl={getTeamBadgeUrlSync(data.club.name)} challengeTo={challengeTo} />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       );
       })()}
-
-      {/* Volume picker. Only reachable from a topic holding more than one quiz. */}
-      {sheetTopic && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.7)" }}
-          onClick={() => setSheetTopic(null)}
-        >
-          <div
-            className="w-full max-w-lg rounded-t-3xl px-4 pt-3"
-            style={{ background: "#080d0a", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
-            <p className="font-display text-base text-white text-center mb-1">
-              {TOPIC_EMOJI[sheetTopic.category] ?? "🎲"} {sheetTopic.label}
-            </p>
-            <p className="font-body text-xs text-center mb-4" style={{ color: "#7a857f" }}>
-              {(sheetTopic.packs ?? []).length} quizzes. Each one is a different set of questions.
-            </p>
-            <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pb-1">
-              {(sheetTopic.packs ?? []).map((p, i) => (
-                <Link
-                  key={p.id}
-                  href={withChallenge(`/challenges/${p.slug}?pid=${p.id}`, challengeTo)}
-                  className="flex items-center justify-between rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-transform"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(0,216,192,0.2)" }}
-                >
-                  <span className="font-body text-sm font-bold text-white">Quiz {i + 1}</span>
-                  <span className="font-body text-xs" style={{ color: "#8a948f" }}>{p.question_count} questions</span>
-                </Link>
-              ))}
-            </div>
-            <button
-              onClick={() => setSheetTopic(null)}
-              className="w-full mt-3 py-3 font-body"
-              style={{ fontSize: 13, color: "#8a948f" }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* The club page is a hub, so it keeps the tab bar. BottomNav already treats /club as a
           Play route, but that highlight was dead until the bar was actually rendered here. */}
