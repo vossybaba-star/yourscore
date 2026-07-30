@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getUserBounded } from "@/lib/supabase/bounded";
+import { fantasyAllowed } from "@/lib/fantasy/flag";
+import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
+import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
 import { Button } from "@/components/ui/Button";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -38,6 +42,13 @@ export default async function ProfilePage() {
   }
 
   const userId = user.id;
+
+  // Your fantasy squads by gameweek (service client — the tables are RLS own-row).
+  // Gated on the flag so it's dark until Fantasy launches, like the rest of it.
+  const fantasy = fantasyAllowed(userId)
+    ? await loadProfileTeams(createServiceClient(), userId)
+    : { teams: [], players: [] };
+
   // Several of these columns/RPCs post-date the generated types.
   const sb = supabase as any;
   const since = streakCutoff();
@@ -315,6 +326,10 @@ export default async function ProfilePage() {
         {counted.length > 0 && <PointsBreakdown counted={counted} uncounted={uncounted} />}
 
         <RecentGames games={(roomScoreRows ?? []) as any[]} />
+
+        {fantasy.teams.length > 0 && (
+          <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+        )}
 
         <Link
           href="/leaderboard"

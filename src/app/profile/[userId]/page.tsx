@@ -6,6 +6,9 @@ import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { fantasyAllowed } from "@/lib/fantasy/flag";
+import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
+import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -149,6 +152,13 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
   }
 
   const name = profile.display_name ?? "Player";
+
+  // Their fantasy squads by gameweek — gated on the viewer so it stays dark until
+  // Fantasy launches (env flip), then it's public like the rest of the profile.
+  const fantasy = fantasyAllowed(user?.id)
+    ? await loadProfileTeams(db, userId)
+    : { teams: [], players: [] };
+
   const avgAcc = attempts.length > 0
     ? Math.round(attempts.reduce((s, a) => s + (a.max_score > 0 ? a.score / a.max_score : 0), 0) / attempts.length * 100)
     : null;
@@ -232,6 +242,11 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
             </div>
           ))}
         </div>
+
+        {/* Their fantasy teams, week by week */}
+        {fantasy.teams.length > 0 && (
+          <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+        )}
 
         {/* Recent head-to-heads */}
         {battles.length > 0 && (
