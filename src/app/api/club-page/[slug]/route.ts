@@ -58,7 +58,7 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
   // truth here — never call /api/quiz/availability.
   const { data: topicPacks } = await sb
     .from("quiz_packs")
-    .select("id, name, question_count, metadata")
+    .select("id, name, title, question_count, metadata")
     .eq("type", "club")
     .eq("status", "published")
     .eq("parameter", clubName);
@@ -74,6 +74,7 @@ export async function GET(_req: NextRequest, { params }: { params: { slug: strin
         id: p.id,
         slug: slugify(p.name),
         name: p.name,
+        title: (p as { title?: string | null }).title ?? null,
         question_count: p.question_count,
         volume: (p.metadata as { club_topic_volume?: number } | null)?.club_topic_volume ?? 1,
         cover_image: (p.metadata as { cover_image?: string } | null)?.cover_image ?? null,
