@@ -20,6 +20,13 @@ import { useShortlist } from "@/components/fantasy/useShortlist";
 import {
   buildRelevanceLookup, type PoolIdentity, type Relevance,
 } from "@/lib/fantasy/scoutRelevance";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
+
+/** Normalise a name for surname matching: strip accents/punctuation, lowercase. */
+function normName(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+}
 
 // Shared fantasy tokens (mirrored, not imported — shared.tsx is "use client").
 const GOLD = "#ffc233";
@@ -82,10 +89,12 @@ function TagRow({ children }: { children: React.ReactNode }) {
  * from a real field; nothing here is invented.
  */
 function EditorialCard({
-  label, accent, heading, sub, body, tags,
+  label, accent, heading, sub, body, tags, faceUrl, faceName,
 }: {
   label: string; accent: string; heading: string; sub?: string; body: string;
   tags?: React.ReactNode;
+  /** When the card is about one player, their headshot sits beside the heading. */
+  faceUrl?: string | null; faceName?: string;
 }) {
   return (
     <section style={{ background: PANEL, border: `1px solid ${accent}55`, borderRadius: 12, padding: 13 }}>
@@ -93,10 +102,17 @@ function EditorialCard({
       <div className="font-display" style={{ color: accent, fontSize: 10.5, fontWeight: 700, letterSpacing: "0.11em", marginBottom: 7 }}>
         {label}
       </div>
-      <div style={{ color: INK, fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>
-        {heading}{sub && <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5 }}>  {sub}</span>}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {faceName && (
+          <PlayerAvatar name={faceName} avatarUrl={faceUrl ?? faceFor(faceName)} size={38} />
+        )}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: INK, fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>
+            {heading}{sub && <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5 }}>  {sub}</span>}
+          </div>
+        </div>
       </div>
-      <p style={{ color: INK, fontSize: 13.5, margin: "5px 0 0", lineHeight: 1.5 }}>{body}</p>
+      <p style={{ color: INK, fontSize: 13.5, margin: "7px 0 0", lineHeight: 1.5 }}>{body}</p>
     </section>
   );
 }
@@ -230,6 +246,25 @@ export function NewsFeed({
     [pool, squadIds, shortlist.ids],
   );
 
+  // Resolve a card's player name to a real headshot, by surname against the pool.
+  // Single confident match only — two players share a surname, so an ambiguous
+  // match returns null and the card draws the monogram rather than a wrong face.
+  const faceUrlForName = useMemo(() => {
+    const bySurname = new Map<string, PoolIdentity[]>();
+    for (const p of pool ?? []) {
+      const parts = p.name.trim().split(/\s+/);
+      const sn = normName(parts[parts.length - 1] ?? "");
+      if (!sn) continue;
+      const list = bySurname.get(sn); if (list) list.push(p); else bySurname.set(sn, [p]);
+    }
+    return (display: string): string | null => {
+      const parts = display.trim().split(/[\s.]+/).filter(Boolean);
+      const sn = normName(parts[parts.length - 1] ?? "");
+      const matches = sn ? bySurname.get(sn) ?? [] : [];
+      return matches.length === 1 ? faceUrlById(matches[0].id) ?? null : null;
+    };
+  }, [pool]);
+
   const hasTips = !!(tips?.captain || tips?.differential || tips?.note);
   const show = useMemo(
     () => ({
@@ -305,11 +340,13 @@ export function NewsFeed({
       {show.tips && tips?.captain && (
         <EditorialCard label="CAPTAINCY CALL" accent={GOLD}
           heading={tips.captain.player} body={tips.captain.why}
+          faceName={tips.captain.player} faceUrl={faceUrlForName(tips.captain.player)}
           tags={rel.ready && <RelevanceTag rel={rel.forName(tips.captain.player)} />} />
       )}
       {show.tips && tips?.differential && (
         <EditorialCard label="THE DIFFERENTIAL" accent={TEAL}
           heading={tips.differential.player} body={tips.differential.why}
+          faceName={tips.differential.player} faceUrl={faceUrlForName(tips.differential.player)}
           tags={rel.ready && <RelevanceTag rel={rel.forName(tips.differential.player)} />} />
       )}
       {show.insights && insights.filter((n) => n.kind === "fixture-swing").map((n, i) => (

@@ -23,6 +23,7 @@ import CaptainAssistCard from "@/components/fantasy/CaptainAssistCard";
 import { FantasySubNav } from "@/components/fantasy/FantasySubNav";
 import { pitchName, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BUDGET_TENTHS, CREDIT_CAP, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 
@@ -281,18 +282,28 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                 Build a spine around a big name or two, then fill in value. The
                 headline picks in each line:
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-                {starterPicks.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 rounded-xl"
-                    style={{ background: PANEL_2, border: `1px solid ${LINE}`, padding: "10px 13px" }}>
-                    <span className="font-display" style={{ fontSize: 10, color: TEAL, width: 34, flexShrink: 0, letterSpacing: "0.04em" }}>{p.pos}</span>
-                    <span className="min-w-0 flex-1" style={{ overflow: "hidden" }}>
-                      <span className="font-body block" style={{ fontSize: 13.5, color: INK, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                      <span className="font-body block" style={{ fontSize: 11, color: MUTED }}>{p.club}</span>
-                    </span>
-                    <span className="font-display" style={{ fontSize: 13, color: GOLD, flexShrink: 0 }}>£{p.price}m</span>
-                  </div>
-                ))}
+              {/* The spine as a formation: the priciest name in each line stacked
+                  forward-to-back (FWD top → GK bottom, the order starterPicks is
+                  built in), faces + the one fact this section stands on — price.
+                  A faint centre line ties them into a spine, not a list. */}
+              <div style={{ position: "relative", padding: "6px 0 2px", marginBottom: 14 }}>
+                <div aria-hidden style={{
+                  position: "absolute", left: "50%", top: 14, bottom: 14, width: 2,
+                  background: `linear-gradient(${tint(TEAL, "00")}, ${tint(TEAL, "33")}, ${tint(TEAL, "00")})`,
+                  transform: "translateX(-50%)",
+                }} />
+                <div style={{ display: "grid", gap: 14, justifyItems: "center", position: "relative" }}>
+                  {starterPicks.map((p) => (
+                    <div key={p.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                      <span className="font-display" style={{ fontSize: 9, color: TEAL, letterSpacing: "0.1em" }}>{p.pos}</span>
+                      <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={54} ring={tint(TEAL, "66")} />
+                      <span className="font-body" style={{ fontSize: 13, fontWeight: 700, color: INK, marginTop: 2 }}>{p.name}</span>
+                      <span className="font-body" style={{ fontSize: 11, color: MUTED }}>
+                        {p.club} · <span style={{ color: GOLD, fontWeight: 700 }}>£{p.price}m</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
