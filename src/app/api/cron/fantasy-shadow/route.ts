@@ -21,7 +21,9 @@ export const fetchCache = "force-no-store";
 export const maxDuration = 60;
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Fail closed if CRON_SECRET is unset: without the presence check the expected
+  // header becomes the literal "Bearer undefined", which any caller can send.
+  if (!process.env.CRON_SECRET || req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
