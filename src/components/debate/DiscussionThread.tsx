@@ -49,7 +49,7 @@ export function DiscussionThread({
   embedded = false,
   focusCommentId = null,
 }: {
-  subjectType: "pack" | "debate";
+  subjectType: "pack" | "debate" | "fantasy_feed";
   subjectId: string;
   title?: string;
   accent?: string;
@@ -369,40 +369,14 @@ export function DiscussionThread({
         ? { borderTop: "1px solid rgba(255,255,255,0.08)" }
         : { background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}
     >
-      <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="px-4 py-2 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <p className="font-body text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: accent }}>{title}</p>
         <p className="font-body text-[10px]" style={{ color: "#586058" }}>{total > 0 ? `${total} comment${total === 1 ? "" : "s"}` : "Start it off"}</p>
       </div>
 
-      {/* Composer */}
-      <div className="px-5 pt-4 pb-2">
-        <div className="flex gap-2">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value.slice(0, 280))}
-            onKeyDown={(e) => { if (e.key === "Enter") post(); }}
-            disabled={!canPost}
-            placeholder={!canPost ? lockedHint : user ? "Say your piece…" : "Sign in to join in…"}
-            className="flex-1 min-w-0 rounded-xl px-4 py-3 font-body text-sm text-white placeholder:text-[#586058] outline-none disabled:opacity-60"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
-          />
-          <button
-            onClick={post}
-            disabled={posting || !canPost || !draft.trim()}
-            className="rounded-xl px-4 font-display text-[12px] tracking-wide active:scale-[0.97] transition-transform disabled:opacity-40"
-            style={{ background: accent, color: "#04231f" }}
-          >
-            POST
-          </button>
-        </div>
-        <div className="flex items-center justify-between mt-1.5 min-h-[16px]">
-          {error ? <p className="font-body text-[11px]" style={{ color: "#f87171" }}>{error}</p> : <span />}
-          {draft.length > 200 && <p className="font-body text-[10px]" style={{ color: "#586058" }}>{280 - draft.length}</p>}
-        </div>
-      </div>
-
-      {/* Thread */}
-      <div className="px-5 pb-4 space-y-4">
+      {/* Thread — comments first (Instagram order), composer pinned below, so a
+          new comment never pushes the whole conversation off the screen. */}
+      <div className="px-4 pt-2.5 pb-2 space-y-2">
         {topLevel.length === 0 && (
           <p className="font-body text-xs text-text-muted py-2">No comments yet. Someone has to have an opinion.</p>
         )}
@@ -441,6 +415,36 @@ export function DiscussionThread({
             </div>
           );
         })}
+      </div>
+
+      {/* Composer at the bottom (Instagram-style): a single compact line, so it
+          stays out of the way and posting keeps the thread in view. */}
+      <div className="px-4 pt-2 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="flex gap-2">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, 280))}
+            onKeyDown={(e) => { if (e.key === "Enter") post(); }}
+            disabled={!canPost}
+            placeholder={!canPost ? lockedHint : user ? "Add a comment…" : "Sign in to join in…"}
+            className="flex-1 min-w-0 rounded-full px-4 py-2 font-body text-sm text-white placeholder:text-[#586058] outline-none disabled:opacity-60"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+          />
+          <button
+            onClick={post}
+            disabled={posting || !canPost || !draft.trim()}
+            className="rounded-full px-4 font-display text-[12px] tracking-wide active:scale-[0.97] transition-transform disabled:opacity-40"
+            style={{ background: accent, color: "#04231f" }}
+          >
+            POST
+          </button>
+        </div>
+        {(error || draft.length > 200) && (
+          <div className="flex items-center justify-between mt-1">
+            {error ? <p className="font-body text-[11px]" style={{ color: "#f87171" }}>{error}</p> : <span />}
+            {draft.length > 200 && <p className="font-body text-[10px]" style={{ color: "#586058" }}>{280 - draft.length}</p>}
+          </div>
+        )}
       </div>
     </div>
   );

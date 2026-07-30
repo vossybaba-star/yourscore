@@ -9,6 +9,7 @@ import {
   api, Btn, Card, Chip, GOLD, INK, LINE, MUTED, page, PANEL, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
+import { GlobalStandings } from "@/components/fantasy/GlobalStandings";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 interface MyLeague {
@@ -125,6 +126,10 @@ export default function LeaguesHome() {
             padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
           }}>How it works</button>
       </div>
+
+      {/* Where you fall among everyone — the global table sits above your private
+          leagues (that's the headline the monthly comp is played for). */}
+      <GlobalStandings />
 
       {/* A returning manager came to look at a table, not to fill in a form. When
           they already have leagues, those go first and the setup cards drop

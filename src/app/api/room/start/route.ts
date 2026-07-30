@@ -96,11 +96,40 @@ export async function POST(req: NextRequest) {
   const now = new Date();
   const closesAt = new Date(now.getTime() + QUESTION_DURATION_MS);
 
+  // Split the answers out of the snapshot before storing it. `questions_json` is
+  // readable by the anon key (the play page reads it to render the question), so
+  // an answer left in it hands every player the answer key for their own live
+  // game. Answers go to the `room_answers` table, which has RLS on with no policy
+  // and no grants to anon/authenticated, so it is only ever read with the service
+  // role (see /api/answer).
+  //
+  // Shadow lobbies reuse an already-stripped questions_json copied from the source
+  // room, so there are no answers to extract — leave their room_answers row (written
+  // alongside at creation) untouched rather than overwriting it with blanks.
+  const rows = questions as Array<Record<string, unknown>>;
+  const hasAnswers = rows.some((q) => q && q.answer !== undefined);
+  const answers = hasAnswers ? rows.map((q) => String(q?.answer ?? "")) : null;
+  const publicQuestions = rows.map((q) => {
+    if (!q || q.answer === undefined) return q;
+    const rest = { ...q };
+    delete rest.answer;
+    return rest;
+  });
+
+  // The key goes to room_answers (service-role only) BEFORE the room goes live,
+  // so a question can never fire without a gradeable answer behind it.
+  if (answers) {
+    const { error: keyErr } = await sb
+      .from("room_answers")
+      .upsert({ room_id: roomId, answers: answers as unknown as Json }, { onConflict: "room_id" });
+    if (keyErr) return NextResponse.json({ error: keyErr.message }, { status: 500 });
+  }
+
   // Update room: store questions, mark live, set first question pointer
   const { error: updateErr } = await sb
     .from("rooms")
     .update({
-      questions_json: questions as unknown as Json,
+      questions_json: publicQuestions as unknown as Json,
       status: "live",
       current_question_idx: 0,
       question_started_at: now.toISOString(),

@@ -6,6 +6,10 @@ import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
+import { fantasyAllowed } from "@/lib/fantasy/flag";
+import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
+import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
+import { FollowButton } from "@/components/social/FollowButton";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -149,6 +153,22 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
   }
 
   const name = profile.display_name ?? "Player";
+
+  // Follow graph counts (public) — one-way follows, separate from friends.
+  // user_follows post-dates the generated Database types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const followRel = () => (db as any).from("user_follows");
+  const [{ count: followers }, { count: followingCount }] = await Promise.all([
+    followRel().select("*", { count: "exact", head: true }).eq("followee_id", userId),
+    followRel().select("*", { count: "exact", head: true }).eq("follower_id", userId),
+  ]);
+
+  // Their fantasy squads by gameweek — gated on the viewer so it stays dark until
+  // Fantasy launches (env flip), then it's public like the rest of the profile.
+  const fantasy = fantasyAllowed(user?.id)
+    ? await loadProfileTeams(db, userId)
+    : { teams: [], players: [] };
+
   const avgAcc = attempts.length > 0
     ? Math.round(attempts.reduce((s, a) => s + (a.max_score > 0 ? a.score / a.max_score : 0), 0) / attempts.length * 100)
     : null;
@@ -192,8 +212,21 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
           </div>
         </div>
 
+        {/* Follow (one-way) + counts — sits above the friends/challenge actions. */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex gap-4">
+            <Link href={`/profile/${userId}/followers`} className="font-body text-sm" style={{ color: "#c7d0cb", textDecoration: "none" }}>
+              <b className="text-white">{(followers ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>followers</span>
+            </Link>
+            <Link href={`/profile/${userId}/following`} className="font-body text-sm" style={{ color: "#c7d0cb", textDecoration: "none" }}>
+              <b className="text-white">{(followingCount ?? 0).toLocaleString()}</b> <span style={{ color: "#8a948f" }}>following</span>
+            </Link>
+          </div>
+          <FollowButton userId={userId} refreshOnChange />
+        </div>
+
         {/* Connect: add friend (hides itself when you already are) + challenge */}
-        <AddFriendCard userId={userId} displayName={name} />
+        <AddFriendCard userId={userId} displayName={name} showFollow={false} />
         <div className="flex gap-2">
           <Link href={`/versus/quiz?to=${userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: TEAL, color: "#04231f" }}>
             CHALLENGE THEM
@@ -232,6 +265,14 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
             </div>
           ))}
         </div>
+
+        {/* Their fantasy teams, week by week. `id` is the scroll target for the
+            feed's "See their squad" tap, so a squad share lands on the squad. */}
+        {fantasy.teams.length > 0 && (
+          <div id="fantasy-xi" style={{ scrollMarginTop: 16 }}>
+            <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+          </div>
+        )}
 
         {/* Recent head-to-heads */}
         {battles.length > 0 && (

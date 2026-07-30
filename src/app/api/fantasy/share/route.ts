@@ -1,6 +1,7 @@
 import { withFantasyUser } from "../_lib";
 import { HttpError } from "@/lib/fantasy/server";
-import { enginePool } from "@/lib/fantasy/pool";
+import { enginePool, gwPrices } from "@/lib/fantasy/pool";
+import { faceUrlById } from "@/lib/fantasy/faces";
 
 export const fetchCache = "force-no-store";
 
@@ -30,15 +31,20 @@ export async function POST(req: Request) {
   return withFantasyUser("share", async (db, userId) => {
     const body = await req.json().catch(() => ({}));
     const want = (body as { kind?: string }).kind;
+    // Share ANY manager's squad from the feed — a squad is public (it's on their
+    // profile and in the feed), so a share card of it is fine. When a target is
+    // given we always mint the SQUAD card for THEM (never their scores).
+    const target = (typeof (body as { userId?: string }).userId === "string" && (body as { userId: string }).userId) || userId;
+    const squadOnly = want === "squad" || target !== userId;
 
     // Latest scored gameweek — the thing you'd actually want to show off.
-    const { data: entry } = want === "squad" ? { data: null } : await db.from("fantasy_entries")
+    const { data: entry } = squadOnly ? { data: null } : await db.from("fantasy_entries")
       .select("gw, points, points_breakdown, captain_used")
       .eq("user_id", userId).not("scored_at", "is", null)
       .order("gw", { ascending: false }).limit(1).maybeSingle();
 
     const { data: prof } = await db.from("profiles")
-      .select("display_name, username").eq("id", userId).maybeSingle();
+      .select("display_name, username").eq("id", target).maybeSingle();
     const nameOf = new Map(enginePool().map((p) => [p.id, p.name]));
     const who = (prof?.display_name ?? prof?.username ?? "").slice(0, 24);
 
@@ -47,7 +53,7 @@ export async function POST(req: Request) {
     if (!entry) {
       // ── the squad card ──────────────────────────────────────────────────
       const { data: squad } = await db.from("fantasy_squads")
-        .select("picks, xi, captain, bank_tenths").eq("user_id", userId).maybeSingle();
+        .select("picks, xi, captain, bank_tenths").eq("user_id", target).maybeSingle();
       if (!squad) throw new HttpError(409, "build a squad first", "no-squad");
 
       const pool = new Map(enginePool().map((p) => [p.id, p]));
@@ -62,10 +68,16 @@ export async function POST(req: Request) {
         .select("gw").eq("mode", "live").neq("status", "final")
         .order("gw", { ascending: true }).limit(1).maybeSingle();
 
-      // "GK~Raya~Arsenal|DEF~Saliba~Arsenal|…" — the same tilde/pipe shape every
-      // other share payload in this table uses.
+      // The share card draws the REAL pitch (portraits + crests + price), so bake
+      // each player's headshot and live price into the chunk. Live price off this
+      // gameweek's snapshot, so the per-player prices agree with the "spent" total;
+      // a player with no snapshot keeps his seed price. Shape: "POS~Name~Club~face~priceTenths".
+      const priceOf = gw ? await gwPrices(db, gw.gw) : new Map<number, number>();
       payload.fsq = "1";
-      payload.fxi = xi.map((p) => `${p.pos}~${p.name}~${p.club}`).join("|");
+      payload.fxi = xi.map((p) => {
+        const pt = priceOf.get(p.id) ?? p.priceTenths;
+        return `${p.pos}~${p.name}~${p.club}~${faceUrlById(p.id) ?? ""}~${pt}`;
+      }).join("|");
       payload.fcapn = nameOf.get(squad.captain) ?? "";
       payload.fval = String(1000 - (squad.bank_tenths ?? 0));
       if (gw) payload.fgw1 = String(gw.gw);

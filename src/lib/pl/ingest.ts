@@ -20,8 +20,12 @@ const PER_SOURCE = 8;
 
 /** Fetch every desk, keep only PL stories, dedupe, newest first, capped.
  *  Partial feed failure is tolerated — one desk down must not empty the tab. */
-export async function fetchPlNews(): Promise<{ items: PlNewsItem[]; sources: Record<string, number | string> }> {
+export async function fetchPlNews(
+  /** Longer standfirsts for the briefing, which has to write two lines from one. */
+  opts: { summaryMax?: number } = {},
+): Promise<{ items: PlNewsItem[]; sources: Record<string, number | string> }> {
   const { items, sources } = await fetchFeeds(PL_SOURCES, {
+    summaryMax: opts.summaryMax,
     // The gate runs per-source, BEFORE the per-desk cap — otherwise a desk's 8
     // slots get spent on non-PL stories that are then thrown away, and the feed
     // comes back half empty.

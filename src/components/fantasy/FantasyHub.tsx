@@ -425,10 +425,10 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   // deadline is a Friday — so the live copy says what is actually true.
   const BANNER: Record<typeof phase, { tag: string; head: string; sub: string }> = {
     open: preseason
-      ? { tag: `PRE-SEASON · ${seasonPos.toUpperCase()}`, head: gwN === 1 ? "The season kicks off here" : `Gameweek ${gwN} is open`,
+      ? { tag: `PRE-SEASON · ${seasonPos.toUpperCase()}`, head: gwN === 1 ? "Your squad is in for gameweek 1" : `Gameweek ${gwN} is open`,
           sub: isDemo
             ? "Your squad isn't committed yet. Build and edit it freely, then lock it in for the gameweek."
-            : "Your squad is already entered — there's nothing to submit. Change it as often as you like until the deadline, and play the round to earn extra transfers." }
+            : "Change your team as much as you like before the deadline. Keep an eye on team news, and play the weekly quiz to earn transfers." }
       : { tag: `GAMEWEEK OPEN · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is open`,
           sub: isDemo
             ? "Play your round, make transfers, set your team, then lock it in."
@@ -491,6 +491,14 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
    *  chip progress in their opening week. Replay is genuinely self-paced and keeps
    *  the old behaviour; live opens the round with the gameweek. */
   const roundOpen = !isDemo || !preseason;
+
+  /** The knowledge round is a LIVE-GAMEWEEK thing. In a live pre-season — squad
+   *  picking, before the first deadline — it isn't available yet: the round opens
+   *  with the gameweek. So the hub shows no "play the round" CTAs pre-season and
+   *  leads on squad selection instead (founder, 30 Jul). `roundOpen` still gates
+   *  the chips card, which IS shown pre-season ("chips unlock when GW1 kicks off"),
+   *  so the two are kept distinct. Replay and the live in-season keep the round. */
+  const roundPlayable = roundOpen && !preseason;
 
   /** THE PRE-DEADLINE CHECK.
    *
@@ -556,7 +564,8 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     }
 
     // The round is the game's own differentiator, and it expires with the deadline.
-    if (!roundDone && roundOpen) {
+    // Not pre-season though — there's no round to play yet, so no nag about it.
+    if (!roundDone && roundPlayable) {
       out.push({
         tone: "info",
         text: entry && entry.round.answered > 0
@@ -595,7 +604,12 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     // action left this week, so offering one would be an invitation to break
     // something. The live panel below carries the interest instead.
     : phase === "live" || phase === "locked" ? null
-    : !roundDone && roundOpen ? playRound
+    // Live pre-season is squad-selection time: no round to play yet, and nothing
+    // to lock (the season locks at the deadline). The pitch and the "Edit my
+    // squad" button below carry it — a top CTA here would be the play-round button
+    // the founder pulled, or a duplicate edit button.
+    : preseason && !isDemo ? null
+    : !roundDone && roundPlayable ? playRound
     : isDemo
       ? (preseason
         ? { label: "Lock in my squad", note: "You can still change it until you lock.", onClick: lock }
@@ -725,6 +739,23 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       </div>
 
+      {/* Pre-season, the one thing worth doing beyond your squad is the quiz —
+          it's how transfers are earned. A tappable explainer, not dead copy. */}
+      {preseason && !result && (
+        <button onClick={() => router.push("/fantasy/rules")} style={{
+          display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", cursor: "pointer",
+          background: `linear-gradient(150deg, ${tint(GOLD, "16")}, ${tint(GOLD, "04")})`,
+          border: `1px solid ${tint(GOLD, "3a")}`, borderRadius: 16, padding: "13px 15px", marginBottom: 12,
+        }}>
+          <span style={{ fontSize: 22, flexShrink: 0 }}>⚡</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: INK }}>Earn transfers by playing the weekly quiz</span>
+            <span style={{ display: "block", fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>Right answers bank transfers for your squad. See how it works.</span>
+          </span>
+          <span style={{ color: GOLD, fontSize: 20, flexShrink: 0 }}>›</span>
+        </button>
+      )}
+
       {/* When it closes. Directly under the hero, above the week's action, so the
           answer to "how long have I got?" is never more than a glance away.
           Replay is self-paced and has no deadline to show, and once points exist
@@ -840,7 +871,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           this fantasy game ours. The two money figures sit beside it. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
         <MovesBank held={squad.credits} cap={CREDIT_CAP}
-          roundEarns={!roundDone && roundOpen} chipsHeld={state.chips?.available.length ?? 0} />
+          roundEarns={!roundDone && roundPlayable} chips={CHIP_META.map((c) => c.label)} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
           {([
             { label: "In the bank", value: fmtM(squad.bankTenths) },
@@ -923,7 +954,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         ))}
       </div>
 
-      {phase === "open" && !roundDone && roundOpen && (
+      {phase === "open" && !roundDone && roundPlayable && (
         <Card style={{ marginBottom: 12, border: `1px solid ${tint(TEAL, "44")}`, background: `linear-gradient(150deg, ${tint(TEAL, "0e")}, ${PANEL})` }}>
           <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
             THIS WEEK&apos;S ROUND IS OPEN
@@ -966,12 +997,14 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           through onboarding and all of gameweek 1. A locked card that names the
           chips and shows progress teaches the game; an absent one doesn't. */}
       {phase === "open" && roundOpen && chips && (
-        <Card style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>Chips</div>
+        <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${tint(GOLD, "14")}, ${tint(GOLD, "04")})`, border: `1px solid ${tint(GOLD, "33")}` }}>
+          <div className="font-display" style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4, color: GOLD, letterSpacing: "0.02em" }}>Chips</div>
           {/* Monthly rotation: one a month, a fresh set of three once all three
               are used. No progress bar — nothing accrues, you simply have the set. */}
           <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
-            {chips.playedThisMonth
+            {preseason
+              ? "Your powers for the season. Chips unlock to play once gameweek 1 kicks off."
+              : chips.playedThisMonth
               ? "You've played this month's chip. A fresh pick opens next month."
               : chips.available.length >= CHIP_META.length
                 ? "One chip a month, your pick. Use all three before any comes back."
@@ -991,7 +1024,8 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
               {CHIP_META.map((c) => {
                 const held = chips.available.includes(c.key);
-                const playable = held && !c.comingSoon;
+                // Pre-season a chip can't be played — the season hasn't started.
+                const playable = held && !c.comingSoon && !preseason;
                 return (
                   <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key)} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,

@@ -154,7 +154,7 @@ function seeded01(seed: string): number {
 /** Insert a CPU-seat h2h Lobby (shared by CPU + shadow paths). */
 async function insertBotSeatLobby(
   db: Db, userId: string,
-  extras: { packId: string; questionCount: number; questionsJson?: unknown; shadow?: ShadowInfo }
+  extras: { packId: string; questionCount: number; questionsJson?: unknown; answersJson?: unknown; shadow?: ShadowInfo }
 ): Promise<{ id: string; code: string }> {
   let room: { id: string; code: string } | null = null;
   for (let attempt = 0; attempt < 5 && !room; attempt++) {
@@ -170,6 +170,14 @@ async function insertBotSeatLobby(
     else if (error && !`${error.message}`.toLowerCase().includes("duplicate")) throw new Error(error.message);
   }
   if (!room) throw new Error("Could not start the match — try again");
+
+  // Answer key is stored apart from the anon-readable snapshot (see room/start).
+  if (extras.answersJson !== undefined) {
+    const { error: keyErr } = await db
+      .from("room_answers")
+      .upsert({ room_id: room.id, answers: extras.answersJson as never }, { onConflict: "room_id" });
+    if (keyErr) throw new Error(keyErr.message);
+  }
 
   const { error: memberErr } = await db.from("room_members").insert([
     { room_id: room.id, user_id: userId },
@@ -187,6 +195,8 @@ async function insertBotSeatLobby(
  *    (solo grades answers[i] vs pack.questions[i], so idx maps 1:1). */
 async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promise<QuizQueueResult | null> {
   let questionsJson: unknown = null;
+  // Answer key travels beside the snapshot, never inside it (see room/start).
+  let answersJson: unknown = undefined;
   let questionCount = 10;
   if (run.sourceAttemptId) {
     const [{ data: pack }, { data: attempt }] = await Promise.all([
@@ -196,13 +206,25 @@ async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promis
     const qs = Array.isArray(pack?.questions) ? pack.questions : [];
     const logLen = Array.isArray(attempt?.answers) ? attempt.answers.length : 0;
     if (qs.length === 0 || logLen < 3) return null;
-    questionsJson = qs.slice(0, Math.min(logLen, qs.length));
+    const sliced = (qs as Array<Record<string, unknown>>).slice(0, Math.min(logLen, qs.length));
+    // Pack questions carry their answer inline — split it out before it lands in
+    // the anon-readable snapshot.
+    answersJson = sliced.map((q) => String(q?.answer ?? ""));
+    questionsJson = sliced.map((q) => {
+      if (!q || q.answer === undefined) return q;
+      const rest = { ...q };
+      delete rest.answer;
+      return rest;
+    });
     questionCount = (questionsJson as unknown[]).length;
   } else {
-    const { data: src } = await db
-      .from("rooms").select("questions_json, question_count").eq("id", run.sourceRoomId).maybeSingle();
+    const [{ data: src }, { data: srcKey }] = await Promise.all([
+      db.from("rooms").select("questions_json, question_count").eq("id", run.sourceRoomId).maybeSingle(),
+      db.from("room_answers").select("answers").eq("room_id", run.sourceRoomId).maybeSingle(),
+    ]);
     if (!src?.questions_json) return null;
     questionsJson = src.questions_json;
+    answersJson = srcKey?.answers ?? undefined;
     questionCount = src.question_count ?? 10;
   }
 
@@ -210,7 +232,7 @@ async function createShadowLobby(db: Db, userId: string, run: ShadowRun): Promis
   if (!shadow) return null;
 
   const room = await insertBotSeatLobby(db, userId, {
-    packId: run.packId, questionCount, questionsJson, shadow,
+    packId: run.packId, questionCount, questionsJson, answersJson, shadow,
   });
   return {
     status: "matched", roomId: room.id, code: room.code,

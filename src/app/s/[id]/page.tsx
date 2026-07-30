@@ -9,6 +9,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createDraftDb } from "@/lib/draft/server";
 import { matchOgMetadata } from "@/lib/draft/match-og";
+import { PitchSurface } from "@/components/fantasy/board/PitchSurface";
+import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
 import { Button } from "@/components/ui/Button";
 
 export const runtime = "nodejs";
@@ -156,15 +158,20 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
   // stranger who taps this has never heard of the game, so the squad has to do
   // the explaining before the CTA asks for anything.
   if (p?.fsq) {
-    const posRank: Record<string, number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
+    const short = (full: string) => {
+      const parts = full.trim().split(/\s+/);
+      return parts.length > 1 ? parts[parts.length - 1] : full;
+    };
+    const capShort = p.fcapn ? short(p.fcapn) : "";
     const xi = (p.fxi ?? "").split("|").map((chunk) => {
-      const [pos, name, club] = chunk.split("~");
-      return { pos: pos ?? "", name: name ?? "", club: club ?? "" };
+      const [pos, name, club, face, priceTenths] = chunk.split("~");
+      return { pos: pos ?? "", name: name ?? "", club: club ?? "", face: face || null, priceTenths: Number(priceTenths || 0) };
     }).filter((x) => x.name);
-    const rows = (["GK", "DEF", "MID", "FWD"] as const)
+    // Top-down: forwards attack the top of the pitch, keeper at the back — the
+    // same shape the in-app board draws, so the tap-through matches the unfurl.
+    const rows = (["FWD", "MID", "DEF", "GK"] as const)
       .map((pos) => ({ pos, players: xi.filter((x) => x.pos === pos) }))
-      .filter((r) => r.players.length > 0)
-      .sort((a, b) => posRank[a.pos] - posRank[b.pos]);
+      .filter((r) => r.players.length > 0);
     const who = p.fname ? p.fname : "A YourScore manager";
     const valTenths = Number(p.fval ?? "0");
     const spent = valTenths <= 0 ? null
@@ -179,43 +186,42 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
             YOURSCORE FANTASY FOOTBALL
           </div>
 
-          <div className="rounded-3xl p-6 mb-4"
+          <div className="rounded-3xl p-5 mb-4"
             style={{ background: "#0e1611", border: "1px solid rgba(0,216,192,0.30)" }}>
-            <div className="font-body text-xs tracking-widest" style={{ color: "#8a948f" }}>
-              {who.toUpperCase()}{p.fgw1 ? ` · GAMEWEEK ${p.fgw1}` : ""}
+            <div className="flex items-center justify-between mb-4">
+              <div className="font-body text-xs tracking-widest" style={{ color: "#8a948f" }}>
+                {who.toUpperCase()}{p.fgw1 ? ` · GW ${p.fgw1}` : ""}
+              </div>
+              <p className="font-display text-white" style={{ fontSize: 18 }}>This is my eleven.</p>
             </div>
-            <p className="font-display text-white mt-2 mb-5" style={{ fontSize: 32, lineHeight: 1.05 }}>
-              This is my eleven.
-            </p>
 
-            <div className="space-y-3">
-              {rows.map((row) => (
-                <div key={row.pos} className="flex items-start gap-3">
-                  <span className="font-body text-xs flex-shrink-0 rounded-lg px-2 py-1"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#8a948f", letterSpacing: 1, minWidth: 44, textAlign: "center" }}>
-                    {row.pos}
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {row.players.map((pl, i) => {
-                      const isCap = !!p.fcapn && pl.name === p.fcapn;
-                      return (
-                        <span key={i} className="font-body text-sm rounded-lg px-2.5 py-1"
-                          style={{
-                            background: isCap ? "rgba(255,194,51,0.12)" : "rgba(255,255,255,0.04)",
-                            border: `1px solid ${isCap ? "rgba(255,194,51,0.45)" : "rgba(255,255,255,0.06)"}`,
-                            color: isCap ? "#ffc233" : "#eef2f0",
-                          }}>
-                          {pl.name}{isCap ? " ©" : ""}
-                        </span>
-                      );
-                    })}
+            {/* The squad on the ACTUAL in-app pitch — the same PitchSurface +
+                PlayerMarker the game draws, so a stranger sees exactly what a
+                manager sees: portraits, crests, the captain's armband. */}
+            <div className="rounded-2xl overflow-hidden flex" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+              <PitchSurface>
+                {rows.map((row) => (
+                  <div key={row.pos} className="flex items-start justify-around" style={{ gap: 6 }}>
+                    {row.players.map((pl, i) => (
+                      <div key={i} style={{ flex: 1, minWidth: 0, maxWidth: 96, display: "flex", justifyContent: "center" }}>
+                        <PlayerMarker
+                          name={pl.name}
+                          label={short(pl.name)}
+                          avatarUrl={pl.face}
+                          club={pl.club}
+                          size={38}
+                          isCaptain={!!capShort && short(pl.name) === capShort}
+                          datum={pl.priceTenths > 0 ? `£${(pl.priceTenths / 10).toFixed(1)}` : undefined}
+                        />
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
+                ))}
+              </PitchSurface>
             </div>
 
             {spent && (
-              <p className="font-body text-xs mt-5" style={{ color: "#5b645e" }}>
+              <p className="font-body text-xs mt-4" style={{ color: "#5b645e" }}>
                 {spent}
               </p>
             )}

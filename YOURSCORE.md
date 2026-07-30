@@ -685,6 +685,84 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Feed UX fixes.** (1) **Back from a profile returns to the same view** — scope +
+  sort live in the feed URL (`?scope=&sort=`, kept via `history.replaceState`), so back restores
+  the tab (and Next restores scroll) instead of dumping you on Following. (2) **No Following tab
+  when you follow nobody** — the feed API returns `followingCount`; 0 → only Global shows (and a
+  following-scope request falls back to global). (3) **Sort: Recent or Top** — Top ranks by
+  engagement (likes + comments), like old IG; feed API `sort` param, in-memory rank over a wider
+  window. (4) **Shortlist tiles open the player** — tap the player on a shortlist/squad-update tile
+  to open the scout `PlayerProfile` sheet (feed carries the player's pool id). Also fixed a
+  hydration mismatch (don't read `window` in a `useState` initializer — restore the URL in a mount
+  effect).
+
+- **2026-07-30** — **Feed share cards + Instagram-compact comments.** (1) **Share any manager's
+  squad from the feed** — the Share button mints a squad share CARD (`/api/fantasy/share` now
+  accepts a `userId`, so it builds the card for that manager, not just the caller; resolves to the
+  existing `/s/<id>` + `/api/og/fantasy-squad`). Squads are public, so this is fine. (2) **Comments
+  are now Instagram-style**: composer moved to the BOTTOM as a compact "Add a comment…" pill (was a
+  bulky top input that pushed the thread off screen), tighter per-row padding + spacing, so several
+  comments fit on screen and posting keeps the thread in view (`DiscussionThread`).
+
+- **2026-07-30** — **Feed + squad-tab polish pass.** (1) **squad_complete feed tiles now render the
+  real pitch board** — formation rows + **club crests** on each marker (new `PlayerMarker` crest,
+  `SquadBoard` passes `club`), captain gold-ringed; payload carries xi+bench+captain+vice.
+  (2) Copy "finalised" → **"selected their squad"** (pre-season = filled the spaces, nothing to
+  submit). (3) **Share** button on squad tiles (native share of the manager's profile). (4) Seed
+  avatars: ~72% now null (monogram) — an all-avatars roster read as fake. (5) **Squad-tab hero**
+  dropped the "already entered, nothing to submit" copy for "Change your team… play the weekly quiz
+  to earn transfers" + a tappable **"Earn transfers by playing the weekly quiz"** explainer tile →
+  `/fantasy/rules`. (6) **"Move Bank" → "Transfer Bank"**, and it now lists the three chip powers
+  (Triple Captain / Bench Boost / Insight) by name. (7) **Chips tile** gold-tinted + **not playable
+  pre-GW1** ("unlock once gameweek 1 kicks off"). (8) Fantasy nav **tab titles bigger** (13.5→16,
+  pills unchanged).
+
+- **2026-07-30** — **Feed activity is now PRE-SEASON, with faces.** The season hasn't started, so
+  nobody's making transfers or playing chips — they're building teams. New feed event types (mig
+  231): **`squad_complete`** (finalised their squad — the tile renders the XI as player headshots,
+  captain ringed gold), **`squad_update`** (added a player), **`shortlist_add`** (shortlisted a
+  player — tile shows the portrait). Real emitters wired: `squad_complete` on first squad finalise
+  (`createSquad`, `!existing` only, no spam), `shortlist_add` on a genuinely-new shortlist star.
+  `feed.ts` resolves payload player-ids → faces off the pool. The 50 seed managers were re-fed to
+  pre-season activity (`seed-users.sh --refeed`): squad_complete (40) + shortlist_add (43) +
+  squad_update (19), no transfers/chips. transfer/captain/chip/haul/rank_jump types stay — they come
+  alive at GW1.
+
+- **2026-07-30** — **Cold-start: 50 seed managers + follower/following lists + a feed discover door.**
+  Two UX-walk gaps closed and the follow graph bootstrapped. (1) **Follower/following counts are now
+  tappable** → `/profile/[id]/followers` + `/following` list pages (`FollowList` + `/api/follow/list`);
+  each row's follow state is primed by the list so there's no per-row fetch (`FollowButton`
+  `initialFollowing`). (2) **Feed empty state has an on-ramp** — a "Find managers to follow" button +
+  a persistent "Find managers" pill → `/fantasy/feed/discover` (managers ranked by followers, minus
+  you + those you follow). (3) **50 seed managers** (`scripts/fantasy/seed-users.ts`, mig 229
+  `profiles.is_seed`): real auth users, realistic handles + avatars, a legal £100m squad each (real
+  engine/preset solver), webbed into a follow graph (~386 edges), light feed activity (transfers/
+  chips, ~41 events) — **NO fabricated points/ranks** (standings fill honestly from GW1). Every seed
+  is `is_seed`, excludable from prizes/analytics; `seed-users.sh --teardown` wipes them in one go,
+  `--rename` re-handles them in place. Names are realistic careless-signup handles (adam766, beardo,
+  dave186, josh, kalvin21 — modelled on real usernames, not copies), not banter. **Seeds are
+  EXCLUDED from the competitive standings** (mig 230 rebuilt `fantasy_global_standings` +
+  `fantasy_rank_jumps` to inner-join `profiles` and drop `is_seed`), so they never rank against real
+  managers or claim prizes; they stay social (followable, in the feed) only.
+- **2026-07-30** — **Fantasy social suite + a one-way follow layer.** Four surfaces (migs 224–226):
+  (1) **Weekly teams on profiles** — a "Fantasy XI by gameweek" section on own + public profiles,
+  a gameweek-chip selector over a read-only SquadBoard; "This week" is the live team (public on
+  submit), numbered chips are the immutable `fantasy_deadline_squad` snapshots, GW total once
+  scored. (2) **Global standings** on the league tab — rank every fantasy player, month the hero
+  (shown by NAME, e.g. "August"), Season/This-week toggles; `fantasy_global_standings` RPC
+  (mig 224) aggregates in SQL past the 1000-row cap, returns top N + your row. (3) **Follow
+  layer, LIVE app-wide (NOT gated)** — one-way `user_follows` (mig 225), coexists with the mutual
+  `friendships` system (friends = play together, follow = spectate/feed); `FollowButton` rides
+  the shared `AddFriendCard` onto every game surface (opt-out `showFollow`); follower/following
+  counts + Follow on profiles; `/api/follow`. (4) **Activity feed** (`/fantasy/feed`, new FEED
+  nav tab) — Following/Global tabs of interesting moves; `fantasy_feed_events` + `fantasy_feed_likes`
+  (mig 226), `comments.subject_type` gains `'fantasy_feed'` so each move reuses the like/comment/
+  reply stack. Emitted on transfers + chip plays now; **big hauls + rank jumps** emit at settle
+  time from `finaliseGameweek` (idempotent + fail-open) — hauls via a filtered read (>= 80 pts),
+  rank jumps via the `fantasy_rank_jumps` RPC (mig 227, global rank before vs after the gw,
+  climbers only; none at GW1). Thresholds (haul 80, jump 100 places, cap 25/type) are TUNABLE —
+  calibrate against the real spread after GW1. Surfaces 1/2/4 are founder-gated (dark until
+  launch); the follow layer is live now.
 - **2026-07-30** — **Comment push notifications, deep links, and a public quiz thread page.** Stage 3
   of 3, no migration. **Push** (native, opt-in respected, via `notifyUsers`): a like pushes only on
   the **first** like of a comment, forever (dedupe key `comment-like:<commentId>` in
@@ -712,6 +790,21 @@ Confirmed preamble above and the referenced section.
   the ingest** keeps the PL tab to PL stories (was: all football, World Cup and Scottish Prem
   included). Two bugs fixed on the way — a Sky `pubDate` of "…BST" threw on `.toISOString()` and
   silently killed that whole source, and numeric entities went unrendered ("&#163;51m"). (§7)
+- **2026-07-30** — **Daily Briefing: the day's five biggest PL stories, as links** (migration 228,
+  `pl_briefings`, one row per London date). A tile sits above the news feed — "DAILY BRIEFING ·
+  Today" over a compiled subhead like *"Guimaraes set for Arsenal, Real Madrid eye Rodri and more"* —
+  and opens **`/matchweek/briefing`**: the subhead, five numbered bullets, then the five source
+  articles with their own thumbnails and outbound links. **We publish no reporting of our own**, and
+  that is enforced, not just intended: the model may only compress the outlets' headlines and
+  standfirsts, and every proper noun and number in a bullet must trace back to **that story's own**
+  payload (reusing `isProseGrounded` from the fantasy tips) or it is replaced with the outlet's words
+  verbatim. `rejected` in the cron response counts those replacements — it fired on the first live
+  run, correctly. **"Biggest" is measured, not guessed:** stories are clustered by shared names and
+  ranked by **how many separate desks ran them**, which the nine-desk feed made possible. New cron
+  `/api/cron/pl-briefing` at 06:40 UTC; safe to re-run (upsert by date). Two bugs caught on the first
+  live run: cluster entity sets grew by union, so one cluster became a magnet that swallowed eight
+  desks and led the briefing on the *Football Daily* podcast (seeds are now fixed); and the model
+  ignored the subhead length limit (90 chars), so `tidySubhead` now trims to whole hooks. (§7)
 - **2026-07-30** — **The half-view sheet is now shared, and the Fantasy feed uses it too.**
   `PlNewsSheet` became **`src/components/news/NewsSheet.tsx`**, fed a neutral `SheetStory` shape so
   each feed maps its own items and keeps its own clock. Fantasy news cards were still links straight

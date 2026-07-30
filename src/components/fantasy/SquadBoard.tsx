@@ -66,6 +66,7 @@ export function SquadBoard(props: SquadBoardProps) {
         name={p?.name ?? `#${id}`}
         label={p?.label ?? `#${id}`}
         avatarUrl={p?.avatarUrl}
+        club={p?.club}
         size={sizeForRow(crowd, onBench)}
         isCaptain={props.captain === id}
         isVice={props.vice === id}

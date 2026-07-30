@@ -78,15 +78,21 @@ export async function POST(request: NextRequest) {
 
   if (!question && event.room_id && event.sequence_number != null) {
     const db2 = createServiceClient();
-    const { data: roomData } = await db2
-      .from("rooms")
-      .select("questions_json")
-      .eq("id", event.room_id)
-      .single();
+    const [{ data: roomData }, { data: keyRow }] = await Promise.all([
+      db2.from("rooms").select("questions_json").eq("id", event.room_id).single(),
+      db2.from("room_answers").select("answers").eq("room_id", event.room_id).maybeSingle(),
+    ]);
     const qs = Array.isArray(roomData?.questions_json) ? roomData.questions_json : [];
-    // questions_json is an untyped Json array; cast to read answer/difficulty
-    const q = qs[(event.sequence_number as number) - 1] as { answer: string; difficulty?: string } | undefined;
-    if (q) question = { answer: q.answer, difficulty: q.difficulty ?? "medium" };
+    const idx = (event.sequence_number as number) - 1;
+    // questions_json is an untyped Json array; cast to read difficulty
+    const q = qs[idx] as { answer?: string; difficulty?: string } | undefined;
+    // The key lives in room_answers (service-role only). Fall back to an inline
+    // answer for rooms created before the split — those snapshots still carry it.
+    const answerKey = Array.isArray(keyRow?.answers) ? keyRow.answers : null;
+    const answer = (answerKey?.[idx] as string | undefined) ?? q?.answer;
+    if (answer !== undefined && answer !== null) {
+      question = { answer: String(answer), difficulty: q?.difficulty ?? "medium" };
+    }
   }
 
   if (!question) {

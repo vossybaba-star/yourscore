@@ -20,6 +20,7 @@ import { monthKeyOf } from "./months";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { enginePool, fantasyPool, pricedPool } from "./pool";
+import { tryEmitFeedEvent } from "./feed";
 import { loadFixtureSet, fixtureStatusFor } from "./captainAssist";
 import { isOpenForEdits, type GwRow } from "./gameweeks";
 import { FORM_WINDOW_GWS, type NewsClubRun, type NewsTickerCell, type NewsDoc } from "./news";
@@ -253,6 +254,9 @@ export async function createSquad(db: Db, userId: string, body: {
   if (error) throw new HttpError(500, error.message);
   // Rebuilding clears the current gameweek's entry so a fresh round/lock starts clean.
   if (existing) await db.from("fantasy_entries").delete().eq("user_id", userId).eq("gw", gw.gw);
+  // Activity feed: the pre-season move that matters is finalising your squad. Only
+  // on the FIRST build (not every tweak), so it never spams; the tile shows the XI.
+  if (!existing) await tryEmitFeedEvent(db, userId, "squad_complete", null, { xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice });
   return getState(db, userId);
 }
 

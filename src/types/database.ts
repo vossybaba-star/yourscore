@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admin_chat_messages: {
@@ -452,35 +477,51 @@ export type Database = {
         }
         Relationships: []
       }
-      comments: {
+      club_supporters: {
         Row: {
-          body: string
+          changed_at: string
+          club: string
           created_at: string
-          deleted_at: string | null
-          id: string
-          subject_id: string
-          subject_type: string
+          season_id: number
           user_id: string
         }
         Insert: {
-          body: string
+          changed_at?: string
+          club: string
           created_at?: string
-          deleted_at?: string | null
-          id?: string
-          subject_id: string
-          subject_type: string
+          season_id: number
           user_id: string
         }
         Update: {
-          body?: string
+          changed_at?: string
+          club?: string
           created_at?: string
-          deleted_at?: string | null
-          id?: string
-          subject_id?: string
-          subject_type?: string
+          season_id?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "club_supporters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_supporters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "club_supporters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       comment_likes: {
         Row: {
@@ -504,6 +545,79 @@ export type Database = {
             columns: ["comment_id"]
             isOneToOne: false
             referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          parent_id: string | null
+          subject_id: string
+          subject_type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          parent_id?: string | null
+          subject_id: string
+          subject_type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          parent_id?: string | null
+          subject_id?: string
+          subject_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_games: {
+        Row: {
+          created_at: string
+          day: string
+          game_type: string
+          pack_id: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          game_type: string
+          pack_id?: string | null
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          game_type?: string
+          pack_id?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_games_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_packs"
             referencedColumns: ["id"]
           },
         ]
@@ -1420,12 +1534,397 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_captain_experiment: {
+        Row: {
+          arm: string
+          assigned_at: string
+          assigned_gw: number | null
+          assignment_version: string
+          experiment_id: string
+          user_id: string
+        }
+        Insert: {
+          arm: string
+          assigned_at?: string
+          assigned_gw?: number | null
+          assignment_version?: string
+          experiment_id?: string
+          user_id: string
+        }
+        Update: {
+          arm?: string
+          assigned_at?: string
+          assigned_gw?: number | null
+          assignment_version?: string
+          experiment_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fantasy_captain_funnel: {
+        Row: {
+          blocked_after_deadline: boolean | null
+          captain_applied: boolean | null
+          confirmation_opened: boolean | null
+          dismissed: boolean | null
+          eligible: boolean | null
+          first_seen_at: string | null
+          gameweek: number
+          is_rehearsal: boolean
+          prepare_clicked: boolean | null
+          recommendation_expanded: boolean | null
+          recommendation_followed_at_deadline: boolean | null
+          recommendation_generated: boolean | null
+          recommendation_scored: boolean | null
+          recommendation_viewed: boolean | null
+          refresh_required: boolean | null
+          updated_at: string
+          user_id: string
+          vice_applied: boolean | null
+        }
+        Insert: {
+          blocked_after_deadline?: boolean | null
+          captain_applied?: boolean | null
+          confirmation_opened?: boolean | null
+          dismissed?: boolean | null
+          eligible?: boolean | null
+          first_seen_at?: string | null
+          gameweek: number
+          is_rehearsal?: boolean
+          prepare_clicked?: boolean | null
+          recommendation_expanded?: boolean | null
+          recommendation_followed_at_deadline?: boolean | null
+          recommendation_generated?: boolean | null
+          recommendation_scored?: boolean | null
+          recommendation_viewed?: boolean | null
+          refresh_required?: boolean | null
+          updated_at?: string
+          user_id: string
+          vice_applied?: boolean | null
+        }
+        Update: {
+          blocked_after_deadline?: boolean | null
+          captain_applied?: boolean | null
+          confirmation_opened?: boolean | null
+          dismissed?: boolean | null
+          eligible?: boolean | null
+          first_seen_at?: string | null
+          gameweek?: number
+          is_rehearsal?: boolean
+          prepare_clicked?: boolean | null
+          recommendation_expanded?: boolean | null
+          recommendation_followed_at_deadline?: boolean | null
+          recommendation_generated?: boolean | null
+          recommendation_scored?: boolean | null
+          recommendation_viewed?: boolean | null
+          refresh_required?: boolean | null
+          updated_at?: string
+          user_id?: string
+          vice_applied?: boolean | null
+        }
+        Relationships: []
+      }
+      fantasy_captain_recommendation: {
+        Row: {
+          alternatives: Json | null
+          applied_captain: boolean
+          applied_vice: boolean
+          change_reason: string | null
+          confidence: string | null
+          confirmed_at: string | null
+          created_at: string
+          data_cutoff: string
+          fixture_context: Json | null
+          gameweek: number | null
+          id: string
+          is_rehearsal: boolean
+          model_version: string
+          outcome: string | null
+          previous_captain: number | null
+          previous_vice: number | null
+          recommendation_version: number | null
+          recommended_captain: number
+          recommended_vice: number
+          signal: string
+          squad_fingerprint: string
+          status: string | null
+          superseded_at: string | null
+          superseded_by_recommendation_id: string | null
+          user_id: string
+          warnings: Json | null
+        }
+        Insert: {
+          alternatives?: Json | null
+          applied_captain?: boolean
+          applied_vice?: boolean
+          change_reason?: string | null
+          confidence?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          data_cutoff: string
+          fixture_context?: Json | null
+          gameweek?: number | null
+          id?: string
+          is_rehearsal?: boolean
+          model_version: string
+          outcome?: string | null
+          previous_captain?: number | null
+          previous_vice?: number | null
+          recommendation_version?: number | null
+          recommended_captain: number
+          recommended_vice: number
+          signal: string
+          squad_fingerprint: string
+          status?: string | null
+          superseded_at?: string | null
+          superseded_by_recommendation_id?: string | null
+          user_id: string
+          warnings?: Json | null
+        }
+        Update: {
+          alternatives?: Json | null
+          applied_captain?: boolean
+          applied_vice?: boolean
+          change_reason?: string | null
+          confidence?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          data_cutoff?: string
+          fixture_context?: Json | null
+          gameweek?: number | null
+          id?: string
+          is_rehearsal?: boolean
+          model_version?: string
+          outcome?: string | null
+          previous_captain?: number | null
+          previous_vice?: number | null
+          recommendation_version?: number | null
+          recommended_captain?: number
+          recommended_vice?: number
+          signal?: string
+          squad_fingerprint?: string
+          status?: string | null
+          superseded_at?: string | null
+          superseded_by_recommendation_id?: string | null
+          user_id?: string
+          warnings?: Json | null
+        }
+        Relationships: []
+      }
+      fantasy_captain_shadow: {
+        Row: {
+          confidence: string | null
+          data_cutoff: string | null
+          deadline_captain: number | null
+          deadline_vice: number | null
+          difference: number | null
+          eligible: boolean | null
+          excluded_reason: string | null
+          exposure: string | null
+          feature_version: string | null
+          followed: boolean | null
+          frozen_at: string
+          gameweek: number
+          id: number
+          is_rehearsal: boolean
+          model_identity: string | null
+          model_version: string | null
+          recommendation_id: string | null
+          recommended_appeared: boolean | null
+          recommended_captain: number
+          recommended_effective_points: number | null
+          recommended_points: number | null
+          recommended_vice: number | null
+          recommended_vice_activated: boolean | null
+          recommended_vice_points: number | null
+          scored_at: string | null
+          scoring_version: string | null
+          signal: string | null
+          status: string | null
+          user_appeared: boolean | null
+          user_captain: number | null
+          user_effective_points: number | null
+          user_id: string
+          user_points: number | null
+          user_vice: number | null
+          user_vice_activated: boolean | null
+          user_vice_points: number | null
+        }
+        Insert: {
+          confidence?: string | null
+          data_cutoff?: string | null
+          deadline_captain?: number | null
+          deadline_vice?: number | null
+          difference?: number | null
+          eligible?: boolean | null
+          excluded_reason?: string | null
+          exposure?: string | null
+          feature_version?: string | null
+          followed?: boolean | null
+          frozen_at?: string
+          gameweek: number
+          id?: number
+          is_rehearsal?: boolean
+          model_identity?: string | null
+          model_version?: string | null
+          recommendation_id?: string | null
+          recommended_appeared?: boolean | null
+          recommended_captain: number
+          recommended_effective_points?: number | null
+          recommended_points?: number | null
+          recommended_vice?: number | null
+          recommended_vice_activated?: boolean | null
+          recommended_vice_points?: number | null
+          scored_at?: string | null
+          scoring_version?: string | null
+          signal?: string | null
+          status?: string | null
+          user_appeared?: boolean | null
+          user_captain?: number | null
+          user_effective_points?: number | null
+          user_id: string
+          user_points?: number | null
+          user_vice?: number | null
+          user_vice_activated?: boolean | null
+          user_vice_points?: number | null
+        }
+        Update: {
+          confidence?: string | null
+          data_cutoff?: string | null
+          deadline_captain?: number | null
+          deadline_vice?: number | null
+          difference?: number | null
+          eligible?: boolean | null
+          excluded_reason?: string | null
+          exposure?: string | null
+          feature_version?: string | null
+          followed?: boolean | null
+          frozen_at?: string
+          gameweek?: number
+          id?: number
+          is_rehearsal?: boolean
+          model_identity?: string | null
+          model_version?: string | null
+          recommendation_id?: string | null
+          recommended_appeared?: boolean | null
+          recommended_captain?: number
+          recommended_effective_points?: number | null
+          recommended_points?: number | null
+          recommended_vice?: number | null
+          recommended_vice_activated?: boolean | null
+          recommended_vice_points?: number | null
+          scored_at?: string | null
+          scoring_version?: string | null
+          signal?: string | null
+          status?: string | null
+          user_appeared?: boolean | null
+          user_captain?: number | null
+          user_effective_points?: number | null
+          user_id?: string
+          user_points?: number | null
+          user_vice?: number | null
+          user_vice_activated?: boolean | null
+          user_vice_points?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_captain_shadow_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_captain_recommendation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fantasy_collection_run: {
+        Row: {
+          band: string | null
+          collected: boolean
+          error: string | null
+          finished_at: string | null
+          fpl_rows: number | null
+          hours_to_deadline: number | null
+          id: number
+          odds_rows: number | null
+          ok: boolean
+          post_deadline: boolean
+          started_at: string
+        }
+        Insert: {
+          band?: string | null
+          collected?: boolean
+          error?: string | null
+          finished_at?: string | null
+          fpl_rows?: number | null
+          hours_to_deadline?: number | null
+          id?: number
+          odds_rows?: number | null
+          ok?: boolean
+          post_deadline?: boolean
+          started_at: string
+        }
+        Update: {
+          band?: string | null
+          collected?: boolean
+          error?: string | null
+          finished_at?: string | null
+          fpl_rows?: number | null
+          hours_to_deadline?: number | null
+          id?: number
+          odds_rows?: number | null
+          ok?: boolean
+          post_deadline?: boolean
+          started_at?: string
+        }
+        Relationships: []
+      }
+      fantasy_deadline_squad: {
+        Row: {
+          bench: number[] | null
+          captain: number | null
+          captured_at: string
+          gameweek: number
+          id: number
+          is_rehearsal: boolean
+          squad_fingerprint: string | null
+          user_id: string
+          vice: number | null
+          xi: number[]
+        }
+        Insert: {
+          bench?: number[] | null
+          captain?: number | null
+          captured_at?: string
+          gameweek: number
+          id?: number
+          is_rehearsal?: boolean
+          squad_fingerprint?: string | null
+          user_id: string
+          vice?: number | null
+          xi: number[]
+        }
+        Update: {
+          bench?: number[] | null
+          captain?: number | null
+          captured_at?: string
+          gameweek?: number
+          id?: number
+          is_rehearsal?: boolean
+          squad_fingerprint?: string | null
+          user_id?: string
+          vice?: number | null
+          xi?: number[]
+        }
+        Relationships: []
+      }
       fantasy_entries: {
         Row: {
           autosubs: Json | null
           bench: number[] | null
           captain: number | null
           captain_used: number | null
+          cash_points: number
+          chip: string | null
           gw: number
           hits: number
           locked_at: string | null
@@ -1436,8 +1935,11 @@ export type Database = {
           round_correct: number
           round_credits: number
           round_done_at: string | null
+          round_hint_k: number | null
+          round_retry_k: number | null
           round_version: string | null
           scored_at: string | null
+          scoring_version: string | null
           status: string
           transfers: Json
           user_id: string
@@ -1449,6 +1951,8 @@ export type Database = {
           bench?: number[] | null
           captain?: number | null
           captain_used?: number | null
+          cash_points?: number
+          chip?: string | null
           gw: number
           hits?: number
           locked_at?: string | null
@@ -1459,8 +1963,11 @@ export type Database = {
           round_correct?: number
           round_credits?: number
           round_done_at?: string | null
+          round_hint_k?: number | null
+          round_retry_k?: number | null
           round_version?: string | null
           scored_at?: string | null
+          scoring_version?: string | null
           status?: string
           transfers?: Json
           user_id: string
@@ -1472,6 +1979,8 @@ export type Database = {
           bench?: number[] | null
           captain?: number | null
           captain_used?: number | null
+          cash_points?: number
+          chip?: string | null
           gw?: number
           hits?: number
           locked_at?: string | null
@@ -1482,8 +1991,11 @@ export type Database = {
           round_correct?: number
           round_credits?: number
           round_done_at?: string | null
+          round_hint_k?: number | null
+          round_retry_k?: number | null
           round_version?: string | null
           scored_at?: string | null
+          scoring_version?: string | null
           status?: string
           transfers?: Json
           user_id?: string
@@ -1500,11 +2012,188 @@ export type Database = {
           },
         ]
       }
+      fantasy_feed_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          gw: number | null
+          id: string
+          payload: Json
+          type: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          gw?: number | null
+          id?: string
+          payload?: Json
+          type: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          gw?: number | null
+          id?: string
+          payload?: Json
+          type?: string
+        }
+        Relationships: []
+      }
+      fantasy_feed_likes: {
+        Row: {
+          created_at: string
+          event_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_feed_likes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_feed_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fantasy_fixture_snapshot: {
+        Row: {
+          captured_at: string
+          event: number | null
+          finished: boolean | null
+          fixture_id: number
+          id: number
+          is_rehearsal: boolean
+          kickoff_time: string | null
+          provisional_start_time: boolean | null
+          team_a: number | null
+          team_a_difficulty: number | null
+          team_a_name: string | null
+          team_h: number | null
+          team_h_difficulty: number | null
+          team_h_name: string | null
+        }
+        Insert: {
+          captured_at: string
+          event?: number | null
+          finished?: boolean | null
+          fixture_id: number
+          id?: number
+          is_rehearsal?: boolean
+          kickoff_time?: string | null
+          provisional_start_time?: boolean | null
+          team_a?: number | null
+          team_a_difficulty?: number | null
+          team_a_name?: string | null
+          team_h?: number | null
+          team_h_difficulty?: number | null
+          team_h_name?: string | null
+        }
+        Update: {
+          captured_at?: string
+          event?: number | null
+          finished?: boolean | null
+          fixture_id?: number
+          id?: number
+          is_rehearsal?: boolean
+          kickoff_time?: string | null
+          provisional_start_time?: boolean | null
+          team_a?: number | null
+          team_a_difficulty?: number | null
+          team_a_name?: string | null
+          team_h?: number | null
+          team_h_difficulty?: number | null
+          team_h_name?: string | null
+        }
+        Relationships: []
+      }
+      fantasy_fpl_snapshot: {
+        Row: {
+          captured_at: string
+          chance_of_playing_next_round: number | null
+          chance_of_playing_this_round: number | null
+          current_event: number | null
+          ep_next: number | null
+          ep_this: number | null
+          form: number | null
+          id: number
+          is_rehearsal: boolean
+          news: string | null
+          next_deadline: string | null
+          next_event: number | null
+          now_cost: number | null
+          player_id: number
+          position: string | null
+          selected_by_percent: number | null
+          status: string | null
+          team: number | null
+          transfers_in_event: number | null
+          transfers_out_event: number | null
+          web_name: string | null
+        }
+        Insert: {
+          captured_at: string
+          chance_of_playing_next_round?: number | null
+          chance_of_playing_this_round?: number | null
+          current_event?: number | null
+          ep_next?: number | null
+          ep_this?: number | null
+          form?: number | null
+          id?: number
+          is_rehearsal?: boolean
+          news?: string | null
+          next_deadline?: string | null
+          next_event?: number | null
+          now_cost?: number | null
+          player_id: number
+          position?: string | null
+          selected_by_percent?: number | null
+          status?: string | null
+          team?: number | null
+          transfers_in_event?: number | null
+          transfers_out_event?: number | null
+          web_name?: string | null
+        }
+        Update: {
+          captured_at?: string
+          chance_of_playing_next_round?: number | null
+          chance_of_playing_this_round?: number | null
+          current_event?: number | null
+          ep_next?: number | null
+          ep_this?: number | null
+          form?: number | null
+          id?: number
+          is_rehearsal?: boolean
+          news?: string | null
+          next_deadline?: string | null
+          next_event?: number | null
+          now_cost?: number | null
+          player_id?: number
+          position?: string | null
+          selected_by_percent?: number | null
+          status?: string | null
+          team?: number | null
+          transfers_in_event?: number | null
+          transfers_out_event?: number | null
+          web_name?: string | null
+        }
+        Relationships: []
+      }
       fantasy_gameweeks: {
         Row: {
           deadline: string | null
           gw: number
           mode: string
+          ops_hold: boolean
           season: string
           sm_season_id: number
           status: string
@@ -1515,6 +2204,7 @@ export type Database = {
           deadline?: string | null
           gw: number
           mode?: string
+          ops_hold?: boolean
           season: string
           sm_season_id: number
           status?: string
@@ -1525,11 +2215,200 @@ export type Database = {
           deadline?: string | null
           gw?: number
           mode?: string
+          ops_hold?: boolean
           season?: string
           sm_season_id?: number
           status?: string
           window_end?: string
           window_start?: string
+        }
+        Relationships: []
+      }
+      fantasy_league_members: {
+        Row: {
+          joined_at: string
+          league_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          league_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          league_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fantasy_league_members_league_id_fkey"
+            columns: ["league_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_leagues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fantasy_leagues: {
+        Row: {
+          created_at: string
+          id: string
+          is_public: boolean
+          join_code: string
+          name: string
+          owner_id: string
+          stakes: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          join_code: string
+          name: string
+          owner_id: string
+          stakes?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          join_code?: string
+          name?: string
+          owner_id?: string
+          stakes?: string | null
+        }
+        Relationships: []
+      }
+      fantasy_news_feed: {
+        Row: {
+          doc: Json
+          gw: number
+          updated_at: string
+        }
+        Insert: {
+          doc: Json
+          gw: number
+          updated_at?: string
+        }
+        Update: {
+          doc?: Json
+          gw?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fantasy_news_items: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          payload: Json
+          source_key: string | null
+          topic: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          payload: Json
+          source_key?: string | null
+          topic?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          source_key?: string | null
+          topic?: string
+        }
+        Relationships: []
+      }
+      fantasy_odds_snapshot: {
+        Row: {
+          bookmaker_id: number | null
+          collected_at: string
+          fixture_id: number
+          fixture_kickoff: string | null
+          handicap: string | null
+          id: number
+          market_description: string | null
+          market_id: number | null
+          odds: number | null
+          odds_probability_raw: number | null
+          selection: string | null
+          source_updated_at: string | null
+        }
+        Insert: {
+          bookmaker_id?: number | null
+          collected_at: string
+          fixture_id: number
+          fixture_kickoff?: string | null
+          handicap?: string | null
+          id?: number
+          market_description?: string | null
+          market_id?: number | null
+          odds?: number | null
+          odds_probability_raw?: number | null
+          selection?: string | null
+          source_updated_at?: string | null
+        }
+        Update: {
+          bookmaker_id?: number | null
+          collected_at?: string
+          fixture_id?: number
+          fixture_kickoff?: string | null
+          handicap?: string | null
+          id?: number
+          market_description?: string | null
+          market_id?: number | null
+          odds?: number | null
+          odds_probability_raw?: number | null
+          selection?: string | null
+          source_updated_at?: string | null
+        }
+        Relationships: []
+      }
+      fantasy_ops_state: {
+        Row: {
+          alerted_at: string
+          fingerprint: string
+          guard: string
+          gw: number
+        }
+        Insert: {
+          alerted_at?: string
+          fingerprint: string
+          guard: string
+          gw: number
+        }
+        Update: {
+          alerted_at?: string
+          fingerprint?: string
+          guard?: string
+          gw?: number
+        }
+        Relationships: []
+      }
+      fantasy_player_prices: {
+        Row: {
+          gw: number
+          player_id: number
+          price_tenths: number
+          updated_at: string
+        }
+        Insert: {
+          gw: number
+          player_id: number
+          price_tenths: number
+          updated_at?: string
+        }
+        Update: {
+          gw?: number
+          player_id?: number
+          price_tenths?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1560,14 +2439,120 @@ export type Database = {
         }
         Relationships: []
       }
+      fantasy_predicted_xi: {
+        Row: {
+          club_id: number
+          fetched_at: string
+          gw: number
+          xi: Json
+        }
+        Insert: {
+          club_id: number
+          fetched_at?: string
+          gw: number
+          xi: Json
+        }
+        Update: {
+          club_id?: number
+          fetched_at?: string
+          gw?: number
+          xi?: Json
+        }
+        Relationships: []
+      }
+      fantasy_scout_picks: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          backups: Json
+          category: string
+          copy_source: string
+          data_cutoff: string
+          expires_at: string
+          facts: Json
+          generated_at: string
+          gw: number
+          id: string
+          player_id: number
+          published_at: string | null
+          reasons: Json
+          rejected_reason: string | null
+          risk: string | null
+          signal: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          backups?: Json
+          category: string
+          copy_source?: string
+          data_cutoff: string
+          expires_at: string
+          facts: Json
+          generated_at?: string
+          gw: number
+          id?: string
+          player_id: number
+          published_at?: string | null
+          reasons: Json
+          rejected_reason?: string | null
+          risk?: string | null
+          signal: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          backups?: Json
+          category?: string
+          copy_source?: string
+          data_cutoff?: string
+          expires_at?: string
+          facts?: Json
+          generated_at?: string
+          gw?: number
+          id?: string
+          player_id?: number
+          published_at?: string | null
+          reasons?: Json
+          rejected_reason?: string | null
+          risk?: string | null
+          signal?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      fantasy_shortlist: {
+        Row: {
+          created_at: string
+          player_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          player_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          player_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       fantasy_squads: {
         Row: {
           bank_tenths: number
           bench: number[]
           captain: number
+          chip_log: Json
           created_at: string
           created_gw: number
           credits: number
+          pending_credits: number
+          pending_gameday_done: boolean
+          pending_source: string | null
           picks: Json
           updated_at: string
           user_id: string
@@ -1579,9 +2564,13 @@ export type Database = {
           bank_tenths: number
           bench: number[]
           captain: number
+          chip_log?: Json
           created_at?: string
           created_gw: number
           credits?: number
+          pending_credits?: number
+          pending_gameday_done?: boolean
+          pending_source?: string | null
           picks: Json
           updated_at?: string
           user_id: string
@@ -1593,9 +2582,13 @@ export type Database = {
           bank_tenths?: number
           bench?: number[]
           captain?: number
+          chip_log?: Json
           created_at?: string
           created_gw?: number
           credits?: number
+          pending_credits?: number
+          pending_gameday_done?: boolean
+          pending_source?: string | null
           picks?: Json
           updated_at?: string
           user_id?: string
@@ -1667,6 +2660,171 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      game_duels: {
+        Row: {
+          bar_final: number | null
+          challenger_id: string
+          challenger_timeline: Json
+          code: string | null
+          completed_at: string | null
+          created_at: string
+          game: string
+          id: string
+          mode: string
+          opponent_id: string | null
+          opponent_kind: string
+          opponent_timeline: Json
+          seed: string
+          shadow_persona: Json | null
+          shadow_run_id: string | null
+          status: string
+          winner_id: string | null
+        }
+        Insert: {
+          bar_final?: number | null
+          challenger_id: string
+          challenger_timeline?: Json
+          code?: string | null
+          completed_at?: string | null
+          created_at?: string
+          game: string
+          id?: string
+          mode: string
+          opponent_id?: string | null
+          opponent_kind?: string
+          opponent_timeline?: Json
+          seed: string
+          shadow_persona?: Json | null
+          shadow_run_id?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Update: {
+          bar_final?: number | null
+          challenger_id?: string
+          challenger_timeline?: Json
+          code?: string | null
+          completed_at?: string | null
+          created_at?: string
+          game?: string
+          id?: string
+          mode?: string
+          opponent_id?: string | null
+          opponent_kind?: string
+          opponent_timeline?: Json
+          seed?: string
+          shadow_persona?: Json | null
+          shadow_run_id?: string | null
+          status?: string
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_duels_shadow_run_id_fkey"
+            columns: ["shadow_run_id"]
+            isOneToOne: false
+            referencedRelation: "game_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_runs: {
+        Row: {
+          correct_count: number
+          created_at: string
+          finished: boolean
+          game: string
+          id: string
+          seed: string
+          timeline: Json
+          user_id: string | null
+        }
+        Insert: {
+          correct_count?: number
+          created_at?: string
+          finished?: boolean
+          game: string
+          id?: string
+          seed: string
+          timeline?: Json
+          user_id?: string | null
+        }
+        Update: {
+          correct_count?: number
+          created_at?: string
+          finished?: boolean
+          game?: string
+          id?: string
+          seed?: string
+          timeline?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      game_scores: {
+        Row: {
+          correct_count: number
+          created_at: string
+          fastest_ms: number | null
+          game: string
+          id: string
+          max_score: number
+          score: number
+          seed: string
+          topic: string
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          correct_count: number
+          created_at?: string
+          fastest_ms?: number | null
+          game: string
+          id?: string
+          max_score: number
+          score: number
+          seed: string
+          topic?: string
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          correct_count?: number
+          created_at?: string
+          fastest_ms?: number | null
+          game?: string
+          id?: string
+          max_score?: number
+          score?: number
+          seed?: string
+          topic?: string
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "game_scores_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       group_challenge_participants: {
         Row: {
@@ -1765,7 +2923,9 @@ export type Database = {
           challenger_name: string
           challenger_score: number
           created_at: string | null
+          duel_id: string | null
           expires_at: string | null
+          game: string
           id: string
           invited_user_id: string | null
           max_score: number
@@ -1787,7 +2947,9 @@ export type Database = {
           challenger_name: string
           challenger_score: number
           created_at?: string | null
+          duel_id?: string | null
           expires_at?: string | null
+          game?: string
           id?: string
           invited_user_id?: string | null
           max_score: number
@@ -1809,7 +2971,9 @@ export type Database = {
           challenger_name?: string
           challenger_score?: number
           created_at?: string | null
+          duel_id?: string | null
           expires_at?: string | null
+          game?: string
           id?: string
           invited_user_id?: string | null
           max_score?: number
@@ -1823,6 +2987,228 @@ export type Database = {
           seen_by_opponent?: boolean
           status?: string
           total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "h2h_challenges_duel_id_fkey"
+            columns: ["duel_id"]
+            isOneToOne: false
+            referencedRelation: "game_duels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      halftime_control: {
+        Row: {
+          fresh_kill: boolean
+          matchday: string
+          updated_at: string
+        }
+        Insert: {
+          fresh_kill?: boolean
+          matchday: string
+          updated_at?: string
+        }
+        Update: {
+          fresh_kill?: boolean
+          matchday?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      halftime_heartbeat: {
+        Row: {
+          beat_at: string
+          detail: Json | null
+          id: string
+        }
+        Insert: {
+          beat_at: string
+          detail?: Json | null
+          id: string
+        }
+        Update: {
+          beat_at?: string
+          detail?: Json | null
+          id?: string
+        }
+        Relationships: []
+      }
+      halftime_prediction_results: {
+        Row: {
+          away_goals: number
+          fixture_id: number
+          home_goals: number
+          phase: string
+          result: string
+          settled_at: string
+        }
+        Insert: {
+          away_goals: number
+          fixture_id: number
+          home_goals: number
+          phase?: string
+          result: string
+          settled_at?: string
+        }
+        Update: {
+          away_goals?: number
+          fixture_id?: number
+          home_goals?: number
+          phase?: string
+          result?: string
+          settled_at?: string
+        }
+        Relationships: []
+      }
+      halftime_predictions: {
+        Row: {
+          correct: boolean | null
+          created_at: string
+          fixture_id: number
+          pack_id: string | null
+          phase: string
+          pick: string
+          user_id: string
+        }
+        Insert: {
+          correct?: boolean | null
+          created_at?: string
+          fixture_id: number
+          pack_id?: string | null
+          phase?: string
+          pick: string
+          user_id: string
+        }
+        Update: {
+          correct?: boolean | null
+          created_at?: string
+          fixture_id?: number
+          pack_id?: string | null
+          phase?: string
+          pick?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "halftime_predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "halftime_predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "halftime_predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      halftime_releases: {
+        Row: {
+          away: string
+          base_questions: Json | null
+          created_at: string
+          fixture_id: number
+          fresh_questions: Json | null
+          fresh_state: string
+          gameweek: number | null
+          home: string
+          id: string
+          kickoff_at: string
+          kind: string
+          pack_id: string | null
+          pack_questions: Json | null
+          publish_at: string | null
+          published_at: string | null
+          questions: Json | null
+          released_at: string | null
+          round_name: string | null
+          season_id: number | null
+          second_half_started_at: string | null
+          state: string
+          telegram_message_id: number | null
+          updated_at: string
+          veto_deadline_at: string | null
+        }
+        Insert: {
+          away: string
+          base_questions?: Json | null
+          created_at?: string
+          fixture_id: number
+          fresh_questions?: Json | null
+          fresh_state?: string
+          gameweek?: number | null
+          home: string
+          id?: string
+          kickoff_at: string
+          kind?: string
+          pack_id?: string | null
+          pack_questions?: Json | null
+          publish_at?: string | null
+          published_at?: string | null
+          questions?: Json | null
+          released_at?: string | null
+          round_name?: string | null
+          season_id?: number | null
+          second_half_started_at?: string | null
+          state?: string
+          telegram_message_id?: number | null
+          updated_at?: string
+          veto_deadline_at?: string | null
+        }
+        Update: {
+          away?: string
+          base_questions?: Json | null
+          created_at?: string
+          fixture_id?: number
+          fresh_questions?: Json | null
+          fresh_state?: string
+          gameweek?: number | null
+          home?: string
+          id?: string
+          kickoff_at?: string
+          kind?: string
+          pack_id?: string | null
+          pack_questions?: Json | null
+          publish_at?: string | null
+          published_at?: string | null
+          questions?: Json | null
+          released_at?: string | null
+          round_name?: string | null
+          season_id?: number | null
+          second_half_started_at?: string | null
+          state?: string
+          telegram_message_id?: number | null
+          updated_at?: string
+          veto_deadline_at?: string | null
+        }
+        Relationships: []
+      }
+      halftime_reminders: {
+        Row: {
+          created_at: string
+          fixture_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fixture_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fixture_id?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -2116,141 +3502,107 @@ export type Database = {
         }
         Relationships: []
       }
-      p10_players: {
+      notifications: {
         Row: {
-          id: number
-          name: string
-          normalized: string
-          source: string | null
+          actor_id: string | null
+          body: string | null
+          comment_id: string | null
           created_at: string
-        }
-        Insert: {
-          id: number
-          name: string
-          normalized: string
-          source?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: number
-          name?: string
-          normalized?: string
-          source?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      p10_lists: {
-        Row: {
+          dedupe_key: string | null
           id: string
-          title: string
-          day: string | null
-          status: string
-          entries: Json
-          created_at: string
+          like_count: number
+          subject_id: string | null
+          subject_type: string | null
+          title: string | null
+          type: string
+          updated_at: string
+          url: string
+          user_id: string | null
         }
         Insert: {
-          id?: string
-          title: string
-          day?: string | null
-          status?: string
-          entries?: Json
+          actor_id?: string | null
+          body?: string | null
+          comment_id?: string | null
           created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          like_count?: number
+          subject_id?: string | null
+          subject_type?: string | null
+          title?: string | null
+          type: string
+          updated_at?: string
+          url: string
+          user_id?: string | null
         }
         Update: {
-          id?: string
-          title?: string
-          day?: string | null
-          status?: string
-          entries?: Json
+          actor_id?: string | null
+          body?: string | null
+          comment_id?: string | null
           created_at?: string
-        }
-        Relationships: []
-      }
-      game_scores: {
-        Row: {
-          id: string
-          user_id: string
-          game: string
-          topic: string
-          seed: string
-          score: number
-          max_score: number
-          correct_count: number
-          total_questions: number
-          fastest_ms: number | null
-          created_at: string
-        }
-        Insert: {
+          dedupe_key?: string | null
           id?: string
-          user_id: string
-          game: string
-          topic?: string
-          seed: string
-          score: number
-          max_score: number
-          correct_count: number
-          total_questions: number
-          fastest_ms?: number | null
-          created_at?: string
+          like_count?: number
+          subject_id?: string | null
+          subject_type?: string | null
+          title?: string | null
+          type?: string
+          updated_at?: string
+          url?: string
+          user_id?: string | null
         }
-        Update: {
-          id?: string
-          user_id?: string
-          game?: string
-          topic?: string
-          seed?: string
-          score?: number
-          max_score?: number
-          correct_count?: number
-          total_questions?: number
-          fastest_ms?: number | null
-          created_at?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       p10_attempts: {
         Row: {
-          id: string
-          list_id: string
-          user_id: string | null
+          created_at: string
+          done: boolean
           found: Json
           hints: Json
+          id: string
+          list_id: string
+          score: number
+          share_token: string
           strikes: number
           tokens_left: number
-          score: number
-          done: boolean
-          share_token: string
-          created_at: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
+          created_at?: string
+          done?: boolean
+          found?: Json
+          hints?: Json
           id?: string
           list_id: string
-          user_id?: string | null
-          found?: Json
-          hints?: Json
+          score?: number
+          share_token?: string
           strikes?: number
           tokens_left?: number
-          score?: number
-          done?: boolean
-          share_token?: string
-          created_at?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
-          id?: string
-          list_id?: string
-          user_id?: string | null
+          created_at?: string
+          done?: boolean
           found?: Json
           hints?: Json
+          id?: string
+          list_id?: string
+          score?: number
+          share_token?: string
           strikes?: number
           tokens_left?: number
-          score?: number
-          done?: boolean
-          share_token?: string
-          created_at?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2266,7 +3618,194 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
+          },
+          {
+            foreignKeyName: "p10_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "p10_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      p10_lists: {
+        Row: {
+          created_at: string
+          day: string | null
+          entries: Json
+          id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          day?: string | null
+          entries?: Json
+          id?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          day?: string | null
+          entries?: Json
+          id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      p10_players: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          normalized: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: number
+          name: string
+          normalized: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+          normalized?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
+      pl_briefings: {
+        Row: {
+          date: string
+          doc: Json
+          updated_at: string
+        }
+        Insert: {
+          date: string
+          doc: Json
+          updated_at?: string
+        }
+        Update: {
+          date?: string
+          doc?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pl_news_feed: {
+        Row: {
+          doc: Json
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          doc?: Json
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          doc?: Json
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      player_game_counts: {
+        Row: {
+          games: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          games?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          games?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_game_counts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_game_counts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "player_game_counts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      product_feedback: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "product_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       profiles: {
@@ -2280,7 +3819,9 @@ export type Database = {
           first_play_at: string | null
           games_played: number | null
           id: string
+          is_seed: boolean
           notifications_opt_in: boolean
+          notifications_read_at: string | null
           referrer: string | null
           social_handle: string | null
           social_platform: string | null
@@ -2302,7 +3843,9 @@ export type Database = {
           first_play_at?: string | null
           games_played?: number | null
           id: string
+          is_seed?: boolean
           notifications_opt_in?: boolean
+          notifications_read_at?: string | null
           referrer?: string | null
           social_handle?: string | null
           social_platform?: string | null
@@ -2324,7 +3867,9 @@ export type Database = {
           first_play_at?: string | null
           games_played?: number | null
           id?: string
+          is_seed?: boolean
           notifications_opt_in?: boolean
+          notifications_read_at?: string | null
           referrer?: string | null
           social_handle?: string | null
           social_platform?: string | null
@@ -2395,6 +3940,7 @@ export type Database = {
           entity: string
           entity_type: string
           era: string | null
+          fact_key: string | null
           id: string
           options: Json
           question: string
@@ -2414,6 +3960,7 @@ export type Database = {
           entity: string
           entity_type: string
           era?: string | null
+          fact_key?: string | null
           id?: string
           options: Json
           question: string
@@ -2433,6 +3980,7 @@ export type Database = {
           entity?: string
           entity_type?: string
           era?: string | null
+          fact_key?: string | null
           id?: string
           options?: Json
           question?: string
@@ -2528,8 +4076,28 @@ export type Database = {
           },
         ]
       }
+      quiz_highlights: {
+        Row: {
+          doc: Json
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          doc?: Json
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          doc?: Json
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quiz_packs: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -2544,17 +4112,21 @@ export type Database = {
           play_count: number
           question_count: number | null
           questions: Json
+          release_at: string | null
           rotation_active: boolean | null
           rotation_order: number | null
           source: string
           status: string
           tags: string[] | null
+          theme: string | null
           title: string | null
           type: string
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -2569,17 +4141,21 @@ export type Database = {
           play_count?: number
           question_count?: number | null
           questions: Json
+          release_at?: string | null
           rotation_active?: boolean | null
           rotation_order?: number | null
           source?: string
           status?: string
           tags?: string[] | null
+          theme?: string | null
           title?: string | null
           type: string
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -2594,11 +4170,13 @@ export type Database = {
           play_count?: number
           question_count?: number | null
           questions?: Json
+          release_at?: string | null
           rotation_active?: boolean | null
           rotation_order?: number | null
           source?: string
           status?: string
           tags?: string[] | null
+          theme?: string | null
           title?: string | null
           type?: string
           updated_at?: string | null
@@ -2638,6 +4216,84 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      review_prompts: {
+        Row: {
+          created_at: string
+          games_at: number | null
+          id: string
+          outcome: string | null
+          surface: string
+          user_id: string
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          games_at?: number | null
+          id?: string
+          outcome?: string | null
+          surface: string
+          user_id: string
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          games_at?: number | null
+          id?: string
+          outcome?: string | null
+          surface?: string
+          user_id?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "review_prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      room_answers: {
+        Row: {
+          answers: Json
+          created_at: string
+          room_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          room_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_answers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: true
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_members: {
         Row: {
@@ -2777,6 +4433,7 @@ export type Database = {
       }
       rooms: {
         Row: {
+          answers_json: Json | null
           category_filter: string | null
           code: string
           completed_at: string | null
@@ -2803,6 +4460,7 @@ export type Database = {
           whatsapp_channel_id: string | null
         }
         Insert: {
+          answers_json?: Json | null
           category_filter?: string | null
           code: string
           completed_at?: string | null
@@ -2829,6 +4487,7 @@ export type Database = {
           whatsapp_channel_id?: string | null
         }
         Update: {
+          answers_json?: Json | null
           category_filter?: string | null
           code?: string
           completed_at?: string | null
@@ -2912,6 +4571,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_follows: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+        }
+        Relationships: []
+      }
       user_question_history: {
         Row: {
           correct: boolean | null
@@ -2946,6 +4623,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      waitlist_emails: {
+        Row: {
+          created_at: string
+          email: string
+          source: string
+          synced_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          source?: string
+          synced_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          source?: string
+          synced_at?: string | null
+        }
+        Relationships: []
       }
       wc_ranked_edition: {
         Row: {
@@ -3003,8 +4701,141 @@ export type Database = {
           },
         ]
       }
+      wc_thanks_prompts: {
+        Row: {
+          cohort: string
+          created_at: string
+          feedback_done_at: string | null
+          review_done_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cohort?: string
+          created_at?: string
+          feedback_done_at?: string | null
+          review_done_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cohort?: string
+          created_at?: string
+          feedback_done_at?: string | null
+          review_done_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wc_thanks_prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wc_thanks_prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_email_segments"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "wc_thanks_prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "yourscore_user_ratings"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
+      fantasy_captain_exclusions: {
+        Row: {
+          excluded_reason: string | null
+          gameweek: number | null
+          rows: number | null
+        }
+        Relationships: []
+      }
+      fantasy_captain_rehearsal: {
+        Row: {
+          confidence: string | null
+          deadline_captain: number | null
+          deadline_vice: number | null
+          difference: number | null
+          eligible: boolean | null
+          excluded_reason: string | null
+          exposure: string | null
+          gameweek: number | null
+          model_identity: string | null
+          recommended_captain: number | null
+          recommended_effective_points: number | null
+          recommended_vice: number | null
+          recommended_vice_activated: boolean | null
+          status: string | null
+          user_effective_points: number | null
+          user_vice_activated: boolean | null
+        }
+        Insert: {
+          confidence?: string | null
+          deadline_captain?: number | null
+          deadline_vice?: number | null
+          difference?: number | null
+          eligible?: boolean | null
+          excluded_reason?: string | null
+          exposure?: string | null
+          gameweek?: number | null
+          model_identity?: string | null
+          recommended_captain?: number | null
+          recommended_effective_points?: number | null
+          recommended_vice?: number | null
+          recommended_vice_activated?: boolean | null
+          status?: string | null
+          user_effective_points?: number | null
+          user_vice_activated?: boolean | null
+        }
+        Update: {
+          confidence?: string | null
+          deadline_captain?: number | null
+          deadline_vice?: number | null
+          difference?: number | null
+          eligible?: boolean | null
+          excluded_reason?: string | null
+          exposure?: string | null
+          gameweek?: number | null
+          model_identity?: string | null
+          recommended_captain?: number | null
+          recommended_effective_points?: number | null
+          recommended_vice?: number | null
+          recommended_vice_activated?: boolean | null
+          status?: string | null
+          user_effective_points?: number | null
+          user_vice_activated?: boolean | null
+        }
+        Relationships: []
+      }
+      fantasy_captain_shadow_summary: {
+        Row: {
+          confidence: string | null
+          eligible: number | null
+          eligible_pct: number | null
+          exposure: string | null
+          followed_pct: number | null
+          gameweek: number | null
+          mean_uplift: number | null
+          model_identity: string | null
+          rec_appeared_pct: number | null
+          rec_vice_activations: number | null
+          recommendations: number | null
+          total_uplift: number | null
+          user_appeared_pct: number | null
+          user_vice_activations: number | null
+          weeks_better: number | null
+          weeks_same: number | null
+          weeks_worse: number | null
+        }
+        Relationships: []
+      }
       user_email_segments: {
         Row: {
           active_hour_utc: number | null
@@ -3058,29 +4889,7 @@ export type Database = {
         Args: { p_penalty: number; p_room_id: string; p_user_ids: string[] }
         Returns: undefined
       }
-      game_board: {
-        Args: { p_game: string; p_limit?: number }
-        Returns: {
-          user_id: string
-          username: string | null
-          avatar_url: string | null
-          best: number
-          plays: number
-          best_at: string
-        }[]
-      }
-      game_my_standing: {
-        Args: { p_game: string; p_user: string }
-        Returns: {
-          best: number | null
-          plays: number
-          rank: number | null
-        }[]
-      }
-      game_rank: {
-        Args: { p_game: string; p_score: number }
-        Returns: number
-      }
+      bump_player_games: { Args: { p_user: string }; Returns: number }
       check_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
         Returns: boolean
@@ -3225,6 +5034,65 @@ export type Database = {
           wins: number
         }[]
       }
+      fantasy_collect_tick: { Args: never; Returns: undefined }
+      fantasy_global_standings: {
+        Args: { p_gws: number[]; p_limit?: number; p_viewer: string }
+        Returns: {
+          is_viewer: boolean
+          knowledge: number
+          last_gw_points: number
+          played: number
+          points: number
+          rank: number
+          total_players: number
+          user_id: string
+        }[]
+      }
+      fantasy_rank_jumps: {
+        Args: { p_gw: number; p_min_jump: number }
+        Returns: {
+          after_rank: number
+          jump: number
+          user_id: string
+        }[]
+      }
+      game_board: {
+        Args: { p_game: string; p_limit?: number }
+        Returns: {
+          avatar_url: string
+          best: number
+          best_at: string
+          plays: number
+          user_id: string
+          username: string
+        }[]
+      }
+      game_my_standing: {
+        Args: { p_game: string; p_user: string }
+        Returns: {
+          best: number
+          plays: number
+          rank: number
+        }[]
+      }
+      game_rank: { Args: { p_game: string; p_score: number }; Returns: number }
+      get_best_quiz: {
+        Args: { p_user_id: string }
+        Returns: {
+          correct: number
+          title: string
+          total: number
+        }[]
+      }
+      get_best_wc_run: {
+        Args: { p_user_id: string }
+        Returns: {
+          champion: boolean
+          games: number
+          nation: string
+          wins: number
+        }[]
+      }
       get_club_league_feed: {
         Args: { p_league_id: string; p_limit?: number }
         Returns: {
@@ -3234,6 +5102,24 @@ export type Database = {
           display_name: string
           kind: string
           user_id: string
+        }[]
+      }
+      get_daily_p10_stats: {
+        Args: { p_list_id: string }
+        Returns: {
+          avg_score: number
+          hardest_correct_pct: number
+          hardest_rank: number
+          players: number
+        }[]
+      }
+      get_daily_pack_stats: {
+        Args: { p_pack_id: string }
+        Returns: {
+          avg_score: number
+          hardest_correct_pct: number
+          hardest_idx: number
+          players: number
         }[]
       }
       get_email_segments: { Args: never; Returns: Json }
@@ -3257,6 +5143,13 @@ export type Database = {
           my_rank: number
           my_score: number
           name: string
+        }[]
+      }
+      get_profile_accuracy: {
+        Args: { p_user_id: string }
+        Returns: {
+          correct: number
+          total: number
         }[]
       }
       get_segment_all_sendable: {
@@ -3410,6 +5303,17 @@ export type Database = {
           created_at: string
           id: string
           run_id: string
+        }[]
+      }
+      get_yourscore_ladder: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          is_me: boolean
+          overall_rank: number
+          overall_score: number
+          user_id: string
         }[]
       }
       get_yourscore_leaderboard: {
@@ -3589,6 +5493,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
