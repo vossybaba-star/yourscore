@@ -25,13 +25,25 @@ const LINE = "rgba(255,255,255,0.08)";
 const INK = "#e8ede9";
 const MUTED = "#8a948f";
 
+/**
+ * Top padding INCLUDING the iOS status bar.
+ *
+ * This screen has no GamesNav above it, so the back pill sits at the very top of
+ * the viewport and a plain `pt-4` puts it under the Dynamic Island, where it
+ * can't be tapped. Exactly the bug already reported and fixed on /club — see the
+ * pt-safe note in src/app/club/[slug]/page.tsx. Written as a calc rather than
+ * the `.pt-safe` class because that class and Tailwind's `pt-4` both set
+ * padding-top, and which one wins depends on stylesheet order.
+ */
+const TOP_PAD = "calc(1rem + env(safe-area-inset-top, 0px))";
+
 export function BriefingView({ briefing }: { briefing: PlBriefing | null }) {
   // Captured once so every relative label on the page agrees on one clock.
   const [now] = useState(() => Date.now());
 
   if (!briefing || briefing.stories.length === 0) {
     return (
-      <div className="max-w-lg mx-auto px-4 pt-4" style={{ display: "grid", gap: 14 }}>
+      <div className="max-w-lg mx-auto px-4" style={{ display: "grid", gap: 14, paddingTop: TOP_PAD }}>
         {/* A flex row, not justifySelf: the pill computes to `display: flex`
             rather than the inline-flex its class asks for, so it fills whatever
             it is given. A flex parent sizes it to its content. */}
@@ -49,7 +61,7 @@ export function BriefingView({ briefing }: { briefing: PlBriefing | null }) {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 pt-4 pb-10" style={{ display: "grid", gap: 16 }}>
+    <div className="max-w-lg mx-auto px-4 pb-10" style={{ display: "grid", gap: 16, paddingTop: TOP_PAD }}>
       <div style={{ display: "flex" }}>
         <BackPill fallback="/matchweek" tone="play" />
       </div>
