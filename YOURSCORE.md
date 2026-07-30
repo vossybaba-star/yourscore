@@ -685,6 +685,23 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-07-30** — **Fantasy: import your FPL squad by team ID** (branch `feat/fpl-import`, NOT on
+  `main`). A collapsible "Import your FPL squad" card on the squad builder (same pattern as Start
+  fast): paste a team ID or any FPL URL containing `/entry/<id>` and the real FPL 15 lands on the
+  pitch at OUR prices, captain/vice/bench preserved; confirm goes through the untouched
+  `createSquad` validation (identical rules: 15, 2/5/5/3, £100m, max 3/club). Works because **pool
+  ids ARE live FPL element ids** (pool = FPL ∩ SportMonks, 522 of 564 elements); unmatched players
+  are named via the existing 6h-cached bootstrap helper and left as gaps to fill. New pure mapper
+  `src/lib/fantasy/fplImport.ts` (+6 tests), stateless read-only route
+  `/api/fantasy/fpl-import` (auth + allowlist + rate limit via `withFantasyUser`; 8s timeout;
+  friendly `ready:false` for preseason/pre-deadline — FPL 404s picks until each GW's deadline
+  passes, so the import only lights up once GW1 locks ~21 Aug). **Privacy rule:** the route never
+  reads, logs, or returns the FPL manager's real name, only the team name, and stores nothing.
+  Target audience: FPL players with a bad start wanting a monthly game — the import kills the
+  blank-slate re-entry cost. ⚠️ The happy path cannot be exercised end-to-end until FPL's GW1
+  deadline passes (every picks call 404s today); re-check live on deadline day. Marketing copy must
+  never lean on FPL branding (founder-locked); in-app naming is fine.
+
 - **2026-07-30** — **Comment push notifications, deep links, and a public quiz thread page.** Stage 3
   of 3, no migration. **Push** (native, opt-in respected, via `notifyUsers`): a like pushes only on
   the **first** like of a comment, forever (dedupe key `comment-like:<commentId>` in
