@@ -701,6 +701,46 @@ Confirmed preamble above and the referenced section.
   play (`/challenges/<slug>?pid=<packId>`), not multiplayer matchmaking. A debate deep link whose
   comment belongs to an older debate lands cleanly on the **current day's** debate (the page always
   renders today's; the missing target is a silent no-op, verified: 200, no errors, nothing leaked).
+- **2026-07-30** — **PL News: a half-view sheet instead of a browser tab, and a feed that is
+  actually PL.** Tapping a card in Matchweek → PL → News no longer punts the reader out to the
+  outlet. It opens **`PlNewsSheet`** over the feed: hero image, source and time, headline, and the
+  outlet's own standfirst, with **Read the full story** (the only thing that leaves the app) and
+  **Share**. **Swipe up for the next story, swipe down to close**; the sheet walks the list as the
+  active chip filters it. On the pull-in side: **two new desks** (Sky Sports' PL feed, The Standard)
+  alongside BBC and Guardian, every item now carries the feed's `<description>` as **`summary`**
+  (free — it was being fetched and thrown away, so no model cost), and a **`isPremierLeague` gate at
+  the ingest** keeps the PL tab to PL stories (was: all football, World Cup and Scottish Prem
+  included). Two bugs fixed on the way — a Sky `pubDate` of "…BST" threw on `.toISOString()` and
+  silently killed that whole source, and numeric entities went unrendered ("&#163;51m"). (§7)
+- **2026-07-30** — **The half-view sheet is now shared, and the Fantasy feed uses it too.**
+  `PlNewsSheet` became **`src/components/news/NewsSheet.tsx`**, fed a neutral `SheetStory` shape so
+  each feed maps its own items and keeps its own clock. Fantasy news cards were still links straight
+  out to a browser tab — the exact thing the PL feed had just stopped doing — and now open the same
+  sheet. **Tweets** get the treatment too: gold handle and accent (as everywhere else a tweet
+  appears), the text set as body copy rather than a headline, and a **"Read on X"** primary button.
+  Swiping stays **inside the section you tapped** (team news vs transfers) — sliding from one into
+  the other mid-swipe reads as a bug. (§7)
+- **2026-07-30** — **PL News reads NINE desks, and feed parsing moves to `src/lib/rss.ts`.** Added
+  **FootballLondon, Football365, Sports Mole, Sport Witness and SPORTbible** to BBC, Guardian, Sky
+  and the Standard. Three things had to be built for them: **Atom support** (SPORTbible publish
+  `<entry>` from `index.rss`, not `<item>`, and the old parser silently returned zero for it), an
+  **image fallback to the first real `<img>` in `content:encoded`** (WordPress desks ship no media
+  tags, so they rendered as walls of text), and a **`requireCategory`** filter (SPORTbible run NBA
+  and UFC through the same feed). A **per-desk cap of 8** stops Sports Mole's ~148 items a pull from
+  owning the feed. Measured live: **40 items, 38 with an image, 40 with a summary**, all nine desks
+  represented, and every image host verified to load in-browser. `scripts/pl-news-ingest.mjs` now
+  **imports the real source list and gate from `src/`** (node strips the types) instead of carrying
+  hand-synced copies that had already drifted. **Goal.com and FootballTransfers.com publish no feed
+  at all** and were left out — they would need scraping. (§7)
+- **2026-07-30** — **Fantasy desks feed the fantasy river, not PL news.** **Fantasy Football Scout**
+  and **FantasyFootball247** land in `fantasy_news_items` (topic `general` → "Transfers & talk") via
+  a new `ingestFantasyRss` called from the existing hourly `/api/cron/fantasy-news` — no new cron,
+  no new trust boundary. They stay OUT of PL news on purpose: that feed is general football, tips
+  and price talk belong to the Fantasy tab. Rows carry the story's **own publish time** (defaulting
+  to `now()` would stamp a three-day-old post as "just now") and a **14-day cutoff** drops the May
+  and June posts still sitting in FF247's feed. Note: **Fantasy Football Scout's RSS carries no
+  image in any field**, so their cards are text-only — nothing to fix in code, the data isn't
+  there. (§7)
 - **2026-07-30** — **In-app notification inbox: bell in the home header + `/notifications`** (migration
   222). Stage 2 of 3 on the comment layer. A **bell** sits in the Dashboard header beside the profile
   circle with a lime dot when anything is unread, computed **server-side** inside the home page's
