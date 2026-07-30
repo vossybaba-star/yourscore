@@ -6,6 +6,7 @@
  * snapshots. Points show once a gameweek is scored.
  */
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 import type { WeeklyTeam } from "@/lib/fantasy/profileTeams";
@@ -18,6 +19,7 @@ export function ProfileFantasyTeams({ teams, players }: {
   teams: WeeklyTeam[];
   players: BoardPlayer[];
 }) {
+  const router = useRouter();
   const [sel, setSel] = useState(0);
   const team = teams[sel] ?? teams[0];
   const byId = new Map(players.map((p) => [p.id, p]));
@@ -56,6 +58,8 @@ export function ProfileFantasyTeams({ teams, players }: {
         )}
       </div>
 
+      {/* Tap any player to open their profile as a real route, so back returns
+          here to the squad (and on again to the feed). */}
       <SquadBoard
         mode="complete"
         players={players}
@@ -63,7 +67,11 @@ export function ProfileFantasyTeams({ teams, players }: {
         bench={team.bench}
         captain={team.captain ?? undefined}
         vice={team.vice ?? undefined}
+        onSlot={(id) => router.push(`/fantasy/players/${id}`)}
       />
+      <p className="font-body" style={{ fontSize: 11.5, color: MUTED, marginTop: 8, textAlign: "center" }}>
+        Tap a player to see their profile.
+      </p>
     </div>
   );
 }

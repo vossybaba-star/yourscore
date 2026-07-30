@@ -266,9 +266,12 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
           ))}
         </div>
 
-        {/* Their fantasy teams, week by week */}
+        {/* Their fantasy teams, week by week. `id` is the scroll target for the
+            feed's "See their squad" tap, so a squad share lands on the squad. */}
         {fantasy.teams.length > 0 && (
-          <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+          <div id="fantasy-xi" style={{ scrollMarginTop: 16 }}>
+            <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+          </div>
         )}
 
         {/* Recent head-to-heads */}

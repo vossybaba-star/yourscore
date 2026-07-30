@@ -9,8 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { INK, LINE, MUTED, PANEL, TEAL, tint, page, Sheet } from "@/components/fantasy/shared";
-import { PlayerProfile } from "@/components/fantasy/PlayerProfile";
+import { INK, LINE, MUTED, PANEL, TEAL, tint, page } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
@@ -44,7 +43,6 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
   const [liked, setLiked] = useState(ev.likedByMe);
   const [likes, setLikes] = useState(ev.likeCount);
   const [open, setOpen] = useState(false);
-  const [playerOpen, setPlayerOpen] = useState(false);
 
   const toggleLike = useCallback(async () => {
     const next = !liked;
@@ -92,9 +90,11 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
       </div>
 
       {/* Squad-complete tiles render the real pitch board — positions + crests,
-          exactly like the squad picker, captain ringed gold. */}
+          exactly like the squad picker, captain ringed gold. The whole board is a
+          link INTO this manager's profile squad, where each player is tappable and
+          the back button retraces feed → profile → player. */}
       {ev.board && ev.board.xi.length > 0 && (
-        <div style={{ marginTop: 12 }}>
+        <Link href={`/profile/${ev.actorId}#fantasy-xi`} style={{ display: "block", marginTop: 12, textDecoration: "none" }}>
           <SquadBoard
             mode="complete"
             players={ev.board.players}
@@ -103,26 +103,29 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
             captain={ev.board.captain}
             vice={ev.board.vice}
           />
-        </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 8, fontSize: 12.5, fontWeight: 700, color: TEAL }}>
+            See {ev.actorName}&apos;s squad <span aria-hidden>›</span>
+          </div>
+        </Link>
       )}
 
-      {/* Shortlist / squad-update tiles show the one player — tap to open their
-          profile (the scout player sheet). */}
+      {/* Shortlist / squad-update tiles show the one player — a link to their
+          profile ROUTE, so back returns to the feed exactly where you left it. */}
       {ev.player && (
-        <button
-          onClick={() => ev.playerId != null && setPlayerOpen(true)}
-          disabled={ev.playerId == null}
-          style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`, cursor: ev.playerId != null ? "pointer" : "default" }}>
-          <PlayerAvatar name={ev.player.name} avatarUrl={ev.player.avatarUrl} size={40} />
-          <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
-          {ev.playerId != null && <span style={{ color: MUTED, fontSize: 18 }}>›</span>}
-        </button>
-      )}
-
-      {playerOpen && ev.playerId != null && (
-        <Sheet onClose={() => setPlayerOpen(false)} labelledBy="fantasy-player-profile-name">
-          <PlayerProfile playerId={ev.playerId} onClose={() => setPlayerOpen(false)} />
-        </Sheet>
+        ev.playerId != null ? (
+          <Link
+            href={`/fantasy/players/${ev.playerId}`}
+            style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textDecoration: "none", marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}` }}>
+            <PlayerAvatar name={ev.player.name} avatarUrl={ev.player.avatarUrl} size={40} />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
+            <span style={{ color: MUTED, fontSize: 18 }}>›</span>
+          </Link>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}` }}>
+            <PlayerAvatar name={ev.player.name} avatarUrl={ev.player.avatarUrl} size={40} />
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
+          </div>
+        )
       )}
 
       <div style={{ display: "flex", gap: 16, marginTop: 12, paddingLeft: 2 }}>
