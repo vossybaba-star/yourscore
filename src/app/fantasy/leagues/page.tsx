@@ -1,21 +1,31 @@
 "use client";
-/** Leagues home — create, join by code, your leagues, and public leagues to
- *  discover. The api() helper (shared.tsx) only ever does GET-or-POST on a
- *  fixed path, so the my-leagues+public GET (which shares a path with the
- *  create POST) goes through a small local raw fetch instead. */
+/** Leagues tab — two subtabs.
+ *
+ *   Competition — the YourScore-wide comp: the monthly (e.g. August) table as the
+ *                 hero, plus the season-long table. This leads, because the monthly
+ *                 prize is what's live now (founder, 31 Jul).
+ *   My Leagues  — your private leagues with friends: create, join by code, your
+ *                 leagues, and public leagues to discover. Sign-in gated, since
+ *                 leagues save to your account.
+ *
+ * Splitting them makes it clear there's one all-round YourScore competition AND a
+ * separate area to play with your friends. The api() helper (shared.tsx) only does
+ * GET-or-POST on a fixed path, so the my-leagues+public GET goes through a small
+ * local raw fetch. */
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
   api, Btn, Card, Chip, GOLD, INK, LINE, MUTED, page, PANEL, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
-import { GlobalStandings } from "@/components/fantasy/GlobalStandings";
+import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 interface MyLeague {
   id: string; name: string; code: string; memberCount: number; isPublic: boolean; isOwner: boolean;
 }
 interface PublicLeague { id: string; name: string; code: string; memberCount: number }
+type Tab = "competition" | "leagues";
 
 async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, init);
@@ -37,6 +47,7 @@ const rowStyle: CSSProperties = {
 
 export default function LeaguesHome() {
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("competition");
   const [leagues, setLeagues] = useState<MyLeague[]>([]);
   const [publicList, setPublicList] = useState<PublicLeague[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -47,6 +58,17 @@ export default function LeaguesHome() {
   const [name, setName] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [code, setCode] = useState("");
+
+  // Restore the subtab from the URL on mount, and keep it there so back from a
+  // profile or a league returns to the same subtab.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "leagues") setTab("leagues");
+  }, []);
+  useEffect(() => {
+    const u = new URL(window.location.href);
+    u.searchParams.set("tab", tab);
+    window.history.replaceState(null, "", u);
+  }, [tab]);
 
   const refresh = useCallback(async () => {
     try {
@@ -82,19 +104,122 @@ export default function LeaguesHome() {
     } catch (e) { setErr((e as Error).message); setBusy(false); }
   };
 
-  if (needsAuth) return (
+  const myLeagues = (
     <>
-    <main data-fantasy style={page}>
-      <FantasyHeader />
-      <Card style={{ marginTop: 12 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Sign in to play with friends</div>
-        <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-          Leagues are saved to your YourScore account, so you&apos;ll need to be signed in.
-        </p>
-        <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/leagues")}>Sign in</Btn>
-      </Card>
-    </main>
-      <BottomNav />
+      {needsAuth ? (
+        <Card style={{ marginTop: 2 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Sign in to play with friends</div>
+          <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
+            Leagues are saved to your YourScore account, so you&apos;ll need to be signed in.
+          </p>
+          <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/leagues")}>Sign in</Btn>
+        </Card>
+      ) : (
+        <>
+          {/* A returning manager came to look at their tables, not fill in a form,
+              so their leagues go first and the setup cards drop below. */}
+          {leagues.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>YOUR LEAGUES</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {leagues.map((l) => (
+                  <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={rowStyle}>
+                    <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>{l.name}</span>
+                        {l.isPublic && <Chip>Public</Chip>}
+                      </span>
+                      <span style={{ fontSize: 11.5, color: MUTED }}>
+                        {l.memberCount} member{l.memberCount === 1 ? "" : "s"}
+                      </span>
+                    </span>
+                    <span style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>›</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Card style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.1em", color: GOLD, marginBottom: 8 }}>
+              CREATE A LEAGUE
+            </div>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, 40))}
+              placeholder="League name"
+              style={{ ...inputStyle, marginBottom: 8 }}
+            />
+            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+              {(["Private", "Public"] as const).map((label, i) => {
+                const wantsPublic = i === 1;
+                const active = wantsPublic === isPublic;
+                return (
+                  <button key={label} onClick={() => setIsPublic(wantsPublic)} style={{
+                    flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12.5, fontWeight: 700,
+                    cursor: "pointer", background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
+                    border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 11, color: MUTED, margin: "0 0 10px", lineHeight: 1.4 }}>
+              {isPublic
+                ? "Public: anyone can find and join this league."
+                : "Private: only people with your code can join."}
+            </p>
+            <Btn gold disabled={!name.trim() || busy} onClick={create}>
+              {busy ? "…" : "Create league"}
+            </Btn>
+          </Card>
+
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.1em", color: GOLD, marginBottom: 8 }}>
+              JOIN WITH CODE
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
+                placeholder="CODE"
+                style={{ ...inputStyle, flex: 1, letterSpacing: "0.1em" }}
+              />
+              <Btn small gold disabled={!code.trim() || busy} onClick={join}>Join</Btn>
+            </div>
+          </Card>
+
+          {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 12px" }}>{err}</p>}
+
+          {loaded && leagues.length === 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>YOUR LEAGUES</div>
+              <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>
+                No leagues yet. Create one and send your friends the code.
+              </p>
+            </div>
+          )}
+
+          <div>
+            <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>PUBLIC LEAGUES</div>
+            {loaded && publicList.length === 0 && (
+              <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No public leagues yet. Be the first.</p>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {publicList.map((l) => (
+                <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={rowStyle}>
+                  <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{l.name}</span>
+                    <span style={{ fontSize: 11.5, color: MUTED }}>
+                      {l.memberCount} member{l.memberCount === 1 ? "" : "s"}
+                    </span>
+                  </span>
+                  <span style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>›</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 
@@ -103,137 +228,21 @@ export default function LeaguesHome() {
     <main data-fantasy style={page}>
       <FantasyHeader />
 
-      {/* Month one is the headline: the August competition carries the prize, so
-          it leads the Leagues tab (founder, 30 Jul). Gold = a thing you win. */}
-      <div style={{
-        borderRadius: 16, padding: 18, marginBottom: 16, position: "relative", overflow: "hidden",
-        background: `linear-gradient(140deg, ${tint(GOLD, "22")}, ${tint(GOLD, "05")})`,
-        border: `1px solid ${tint(GOLD, "55")}`,
-      }}>
-        <div className="font-display" style={{ fontSize: 10.5, letterSpacing: "0.16em", color: GOLD, marginBottom: 7 }}>
-          MONTH ONE · THE PRIZE IS LIVE
-        </div>
-        <div className="font-display text-white" style={{ fontSize: 30, lineHeight: 0.95, letterSpacing: "-0.01em" }}>
-          AUGUST COMPETITION
-        </div>
-        <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "11px 0 0", lineHeight: 1.55, maxWidth: "92%" }}>
-          Every gameweek this month feeds one table. Finish top of the August standings to win the month one prize.
-          It resets in September, so a slow start never buries your season.
-        </p>
-        <button onClick={() => router.push("/fantasy/rules")} className="font-body"
-          style={{
-            marginTop: 14, background: GOLD, color: "#1a1204", border: "none", borderRadius: 999,
-            padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer",
-          }}>How it works</button>
+      {/* Subtabs — the YourScore-wide competition first, your own leagues second. */}
+      <div style={{ display: "flex", gap: 6, margin: "4px 0 14px" }}>
+        {([["competition", "Competition"], ["leagues", "My Leagues"]] as [Tab, string][]).map(([k, label]) => {
+          const active = tab === k;
+          return (
+            <button key={k} onClick={() => setTab(k)} style={{
+              flex: 1, padding: "10px 4px", borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
+              background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
+              border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
+            }}>{label}</button>
+          );
+        })}
       </div>
 
-      {/* Where you fall among everyone — the global table sits above your private
-          leagues (that's the headline the monthly comp is played for). */}
-      <GlobalStandings />
-
-      {/* A returning manager came to look at a table, not to fill in a form. When
-          they already have leagues, those go first and the setup cards drop
-          below; a newcomer still gets the form at the top. */}
-      {leagues.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>YOUR LEAGUES</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {leagues.map((l) => (
-              <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={rowStyle}>
-                <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700 }}>{l.name}</span>
-                    {l.isPublic && <Chip>Public</Chip>}
-                  </span>
-                  <span style={{ fontSize: 11.5, color: MUTED }}>
-                    {l.memberCount} member{l.memberCount === 1 ? "" : "s"}
-                  </span>
-                </span>
-                <span style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>›</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <Card style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.1em", color: GOLD, marginBottom: 8 }}>
-          CREATE A LEAGUE
-        </div>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value.slice(0, 40))}
-          placeholder="League name"
-          style={{ ...inputStyle, marginBottom: 8 }}
-        />
-        <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-          {(["Private", "Public"] as const).map((label, i) => {
-            const wantsPublic = i === 1;
-            const active = wantsPublic === isPublic;
-            return (
-              <button key={label} onClick={() => setIsPublic(wantsPublic)} style={{
-                flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12.5, fontWeight: 700,
-                cursor: "pointer", background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
-                border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
-              }}>{label}</button>
-            );
-          })}
-        </div>
-        <p style={{ fontSize: 11, color: MUTED, margin: "0 0 10px", lineHeight: 1.4 }}>
-          {isPublic
-            ? "Public: anyone can find and join this league."
-            : "Private: only people with your code can join."}
-        </p>
-        <Btn gold disabled={!name.trim() || busy} onClick={create}>
-          {busy ? "…" : "Create league"}
-        </Btn>
-      </Card>
-
-      <Card style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.1em", color: GOLD, marginBottom: 8 }}>
-          JOIN WITH CODE
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <input
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
-            placeholder="CODE"
-            style={{ ...inputStyle, flex: 1, letterSpacing: "0.1em" }}
-          />
-          <Btn small gold disabled={!code.trim() || busy} onClick={join}>Join</Btn>
-        </div>
-      </Card>
-
-      {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 12px" }}>{err}</p>}
-
-      {loaded && leagues.length === 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>YOUR LEAGUES</div>
-          <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>
-            No leagues yet. Create one and send your friends the code.
-          </p>
-        </div>
-      )}
-
-      <div>
-        <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>PUBLIC LEAGUES</div>
-        {loaded && publicList.length === 0 && (
-          <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No public leagues yet. Be the first.</p>
-        )}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {publicList.map((l) => (
-            <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={rowStyle}>
-              <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>{l.name}</span>
-                <span style={{ fontSize: 11.5, color: MUTED }}>
-                  {l.memberCount} member{l.memberCount === 1 ? "" : "s"}
-                </span>
-              </span>
-              <span style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>›</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {tab === "competition" ? <LeagueCompetition /> : myLeagues}
     </main>
       <BottomNav />
     </>
