@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { TEAL, tint } from "@/components/fantasy/shared";
 
-const DUGOUT_W = 68;
+// Wider than the bare avatar column: each sub now carries a position tag to its
+// right (GK/DEF/MID/FWD), so the dugout needs room for the name and the tag.
+const DUGOUT_W = 96;
 
 /**
  * The dugout — the four subs down the touchline, off the field. A labelled

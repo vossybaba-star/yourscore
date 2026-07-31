@@ -41,7 +41,7 @@ const EMBEDDED_PAGE: CSSProperties = { padding: "4px 16px 8px", color: INK };
  *  learn how any of them arrives — so the whole mechanic read as something the
  *  game might give you one day for reasons of its own. */
 const CHIP_META: { key: ChipName; label: string; blurb: string; earn: string; comingSoon?: boolean }[] = [
-  { key: "triple_captain", label: "Triple Captain", blurb: "Your captain's points count ×3, not ×2",
+  { key: "triple_captain", label: "Triple Captain", blurb: "Your captain scores ×3",
     earn: "One a month — use the other two before it comes back" },
   { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included",
     earn: "One a month — use the other two before it comes back" },

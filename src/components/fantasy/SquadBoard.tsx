@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
 import { PitchSurface } from "@/components/fantasy/board/PitchSurface";
 import { BenchStrip } from "@/components/fantasy/board/BenchStrip";
-import { LINE, MUTED, TEAL } from "@/components/fantasy/shared";
+import { LINE, MUTED, TEAL, tint } from "@/components/fantasy/shared";
 import {
   xiRows, rosterBands, datumFor, isDim,
   type BoardMode, type BoardPlayer, type LiveDatum,
@@ -48,8 +48,15 @@ export interface SquadBoardProps {
   renderMenu?: (id: number, ctx: { onBench: boolean }) => ReactNode;
 }
 
+// Bigger faces read better and show the crest clearly — the founder wants the
+// pitch to use the space. Still sized down as a row gets more crowded so five
+// across never collide. The dugout keeps a compact size (its own layout below).
+// Position tag colours for the dugout — the four subs each show what they are,
+// so it's clear who covers whom on an auto-sub. Standard fantasy position hues.
+const POS_COLOR: Record<string, string> = { GK: "#f4a63a", DEF: "#00d8c0", MID: "#8ad14f", FWD: "#ff7a85" };
+
 const sizeForRow = (n: number, onBench: boolean) =>
-  onBench ? 26 : n >= 5 ? 26 : n === 4 ? 30 : 34;
+  onBench ? 30 : n >= 5 ? 34 : n === 4 ? 40 : 46;
 
 export function SquadBoard(props: SquadBoardProps) {
   const { mode, players, doubts = {}, live = {}, selectedId, onSlot, onEmpty, menuFor, renderMenu } = props;
@@ -61,7 +68,7 @@ export function SquadBoard(props: SquadBoardProps) {
     const selected = selectedId === id;
     const ld = live[id];
     const tappable = !!onSlot;
-    const inner = (
+    const marker = (
       <PlayerMarker
         name={p?.name ?? `#${id}`}
         label={p?.label ?? `#${id}`}
@@ -75,6 +82,21 @@ export function SquadBoard(props: SquadBoardProps) {
         dim={isDim(mode, onBench, ld)}
       />
     );
+    // In the dugout each sub carries a position tag to its right, so it's obvious
+    // who covers whom when a starter blanks (a bench GK only ever subs the GK).
+    const posTag = p?.pos ? POS_COLOR[p.pos] : undefined;
+    const inner = onBench ? (
+      <div style={{ display: "flex", alignItems: "center", gap: 5, width: "100%" }}>
+        <div style={{ flexShrink: 0, minWidth: 0, flex: 1 }}>{marker}</div>
+        {p?.pos && (
+          <span style={{
+            flexShrink: 0, fontSize: 9, fontWeight: 800, letterSpacing: "0.04em",
+            padding: "2px 5px", borderRadius: 6, color: posTag,
+            background: tint(posTag ?? MUTED, "1c"), border: `1px solid ${tint(posTag ?? MUTED, "40")}`,
+          }}>{p.pos}</span>
+        )}
+      </div>
+    ) : marker;
     const controlStyle: CSSProperties = {
       background: "transparent", border: "none", padding: onBench ? "2px 0" : "2px 1px",
       width: "100%", cursor: tappable ? "pointer" : "default", borderRadius: 12,

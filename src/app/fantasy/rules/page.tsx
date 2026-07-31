@@ -268,7 +268,7 @@ export default function RulesPage() {
               <b style={{ color: INK }}>One chip a month</b>, your pick of the three. A chip can&apos;t come
               back until you&apos;ve used the other two — a fresh set of three roughly every quarter
             </li>
-            <li><b style={{ color: INK }}>Triple Captain</b> — your captain counts ×3 instead of ×2</li>
+            <li><b style={{ color: INK }}>Triple Captain</b> — your captain scores ×3</li>
             <li><b style={{ color: INK }}>Bench Boost</b> — all {SQUAD_SIZE} players score, bench included</li>
             <li><b style={{ color: INK }}>Insight</b> — takes two wrong answers off one question of the round</li>
           </ul>
