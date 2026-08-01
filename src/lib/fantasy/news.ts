@@ -74,6 +74,11 @@ export interface NewsInsight {
   kind: "form" | "fixture-swing";
   title: string;
   body: string;
+  /** form: whose form — drives the card's headshot (pool id + name for the seed). */
+  playerId?: number;
+  playerName?: string;
+  /** fixture-swing: whose run — drives the card's club crest. */
+  club?: string;
 }
 
 export interface NewsTips {
@@ -243,6 +248,8 @@ export function buildInsights(
       kind: "form",
       title: `${r.name} is quietly racking up points`,
       body: `${r.points} points for ${r.club}, ${r.line}.`,
+      playerId: r.playerId,
+      playerName: r.name,
     });
   }
 
@@ -261,6 +268,7 @@ export function buildInsights(
       kind: "fixture-swing",
       title: `${r.club} have a kind run coming`,
       body: `${kind} of their next ${gwCount} look winnable. A good time to be buying their players.`,
+      club: r.club,
     });
   }
 

@@ -159,6 +159,27 @@ export async function getTeamBadgeUrl(teamName: string): Promise<string | null> 
   return getTeamBadgeUrlSync(teamName);
 }
 
+// Longest names first, so "Aston Villa" wins over a shorter partial and
+// "Newcastle United" is tried before "Newcastle".
+const BADGE_KEYS_BY_LEN = Object.keys(BADGE_MAP).sort((a, b) => b.length - a.length);
+
+/** A club crest for any club name/alias appearing as a WHOLE word in free text —
+ *  so a headline like "Howe leaves Newcastle" can carry the Newcastle crest. Exact
+ *  known names/aliases only (never a fuzzy guess), so a card never wears the wrong
+ *  club. Null when no club is named. */
+export function clubBadgeInText(text: string): string | null {
+  const t = ` ${text.toLowerCase()} `;
+  for (const k of BADGE_KEYS_BY_LEN) {
+    const kl = k.toLowerCase();
+    const idx = t.indexOf(kl);
+    if (idx < 0) continue;
+    const before = t[idx - 1] ?? " ";
+    const after = t[idx + kl.length] ?? " ";
+    if (!/[a-z0-9]/.test(before) && !/[a-z0-9]/.test(after)) return BADGE_MAP[k];
+  }
+  return null;
+}
+
 /** Falls back to badge — we don't have separate jersey images. */
 export async function getTeamJerseyUrl(teamName: string): Promise<string | null> {
   return getTeamBadgeUrl(teamName);

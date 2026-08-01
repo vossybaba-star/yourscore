@@ -21,8 +21,10 @@ import {
   buildRelevanceLookup, type PoolIdentity, type Relevance,
 } from "@/lib/fantasy/scoutRelevance";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { Crest } from "@/components/ui/Crest";
 import { NewsSheet, type SheetStory } from "@/components/news/NewsSheet";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
+import { clubBadgeInText } from "@/lib/teamImages";
 
 /** Normalise a name for surname matching: strip accents/punctuation, lowercase. */
 function normName(s: string): string {
@@ -90,12 +92,14 @@ function TagRow({ children }: { children: React.ReactNode }) {
  * from a real field; nothing here is invented.
  */
 function EditorialCard({
-  label, accent, heading, sub, body, tags, faceUrl, faceName,
+  label, accent, heading, sub, body, tags, faceUrl, faceName, crestClub,
 }: {
   label: string; accent: string; heading: string; sub?: string; body: string;
   tags?: React.ReactNode;
   /** When the card is about one player, their headshot sits beside the heading. */
   faceUrl?: string | null; faceName?: string;
+  /** When the card is about a club (a fixture run), its crest sits there instead. */
+  crestClub?: string;
 }) {
   return (
     <section style={{ background: PANEL, border: `1px solid ${accent}55`, borderRadius: 12, padding: 13 }}>
@@ -104,9 +108,17 @@ function EditorialCard({
         {label}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {faceName && (
+        {faceName ? (
           <PlayerAvatar name={faceName} avatarUrl={faceUrl ?? faceFor(faceName)} size={38} />
-        )}
+        ) : crestClub ? (
+          <div style={{
+            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+            background: "rgba(255,255,255,0.05)", border: `1px solid ${LINE}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Crest club={crestClub} size={28} />
+          </div>
+        ) : null}
         <div style={{ minWidth: 0 }}>
           <div style={{ color: INK, fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>
             {heading}{sub && <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5 }}>  {sub}</span>}
@@ -179,9 +191,17 @@ function Thumb({ src, alt }: { src: string; alt: string }) {
  * same half-view the PL news feed uses — so the reader gets the gist without
  * being dumped onto someone else's site, and leaving is a deliberate second tap.
  */
-function ItemCard({ item, rel, onOpen }: { item: NewsItem; rel?: Relevance; onOpen: () => void }) {
+function ItemCard({ item, rel, onOpen, faceUrl, faceName, crestUrl }: {
+  item: NewsItem; rel?: Relevance; onOpen: () => void;
+  /** When the source carries no photo, the matched player's face fills the gap so
+   *  no card is a bare block of text (the whole point of this feed). A club crest
+   *  is the next fallback, for manager/club news that names no single player. */
+  faceUrl?: string | null; faceName?: string; crestUrl?: string | null;
+}) {
   const p = item.payload;
   const isTweet = item.kind === "tweet";
+  const showFace = !p.image && !!faceUrl;
+  const showCrest = !p.image && !faceUrl && !!crestUrl;
   return (
     <button type="button" onClick={onOpen}
       style={{ ...cardBase, width: "100%", textAlign: "left", padding: 0, cursor: "pointer" }}
@@ -189,28 +209,42 @@ function ItemCard({ item, rel, onOpen }: { item: NewsItem; rel?: Relevance; onOp
       {p.image && <Thumb src={p.image} alt="" />}
       <div style={{ padding: 12 }}>
         {rel && <TagRow><RelevanceTag rel={rel} /></TagRow>}
-        <div
-          style={{
-            display: "flex", alignItems: "center", gap: 6, marginBottom: 5,
-            fontSize: 11, color: MUTED,
-          }}
-        >
-          <span style={{ color: isTweet ? GOLD : MUTED, fontWeight: 600 }}>
-            {isTweet ? p.handle : p.source}
-          </span>
-          {isTweet && p.verified === "true" && (
-            <span aria-hidden="true" style={{ color: "#4FA8E0", fontSize: 12, lineHeight: 1 }}>✓</span>
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+          {showFace && (
+            <div style={{ flexShrink: 0, marginTop: 1 }}>
+              <PlayerAvatar name={faceName ?? ""} avatarUrl={faceUrl} size={44} />
+            </div>
           )}
-          <span aria-hidden="true">·</span>
-          <span>{ago(item.createdAt)}</span>
-        </div>
-        <div
-          style={{
-            color: INK, fontSize: 14, lineHeight: 1.45,
-            fontWeight: isTweet ? 400 : 600,
-          }}
-        >
-          {isTweet ? p.text : p.title}
+          {showCrest && (
+            <div style={{
+              flexShrink: 0, marginTop: 1, width: 44, height: 44, borderRadius: 12,
+              background: "rgba(255,255,255,0.05)", border: `1px solid ${LINE}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={crestUrl ?? ""} alt="" width={32} height={32} style={{ objectFit: "contain" }} />
+            </div>
+          )}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                display: "flex", alignItems: "center", gap: 6, marginBottom: 5,
+                fontSize: 11, color: MUTED,
+              }}
+            >
+              <span style={{ color: isTweet ? GOLD : MUTED, fontWeight: 600 }}>
+                {isTweet ? p.handle : p.source}
+              </span>
+              {isTweet && p.verified === "true" && (
+                <span aria-hidden="true" style={{ color: "#4FA8E0", fontSize: 12, lineHeight: 1 }}>✓</span>
+              )}
+              <span aria-hidden="true">·</span>
+              <span>{ago(item.createdAt)}</span>
+            </div>
+            <div style={{ color: INK, fontSize: 14, lineHeight: 1.45, fontWeight: isTweet ? 400 : 600 }}>
+              {isTweet ? p.text : p.title}
+            </div>
+          </div>
         </div>
       </div>
     </button>
@@ -286,7 +320,7 @@ export function NewsFeed({
   // Resolve a card's player name to a real headshot, by surname against the pool.
   // Single confident match only — two players share a surname, so an ambiguous
   // match returns null and the card draws the monogram rather than a wrong face.
-  const faceUrlForName = useMemo(() => {
+  const facer = useMemo(() => {
     const bySurname = new Map<string, PoolIdentity[]>();
     for (const p of pool ?? []) {
       const parts = p.name.trim().split(/\s+/);
@@ -294,11 +328,30 @@ export function NewsFeed({
       if (!sn) continue;
       const list = bySurname.get(sn); if (list) list.push(p); else bySurname.set(sn, [p]);
     }
-    return (display: string): string | null => {
-      const parts = display.trim().split(/[\s.]+/).filter(Boolean);
-      const sn = normName(parts[parts.length - 1] ?? "");
-      const matches = sn ? bySurname.get(sn) ?? [] : [];
-      return matches.length === 1 ? faceUrlById(matches[0].id) ?? null : null;
+    const single = (sn: string): PoolIdentity | null => {
+      const m = sn ? bySurname.get(sn) ?? [] : [];
+      return m.length === 1 ? m[0] : null;
+    };
+    return {
+      // The subject's face, matched on the LAST word as a surname — for a card
+      // that IS a player (a tip's captain pick).
+      byName: (display: string): string | null => {
+        const parts = display.trim().split(/[\s.]+/).filter(Boolean);
+        const m = single(normName(parts[parts.length - 1] ?? ""));
+        return m ? faceUrlById(m.id) ?? null : null;
+      },
+      // A face for a freeform headline: scan every word, first confident single
+      // surname match wins. So "Saka back in training" finds Saka. Short tokens
+      // are skipped to avoid matching stray words.
+      inText: (text: string): PoolIdentity | null => {
+        for (const w of text.split(/[\s.,'"’()]+/)) {
+          const sn = normName(w);
+          if (sn.length < 3) continue;
+          const m = single(sn);
+          if (m) return m;
+        }
+        return null;
+      },
     };
   }, [pool]);
 
@@ -377,21 +430,23 @@ export function NewsFeed({
       {show.tips && tips?.captain && (
         <EditorialCard label="CAPTAINCY CALL" accent={GOLD}
           heading={tips.captain.player} body={tips.captain.why}
-          faceName={tips.captain.player} faceUrl={faceUrlForName(tips.captain.player)}
+          faceName={tips.captain.player} faceUrl={facer.byName(tips.captain.player)}
           tags={rel.ready && <RelevanceTag rel={rel.forName(tips.captain.player)} />} />
       )}
       {show.tips && tips?.differential && (
         <EditorialCard label="THE DIFFERENTIAL" accent={TEAL}
           heading={tips.differential.player} body={tips.differential.why}
-          faceName={tips.differential.player} faceUrl={faceUrlForName(tips.differential.player)}
+          faceName={tips.differential.player} faceUrl={facer.byName(tips.differential.player)}
           tags={rel.ready && <RelevanceTag rel={rel.forName(tips.differential.player)} />} />
       )}
       {show.insights && insights.filter((n) => n.kind === "fixture-swing").map((n, i) => (
         <EditorialCard key={`sw${i}`} label="FIXTURE SWING" accent={TEAL} heading={n.title} body={n.body}
+          crestClub={n.club}
           tags={rel.ready && <RelevanceTag rel={rel.forText(`${n.title} ${n.body}`)} />} />
       ))}
       {show.insights && insights.filter((n) => n.kind === "form").map((n, i) => (
         <EditorialCard key={`fm${i}`} label="WORTH KNOWING" accent={MUTED} heading={n.title} body={n.body}
+          faceName={n.playerName} faceUrl={n.playerId != null ? faceUrlById(n.playerId) : undefined}
           tags={rel.ready && <RelevanceTag rel={rel.forText(`${n.title} ${n.body}`)} />} />
       ))}
       {show.tips && (tips?.note || tips?.draftedAt) && (
@@ -407,6 +462,7 @@ export function NewsFeed({
       {show.doubts && doubts.map((d) => (
         <EditorialCard key={d.smId} label="THE RISK" accent={CORAL}
           heading={d.name} sub={`(${d.club})`} body={d.reason}
+          faceName={d.name} faceUrl={facer.byName(d.name)}
           tags={<>
             {rel.ready && <RelevanceTag rel={rel.forName(d.name)} />}
             <ConfirmationTag level="reported" />
@@ -416,20 +472,32 @@ export function NewsFeed({
       {show.team && (
         <section style={{ display: "grid", gap: 10 }}>
           <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Team news</h2>
-          {teamItems.map((it, i) => (
-            <ItemCard key={`t${i}`} item={it} onOpen={() => setOpen({ section: "team", index: i })}
-              rel={rel.ready ? rel.forText(`${it.payload.title ?? ""} ${it.payload.text ?? ""}`) : undefined} />
-          ))}
+          {teamItems.map((it, i) => {
+            const txt = `${it.payload.title ?? ""} ${it.payload.text ?? ""}`;
+            const m = facer.inText(txt);
+            return (
+              <ItemCard key={`t${i}`} item={it} onOpen={() => setOpen({ section: "team", index: i })}
+                rel={rel.ready ? rel.forText(txt) : undefined}
+                faceUrl={m ? faceUrlById(m.id) : null} faceName={m?.name}
+                crestUrl={m ? null : clubBadgeInText(txt)} />
+            );
+          })}
         </section>
       )}
 
       {show.transfers && (
         <section style={{ display: "grid", gap: 10 }}>
           <h2 style={{ color: INK, fontSize: 13, fontWeight: 600, margin: 0 }}>Transfers &amp; talk</h2>
-          {transferItems.map((it, i) => (
-            <ItemCard key={`x${i}`} item={it} onOpen={() => setOpen({ section: "transfers", index: i })}
-              rel={rel.ready ? rel.forText(`${it.payload.title ?? ""} ${it.payload.text ?? ""}`) : undefined} />
-          ))}
+          {transferItems.map((it, i) => {
+            const txt = `${it.payload.title ?? ""} ${it.payload.text ?? ""}`;
+            const m = facer.inText(txt);
+            return (
+              <ItemCard key={`x${i}`} item={it} onOpen={() => setOpen({ section: "transfers", index: i })}
+                rel={rel.ready ? rel.forText(txt) : undefined}
+                faceUrl={m ? faceUrlById(m.id) : null} faceName={m?.name}
+                crestUrl={m ? null : clubBadgeInText(txt)} />
+            );
+          })}
         </section>
       )}
 
