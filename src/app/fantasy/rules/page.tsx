@@ -27,6 +27,8 @@ import {
 } from "@/components/fantasy/shared";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
+import { RulesCards } from "@/components/fantasy/RulesCards";
+import { RulesBot } from "@/components/fantasy/RulesBot";
 
 const POSITIONS: FantasyPos[] = ["GK", "DEF", "MID", "FWD"];
 
@@ -113,6 +115,9 @@ export default function RulesPage() {
         The whole game, start to finish. Every number is read straight from the scoring engine, so
         this page and the game can never disagree.
       </p>
+
+      {/* The same eight beats, skimmable before the full walkthrough below. */}
+      <RulesCards />
 
       {/* The chronological walkthrough — the journey top to bottom, before the
           reference tables that spell each step out in full. */}
@@ -294,6 +299,7 @@ export default function RulesPage() {
         <Btn gold onClick={() => router.push("/fantasy")}>Back to my team</Btn>
       </div>
     </main>
+      <RulesBot />
       <BottomNav />
     </>
   );
