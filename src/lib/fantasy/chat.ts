@@ -165,16 +165,40 @@ export async function momentsForGw(db: Db, memberIds: string[], gw: number): Pro
   return moments.slice(0, 6);
 }
 
-export async function leagueChat(db: Db, userId: string, code: string) {
+export async function leagueChat(db: Db, userId: string, code: string, gwParam?: number | null) {
   const league = await requireMemberLeague(db, code, userId);
   const { data: members } = await db.from("fantasy_league_members")
     .select("user_id").eq("league_id", league.id).range(0, 9999);
   const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id);
 
-  const { data: rows } = await db.from("comments")
+  // Per-gameweek chat: a message belongs to the gameweek that was underway when it
+  // was sent (bucketed by created_at against the gameweek windows — no per-message
+  // stamp, so this works for messages posted before this feature existed). The
+  // CURRENT gameweek's thread is live; a past gameweek's is a read-only archive.
+  const { data: gwRows } = await db.from("fantasy_gameweeks")
+    .select("gw, window_start, status, mode").order("gw", { ascending: true });
+  const allGws = (gwRows ?? []) as { gw: number; window_start: string; status: string; mode: string }[];
+  const live = allGws.filter((g) => g.mode === "live");
+  const gws = live.length ? live : allGws;
+  const currentGw = (gws.find((g) => g.status !== "final") ?? gws[gws.length - 1])?.gw ?? 1;
+  const viewGw = gwParam != null && gws.some((g) => g.gw === gwParam) ? gwParam : currentGw;
+  const readOnly = viewGw !== currentGw;
+  // The gameweeks worth offering in the selector: up to and including the current.
+  const gameweeks = gws.filter((g) => g.gw <= currentGw).map((g) => g.gw);
+
+  // Time bounds for the viewed gameweek. GW1 (index 0) has no lower bound so it
+  // scoops up pre-season banter; the last/current gw has no upper bound.
+  const vi = gws.findIndex((g) => g.gw === viewGw);
+  const lower = vi > 0 ? gws[vi].window_start : null;
+  const upper = vi >= 0 && vi < gws.length - 1 ? gws[vi + 1].window_start : null;
+
+  let q = db.from("comments")
     .select("id, user_id, body, created_at, kind, payload")
     .eq("subject_type", "fantasy_league").eq("subject_id", league.id)
-    .is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
+    .is("deleted_at", null);
+  if (lower) q = q.gte("created_at", lower);
+  if (upper) q = q.lt("created_at", upper);
+  const { data: rows } = await q.order("created_at", { ascending: false }).limit(50);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const msgs = (rows ?? []) as { id: string; user_id: string; body: string; created_at: string; kind: string | null; payload: any }[];
 
@@ -275,10 +299,13 @@ export async function leagueChat(db: Db, userId: string, code: string) {
     return { kind: "text" };
   };
 
-  const latest = await latestScoredGw(db, memberIds);
+  // Moments: an archived thread shows THAT gameweek's talking points; the live
+  // thread shows the most recent scored week's.
+  const momentGw = readOnly ? viewGw : await latestScoredGw(db, memberIds);
 
   return {
     league: { name: league.name, stakes: league.stakes, isOwner: league.owner_id === userId },
+    gw: viewGw, currentGw, readOnly, gameweeks,
     // oldest-first for a chat read
     messages: msgs.reverse().map((m): ChatMessage => {
       const p = profOf.get(m.user_id);
@@ -293,7 +320,7 @@ export async function leagueChat(db: Db, userId: string, code: string) {
         news: card.news ?? null, compare: card.compare ?? null,
       };
     }),
-    moments: latest != null ? await momentsForGw(db, memberIds, latest) : [],
+    moments: momentGw != null ? await momentsForGw(db, memberIds, momentGw) : [],
   };
 }
 

@@ -36,17 +36,30 @@ export default function LeaguePage() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<Tab>("hub");
+  const [chatGw, setChatGw] = useState<number | null>(null);
 
   // Restore + persist the tab in the URL, so back from settings/a profile returns
-  // to the tab you were on.
+  // to the tab you were on. `gw` deep-links a gameweek's chat (from History).
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("t");
+    const sp = new URLSearchParams(window.location.search);
+    const t = sp.get("t");
     if (t === "chat" || t === "table" || t === "history") setTab(t);
+    const gw = sp.get("gw");
+    if (gw && /^\d+$/.test(gw)) setChatGw(Number(gw));
   }, []);
   const goTab = useCallback((t: Tab) => {
     setTab(t);
+    if (t === "chat") setChatGw(null); // the tab bar always opens the live thread
     const u = new URL(window.location.href);
     u.searchParams.set("t", t);
+    if (t === "chat") u.searchParams.delete("gw");
+    window.history.replaceState(null, "", u);
+  }, []);
+  // From History: open a past gameweek's chat archive.
+  const openGwChat = useCallback((gw: number) => {
+    setChatGw(gw); setTab("chat");
+    const u = new URL(window.location.href);
+    u.searchParams.set("t", "chat"); u.searchParams.set("gw", String(gw));
     window.history.replaceState(null, "", u);
   }, []);
 
@@ -172,12 +185,9 @@ export default function LeaguePage() {
       </div>
 
       {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} />}
-      {tab === "chat" && league.isMember && (
-        chat ? <LeagueChatView chat={chat} code={code} onReload={loadChat} />
-             : <p style={{ fontSize: 13, color: MUTED }}>Loading chat…</p>
-      )}
+      {tab === "chat" && league.isMember && <LeagueChatView code={code} initialGw={chatGw} />}
       {tab === "table" && <LeagueTableView detail={detail} code={code} />}
-      {tab === "history" && league.isMember && <LeagueHistoryView code={code} />}
+      {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
     </main>
       <BottomNav />
     </>

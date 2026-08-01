@@ -12,7 +12,7 @@ function ordinal(n: number): string {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
-export function LeagueHistoryView({ code }: { code: string }) {
+export function LeagueHistoryView({ code, onOpenChat }: { code: string; onOpenChat: (gw: number) => void }) {
   const [data, setData] = useState<LeagueHistoryData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [open, setOpen] = useState<HistoryGw | null>(null);
@@ -43,10 +43,7 @@ export function LeagueHistoryView({ code }: { code: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {data.gameweeks.map((g) => (
-        <button key={g.gw} onClick={() => setOpen(g)} style={{
-          textAlign: "left", cursor: "pointer", width: "100%",
-          background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 13,
-        }}>
+        <div key={g.gw} style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 13 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span className="font-display" style={{ fontSize: 13, fontWeight: 700, color: INK }}>Gameweek {g.gw}</span>
             <span style={{ fontSize: 10.5, letterSpacing: "0.1em", color: MUTED }}>COMPLETED</span>
@@ -59,8 +56,11 @@ export function LeagueHistoryView({ code }: { code: string }) {
               )}
             </div>
           )}
-          <div style={{ fontSize: 11.5, color: "#43d6c0", marginTop: 6, fontWeight: 700 }}>View recap →</div>
-        </button>
+          <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+            <button onClick={() => setOpen(g)} style={{ background: "none", border: "none", color: "#43d6c0", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>View recap →</button>
+            <button onClick={() => onOpenChat(g.gw)} style={{ background: "none", border: "none", color: "#43d6c0", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>Open GW{g.gw} chat →</button>
+          </div>
+        </div>
       ))}
 
       {open && (
@@ -93,7 +93,10 @@ export function LeagueHistoryView({ code }: { code: string }) {
           <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>FINAL TABLE AFTER GW{open.gw}</div>
           <LeagueTableRows rows={open.table} showLastGw={false} />
 
-          <div style={{ marginTop: 14 }}><Btn onClick={() => setOpen(null)}>Close</Btn></div>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <Btn onClick={() => { const gw = open.gw; setOpen(null); onOpenChat(gw); }}>Open GW{open.gw} chat</Btn>
+            <Btn onClick={() => setOpen(null)}>Close</Btn>
+          </div>
         </Sheet>
       )}
     </div>

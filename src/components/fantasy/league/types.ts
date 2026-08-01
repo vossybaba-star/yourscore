@@ -54,6 +54,12 @@ export interface ChatMessage {
 export interface ChatMoment { emoji: string; text: string; gw: number }
 export interface ChatData {
   league: { name: string; stakes: string | null; isOwner: boolean };
+  /** The gameweek this thread is for, the current one, and whether it's a
+   *  read-only archive (a past gameweek). `gameweeks` drives the selector. */
+  gw: number;
+  currentGw: number;
+  readOnly: boolean;
+  gameweeks: number[];
   messages: ChatMessage[];
   moments: ChatMoment[];
 }

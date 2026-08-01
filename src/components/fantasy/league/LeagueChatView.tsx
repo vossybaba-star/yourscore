@@ -3,7 +3,7 @@
  *  gameweek's moments sit up top as event cards. Members can drop a POLL from the
  *  composer, and a shared PLAYER card arrives from a player's profile. Full emoji
  *  reactions on every message. */
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -17,23 +17,24 @@ async function api(code: string, path: string, body: unknown, method = "POST") {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
 }
 
-function Reactions({ msg, onReact }: { msg: ChatMessage; onReact: (emoji: string, on: boolean) => void }) {
+function Reactions({ msg, onReact, readOnly }: { msg: ChatMessage; onReact: (emoji: string, on: boolean) => void; readOnly?: boolean }) {
   const [pick, setPick] = useState(false);
+  if (readOnly && !msg.reactions.length) return null;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 5, alignItems: "center" }}>
       {msg.reactions.map((r) => (
-        <button key={r.emoji} onClick={() => onReact(r.emoji, !r.mine)} style={{
-          display: "flex", alignItems: "center", gap: 3, padding: "2px 7px", borderRadius: 999, cursor: "pointer",
+        <button key={r.emoji} disabled={readOnly} onClick={() => onReact(r.emoji, !r.mine)} style={{
+          display: "flex", alignItems: "center", gap: 3, padding: "2px 7px", borderRadius: 999, cursor: readOnly ? "default" : "pointer",
           fontSize: 12, background: r.mine ? tint(TEAL, "1c") : "rgba(255,255,255,0.04)",
           border: `1px solid ${r.mine ? tint(TEAL, "66") : LINE}`, color: INK,
         }}>
           <span>{r.emoji}</span><span style={{ fontSize: 11, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{r.count}</span>
         </button>
       ))}
-      <button onClick={() => setPick((p) => !p)} aria-label="Add reaction" style={{
+      {!readOnly && <button onClick={() => setPick((p) => !p)} aria-label="Add reaction" style={{
         width: 24, height: 22, borderRadius: 999, cursor: "pointer", fontSize: 13, lineHeight: 1,
         background: "rgba(255,255,255,0.04)", border: `1px solid ${LINE}`, color: MUTED,
-      }}>＋</button>
+      }}>＋</button>}
       {pick && (
         <div style={{ display: "flex", gap: 4, padding: "3px 6px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}` }}>
           {CHAT_EMOJI.map((e) => (
@@ -134,7 +135,7 @@ function SharedCompare({ msg, onView }: { msg: ChatMessage; onView: (id: number)
   );
 }
 
-function Poll({ msg, onVote }: { msg: ChatMessage; onVote: (i: number) => void }) {
+function Poll({ msg, onVote, readOnly }: { msg: ChatMessage; onVote: (i: number) => void; readOnly?: boolean }) {
   const poll = msg.poll!;
   const total = poll.totalVotes;
   return (
@@ -146,8 +147,8 @@ function Poll({ msg, onVote }: { msg: ChatMessage; onVote: (i: number) => void }
           const pct = total ? Math.round((o.votes / total) * 100) : 0;
           const mine = poll.myVote === i;
           return (
-            <button key={i} onClick={() => onVote(i)} style={{
-              position: "relative", overflow: "hidden", textAlign: "left", cursor: "pointer",
+            <button key={i} disabled={readOnly} onClick={() => onVote(i)} style={{
+              position: "relative", overflow: "hidden", textAlign: "left", cursor: readOnly ? "default" : "pointer",
               borderRadius: 9, padding: "9px 11px", background: "rgba(255,255,255,0.03)",
               border: `1px solid ${mine ? tint(TEAL, "66") : LINE}`,
             }}>
@@ -193,17 +194,33 @@ function PollComposer({ onPost, onCancel, busy }: { onPost: (q: string, opts: st
   );
 }
 
-export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code: string; onReload: () => void }) {
+export function LeagueChatView({ code, initialGw = null }: { code: string; initialGw?: number | null }) {
   const router = useRouter();
+  const [chat, setChat] = useState<ChatData | null>(null);
+  const [viewGw, setViewGw] = useState<number | null>(initialGw);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   const [poll, setPoll] = useState(false);
 
+  const load = useCallback(async (gw: number | null) => {
+    try {
+      const res = await fetch(`/api/fantasy/leagues/${code}/chat${gw != null ? `?gw=${gw}` : ""}`);
+      if (res.ok) setChat(await res.json());
+    } catch { /* keep prior state */ }
+  }, [code]);
+  useEffect(() => { load(viewGw); }, [viewGw, load]);
+  // Poll the LIVE thread only — an archive never changes.
+  useEffect(() => {
+    if (!chat || chat.readOnly) return;
+    const t = setInterval(() => load(viewGw), 15_000);
+    return () => clearInterval(t);
+  }, [chat, viewGw, load]);
+
   const guard = async (fn: () => Promise<void>) => {
     setBusy(true); setErr(null);
-    try { await fn(); onReload(); }
+    try { await fn(); await load(viewGw); }
     catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };
@@ -214,8 +231,36 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
   const shareSquad = () => guard(async () => { await api(code, "share", { kind: "squad" }); setMenu(false); });
   const shareCaptain = () => guard(async () => { await api(code, "share", { kind: "captain" }); setMenu(false); });
 
+  if (!chat) return <p style={{ fontSize: 13, color: MUTED }}>Loading chat…</p>;
+  const readOnly = chat.readOnly;
+  // Most recent gameweeks first, capped so the selector stays thumb-sized.
+  const gwChips = [...chat.gameweeks].sort((a, b) => b - a).slice(0, 6);
+
   return (
     <div>
+      {/* Gameweek selector — the live gameweek plus its archives. */}
+      {chat.gameweeks.length > 1 && (
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginBottom: 10 }}>
+          {gwChips.map((g) => {
+            const on = g === chat.gw;
+            return (
+              <button key={g} onClick={() => setViewGw(g === chat.currentGw ? null : g)} style={{
+                flex: "0 0 auto", padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
+                background: on ? tint(TEAL, "22") : PANEL, color: on ? TEAL : MUTED,
+                border: `1px solid ${on ? tint(TEAL, "66") : LINE}`,
+              }}>GW{g}{g === chat.currentGw ? "" : ""}</button>
+            );
+          })}
+        </div>
+      )}
+
+      {readOnly && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: "8px 11px" }}>
+          <span style={{ fontSize: 10, letterSpacing: "0.1em", color: MUTED }}>ARCHIVE</span>
+          <span style={{ fontSize: 12.5, color: MUTED }}>Gameweek {chat.gw} chat · read-only</span>
+        </div>
+      )}
+
       {chat.league.stakes && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, background: PANEL, border: `1px solid ${tint(GOLD, "44")}`, borderRadius: 10, padding: "8px 11px" }}>
           <span style={{ fontSize: 10, letterSpacing: "0.1em", color: MUTED }}>PINNED</span>
@@ -254,7 +299,7 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
                 ) : m.kind === "compare" && m.compare ? (
                   <SharedCompare msg={m} onView={(id) => router.push(`/fantasy/players/${id}`)} />
                 ) : m.kind === "poll" && m.poll ? (
-                  <Poll msg={m} onVote={(i) => vote(m.id, i)} />
+                  <Poll msg={m} onVote={(i) => vote(m.id, i)} readOnly={readOnly} />
                 ) : (
                   <div style={{ background: m.isMe ? tint(TEAL, "1c") : PANEL, border: `1px solid ${m.isMe ? tint(TEAL, "55") : LINE}`, borderRadius: 12, padding: "7px 11px", minWidth: 0 }}>
                     {!m.isMe && <div style={{ fontSize: 10.5, color: INK, fontWeight: 700, marginBottom: 1 }}>{m.name}</div>}
@@ -263,7 +308,7 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
                 )}
               </div>
               <div style={{ maxWidth: "92%", paddingLeft: m.isMe && !structured ? 0 : (structured ? 0 : 34) }}>
-                <Reactions msg={m} onReact={(emoji, on) => react(m.id, emoji, on)} />
+                <Reactions msg={m} onReact={(emoji, on) => react(m.id, emoji, on)} readOnly={readOnly} />
               </div>
             </div>
           );
@@ -272,24 +317,26 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
 
       {err && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "0 0 8px" }}>{err}</p>}
 
-      {poll && <PollComposer onPost={postPoll} onCancel={() => setPoll(false)} busy={busy} />}
-
-      {/* Composer plus-menu: poll + share your own squad/captain. Other content
-          (a player, a scout pick) is shared from its own screen. */}
-      {menu && !poll && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-          <Btn small onClick={() => { setPoll(true); setMenu(false); }}>📊 Poll</Btn>
-          <Btn small disabled={busy} onClick={shareSquad}>👕 Share my squad</Btn>
-          <Btn small disabled={busy} onClick={shareCaptain}>©️ Share my captain</Btn>
-        </div>
+      {/* Composer — the live thread only; an archived gameweek takes no new posts. */}
+      {!readOnly && (
+        <>
+          {poll && <PollComposer onPost={postPoll} onCancel={() => setPoll(false)} busy={busy} />}
+          {menu && !poll && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+              <Btn small onClick={() => { setPoll(true); setMenu(false); }}>📊 Poll</Btn>
+              <Btn small disabled={busy} onClick={shareSquad}>👕 Share my squad</Btn>
+              <Btn small disabled={busy} onClick={shareCaptain}>©️ Share my captain</Btn>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={() => setMenu((v) => !v)} aria-label="More" style={{ width: 42, flexShrink: 0, borderRadius: 10, background: PANEL, border: `1px solid ${LINE}`, color: MUTED, fontSize: 20, cursor: "pointer" }}>＋</button>
+            <input value={draft} maxLength={280} placeholder="Message the league…"
+              onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+              style={{ flex: 1, fontSize: 13.5, padding: "10px 12px", borderRadius: 10, background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none" }} />
+            <Btn gold disabled={busy || !draft.trim()} onClick={send}>Send</Btn>
+          </div>
+        </>
       )}
-      <div style={{ display: "flex", gap: 6 }}>
-        <button onClick={() => setMenu((v) => !v)} aria-label="More" style={{ width: 42, flexShrink: 0, borderRadius: 10, background: PANEL, border: `1px solid ${LINE}`, color: MUTED, fontSize: 20, cursor: "pointer" }}>＋</button>
-        <input value={draft} maxLength={280} placeholder="Message the league…"
-          onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-          style={{ flex: 1, fontSize: 13.5, padding: "10px 12px", borderRadius: 10, background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none" }} />
-        <Btn gold disabled={busy || !draft.trim()} onClick={send}>Send</Btn>
-      </div>
     </div>
   );
 }

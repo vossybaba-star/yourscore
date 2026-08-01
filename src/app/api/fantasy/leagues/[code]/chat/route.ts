@@ -8,8 +8,10 @@ import { leagueChat, postChat, setStakes } from "@/lib/fantasy/chat";
 export const fetchCache = "force-no-store";
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: NextRequest, { params }: { params: { code: string } }) {
-  return withFantasyUser("league-chat", (db, userId) => leagueChat(db, userId, params.code));
+export async function GET(req: NextRequest, { params }: { params: { code: string } }) {
+  const gwRaw = req.nextUrl.searchParams.get("gw");
+  const gw = gwRaw != null && /^\d+$/.test(gwRaw) ? Number(gwRaw) : null;
+  return withFantasyUser("league-chat", (db, userId) => leagueChat(db, userId, params.code, gw));
 }
 
 export async function POST(req: NextRequest, { params }: { params: { code: string } }) {
