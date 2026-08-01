@@ -16,7 +16,7 @@ import { LadderHero, type LadderRow } from "@/components/profile/LadderHero";
 import { ProfileHero } from "@/components/profile/ProfileHero";
 import { MedalShelf } from "@/components/profile/MedalShelf";
 import { PointsBreakdown } from "@/components/profile/PointsBreakdown";
-import { RecentGames } from "@/components/profile/RecentGames";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import { dayStreak, playedDays, streakCutoff } from "@/lib/streak";
 import { allMedals } from "@/lib/medals";
 
@@ -45,7 +45,9 @@ export default async function ProfilePage() {
 
   // Your fantasy squads by gameweek (service client — the tables are RLS own-row).
   // Gated on the flag so it's dark until Fantasy launches, like the rest of it.
-  const fantasy = fantasyAllowed(userId)
+  // The same boolean decides whether the Games/Fantasy tabs appear at all.
+  const hasFantasy = fantasyAllowed(userId);
+  const fantasy = hasFantasy
     ? await loadProfileTeams(createServiceClient(), userId)
     : { teams: [], players: [] };
 
@@ -70,7 +72,6 @@ export default async function ProfilePage() {
     { data: seasonBestRows },
     { data: wcBestRows },
     { data: quizBestRows },
-    { data: roomScoreRows },
     { data: friendRows },
     { count: pendingFriendCount },
     { data: clubRows },
@@ -105,14 +106,6 @@ export default async function ProfilePage() {
     // Questions right, not points — score carries speed bonuses max_score
     // doesn't, so ordering by score renders bests like "5950/4800".
     sb.rpc("get_best_quiz", { p_user_id: userId }),
-    // NOTE: room_scores has updated_at, NOT created_at. Ordering by created_at
-    // here silently errored the whole query, which is why accuracy and this
-    // list rendered empty for every user until 2026-07-17.
-    sb.from("room_scores")
-      .select("room_id, total_score, correct_answers, total_answers, rank, updated_at")
-      .eq("user_id", userId)
-      .order("updated_at", { ascending: false })
-      .limit(5),
     sb.from("friendships")
       .select("user_id, friend_id, status")
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
@@ -229,10 +222,6 @@ export default async function ProfilePage() {
     daysPlayed,
     gameTypesPlayed: gameTypeCounts.filter((c) => c > 0).length,
   });
-  const cabinetFootnote = seasonBest && !seasonBest.invincible
-    ? `Best season ${seasonBest.wins}-${seasonBest.draws}-${seasonBest.losses} · ${38 - seasonBest.wins} wins short of Invincible`
-    : null;
-
   // Half the player base sits on 0 pts, where the "gap" to the player above
   // rounds to a meaningless 1 pt. Show them a first rung, not a fake race.
   const ladder = ((ladderRows ?? []) as LadderRow[]).map((r) => ({ ...r, overall_score: Number(r.overall_score) }));
@@ -339,15 +328,40 @@ export default async function ProfilePage() {
           </Link>
         </div>
 
-        <MedalShelf medals={medals} footnote={cabinetFootnote} />
-
-        {counted.length > 0 && <PointsBreakdown counted={counted} uncounted={uncounted} />}
-
-        <RecentGames games={(roomScoreRows ?? []) as any[]} />
-
-        {fantasy.teams.length > 0 && (
-          <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
-        )}
+        {/* Games vs Fantasy. The card + rank above stay shared; only these
+            stats swap. The tab bar only shows when fantasy is open to you. */}
+        <ProfileTabs
+          hasFantasy={hasFantasy}
+          games={
+            <>
+              <MedalShelf medals={medals} />
+              {counted.length > 0 && <PointsBreakdown counted={counted} uncounted={uncounted} />}
+            </>
+          }
+          fantasy={
+            fantasy.teams.length > 0 ? (
+              <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+            ) : (
+              <div
+                className="rounded-2xl px-5 py-6 text-center"
+                style={{ background: "#0e1611", border: "1px solid rgba(0,216,192,0.25)" }}
+              >
+                <p className="text-3xl mb-2">⚽</p>
+                <p className="font-display text-2xl text-white">Your squad awaits</p>
+                <p className="font-body text-sm text-text-muted mt-1.5 mb-4">
+                  Build your XI and it shows here — points and rank land once the season kicks off.
+                </p>
+                <Link
+                  href="/fantasy"
+                  className="inline-block rounded-2xl px-6 py-3 font-body text-sm font-bold"
+                  style={{ background: "#00d8c0", color: "#04231f" }}
+                >
+                  Build your squad →
+                </Link>
+              </div>
+            )
+          }
+        />
 
         <Link
           href="/leaderboard"

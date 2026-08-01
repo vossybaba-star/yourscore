@@ -1,73 +1,71 @@
+"use client";
+
+import { useState } from "react";
 import { medalColor, shelfOrder, type Medal } from "@/lib/medals";
+import { MedalsModal } from "@/components/profile/MedalsModal";
 
 /**
- * The trophy cabinet as a shelf of medals rather than three large stat boxes.
- *
- * Denser (six in less room than the old three), and it earns the space two ways
- * the boxes didn't: every medal carries how rare it is, and the ones you haven't
- * got stay on the shelf as visible gaps with the target written on them.
+ * The award cabinet, compact. Shows your best few (rarest first), with a tile
+ * that opens the full set — earned and locked — where each medal explains
+ * itself. The old version showed six flat tiles and a count and stopped there;
+ * you couldn't see what you were missing and a medal told you nothing.
  */
-export function MedalShelf({
-  medals,
-  footnote,
-  limit = 6,
-}: {
-  medals: Medal[];
-  footnote?: string | null;
-  /** The full set is 26 — showing them all would re-create the space problem
-   *  this replaced. Six is the shelf; the count carries the rest. */
-  limit?: number;
-}) {
+export function MedalShelf({ medals, preview = 5 }: { medals: Medal[]; preview?: number }) {
+  const [open, setOpen] = useState(false);
   const earned = medals.filter((m) => m.earned).length;
-  const shown = shelfOrder(medals).slice(0, limit);
+  const ordered = shelfOrder(medals);
+  // Lead with what they've won; if they've won nothing, lead with the nearest
+  // targets so the row is never empty.
+  const lead = (earned > 0 ? ordered.filter((m) => m.earned) : ordered).slice(0, preview);
+  const remaining = medals.length - lead.length;
 
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-3">
-        <p className="font-body text-xs text-text-muted uppercase tracking-widest">Your cabinet</p>
-        <p className="font-body text-[11px] text-text-muted">
-          {earned}/{medals.length}
-        </p>
-      </div>
+      <button onClick={() => setOpen(true)} className="w-full flex items-baseline justify-between mb-3">
+        <span className="font-body text-xs text-text-muted uppercase tracking-widest">Awards</span>
+        <span className="font-body text-[11px]" style={{ color: "#aeea00" }}>
+          {earned}/{medals.length} · see all
+        </span>
+      </button>
 
-      <div className="grid grid-cols-3 gap-2">
-        {shown.map((m) => {
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full grid gap-2 active:scale-[0.99] transition-transform"
+        style={{ gridTemplateColumns: `repeat(${lead.length + 1}, minmax(0, 1fr))` }}
+      >
+        {lead.map((m) => {
           const c = medalColor(m.pct);
           return (
             <div
               key={m.id}
-              className="rounded-xl px-2 py-3 text-center"
+              className="rounded-xl py-3 text-center"
               style={{
-                background: m.earned ? `${c}0f` : "transparent",
+                background: m.earned ? `${c}12` : "transparent",
                 border: m.earned ? `1px solid ${c}3d` : "1px dashed rgba(255,255,255,0.12)",
               }}
             >
               <span
                 className="block text-xl leading-none"
-                // Locked medals stay visible but drained — a silhouette reads as
-                // "not yet", where hiding them reads as "doesn't exist".
                 style={{ filter: m.earned ? "none" : "grayscale(1)", opacity: m.earned ? 1 : 0.3 }}
               >
                 {m.glyph}
               </span>
-              <p
-                className="font-body text-[11px] mt-1.5 truncate"
-                style={{ color: m.earned ? "#eef2f0" : "#8a948f" }}
-              >
+              <p className="font-body text-[10px] mt-1.5 leading-tight truncate px-1" style={{ color: m.earned ? "#eef2f0" : "#8a948f" }}>
                 {m.label}
-              </p>
-              <p
-                className="font-body text-[10px] mt-0.5 truncate"
-                style={{ color: m.earned ? c : "#586058" }}
-              >
-                {m.earned ? `${m.pct}% have this` : m.goal}
               </p>
             </div>
           );
         })}
-      </div>
+        <div
+          className="rounded-xl py-3 flex flex-col items-center justify-center"
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+        >
+          <span className="font-display text-lg leading-none text-white">+{remaining}</span>
+          <span className="font-body text-[10px] text-text-muted mt-1">more</span>
+        </div>
+      </button>
 
-      {footnote && <p className="font-body text-[11px] text-text-muted mt-2.5">{footnote}</p>}
+      {open && <MedalsModal medals={medals} onClose={() => setOpen(false)} />}
     </div>
   );
 }

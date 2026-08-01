@@ -6,7 +6,23 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-30 (**Fantasy nav + UX overhaul shipped to prod, founder-gated.** The Fantasy tab
+> **Confirmed:** 2026-07-30 (**Profile tidied — Games vs Fantasy tabs, a real award cabinet.**
+> Branch `feat/profile-tabs`. The page was one long scroll that mixed everything; now the
+> shared identity (player card + YourScore rank + ladder) stays on top, and a **Games ｜ Fantasy**
+> tab bar splits the stats underneath — some players are here for 38-0/quiz, some for Fantasy,
+> some both. **The Fantasy tab is gated by the SAME `fantasyAllowed()` flag as the rest of
+> fantasy** (env-on or allowlist), so real users don't see it until fantasy launches; it reuses
+> the existing `ProfileFantasyTeams` (XI-by-gameweek) and shows a "build your squad" state when
+> empty. There is no honest pre-season rank/points, so the tab is the squad only.
+> **Awards overhaul:** the weak six-tile cabinet is now a compact "best few + N more" row that
+> opens a full modal — all 25 medals grouped, **earned lit and locked visible with dashed
+> borders**, and **tapping any medal explains it** (what it rewards, rarity word, your progress /
+> what it takes). **Removed the Recent Games list** (founder: not important) and its dead
+> component + query. New: `ProfileTabs`, `MedalsModal`; `MedalShelf` rewritten client-side.
+> Verified in-browser against a real squad-holder: tabs switch, awards modal + explainers work,
+> the Fantasy XI pitch renders with real faces/crests. `next build` green.)
+>
+> **Previously confirmed:** 2026-07-30 (**Fantasy nav + UX overhaul shipped to prod, founder-gated.** The Fantasy tab
 > now wears a PL-style header — a big **"YourScore Fantasy PL"** title + a segmented **Squad ｜ Scout ｜
 > Leagues** section bar (`FantasyHeader`), rendered identically on the hub and every Scout page so
 > switching reads as a tab, not a page jump (retired the old wordmark Header + the Scout back-pill
