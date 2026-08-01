@@ -76,6 +76,10 @@ export function LeagueCompetition() {
   const [month, setMonth] = useState<Standings | null>(null);
   const [season, setSeason] = useState<Standings | null>(null);
   const [loading, setLoading] = useState(true);
+  // The two tables are a subtab under the hero (month first), not one stacked
+  // under the other — the month and the season are different competitions, not a
+  // long scroll (founder, 1 Aug).
+  const [view, setView] = useState<"month" | "season">("month");
 
   useEffect(() => {
     let live = true;
@@ -146,22 +150,37 @@ export function LeagueCompetition() {
         }}>How it works</Link>
       </div>
 
-      {/* The month table — the hero's full standings. */}
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-          <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>{monthLabel.toUpperCase()} TABLE</span>
-          {month && month.totalPlayers > 0 && <span style={{ fontSize: 11, color: MUTED }}>{month.totalPlayers.toLocaleString()} playing</span>}
-        </div>
-        <Card>
-          <Table data={month} loading={loading} empty={`No scores yet. ${monthLabel}'s table fills once the first gameweek is played.`} />
-        </Card>
+      {/* Month / Season subtab — one table at a time. The month is the prize
+          that's live; the season is the long game. */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        {([["month", monthLabel], ["season", "Season"]] as ["month" | "season", string][]).map(([k, label]) => {
+          const active = view === k;
+          return (
+            <button key={k} onClick={() => setView(k)} style={{
+              flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
+              border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
+            }}>{label}</button>
+          );
+        })}
       </div>
 
-      {/* The season table — the long game, quietly secondary to the month. */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>
+          {view === "month" ? `${monthLabel.toUpperCase()} TABLE` : "SEASON TABLE"}
+        </span>
+        {(() => {
+          const d = view === "month" ? month : season;
+          return d && d.totalPlayers > 0
+            ? <span style={{ fontSize: 11, color: MUTED }}>{d.totalPlayers.toLocaleString()} playing</span>
+            : null;
+        })()}
+      </div>
       <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>THE LONG GAME · SEASON TABLE</div>
         <Card>
-          <Table data={season} loading={loading} empty="No scores yet. The season table builds gameweek by gameweek." />
+          {view === "month"
+            ? <Table data={month} loading={loading} empty={`No scores yet. ${monthLabel}'s table fills once the first gameweek is played.`} />
+            : <Table data={season} loading={loading} empty="No scores yet. The season table builds gameweek by gameweek." />}
         </Card>
       </div>
     </div>

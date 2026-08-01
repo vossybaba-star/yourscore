@@ -33,22 +33,22 @@ export interface KnowledgeRow {
 interface GwRow { gw: number; mode: string; status: string; deadline: string | null; window_start: string; window_end: string }
 
 /** Which gameweeks belong to the cut. Live rows win outright (the gws[0] trap). */
-async function cutGws(db: Db, cut: KnowledgeCut): Promise<{ gws: number[]; label: string }> {
+async function cutGws(db: Db, cut: KnowledgeCut): Promise<{ gws: number[]; label: string; gw: number }> {
   const { data } = await db.from("fantasy_gameweeks")
     .select("gw, mode, status, deadline, window_start, window_end").order("gw", { ascending: true });
   const all = (data ?? []) as GwRow[];
   const live = all.filter((g) => g.mode === "live");
   const rows = live.length ? live : all;
-  if (!rows.length) return { gws: [], label: "" };
+  if (!rows.length) return { gws: [], label: "", gw: 0 };
   const current = rows.find((g) => g.status !== "final") ?? rows[rows.length - 1];
 
-  if (cut === "week") return { gws: [current.gw], label: `Gameweek ${current.gw}` };
+  if (cut === "week") return { gws: [current.gw], label: `Gameweek ${current.gw}`, gw: current.gw };
   if (cut === "month") {
     const key = monthKeyOf(current);
     const byMonth = groupGwsByMonth(rows);
-    return { gws: (byMonth.get(key) ?? []).slice().sort((a, b) => a - b), label: monthLabel(key) };
+    return { gws: (byMonth.get(key) ?? []).slice().sort((a, b) => a - b), label: monthLabel(key), gw: current.gw };
   }
-  return { gws: rows.map((g) => g.gw), label: "Season" };
+  return { gws: rows.map((g) => g.gw), label: "Season", gw: current.gw };
 }
 
 /**
@@ -58,9 +58,17 @@ async function cutGws(db: Db, cut: KnowledgeCut): Promise<{ gws: number[]; label
  */
 export async function knowledgeBoard(
   db: Db, cut: KnowledgeCut, viewerId: string | null,
-): Promise<{ cut: KnowledgeCut; label: string; rows: KnowledgeRow[] }> {
-  const { gws, label } = await cutGws(db, cut);
-  if (!gws.length) return { cut, label, rows: [] };
+): Promise<{ cut: KnowledgeCut; label: string; gw: number; totalPlayers: number; rows: KnowledgeRow[] }> {
+  const { gws, label, gw } = await cutGws(db, cut);
+  if (!gws.length) return { cut, label, gw: 0, totalPlayers: 0, rows: [] };
+
+  // Everyone who's signed up for fantasy (built a squad) is ON the board, at zero
+  // until they play a round — so the table shows the whole field and fills as
+  // rounds are done, not just the handful who've already played (founder, 1 Aug).
+  const { data: squads } = await db.from("fantasy_squads")
+    .select("user_id, created_at").range(0, 9999);
+  const managers = (squads ?? []) as { user_id: string; created_at: string }[];
+  if (!managers.length) return { cut, label, gw, totalPlayers: 0, rows: [] };
 
   const { data: entries } = await db.from("fantasy_entries")
     .select("user_id, round_correct, round_done_at")
@@ -73,35 +81,45 @@ export async function knowledgeBoard(
     if (e.round_done_at < a.first) a.first = e.round_done_at;
     agg.set(e.user_id, a);
   }
-  const ids = Array.from(agg.keys());
-  if (!ids.length) return { cut, label, rows: [] };
 
-  // Two-step profiles fetch — no FK from entries to profiles (the embedded-select trap).
+  // Rank the whole field: most right answers, then accuracy, then earliest signup
+  // (a stable, distinct order when everyone's level on zero), then id.
+  const ranked = managers.map((m) => {
+    const a = agg.get(m.user_id);
+    const correct = a?.correct ?? 0;
+    const rounds = a?.rounds ?? 0;
+    return {
+      userId: m.user_id, correct, rounds,
+      accuracy: rounds ? Math.round((correct / (rounds * 11)) * 100) : 0,
+      createdAt: m.created_at, isMe: m.user_id === viewerId,
+    };
+  }).sort((x, y) =>
+    (y.correct - x.correct) || (y.accuracy - x.accuracy) ||
+    (x.createdAt < y.createdAt ? -1 : x.createdAt > y.createdAt ? 1 : (x.userId < y.userId ? -1 : 1)),
+  ).map((r, i) => ({ ...r, rank: i + 1 }));
+
+  const totalPlayers = ranked.length;
+  // Show the top 100, plus the viewer's own row if they rank beyond it.
+  const top = ranked.filter((r) => r.rank <= 100);
+  const mine = ranked.find((r) => r.isMe && r.rank > 100);
+  const shown = mine ? [...top, mine] : top;
+
+  const ids = shown.map((r) => r.userId);
   const { data: profs } = await db.from("profiles")
     .select("id, username, display_name, avatar_url").in("id", ids).range(0, 9999);
   const profOf = new Map(((profs ?? []) as { id: string; username: string | null; display_name: string | null; avatar_url: string | null }[])
     .map((p) => [p.id, p]));
 
-  const rows = ids.map((id) => {
-    const a = agg.get(id)!;
-    const p = profOf.get(id);
-    return {
-      userId: id,
-      username: p?.username ?? null,
-      displayName: p?.display_name ?? null,
-      avatarUrl: p?.avatar_url ?? null,
-      correct: a.correct, rounds: a.rounds,
-      accuracy: Math.round((a.correct / (a.rounds * 11)) * 100),
-      first: a.first,
-      isMe: id === viewerId,
-    };
-  });
-  rows.sort((x, y) => (y.correct - x.correct) || (y.accuracy - x.accuracy) || (x.first < y.first ? -1 : 1));
   return {
-    cut, label,
-    rows: rows.slice(0, 100).map((r, i) => ({
-      rank: i + 1, userId: r.userId, username: r.username, displayName: r.displayName,
-      avatarUrl: r.avatarUrl, correct: r.correct, rounds: r.rounds, accuracy: r.accuracy, isMe: r.isMe,
-    })),
+    cut, label, gw, totalPlayers,
+    rows: shown.map((r) => {
+      const p = profOf.get(r.userId);
+      return {
+        rank: r.rank, userId: r.userId,
+        username: p?.username ?? null, displayName: p?.display_name ?? null,
+        avatarUrl: p?.avatar_url ?? null,
+        correct: r.correct, rounds: r.rounds, accuracy: r.accuracy, isMe: r.isMe,
+      };
+    }),
   };
 }
