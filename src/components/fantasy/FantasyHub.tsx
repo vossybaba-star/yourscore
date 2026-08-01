@@ -428,7 +428,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       ? { tag: `PRE-SEASON · ${seasonPos.toUpperCase()}`, head: gwN === 1 ? "Your squad is in for gameweek 1" : `Gameweek ${gwN} is open`,
           sub: isDemo
             ? "Your squad isn't committed yet. Build and edit it freely, then lock it in for the gameweek."
-            : "Change your team as much as you like before the deadline. Keep an eye on team news, and play the weekly quiz to earn transfers." }
+            : "Change your team as much as you like before the deadline, and keep an eye on team news. The weekly quiz is an optional bonus that earns extra transfers." }
       : { tag: `GAMEWEEK OPEN · ${seasonPos.toUpperCase()}`, head: `Gameweek ${gwN} is open`,
           sub: isDemo
             ? "Play your round, make transfers, set your team, then lock it in."
@@ -749,8 +749,8 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         }}>
           <span style={{ fontSize: 22, flexShrink: 0 }}>⚡</span>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: INK }}>Earn transfers by playing the weekly quiz</span>
-            <span style={{ display: "block", fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>Right answers bank transfers for your squad. See how it works.</span>
+            <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: INK }}>Earn extra transfers with the weekly quiz</span>
+            <span style={{ display: "block", fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>A bonus, not a must. Right answers bank extra transfers. See how it works.</span>
           </span>
           <span style={{ color: GOLD, fontSize: 20, flexShrink: 0 }}>›</span>
         </button>
