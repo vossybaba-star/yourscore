@@ -1,36 +1,34 @@
 import { NextResponse } from "next/server";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { createServiceClient } from "@/lib/supabase/service";
-import type { PlBriefing } from "@/lib/pl/briefing";
+import { latestBriefing } from "@/lib/pl/briefingRead";
 
 /**
  * GET /api/pl/briefing — PUBLIC. Today's Daily Briefing, or the most recent one.
  *
- * Falls back to the latest row rather than 404ing when today's hasn't been built
- * yet (the cron runs each morning; a reader at 06:00 should still get yesterday's
- * rather than an empty tile). The tile renders the briefing's own date, so a
- * day-old briefing is never passed off as today's.
+ * This exists for the TILE, which is a client component inside the news feed.
+ * The briefing PAGE does not use it — it reads the row directly (see
+ * matchweek/briefing/page.tsx). Two surfaces reading one row through two caches
+ * is what let the tile advertise a headline the page hadn't got yet.
  */
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export async function GET() {
-  const db = createServiceClient() as unknown as SupabaseClient;
-  try {
-    const { data } = await db
-      .from("pl_briefings").select("doc")
-      .order("date", { ascending: false }).limit(1).maybeSingle();
-    const doc = (data as { doc?: PlBriefing } | null)?.doc ?? null;
-    return NextResponse.json({ doc }, { headers: cache() });
-  } catch (err) {
-    console.error("[pl/briefing] read failed", err);
-    return NextResponse.json({ doc: null }, { headers: cache() });
-  }
+  const doc = await latestBriefing();
+  return NextResponse.json({ doc }, { headers: cache() });
 }
 
-/** A briefing changes once a day, so it can sit on the edge far longer than the
- *  news feed does. */
+/**
+ * Short, because the tile is the surface a reader sees FIRST.
+ *
+ * This was s-maxage=600 with an hour of stale-while-revalidate, which is fine
+ * for something that changes once a day and awful for something that changes at
+ * a known instant: at 18:00 the CDN was entitled to serve the old briefing for
+ * another ten minutes, and the stale window let it keep going for an hour. A
+ * minute of drift is invisible; ten is a reader tapping a headline that isn't
+ * there. The read is a single indexed row, so the cache is protecting almost
+ * nothing anyway.
+ */
 function cache(): Record<string, string> {
-  return { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=3600" };
+  return { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" };
 }

@@ -1,40 +1,33 @@
-import { headers } from "next/headers";
 import type { Metadata } from "next";
-import type { PlBriefing } from "@/lib/pl/briefing";
+import { latestBriefing } from "@/lib/pl/briefingRead";
 import { BriefingView } from "@/components/matchweek/BriefingView";
 
 /**
  * /matchweek/briefing — the Daily Briefing in full.
  *
  * A page, not a sheet: it scrolls, it is ours rather than an outlet's, and it
- * gets a URL a reader can return to or send to a friend. Server-rendered off the
- * public API so a shared link opens with the content already in it.
+ * gets a URL a reader can return to or send to a friend.
  *
- * Revalidate matches the briefing's own cadence — it changes once a day, so
- * anything shorter is just cache churn.
+ * Reads the row DIRECTLY, and must keep doing so. It used to fetch our own
+ * /api/pl/briefing over HTTP, which stacked Next's Data Cache on top of the
+ * CDN's cache over the same row — two independent 600s windows that drift, so
+ * for a while after 18:00 the tile showed the new headline and this page still
+ * rendered yesterday's. Tapping the tile gave you the wrong briefing.
+ *
+ * force-no-store is not optional here: a service-role Supabase read has a
+ * constant cache key, so without it Vercel's data cache pins the FIRST briefing
+ * this page ever rendered and serves it forever (see CLAUDE.md §4).
  */
 
-export const revalidate = 600;
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export const metadata: Metadata = {
   title: "Daily Briefing · YourScore",
   description: "The day's biggest Premier League stories, in one place.",
 };
 
-async function getBriefing(): Promise<PlBriefing | null> {
-  try {
-    const h = await headers();
-    const host = h.get("host") ?? "yourscore.app";
-    const proto = host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
-    const res = await fetch(`${proto}://${host}/api/pl/briefing`, { next: { revalidate: 600 } });
-    if (!res.ok) return null;
-    return (await res.json()).doc ?? null;
-  } catch {
-    return null;
-  }
-}
-
 export default async function BriefingPage() {
-  const briefing = await getBriefing();
+  const briefing = await latestBriefing();
   return <BriefingView briefing={briefing} />;
 }
