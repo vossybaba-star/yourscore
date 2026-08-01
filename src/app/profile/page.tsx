@@ -6,6 +6,8 @@ import { getUserBounded } from "@/lib/supabase/bounded";
 import { fantasyAllowed } from "@/lib/fantasy/flag";
 import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
 import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
+import { FantasyStats } from "@/components/profile/FantasyStats";
+import { fantasyStreak } from "@/lib/fantasy/streak";
 import { Button } from "@/components/ui/Button";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -43,13 +45,20 @@ export default async function ProfilePage() {
 
   const userId = user.id;
 
-  // Your fantasy squads by gameweek (service client — the tables are RLS own-row).
+  // Fantasy PL profile data (service client — the tables are RLS own-row).
   // Gated on the flag so it's dark until Fantasy launches, like the rest of it.
-  // The same boolean decides whether the Games/Fantasy tabs appear at all.
+  // The same boolean decides whether the Games/Fantasy PL tabs appear at all.
   const hasFantasy = fantasyAllowed(userId);
-  const fantasy = hasFantasy
-    ? await loadProfileTeams(createServiceClient(), userId)
-    : { teams: [], players: [] };
+  const fantasySvc = createServiceClient() as any;
+  const [fantasy, fplRankRows, fplEntryRows] = hasFantasy
+    ? await Promise.all([
+        loadProfileTeams(createServiceClient(), userId),
+        // World rank + season totals (migration 238). Unranked until GW1 scores.
+        fantasySvc.rpc("get_fantasy_world_rank", { p_user_id: userId }).then((r: any) => r.data),
+        // Locked gameweeks drive the "submitted a squad" streak.
+        fantasySvc.from("fantasy_entries").select("gw, locked_at").eq("user_id", userId).then((r: any) => r.data),
+      ])
+    : [{ teams: [], players: [] }, null, null];
 
   // Your follow-graph counts (one-way follows, separate from friends).
   // user_follows post-dates the generated Database types.
@@ -222,6 +231,16 @@ export default async function ProfilePage() {
     daysPlayed,
     gameTypesPlayed: gameTypeCounts.filter((c) => c > 0).length,
   });
+  // ── Fantasy PL summary ──────────────────────────────────────────────────
+  // World rank + streak. All real; all empty until GW1 scores (21 Aug), where
+  // the RPC returns a null rank and there are no locked gameweeks yet.
+  const fpl: any = (fplRankRows ?? [])[0] ?? null;
+  const lockedGws = ((fplEntryRows ?? []) as any[])
+    .filter((r) => r.locked_at)
+    .map((r) => r.gw as number);
+  const fplStreak = fantasyStreak(lockedGws);
+  const fplDeadline = "21 Aug";
+
   // Half the player base sits on 0 pts, where the "gap" to the player above
   // rounds to a meaningless 1 pt. Show them a first rung, not a fake race.
   const ladder = ((ladderRows ?? []) as LadderRow[]).map((r) => ({ ...r, overall_score: Number(r.overall_score) }));
@@ -340,7 +359,17 @@ export default async function ProfilePage() {
           }
           fantasy={
             fantasy.teams.length > 0 ? (
-              <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+              <>
+                <FantasyStats
+                  worldRank={fpl?.world_rank ?? null}
+                  totalManagers={Number(fpl?.total_managers ?? 0)}
+                  totalPoints={Number(fpl?.total_points ?? 0)}
+                  streak={fplStreak}
+                  gameweeksPlayed={lockedGws.length}
+                  deadlineLabel={fplDeadline}
+                />
+                <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+              </>
             ) : (
               <div
                 className="rounded-2xl px-5 py-6 text-center"
@@ -349,7 +378,8 @@ export default async function ProfilePage() {
                 <p className="text-3xl mb-2">⚽</p>
                 <p className="font-display text-2xl text-white">Your squad awaits</p>
                 <p className="font-body text-sm text-text-muted mt-1.5 mb-4">
-                  Build your XI and it shows here — points and rank land once the season kicks off.
+                  Build your XI and it shows here — points, world rank and your streak land once
+                  the season kicks off.
                 </p>
                 <Link
                   href="/fantasy"

@@ -48,7 +48,7 @@ export function ProfileTabs({
                 border: active ? `1px solid ${accent}40` : "1px solid transparent",
               }}
             >
-              {t === "games" ? "Games" : "Fantasy"}
+              {t === "games" ? "Games" : "Fantasy PL"}
             </button>
           );
         })}

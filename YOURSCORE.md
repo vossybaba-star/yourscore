@@ -6,7 +6,22 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-07-30 (**Profile tidied — Games vs Fantasy tabs, a real award cabinet.**
+> **Confirmed:** 2026-08-01 (**Profile Fantasy tab → "Fantasy PL", now with a world rank and a
+> weekly streak.** Branch `feat/fantasy-pl-profile`, migration **238 APPLIED to prod**.
+> The tab is renamed **Fantasy PL**, and above the XI-by-gameweek pitch it now shows real detail:
+> a **world rank** ("#8,421 of N managers · 214 pts") and a **fantasy streak** = consecutive
+> gameweeks you locked a squad, plus gameweeks-played and season points.
+> **New `get_fantasy_world_rank(user)` RPC** — the FIRST global fantasy-points ladder (nothing
+> ranked all managers by points before; only league-scoped ranks and a knowledge-accuracy board
+> existed). Ranks managers by summed `fantasy_entries.points`; a manager is on the ladder only
+> once they have SCORED points. **Honest pre-season:** GW1 is 21 Aug, nobody has points or a
+> locked gameweek yet, so the RPC returns a null rank and the UI shows "Unranked — season
+> starts 21 Aug" and "streak starts GW1" rather than a fake #1-of-everyone. It all populates the
+> instant scores land — verified by scoring two real users in a rolled-back transaction (80pts
+> → #1) and by a sim preview. Streak logic is a pure helper (`src/lib/fantasy/streak.ts`,
+> 8 unit cases). Still gated by `fantasyAllowed()` — dark to real users until launch.)
+>
+> **Previously confirmed:** 2026-07-30 (**Profile tidied — Games vs Fantasy tabs, a real award cabinet.**
 > Branch `feat/profile-tabs`. The page was one long scroll that mixed everything; now the
 > shared identity (player card + YourScore rank + ladder) stays on top, and a **Games ｜ Fantasy**
 > tab bar splits the stats underneath — some players are here for 38-0/quiz, some for Fantasy,
