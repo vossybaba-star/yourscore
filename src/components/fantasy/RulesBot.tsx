@@ -265,6 +265,16 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
 
 export function RulesBot() {
   const [open, setOpen] = useState(false);
+
+  // The rules stepper's last card has an "Ask a question" button — it has no
+  // reference to this component's state, so it reaches it via a window event
+  // instead. Anything else on the page could open the sheet the same way.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener("rules-bot-open", onOpen);
+    return () => window.removeEventListener("rules-bot-open", onOpen);
+  }, []);
+
   return (
     <>
       <button

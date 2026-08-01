@@ -453,3 +453,14 @@ input, textarea, select {
 .season-shine { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.13) 47%, transparent 60%); transform: translateX(-130%); animation: seasonSweep 4s ease-in-out infinite; }
 .season-dot { animation: seasonDot 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .season-shine, .season-dot { animation: none; } }
+
+/* Rules stepper (/fantasy/rules) — quick directional fade+slide between story
+   cards, CSS only. The card remounts on a `key={index}` change so the class
+   replays every time; direction tells left-tap-back from right-tap-next. */
+@keyframes rulesCardInNext { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes rulesCardInBack { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
+.rules-card-in-next { animation: rulesCardInNext 0.18s ease; }
+.rules-card-in-back { animation: rulesCardInBack 0.18s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .rules-card-in-next, .rules-card-in-back { animation: none; }
+}
