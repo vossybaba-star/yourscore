@@ -17,6 +17,7 @@ import { commentRejection } from "@/lib/moderation";
 import { HttpError } from "./server";
 import { enginePool, clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
+import { loadLeagueFeed, type FeedEvent } from "./feed";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -79,6 +80,16 @@ async function requireMemberLeague(db: Db, code: string, userId: string) {
     .select("user_id").eq("league_id", league.id).eq("user_id", userId).maybeSingle();
   if (!member) throw new HttpError(403, "not in this league");
   return league as { id: string; name: string; owner_id: string; stakes: string | null };
+}
+
+/** The league's activity feed — the same manager moves the global feed shows, but
+ *  filtered to THIS league's members. Powers the Hub's "Recent activity" rail and
+ *  the full league feed page. Member-only. */
+export async function leagueFeed(db: Db, userId: string, code: string, limit = 20): Promise<{ events: FeedEvent[] }> {
+  const league = await requireMemberLeague(db, code, userId);
+  const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", league.id);
+  const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id);
+  return { events: await loadLeagueFeed(db, userId, memberIds, limit) };
 }
 
 /** The latest gameweek any member has a scored entry for, or null. */

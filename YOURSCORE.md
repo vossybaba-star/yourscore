@@ -716,6 +716,25 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-01** — **Private league polish 2 + a league feed.** (1) **Chat composer is now a
+  slim bar PINNED above the nav** (`position: fixed`, not the earlier sticky that scrolled away);
+  (2) **tighter message spacing** — reactions are tap-to-open (no dead ＋ row padding every
+  message), the Hub/Chat/Table/History tab strip is thinner; (3) **keeper's name no longer
+  clipped** in shared/feed squads (reserve room past the square pitch edge — chat, the new league
+  feed, and the main `/fantasy/feed`); (4) **NEW: a "Recent activity" rail on the Hub** above the
+  chat tile — a horizontal, swipeable feed of the league's own moves (squads, transfers, captains,
+  hauls), with **"See all →" into a full league feed page** (`/fantasy/leagues/[code]/feed`). Data
+  via `loadLeagueFeed` (the global feed, filtered to member ids) + `leagueFeed()` +
+  `GET /api/fantasy/leagues/[code]/feed`, member-gated. (§9)
+- **2026-08-01** — **Fantasy slickness pass.** (1) **The squares are now on EVERY fantasy
+  screen** — the faint grid backdrop is painted once globally via `main[data-fantasy]::before`
+  in globals.css (keyed off the attribute every fantasy `<main>` already sets), so leagues,
+  chat, players, knowledge etc. no longer ship flat; removed the per-screen `bg-grid-pattern`
+  divs from FantasyHub/FantasyTeaser. (2) **League Chat redesign** (`LeagueChatView`): compact
+  composer, tighter message rhythm, **shared squads render full-width**, and **colour-coded
+  entry types** — gold captain, lime poll, amber news, teal squad/player/compare. (3) **Hub chat
+  preview** now summarises structured cards ("📊 …", "👕 shared your squad") instead of leaking
+  the raw internal body. (§9)
 - **2026-08-01** — **Fantasy "How it works" redesign + rules bot** (`/fantasy/rules`). The
   numbered walkthrough is replaced by an eight-card story stepper (tap/swipe, segmented
   progress) whose scenes are LIVE slices of the real app: real SportMonks player faces and

@@ -218,8 +218,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   // straight into the builder with no explanation. Same screen for both now —
   // only the button differs (sign in, versus start building).
   const intro = (cta: { label: string; onClick: () => void; note: string }) => (
-    <main style={embedded ? EMBEDDED_PAGE : page}>
-      <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
+    <main data-fantasy style={embedded ? EMBEDDED_PAGE : page}>
       <div className="relative">
         {!embedded && <FantasyHeader subtitle="Build your squad, then dig in with the Scout." />}
 
@@ -342,13 +341,13 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     note: "Fifteen players, one budget. You can change it freely until the season starts.",
   });
   if (err) return (
-    <main style={embedded ? EMBEDDED_PAGE : page}>
+    <main data-fantasy style={embedded ? EMBEDDED_PAGE : page}>
       {!embedded && <FantasyHeader />}
       <ErrorState message={err} onRetry={() => { setErr(null); refresh(); }} />
     </main>
   );
   if (!state || !squad) return (
-    <main style={embedded ? EMBEDDED_PAGE : page}>
+    <main data-fantasy style={embedded ? EMBEDDED_PAGE : page}>
       {!embedded && <FantasyHeader />}
       <Loading label="Loading your team">
         {/* Shaped like the hub: hero, the three numbers, the pitch. */}
@@ -678,8 +677,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
 
   return (
     <main data-fantasy style={embedded ? EMBEDDED_PAGE : page} onClick={() => menuFor !== null && setMenuFor(null)}>
-      {/* Squared backdrop — the same fixed grid the 38-0 screens use. */}
-      <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
       {!embedded && <FantasyHeader subtitle="Your squad, moves and chips for the gameweek." />}
 

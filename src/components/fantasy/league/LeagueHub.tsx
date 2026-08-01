@@ -5,8 +5,25 @@
 import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { LeagueTableRows } from "./LeagueTableRows";
-import type { ChatData, LeagueDetail, LeagueRow } from "./types";
+import { LeagueRecentRail } from "./LeagueRecentRail";
+import type { ChatData, ChatMessage, LeagueDetail, LeagueRow } from "./types";
 import { nameOf } from "./types";
+
+/** A one-line summary of a message for the hub preview. A structured card can't
+ *  show its whole self here, so it says what it is in plain words — never the raw
+ *  internal body ("shared their captain"), which read as broken third person. */
+function previewText(m: ChatMessage): string {
+  const mine = m.isMe;
+  switch (m.kind) {
+    case "player": return `📤 shared ${m.player?.name ?? "a player"}`;
+    case "captain": return `Ⓒ captain pick${m.player ? `: ${m.player.name}` : ""}`;
+    case "squad": return `👕 shared ${mine ? "your" : "their"} squad`;
+    case "news": return `📰 ${m.news?.title ?? "shared some news"}`;
+    case "compare": return m.compare ? `⚖️ ${m.compare.a.name} vs ${m.compare.b.name}` : "⚖️ shared a comparison";
+    case "poll": return `📊 ${m.poll?.question ?? "started a poll"}`;
+    default: return m.body;
+  }
+}
 
 function countdown(iso: string | null): string | null {
   if (!iso) return null;
@@ -131,6 +148,9 @@ export function LeagueHub({ detail, chat, onTab }: {
         </div>
       )}
 
+      {/* RECENT ACTIVITY — the league's pulse, a swipeable rail into the feed. */}
+      <LeagueRecentRail code={detail.league.code} />
+
       {/* CHAT PREVIEW */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
         <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>CHAT</span>
@@ -143,7 +163,7 @@ export function LeagueHub({ detail, chat, onTab }: {
                 <PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={22} />
                 <div style={{ minWidth: 0 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: m.isMe ? TEAL : INK }}>{m.isMe ? "You" : m.name}: </span>
-                  <span style={{ fontSize: 12.5, color: MUTED, overflowWrap: "anywhere" }}>{m.body}</span>
+                  <span style={{ fontSize: 12.5, color: MUTED, overflowWrap: "anywhere" }}>{previewText(m)}</span>
                 </div>
               </div>
             ))}

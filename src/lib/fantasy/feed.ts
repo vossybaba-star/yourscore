@@ -166,9 +166,31 @@ export async function loadFeed(
     .order("created_at", { ascending: false }).limit(fetchLimit);
   if (scope === "following") q = q.in("actor_id", followeeIds);
   const { data: rows } = await q;
+  const events = await hydrateEvents(db, viewerId, rows ?? [], sort, limit);
+  return { events, followingCount };
+}
+
+/** The league-scoped feed: the SAME activity, filtered to this league's members.
+ *  A flat list (no follow graph) — everyone in the league is "yours" by default,
+ *  which is the whole point of a private league. Newest first. */
+export async function loadLeagueFeed(
+  db: Db, viewerId: string | null, memberIds: string[], limit = 20,
+): Promise<FeedEvent[]> {
+  if (!memberIds.length) return [];
+  const { data: rows } = await db.from("fantasy_feed_events")
+    .select("id, actor_id, type, gw, payload, created_at")
+    .in("actor_id", memberIds)
+    .order("created_at", { ascending: false }).limit(limit);
+  return hydrateEvents(db, viewerId, rows ?? [], "recent", limit);
+}
+
+/** Turn raw feed rows into resolved FeedEvents: identities, sentences, boards,
+ *  reaction counts. Shared by the global/following feed and the league feed. */
+async function hydrateEvents(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const events = (rows ?? []) as any[];
-  if (!events.length) return { events: [], followingCount };
+  db: Db, viewerId: string | null, events: any[], sort: FeedSort, limit: number,
+): Promise<FeedEvent[]> {
+  if (!events.length) return [];
 
   const eventIds = events.map((e) => e.id as string);
   const actorIds = Array.from(new Set(events.map((e) => e.actor_id as string)));
@@ -250,5 +272,5 @@ export async function loadFeed(
       (b.likeCount + b.commentCount) - (a.likeCount + a.commentCount)
       || Date.parse(b.createdAt) - Date.parse(a.createdAt));
   }
-  return { events: mapped.slice(0, limit), followingCount };
+  return mapped.slice(0, limit);
 }

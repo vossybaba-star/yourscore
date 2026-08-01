@@ -91,7 +91,6 @@ function PortraitStack() {
 export function FantasyTeaser() {
   return (
     <main data-fantasy style={{ ...page, padding: "calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(96px + env(safe-area-inset-bottom, 0px))" }}>
-      <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
       <div className="relative">
         <Header />
 

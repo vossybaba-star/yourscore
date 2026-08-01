@@ -95,15 +95,19 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
           the back button retraces feed → profile → player. */}
       {ev.board && ev.board.xi.length > 0 && (
         <Link href={`/profile/${ev.actorId}#fantasy-xi`} style={{ display: "block", marginTop: 12, textDecoration: "none" }}>
-          <SquadBoard
-            mode="complete"
-            players={ev.board.players}
-            xi={ev.board.xi}
-            bench={ev.board.bench}
-            captain={ev.board.captain}
-            vice={ev.board.vice}
-          />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 8, fontSize: 12.5, fontWeight: 700, color: TEAL }}>
+          {/* paddingBottom reserves room for the keeper's name, which sits just
+              past the square pitch edge — without it the caption overlaps it. */}
+          <div style={{ paddingBottom: 12 }}>
+            <SquadBoard
+              mode="complete"
+              players={ev.board.players}
+              xi={ev.board.xi}
+              bench={ev.board.bench}
+              captain={ev.board.captain}
+              vice={ev.board.vice}
+            />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: TEAL }}>
             See {ev.actorName}&apos;s squad <span aria-hidden>›</span>
           </div>
         </Link>

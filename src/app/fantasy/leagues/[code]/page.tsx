@@ -167,8 +167,8 @@ export default function LeaguePage() {
         </Card>
       )}
 
-      {/* Internal tabs */}
-      <div style={{ display: "flex", gap: 4, margin: "12px 0 14px", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 4 }}>
+      {/* Internal tabs — slim, one thumb-height row. */}
+      <div style={{ display: "flex", gap: 3, margin: "10px 0 12px", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: 3 }}>
         {TABS.map(([k, label]) => {
           const active = tab === k;
           // History/Chat need membership; a guest sees Hub + Table.
@@ -176,7 +176,7 @@ export default function LeaguePage() {
           if (locked) return null;
           return (
             <button key={k} onClick={() => goTab(k)} style={{
-              flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              flex: 1, padding: "5px 4px", borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
               background: active ? tint(TEAL, "22") : "transparent", color: active ? TEAL : MUTED,
               border: `1px solid ${active ? tint(TEAL, "55") : "transparent"}`,
             }}>{label}</button>
