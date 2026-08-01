@@ -25,9 +25,21 @@ export interface LeagueDetail {
 }
 
 export interface ChatReaction { emoji: string; count: number; mine: boolean }
+export interface PlayerCard {
+  id: number; name: string; club: string; pos: string; price: number;
+  avatarUrl: string | null; note: string | null;
+}
+export interface PollCard {
+  question: string;
+  options: { text: string; votes: number }[];
+  totalVotes: number;
+  myVote: number | null;
+}
+export type ChatKind = "text" | "player" | "poll";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
+  kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
 export interface ChatData {

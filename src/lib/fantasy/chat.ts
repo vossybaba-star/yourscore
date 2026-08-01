@@ -15,7 +15,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { commentRejection } from "@/lib/moderation";
 import { HttpError } from "./server";
-import { enginePool } from "./pool";
+import { enginePool, clientPool } from "./pool";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -26,12 +26,33 @@ export const CHAT_EMOJI = ["😂", "👀", "🔥", "👏", "❤️", "😭"] as 
 export type ChatEmoji = (typeof CHAT_EMOJI)[number];
 export interface ChatReaction { emoji: string; count: number; mine: boolean }
 
+/** A shared player card (Phase 1b) — resolved from the pool, never trusted from
+ *  the payload beyond the id. */
+export interface PlayerCard {
+  id: number; name: string; club: string; pos: string; price: number;
+  avatarUrl: string | null; note: string | null;
+}
+/** A poll card — the definition lives in the message payload, the tallies in
+ *  comment_poll_votes. */
+export interface PollCard {
+  question: string;
+  options: { text: string; votes: number }[];
+  totalVotes: number;
+  myVote: number | null;
+}
+export type ChatKind = "text" | "player" | "poll";
+
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean;
   reactions: ChatReaction[];
+  kind: ChatKind;
+  player?: PlayerCard | null;
+  poll?: PollCard | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
+
+const MAX_POLL_OPTIONS = 4;
 
 async function requireMemberLeague(db: Db, code: string, userId: string) {
   const { data: league } = await db.from("fantasy_leagues")
@@ -105,20 +126,24 @@ export async function leagueChat(db: Db, userId: string, code: string) {
   const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id);
 
   const { data: rows } = await db.from("comments")
-    .select("id, user_id, body, created_at")
+    .select("id, user_id, body, created_at, kind, payload")
     .eq("subject_type", "fantasy_league").eq("subject_id", league.id)
     .is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
-  const msgs = (rows ?? []) as { id: string; user_id: string; body: string; created_at: string }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const msgs = (rows ?? []) as { id: string; user_id: string; body: string; created_at: string; kind: string | null; payload: any }[];
 
   const authorIds = Array.from(new Set(msgs.map((m) => m.user_id)));
   const msgIds = msgs.map((m) => m.id);
-  const [{ data: profs }, { data: reactRows }] = await Promise.all([
+  const [{ data: profs }, { data: reactRows }, { data: voteRows }] = await Promise.all([
     authorIds.length
       ? db.from("profiles").select("id, display_name, username, avatar_url").in("id", authorIds)
       : Promise.resolve({ data: [] as { id: string; display_name: string | null; username: string | null; avatar_url: string | null }[] }),
     msgIds.length
       ? db.from("comment_reactions").select("comment_id, user_id, emoji").in("comment_id", msgIds)
       : Promise.resolve({ data: [] as { comment_id: string; user_id: string; emoji: string }[] }),
+    msgIds.length
+      ? db.from("comment_poll_votes").select("comment_id, user_id, option_index").in("comment_id", msgIds)
+      : Promise.resolve({ data: [] as { comment_id: string; user_id: string; option_index: number }[] }),
   ]);
   const profOf = new Map(((profs ?? []) as { id: string; display_name: string | null; username: string | null; avatar_url: string | null }[])
     .map((p) => [p.id, p]));
@@ -134,8 +159,39 @@ export async function leagueChat(db: Db, userId: string, code: string) {
   const reactionsFor = (id: string): ChatReaction[] => {
     const per = reactOf.get(id);
     if (!per) return [];
-    // Keep the founder's emoji order stable.
     return CHAT_EMOJI.filter((e) => per.has(e)).map((e) => ({ emoji: e, count: per.get(e)!.count, mine: per.get(e)!.mine }));
+  };
+
+  // Poll tallies per message: option index → count, plus my own vote.
+  const votesOf = new Map<string, { counts: Map<number, number>; mine: number | null }>();
+  for (const v of (voteRows ?? []) as { comment_id: string; user_id: string; option_index: number }[]) {
+    const rec = votesOf.get(v.comment_id) ?? { counts: new Map<number, number>(), mine: null };
+    rec.counts.set(v.option_index, (rec.counts.get(v.option_index) ?? 0) + 1);
+    if (v.user_id === userId) rec.mine = v.option_index;
+    votesOf.set(v.comment_id, rec);
+  }
+
+  // The pool, for resolving shared player cards (identity is never trusted from
+  // the payload beyond the id).
+  const poolById = new Map(clientPool().players.map((p) => [p.id, p]));
+
+  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null } => {
+    if (m.kind === "player" && m.payload && typeof m.payload === "object") {
+      const pid = Number((m.payload as { playerId?: unknown }).playerId);
+      const p = poolById.get(pid);
+      if (!p) return { kind: "text" };
+      const note = typeof (m.payload as { note?: unknown }).note === "string" ? (m.payload as { note: string }).note : null;
+      return { kind: "player", player: { id: p.id, name: p.name, club: p.club, pos: p.pos, price: p.price, avatarUrl: p.avatarUrl ?? null, note } };
+    }
+    if (m.kind === "poll" && m.payload && typeof m.payload === "object") {
+      const q = String((m.payload as { question?: unknown }).question ?? "");
+      const rawOpts = Array.isArray((m.payload as { options?: unknown }).options) ? (m.payload as { options: unknown[] }).options : [];
+      const rec = votesOf.get(m.id);
+      const options = rawOpts.slice(0, MAX_POLL_OPTIONS).map((o, i) => ({ text: String(o), votes: rec?.counts.get(i) ?? 0 }));
+      const totalVotes = options.reduce((s, o) => s + o.votes, 0);
+      return { kind: "poll", poll: { question: q, options, totalVotes, myVote: rec?.mine ?? null } };
+    }
+    return { kind: "text" };
   };
 
   const latest = await latestScoredGw(db, memberIds);
@@ -145,12 +201,14 @@ export async function leagueChat(db: Db, userId: string, code: string) {
     // oldest-first for a chat read
     messages: msgs.reverse().map((m): ChatMessage => {
       const p = profOf.get(m.user_id);
+      const card = cardFor(m);
       return {
         id: m.id, userId: m.user_id,
         name: p?.display_name ?? (p?.username ? `@${p.username}` : "Player"),
         avatarUrl: p?.avatar_url ?? null,
         body: m.body, createdAt: m.created_at, isMe: m.user_id === userId,
         reactions: reactionsFor(m.id),
+        kind: card.kind, player: card.player ?? null, poll: card.poll ?? null,
       };
     }),
     moments: latest != null ? await momentsForGw(db, memberIds, latest) : [],
@@ -203,4 +261,60 @@ export async function setStakes(db: Db, userId: string, code: string, stakes: un
     .update({ stakes: text || null }).eq("id", league.id);
   if (error) throw new HttpError(500, error.message);
   return { ok: true, stakes: text || null };
+}
+
+// ── Phase 1b: structured messages ────────────────────────────────────────────
+
+/** Post a poll into the league chat: a question and 2–4 options. */
+export async function postPoll(db: Db, userId: string, code: string, question: unknown, options: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const q = typeof question === "string" ? question.trim().slice(0, 120) : "";
+  const opts = Array.isArray(options)
+    ? options.map((o) => (typeof o === "string" ? o.trim().slice(0, 60) : "")).filter(Boolean).slice(0, MAX_POLL_OPTIONS)
+    : [];
+  if (!q) throw new HttpError(400, "A poll needs a question");
+  if (opts.length < 2) throw new HttpError(400, "A poll needs at least two options");
+  const why = commentRejection([q, ...opts].join(" "));
+  if (why) throw new HttpError(400, why);
+  const { error } = await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+    body: q, kind: "poll", payload: { question: q, options: opts },
+  });
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
+}
+
+/** Cast or change a vote on a league poll. */
+export async function votePoll(db: Db, userId: string, code: string, commentId: unknown, optionIndex: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const id = typeof commentId === "string" ? commentId : "";
+  const idx = Number(optionIndex);
+  if (!id || !Number.isInteger(idx) || idx < 0 || idx >= MAX_POLL_OPTIONS) throw new HttpError(400, "bad vote");
+  const { data: c } = await db.from("comments")
+    .select("id, kind, payload").eq("id", id).eq("subject_type", "fantasy_league").eq("subject_id", league.id).maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const poll = c as { kind: string; payload: any } | null;
+  if (!poll || poll.kind !== "poll") throw new HttpError(404, "poll not found");
+  const optCount = Array.isArray(poll.payload?.options) ? poll.payload.options.length : 0;
+  if (idx >= optCount) throw new HttpError(400, "no such option");
+  const { error } = await db.from("comment_poll_votes")
+    .upsert({ comment_id: id, user_id: userId, option_index: idx }, { onConflict: "comment_id,user_id" });
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
+}
+
+/** Share a player card into a league's chat (invoked from the player's profile). */
+export async function sharePlayerToLeague(db: Db, userId: string, code: string, playerId: unknown, note: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const pid = Number(playerId);
+  if (!Number.isInteger(pid) || !enginePool().some((p) => p.id === pid)) throw new HttpError(400, "unknown player");
+  const n = typeof note === "string" ? note.trim().slice(0, 200) : "";
+  const why = n ? commentRejection(n) : null;
+  if (why) throw new HttpError(400, why);
+  const { error } = await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+    body: n || "shared a player", kind: "player", payload: { playerId: pid, note: n || null },
+  });
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
 }

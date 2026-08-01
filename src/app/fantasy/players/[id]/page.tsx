@@ -12,6 +12,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { page } from "@/components/fantasy/shared";
 import { PlayerProfile } from "@/components/fantasy/PlayerProfile";
+import { SharePlayerToLeague } from "@/components/fantasy/league/SharePlayerToLeague";
 import { BackPill } from "@/components/ui/BackPill";
 import { BottomNav } from "@/components/ui/BottomNav";
 
@@ -26,6 +27,10 @@ export default function FantasyPlayerProfilePage() {
         {Number.isFinite(id) && (
           <div style={{ marginTop: 12 }}>
             <PlayerProfile playerId={id} onClose={() => router.back()} />
+            {/* Share-from-source: drop this player into a league's chat. */}
+            <div style={{ marginTop: 12 }}>
+              <SharePlayerToLeague playerId={id} />
+            </div>
           </div>
         )}
       </main>
