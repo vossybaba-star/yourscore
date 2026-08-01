@@ -23,6 +23,7 @@ import { spinForNation, spinWorld, ensurePool, isPoolReady } from "@/lib/draft/p
 import type { ServedQuestion } from "@/lib/draft/wc-quiz-public";
 import { upgradeBand, type DraftBand } from "@/lib/draft/draft-quiz";
 import { slotsFor } from "@/lib/draft/formations";
+import { readJson } from "@/lib/http";
 import { CATEGORY_COLOR, posCategory } from "@/lib/draft/score";
 import { RUN_STAGE_LABEL, isDuel, type RunStage, type RunMode } from "@/lib/draft/wc";
 import { wcNation } from "@/data/draft/wc2026";
@@ -121,9 +122,28 @@ export default function WorldCupRun() {
   }, []);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/draft/wc/${id}`);
-    const data = await res.json();
-    if (!res.ok) { setError(data.error ?? "Run not found"); setLoading(false); return; }
+    // This runs on mount, so it is the request most often torn down mid-flight —
+    // a back-tap or a crawler disconnecting resolves it with no body, and the bare
+    // `res.json()` this used to do threw straight past to the error boundary. It
+    // was the app's highest-volume production error.
+    let res: Response;
+    try {
+      res = await fetch(`/api/draft/wc/${id}`);
+    } catch {
+      return; // aborted / offline — the view is going away, nothing to report
+    }
+    const data = await readJson<{
+      error?: string;
+      run: Omit<Run, "ranked">;
+      ranked?: boolean;
+      matches: MatchRow[];
+      opponent: Opponent | null;
+      pensPending?: PensPending;
+      pendingTie?: PendingTie;
+    }>(res);
+    if (!res.ok) { setError(data?.error ?? "Run not found"); setLoading(false); return; }
+    // 200 with an unreadable body: never leave the spinner up forever.
+    if (!data) { setError("Couldn't load this run — refresh to try again."); setLoading(false); return; }
     setRun({ ...data.run, ranked: data.ranked === true }); setMatches(data.matches); setOpponent(data.opponent); setLoading(false);
     // A tie in progress resumes exactly where it was left: mid-shootout, or at the choice.
     if (data.pensPending) { setPens(data.pensPending); setPensDone(null); }
