@@ -2,6 +2,8 @@
  *  lib/fantasy/leagues.ts + chat.ts, re-declared here so client components don't
  *  import the `server-only` libs. */
 
+import type { BoardPlayer } from "@/lib/fantasy/board";
+
 export const CHAT_EMOJI = ["😂", "👀", "🔥", "👏", "❤️", "😭"] as const;
 
 export interface LeagueRow {
@@ -35,11 +37,16 @@ export interface PollCard {
   totalVotes: number;
   myVote: number | null;
 }
-export type ChatKind = "text" | "player" | "poll";
+export interface SquadCard {
+  players: BoardPlayer[];
+  xi: number[]; bench: number[];
+  captain: number | null; vice: number | null;
+}
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
-  kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null;
+  kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
 export interface ChatData {

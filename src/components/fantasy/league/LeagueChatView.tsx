@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { CHAT_EMOJI, type ChatData, type ChatMessage } from "./types";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
@@ -47,11 +48,20 @@ function Reactions({ msg, onReact }: { msg: ChatMessage; onReact: (emoji: string
 
 function SharedPlayer({ msg, onView }: { msg: ChatMessage; onView: () => void }) {
   const p = msg.player!;
+  const captain = msg.kind === "captain";
+  const who = msg.isMe ? "YOUR" : `${msg.name.toUpperCase()}'S`;
   return (
-    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12, maxWidth: "92%" }}>
-      <div style={{ fontSize: 9.5, letterSpacing: "0.1em", color: TEAL, marginBottom: 8 }}>{msg.isMe ? "YOU SHARED" : `${msg.name.toUpperCase()} SHARED`}</div>
+    <div style={{ background: PANEL, border: `1px solid ${captain ? tint(GOLD, "44") : LINE}`, borderRadius: 12, padding: 12, maxWidth: "92%" }}>
+      <div style={{ fontSize: 9.5, letterSpacing: "0.1em", color: captain ? GOLD : TEAL, marginBottom: 8 }}>
+        {captain ? `${who} CAPTAIN` : (msg.isMe ? "YOU SHARED" : `${msg.name.toUpperCase()} SHARED`)}
+      </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size={44} />
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size={44} ring={captain ? GOLD : undefined} />
+          {captain && (
+            <span aria-hidden style={{ position: "absolute", top: -4, right: -4, width: 18, height: 18, borderRadius: 999, background: GOLD, color: "#3a2600", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>C</span>
+          )}
+        </div>
         <div style={{ minWidth: 0 }}>
           <div className="font-display" style={{ fontSize: 15, fontWeight: 700, color: INK, lineHeight: 1.2 }}>{p.name}</div>
           <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{p.club} · {p.pos} · <span style={{ color: GOLD, fontWeight: 700 }}>£{p.price}m</span></div>
@@ -61,6 +71,16 @@ function SharedPlayer({ msg, onView }: { msg: ChatMessage; onView: () => void })
       <button onClick={onView} style={{ marginTop: 10, background: "none", border: "none", color: TEAL, fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>
         View player →
       </button>
+    </div>
+  );
+}
+
+function SharedSquad({ msg }: { msg: ChatMessage }) {
+  const s = msg.squad!;
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12, width: "100%" }}>
+      <div style={{ fontSize: 9.5, letterSpacing: "0.1em", color: TEAL, marginBottom: 8 }}>{msg.isMe ? "YOUR SQUAD" : `${msg.name.toUpperCase()}'S SQUAD`}</div>
+      <SquadBoard mode="complete" players={s.players} xi={s.xi} bench={s.bench} captain={s.captain ?? undefined} vice={s.vice ?? undefined} />
     </div>
   );
 }
@@ -142,6 +162,8 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
   const react = (id: string, emoji: string, on: boolean) => guard(() => api(code, "react", { commentId: id, emoji, on }));
   const vote = (id: string, i: number) => guard(() => api(code, "poll", { commentId: id, optionIndex: i }, "PATCH"));
   const postPoll = (q: string, opts: string[]) => guard(async () => { await api(code, "poll", { question: q, options: opts }); setPoll(false); });
+  const shareSquad = () => guard(async () => { await api(code, "share", { kind: "squad" }); setMenu(false); });
+  const shareCaptain = () => guard(async () => { await api(code, "share", { kind: "captain" }); setMenu(false); });
 
   return (
     <div>
@@ -174,8 +196,10 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
             <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: m.isMe && !structured ? "flex-end" : "flex-start" }}>
               <div style={{ display: "flex", gap: 8, maxWidth: "92%", flexDirection: m.isMe && !structured ? "row-reverse" : "row" }}>
                 {!m.isMe && !structured && <PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={26} />}
-                {m.kind === "player" && m.player ? (
+                {(m.kind === "player" || m.kind === "captain") && m.player ? (
                   <SharedPlayer msg={m} onView={() => router.push(`/fantasy/players/${m.player!.id}`)} />
+                ) : m.kind === "squad" && m.squad ? (
+                  <SharedSquad msg={m} />
                 ) : m.kind === "poll" && m.poll ? (
                   <Poll msg={m} onVote={(i) => vote(m.id, i)} />
                 ) : (
@@ -197,10 +221,13 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
 
       {poll && <PollComposer onPost={postPoll} onCancel={() => setPoll(false)} busy={busy} />}
 
-      {/* Composer with a plus-menu (poll; other content is shared from its source). */}
+      {/* Composer plus-menu: poll + share your own squad/captain. Other content
+          (a player, a scout pick) is shared from its own screen. */}
       {menu && !poll && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-          <Btn small onClick={() => { setPoll(true); setMenu(false); }}>📊 Create a poll</Btn>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+          <Btn small onClick={() => { setPoll(true); setMenu(false); }}>📊 Poll</Btn>
+          <Btn small disabled={busy} onClick={shareSquad}>👕 Share my squad</Btn>
+          <Btn small disabled={busy} onClick={shareCaptain}>©️ Share my captain</Btn>
         </div>
       )}
       <div style={{ display: "flex", gap: 6 }}>
