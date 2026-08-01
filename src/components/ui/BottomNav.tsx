@@ -104,6 +104,15 @@ export function BottomNav() {
   // One capture-phase handler covers every Link in the bar — no per-tab wiring.
   // The Links stay Links so they keep prefetching on viewport entry and still work
   // with a keyboard or a modifier-click; we only take over the plain left-tap.
+  //
+  // Every Link below carries `prefetch` (i.e. prefetch={true}) deliberately. The
+  // App Router default for a dynamic route only prefetches as far as the nearest
+  // loading.tsx — enough to show a skeleton, but the real content is still fetched
+  // after the tap, which is the "I tapped and then waited" feel. This bar is
+  // permanently on screen and its 5-6 destinations are the whole app, so their
+  // payloads (~27kB, edge-cached shells) are worth holding in memory before the tap.
+  // If this ever needs reversing, drop the attribute — behaviour falls back to the
+  // loading-boundary prefetch, it does not break.
   const onNavTap = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const href = hrefOf(e);
@@ -160,7 +169,7 @@ export function BottomNav() {
       >
         <NavProgress show={isPending} />
         <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2" onPointerDownCapture={onNavPointerDown} onPointerCancelCapture={onNavPointerCancel} onClickCapture={onNavTap}>
-          <Link href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
+          <Link prefetch href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M3 9.5L11 3l8 6.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={isHome ? "currentColor" : "none"} fillOpacity={isHome ? 0.15 : 0} />
               <path d="M8 20v-8h6v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -169,7 +178,7 @@ export function BottomNav() {
           </Link>
 
           {/* Play — the label now matches its route (/play). It was "Quiz". */}
-          <Link href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
+          <Link prefetch href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
             <span className="relative inline-flex items-center justify-center">
               <span className="nav-glow" aria-hidden />
               <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
@@ -186,14 +195,14 @@ export function BottomNav() {
               Route stays /matchweek; everything under it IS the PL (halftime
               quizzes are PL fixtures, Fantasy is a PL squad), and "Matchweek"
               names the first section inside. */}
-          <Link href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
+          <Link prefetch href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
             <FootballIcon active={isMatchweek} />
             <span className="font-body text-xs text-center leading-tight">Premier League</span>
           </Link>
 
           {/* Fantasy — public now (founder 2026-07-25). The tab is a teaser +
               waitlist opt-in until launch; the real game stays allowlisted inside. */}
-          <Link href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
+          <Link prefetch href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
             <span className="relative inline-flex items-center justify-center">
               <span className="nav-glow" aria-hidden />
               <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
@@ -210,7 +219,7 @@ export function BottomNav() {
               on a new phone had no way to CHOOSE to sign in outside the marketing
               home's hamburger (founder 2026-07-24). Sign-up keeps its own louder CTAs
               on the surfaces that sell; this is the quiet way back in. */}
-          <Link href="/auth/sign-in" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isSignIn ? "#aeea00" : "#8a948f" }}>
+          <Link prefetch href="/auth/sign-in" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isSignIn ? "#aeea00" : "#8a948f" }}>
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <path d="M9 3H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M13.5 7.5L17 11l-3.5 3.5M17 11H9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
@@ -237,7 +246,7 @@ export function BottomNav() {
       <NavProgress show={isPending} />
       <div className="flex items-start justify-between max-w-lg mx-auto px-1 py-2" onPointerDownCapture={onNavPointerDown} onPointerCancelCapture={onNavPointerCancel} onClickCapture={onNavTap}>
         {/* Home */}
-        <Link href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
+        <Link prefetch href="/" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isHome ? "#aeea00" : "#8a948f" }}>
           <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
             <path d="M3 9.5L11 3l8 6.5V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={isHome ? "currentColor" : "none"} fillOpacity={isHome ? 0.15 : 0} />
             <path d="M8 20v-8h6v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -248,7 +257,7 @@ export function BottomNav() {
         {/* Play — the solo games AND Versus (folded in, founder 2026-07-25). The
             your-turn badge lives here now: a waiting Versus match is a reason to
             open Play. */}
-        <Link href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
+        <Link prefetch href="/play" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isChallenges ? "#00d8c0" : "#8a948f" }}>
           <div className="relative">
             <span className="nav-glow" aria-hidden />
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
@@ -274,14 +283,14 @@ export function BottomNav() {
         </Link>
 
         {/* Premier League — quizzes at half time + the club-fan leaderboard. */}
-        <Link href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
+        <Link prefetch href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
           <FootballIcon active={isMatchweek} />
           <span className="font-body text-xs text-center leading-tight">Premier League</span>
         </Link>
 
         {/* Fantasy — its own tab, public now (founder 2026-07-25). A teaser +
             waitlist opt-in until launch; the real game stays allowlisted inside. */}
-        <Link href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
+        <Link prefetch href="/fantasy" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isFantasy ? "#00d8c0" : "#8a948f" }}>
           <span className="relative inline-flex items-center justify-center">
             <span className="nav-glow" aria-hidden />
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none" style={{ position: "relative", zIndex: 1 }}>
@@ -293,7 +302,7 @@ export function BottomNav() {
         </Link>
 
         {/* Profile */}
-        <Link href="/profile" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isProfile ? "#aeea00" : "#8a948f" }}>
+        <Link prefetch href="/profile" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isProfile ? "#aeea00" : "#8a948f" }}>
           <div className="relative">
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
               <circle cx="11" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" fill={isProfile ? "currentColor" : "none"} fillOpacity={isProfile ? 0.15 : 0} />
