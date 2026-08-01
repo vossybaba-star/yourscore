@@ -12,7 +12,9 @@
 import {
   BASELINE_CREDITS_PER_GW, BUDGET_TENTHS, CASH_POINTS, CREDIT_CAP,
   HIT_POINTS, MAX_PER_CLUB, SQUAD_QUOTA, SQUAD_SIZE, XI_SIZE,
+  creditsForRound,
 } from "./engine";
+import { pointsFor, ZERO_FACTS, type FantasyPos, type MatchFacts } from "./values";
 import { KNOWLEDGE_NAME } from "./brand";
 
 const money = (tenths: number) => `£${(tenths / 10).toFixed(1)}m`;
@@ -90,6 +92,50 @@ export const FAQ: FaqItem[] = [
  *  FAQ above, used server side as the ONLY thing the rules bot's model is
  *  allowed to answer from (see rules-qa/route.ts). Nothing here is hand typed
  *  that the engine already exports. */
+/** The scoring rows, read off the engine the same way the page's table is:
+ *  score a baseline 90 minutes, apply one fact, take the difference. */
+function scoringLines(): string[] {
+  const POSITIONS: FantasyPos[] = ["GK", "DEF", "MID", "FWD"];
+  const worth = (pos: FantasyPos, fact: Partial<MatchFacts>): number => {
+    const base: MatchFacts = { ...ZERO_FACTS, minutes: 90 };
+    return pointsFor(pos, { ...base, ...fact }) - pointsFor(pos, base);
+  };
+  const row = (label: string, fact: Partial<MatchFacts>) =>
+    `${label}: ` + POSITIONS
+      .map((p) => ({ p, v: worth(p, fact) }))
+      .filter((r) => r.v !== 0)
+      .map((r) => `${r.p} ${r.v > 0 ? "+" : ""}${r.v}`)
+      .join(", ");
+  return [
+    `Playing 60 minutes or more: ${POSITIONS.map((p) => `${p} +${pointsFor(p, { ...ZERO_FACTS, minutes: 90 })}`).join(", ")}`,
+    `Playing under 60 minutes: ${POSITIONS.map((p) => `${p} +${pointsFor(p, { ...ZERO_FACTS, minutes: 30 })}`).join(", ")}`,
+    row("Goal", { goals: 1 }),
+    row("Assist", { assists: 1 }),
+    row("Clean sheet, 60 minutes or more", { cleanSheet: 1 }),
+    row("Every 3 saves", { saves: 3 }),
+    row("Penalty saved", { pensSaved: 1 }),
+    row("Every 2 goals conceded", { conceded: 2 }),
+    row("Penalty missed", { pensMissed: 1 }),
+    row("Yellow card", { yellows: 1 }),
+    row("Red card", { reds: 1 }),
+    row("Own goal", { ownGoals: 1 }),
+    "Defensive contribution (10 clearances, interceptions, tackles and blocks for a defender; 12 including recoveries for everyone else): " +
+      POSITIONS.map((p) => ({ p, v: worth(p, p === "DEF" ? { dc: 10 } : { dcRec: 12 }) }))
+        .filter((r) => r.v !== 0).map((r) => `${r.p} +${r.v}`).join(", "),
+  ];
+}
+
+/** The credit curve as steps, read off creditsForRound rather than restated. */
+function creditLines(): string {
+  const steps: string[] = [];
+  let last = 0;
+  for (let c = 0; c <= 11; c++) {
+    const credits = creditsForRound(c);
+    if (credits !== last) { steps.push(`${c} right answers earn ${credits}`); last = credits; }
+  }
+  return steps.join("; ");
+}
+
 export function buildRulesDoc(): string {
   const lines = [
     "YOURSCORE FANTASY, THE RULES",
@@ -100,10 +146,13 @@ export function buildRulesDoc(): string {
     "DEADLINE: your team locks before the first match of the gameweek. Miss it and the team plays as it stands.",
     `TRANSFERS: ${BASELINE_CREDITS_PER_GW} free transfer every gameweek, always, no strings attached. The optional ${KNOWLEDGE_NAME} round of eleven questions earns extra transfers for right answers. Unused transfers bank up to ${CREDIT_CAP}. Beyond that, each extra transfer costs ${HIT_POINTS} points. If the bank is already full, further earned transfers cash out at ${CASH_POINTS} points each, straight onto the gameweek score.`,
     `THE KNOWLEDGE ROUND: optional, never required. Skipping it still lets the team play and score the gameweek normally.`,
-    "CHIPS: one chip a month, choice of Triple Captain, Bench Boost or Insight. A chip cannot return until the other two have been used.",
-    "SCORING: every point comes from a real match fact, goals, assists, clean sheets, minutes, saves, cards and the rest. There is no bonus points panel and no judged score.",
+    `THE CREDIT CURVE: ${creditLines()}. If the bank is full, further earned transfers cash out at ${CASH_POINTS} points each.`,
+    `CHIPS: one chip a month, choice of Triple Captain, Bench Boost or Insight. A chip cannot return until the other two have been used. Triple Captain makes the captain score triple instead of double for that gameweek. Bench Boost makes all ${SQUAD_SIZE} players score, bench included. Insight removes two wrong answers from one question of the ${KNOWLEDGE_NAME} round.`,
+    "SCORING: every point comes from a real match fact. There is no bonus points panel and no judged score. The exact values by position (GK, DEF, MID, FWD):",
+    ...scoringLines(),
+    "The captain's points count double after all facts are scored.",
     `TABLES: the season total is every gameweek added up. Each calendar month is also its own competition that resets. Level on points, the manager with the better round record wins, and ${KNOWLEDGE_NAME} is the final tiebreak.`,
-    "SELLING A PLAYER: a player who has risen in price pays back half the rise. A player who has fallen sells for exactly what he is worth now.",
+    "SELLING A PLAYER: a player who has risen in price pays back half the rise. A player who has fallen sells for exactly what he is worth now. Prices move once a week, never mid week.",
     "",
     "FREQUENTLY ASKED",
     ...FAQ.map((f) => `Q: ${f.q}\nA: ${f.a}`),

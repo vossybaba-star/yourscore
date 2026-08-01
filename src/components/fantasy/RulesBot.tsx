@@ -22,6 +22,13 @@ const MAX_QUESTION = 300;
 const FALLBACK_NOTICE = "I can only answer from the saved questions right now, friend. Tap one below.";
 const RATE_LIMIT_NOTICE = "One moment, friend, you are asking faster than I can answer.";
 
+/** When the grounded model is unreachable, offer the nearest canned answer,
+ *  clearly framed as the closest saved one, before giving up entirely. */
+function rescue(question: string): string {
+  const near = nearestFaq(question);
+  return near ? `The closest saved answer I have: ${near.a}` : FALLBACK_NOTICE;
+}
+
 interface Msg { role: "user" | "bot"; text: string }
 
 /** Strip punctuation, lowercase, collapse whitespace — for a loose text match
@@ -30,19 +37,24 @@ function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-/** A cheap local match: an exact-ish substring hit against a canned question,
- *  or at least two shared significant words. Two rather than one so "team"
- *  alone in both strings doesn't produce a confident wrong answer. */
+/** Exact-ish only: a substring hit against a canned question. Anything looser
+ *  goes to the grounded model instead — a fuzzy word-overlap match here gave a
+ *  confident wrong canned answer to near-miss questions ("what if my captain
+ *  gets a red card" matched the captain-does-not-play answer). */
 function localMatch(input: string): FaqItem | null {
   const norm = normalize(input);
   if (!norm) return null;
-  const substringHit = FAQ.find((f) => {
+  return FAQ.find((f) => {
     const nq = normalize(f.q);
     return nq.includes(norm) || norm.includes(nq);
-  });
-  if (substringHit) return substringHit;
+  }) ?? null;
+}
 
-  const inputWords = new Set(norm.split(" ").filter((w) => w.length >= 4));
+/** The rescue tier, used ONLY when the grounded model is unavailable: the
+ *  closest canned question by shared significant words, offered as a nearby
+ *  answer rather than passed off as the exact one. */
+function nearestFaq(input: string): FaqItem | null {
+  const inputWords = new Set(normalize(input).split(" ").filter((w) => w.length >= 4));
   if (!inputWords.size) return null;
   let best: FaqItem | null = null;
   let bestScore = 0;
@@ -99,17 +111,17 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
         return;
       }
       if (!res.ok) {
-        setMessages((m) => [...m, { role: "bot", text: FALLBACK_NOTICE }]);
+        setMessages((m) => [...m, { role: "bot", text: rescue(question) }]);
         return;
       }
       const json = await res.json().catch(() => ({}));
       if (json?.fallback || typeof json?.answer !== "string" || !json.answer) {
-        setMessages((m) => [...m, { role: "bot", text: FALLBACK_NOTICE }]);
+        setMessages((m) => [...m, { role: "bot", text: rescue(question) }]);
         return;
       }
       setMessages((m) => [...m, { role: "bot", text: json.answer }]);
     } catch {
-      setMessages((m) => [...m, { role: "bot", text: FALLBACK_NOTICE }]);
+      setMessages((m) => [...m, { role: "bot", text: rescue(question) }]);
     } finally {
       setThinking(false);
     }
