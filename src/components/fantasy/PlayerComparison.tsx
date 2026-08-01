@@ -28,6 +28,7 @@ import {
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
+import { ShareToLeague } from "@/components/fantasy/league/ShareToLeague";
 
 // ── the compare affordance, reused on the Players + Shortlist rows ────────────
 
@@ -571,6 +572,12 @@ export function PlayerComparison({ initialOneId, initialTwoId, onClose }: {
                       fontSize: 11.5, fontWeight: 600, padding: "6px 14px", borderRadius: 999, cursor: "pointer",
                       background: PANEL_2, color: MUTED, border: `1px solid ${LINE}`,
                     }}>⇄ Swap sides</button>
+                </div>
+              )}
+
+              {sideA && sideB && !samePlayer && one !== null && two !== null && (
+                <div style={{ marginTop: 8 }}>
+                  <ShareToLeague label="Share this comparison to a league" buildBody={() => ({ kind: "compare", a: one, b: two })} />
                 </div>
               )}
 

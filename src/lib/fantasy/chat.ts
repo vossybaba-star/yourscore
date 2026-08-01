@@ -48,7 +48,12 @@ export interface SquadCard {
   xi: number[]; bench: number[];
   captain: number | null; vice: number | null;
 }
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad";
+/** A shared news article — self-contained (the fields are stored in the payload,
+ *  nothing to resolve). */
+export interface NewsCard { title: string; source: string; url: string; image: string | null; internal: boolean }
+/** A shared player comparison — two pool players side by side. */
+export interface CompareCard { a: PlayerCard; b: PlayerCard }
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare";
 
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
@@ -59,6 +64,8 @@ export interface ChatMessage {
   player?: PlayerCard | null;
   poll?: PollCard | null;
   squad?: SquadCard | null;
+  news?: NewsCard | null;
+  compare?: CompareCard | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
 
@@ -219,14 +226,29 @@ export async function leagueChat(db: Db, userId: string, code: string) {
     return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: (p?.pos ?? "MID") as BoardPlayer["pos"], club: p?.club, avatarUrl: p?.avatarUrl ?? null };
   };
 
-  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null } => {
+  const playerCard = (pid: number, note: string | null): PlayerCard | null => {
+    const p = poolById.get(pid);
+    return p ? { id: p.id, name: p.name, club: p.club, pos: p.pos, price: p.price, avatarUrl: p.avatarUrl ?? null, note } : null;
+  };
+
+  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null } => {
     // player + captain both resolve one pool player (captain is labelled by the UI).
     if ((m.kind === "player" || m.kind === "captain") && m.payload && typeof m.payload === "object") {
       const pid = Number((m.payload as { playerId?: unknown }).playerId);
-      const p = poolById.get(pid);
-      if (!p) return { kind: "text" };
       const note = typeof (m.payload as { note?: unknown }).note === "string" ? (m.payload as { note: string }).note : null;
-      return { kind: m.kind as ChatKind, player: { id: p.id, name: p.name, club: p.club, pos: p.pos, price: p.price, avatarUrl: p.avatarUrl ?? null, note } };
+      const card = playerCard(pid, note);
+      return card ? { kind: m.kind as ChatKind, player: card } : { kind: "text" };
+    }
+    if (m.kind === "compare" && m.payload && typeof m.payload === "object") {
+      const pl = m.payload as { a?: unknown; b?: unknown };
+      const a = playerCard(Number(pl.a), null), b = playerCard(Number(pl.b), null);
+      return a && b ? { kind: "compare", compare: { a, b } } : { kind: "text" };
+    }
+    if (m.kind === "news" && m.payload && typeof m.payload === "object") {
+      const pl = m.payload as { title?: unknown; source?: unknown; url?: unknown; image?: unknown; internal?: unknown };
+      const title = String(pl.title ?? "").slice(0, 300);
+      if (!title) return { kind: "text" };
+      return { kind: "news", news: { title, source: String(pl.source ?? "").slice(0, 80), url: String(pl.url ?? ""), image: pl.image ? String(pl.image) : null, internal: pl.internal === true } };
     }
     if (m.kind === "squad" && m.payload && typeof m.payload === "object") {
       const pl = m.payload as { xi?: unknown; bench?: unknown; captain?: unknown; vice?: unknown };
@@ -268,6 +290,7 @@ export async function leagueChat(db: Db, userId: string, code: string) {
         body: m.body, createdAt: m.created_at, isMe: m.user_id === userId,
         reactions: reactionsFor(m.id),
         kind: card.kind, player: card.player ?? null, poll: card.poll ?? null, squad: card.squad ?? null,
+        news: card.news ?? null, compare: card.compare ?? null,
       };
     }),
     moments: latest != null ? await momentsForGw(db, memberIds, latest) : [],
@@ -404,6 +427,45 @@ export async function shareCaptain(db: Db, userId: string, code: string) {
   const { error } = await db.from("comments").insert({
     subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
     body: "shared their captain", kind: "captain", payload: { playerId: squad.captain },
+  });
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
+}
+
+/** Share a news article into the league chat (from the news reader). Self-contained
+ *  — the article fields are stored on the payload, nothing to resolve. */
+export async function shareNews(db: Db, userId: string, code: string, article: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const a = (article ?? {}) as { title?: unknown; source?: unknown; url?: unknown; image?: unknown; internal?: unknown };
+  const title = typeof a.title === "string" ? a.title.trim().slice(0, 300) : "";
+  if (!title) throw new HttpError(400, "nothing to share");
+  const why = commentRejection(title);
+  if (why) throw new HttpError(400, why);
+  const { error } = await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+    body: title, kind: "news",
+    payload: {
+      title,
+      source: typeof a.source === "string" ? a.source.slice(0, 80) : "",
+      url: typeof a.url === "string" ? a.url.slice(0, 500) : "",
+      image: typeof a.image === "string" ? a.image.slice(0, 500) : null,
+      internal: a.internal === true,
+    },
+  });
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
+}
+
+/** Share a two-player comparison into the league chat (from the compare screen). */
+export async function shareComparison(db: Db, userId: string, code: string, aId: unknown, bId: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const a = Number(aId), b = Number(bId);
+  const pool = enginePool();
+  const known = (id: number) => Number.isInteger(id) && pool.some((p) => p.id === id);
+  if (!known(a) || !known(b) || a === b) throw new HttpError(400, "pick two different players");
+  const { error } = await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+    body: "shared a comparison", kind: "compare", payload: { a, b },
   });
   if (error) throw new HttpError(500, error.message);
   return { ok: true };

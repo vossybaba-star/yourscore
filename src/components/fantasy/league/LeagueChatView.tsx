@@ -85,6 +85,55 @@ function SharedSquad({ msg }: { msg: ChatMessage }) {
   );
 }
 
+function SharedNews({ msg, onOpen }: { msg: ChatMessage; onOpen: () => void }) {
+  const n = msg.news!;
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, overflow: "hidden", maxWidth: "92%" }}>
+      {n.image && (
+        <div style={{ aspectRatio: "16 / 9", background: "#080d0a", overflow: "hidden" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={n.image} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        </div>
+      )}
+      <div style={{ padding: 12 }}>
+        <div style={{ fontSize: 9.5, letterSpacing: "0.1em", color: TEAL, marginBottom: 6 }}>{msg.isMe ? "YOU SHARED" : `${msg.name.toUpperCase()} SHARED`} · NEWS</div>
+        {n.source && <div style={{ fontSize: 11, color: MUTED, marginBottom: 3 }}>{n.source}</div>}
+        <div style={{ fontSize: 13.5, color: INK, fontWeight: 600, lineHeight: 1.35 }}>{n.title}</div>
+        {n.url && (
+          <button onClick={onOpen} style={{ marginTop: 9, background: "none", border: "none", color: TEAL, fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+            {n.internal ? "Read →" : "Read the story →"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CompareSide({ p, onView }: { p: NonNullable<ChatMessage["compare"]>["a"]; onView: () => void }) {
+  return (
+    <button onClick={onView} style={{ flex: 1, minWidth: 0, textAlign: "center", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`, borderRadius: 10, padding: "10px 8px" }}>
+      <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size={40} />
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, marginTop: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+      <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{p.club} · {p.pos}</div>
+      <div style={{ fontSize: 12, color: GOLD, fontWeight: 700, marginTop: 3 }}>£{p.price}m</div>
+    </button>
+  );
+}
+
+function SharedCompare({ msg, onView }: { msg: ChatMessage; onView: (id: number) => void }) {
+  const c = msg.compare!;
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12, maxWidth: "92%" }}>
+      <div style={{ fontSize: 9.5, letterSpacing: "0.1em", color: TEAL, marginBottom: 8 }}>{msg.isMe ? "YOU SHARED" : `${msg.name.toUpperCase()} SHARED`} · COMPARE</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <CompareSide p={c.a} onView={() => onView(c.a.id)} />
+        <span style={{ fontSize: 11, color: MUTED, fontWeight: 700 }}>vs</span>
+        <CompareSide p={c.b} onView={() => onView(c.b.id)} />
+      </div>
+    </div>
+  );
+}
+
 function Poll({ msg, onVote }: { msg: ChatMessage; onVote: (i: number) => void }) {
   const poll = msg.poll!;
   const total = poll.totalVotes;
@@ -200,6 +249,10 @@ export function LeagueChatView({ chat, code, onReload }: { chat: ChatData; code:
                   <SharedPlayer msg={m} onView={() => router.push(`/fantasy/players/${m.player!.id}`)} />
                 ) : m.kind === "squad" && m.squad ? (
                   <SharedSquad msg={m} />
+                ) : m.kind === "news" && m.news ? (
+                  <SharedNews msg={m} onOpen={() => { const n = m.news!; if (n.internal) router.push(n.url); else window.open(n.url, "_blank", "noopener,noreferrer"); }} />
+                ) : m.kind === "compare" && m.compare ? (
+                  <SharedCompare msg={m} onView={(id) => router.push(`/fantasy/players/${id}`)} />
                 ) : m.kind === "poll" && m.poll ? (
                   <Poll msg={m} onVote={(i) => vote(m.id, i)} />
                 ) : (

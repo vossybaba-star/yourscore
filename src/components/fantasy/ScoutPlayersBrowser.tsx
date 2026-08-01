@@ -23,6 +23,7 @@ import {
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerProfile } from "@/components/fantasy/PlayerProfile";
+import { SharePlayerToLeague } from "@/components/fantasy/league/ShareToLeague";
 import { PlayerComparison, CompareButton } from "@/components/fantasy/PlayerComparison";
 import { useShortlist } from "@/components/fantasy/useShortlist";
 
@@ -366,6 +367,8 @@ export function ScoutPlayersBrowser() {
       {detailFor !== null && (
         <Sheet onClose={() => setDetailFor(null)} labelledBy="fantasy-player-profile-name">
           <PlayerProfile playerId={detailFor} onClose={() => setDetailFor(null)} />
+          {/* Scout pick → drop this player into a league's chat. */}
+          <div style={{ marginTop: 12 }}><SharePlayerToLeague playerId={detailFor} /></div>
         </Sheet>
       )}
 

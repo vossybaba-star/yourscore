@@ -21,6 +21,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ShareToLeague } from "@/components/fantasy/league/ShareToLeague";
 
 const TEAL = "#00d8c0";
 const PANEL = "#0e1611";
@@ -57,12 +58,15 @@ export function NewsSheet({
   index,
   onIndexChange,
   onClose,
+  leagueShare = false,
 }: {
   /** The list AS SHOWN on screen, so "next" matches what the reader can see. */
   stories: SheetStory[];
   index: number;
   onIndexChange: (next: number) => void;
   onClose: () => void;
+  /** Fantasy only: offer "Share to a league", dropping the article into league chat. */
+  leagueShare?: boolean;
 }) {
   const router = useRouter();
   const item = stories[index];
@@ -267,7 +271,7 @@ export function NewsSheet({
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 10, padding: "16px 16px 18px" }}>
+        <div style={{ display: "flex", gap: 10, padding: "16px 16px 4px" }}>
           <button onClick={read} className="ys-sheetbtn" style={btn(true, accent)}>
             {item.readLabel ?? (item.internal ? "Read in the app" : "Read the full story")}
           </button>
@@ -275,6 +279,13 @@ export function NewsSheet({
             {copied ? "Link copied" : "Share"}
           </button>
         </div>
+        {leagueShare && item && (
+          <div style={{ padding: "8px 16px 18px" }}>
+            <ShareToLeague label="Share to a league" buildBody={() => ({
+              kind: "news", title: item.title, source: item.source, url: item.url, image: item.image ?? null, internal: item.internal === true,
+            })} />
+          </div>
+        )}
       </div>
     </div>
   );

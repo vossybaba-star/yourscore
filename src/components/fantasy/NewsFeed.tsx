@@ -507,6 +507,7 @@ export function NewsFeed({
           index={open.index}
           onIndexChange={(index) => setOpen({ section: open.section, index })}
           onClose={() => setOpen(null)}
+          leagueShare
         />
       )}
     </>
