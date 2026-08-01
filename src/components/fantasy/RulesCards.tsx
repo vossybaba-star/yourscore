@@ -23,10 +23,17 @@ import {
   creditsForRound, HIT_POINTS, MAX_PER_CLUB, SQUAD_QUOTA, SQUAD_SIZE, XI_SIZE,
   type FantasyPos,
 } from "@/lib/fantasy/engine";
+import { pointsFor, type MatchFacts } from "@/lib/fantasy/values";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 import {
-  AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, TEAL, tint,
+  Chip, CORAL, Crest, Deadline, factLine, fmtM, GOLD, INK, LINE, MUTED,
+  PANEL, PANEL_2, PITCH, TEAL, tint,
 } from "@/components/fantasy/shared";
+import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
+import { PitchSurface } from "@/components/fantasy/board/PitchSurface";
+import { BenchStrip } from "@/components/fantasy/board/BenchStrip";
+import { MovesBank } from "@/components/fantasy/MovesBank";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
 const money = (tenths: number) => `£${(tenths / 10).toFixed(1)}m`;
 
@@ -43,300 +50,306 @@ const CREDIT_STEPS = (() => {
 })();
 const CREDIT_CURVE_TEXT = CREDIT_STEPS.map((s) => `${s.correct} right → ${s.credits}`).join(" · ");
 
-// ── scene SVGs — one per card, in the house palette only ─────────────────────
-// All aria-hidden: a screen reader gets the same information from the title
-// and the full explanation next to them. viewBox is a fixed 320×150 so every
-// scene sits at the same optical scale and nothing depends on the card's
-// actual rendered width.
+// ── scene fragments — miniature slices of the REAL fantasy screens ──────────
+// Founder feedback: abstract SVG diagrams don't teach a user what to actually
+// tap. Every scene below is built from the app's own presentational
+// components (PlayerMarker, PitchSurface, BenchStrip, MovesBank, Deadline,
+// Chip, Crest, PlayerAvatar) fed static sample data — never a redrawn
+// stand-in. Each sits inside the same "window onto the real screen" frame: a
+// rounded clip, a hairline border, the pitch background, content scaled down
+// so it reads as a segment of an actual screen rather than a diagram.
+// aria-hidden + pointer-events: none throughout, so a tap still lands on the
+// stepper's own left/right zones, never on the scene.
+
+function SceneFrame({ children }: { children: ReactNode }) {
+  return (
+    <div aria-hidden style={{ pointerEvents: "none", width: "100%", height: "100%", position: "relative" }}>
+      <div style={{
+        position: "absolute", inset: 0, overflow: "hidden", borderRadius: 14,
+        border: `1px solid ${LINE}`, background: PITCH,
+      }}>
+        <div aria-hidden style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 1,
+          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)",
+        }} />
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", justifyContent: "center",
+          padding: 10, transform: "scale(0.86)", transformOrigin: "top center",
+        }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Sample squad — real PL names, real clubs (so the real Crest renders),
+// MAX_PER_CLUB respected across the 15: Arsenal 3, Newcastle United 3,
+// Man City 2, Aston Villa 2, Liverpool 2, Man United 1, Chelsea 1, Spurs 1.
+// Prices are plausible sample data, not looked-up facts.
+const P = {
+  haaland: { name: "Erling Haaland", label: "Haaland", club: "Man City", price: 145 },
+  watkins: { name: "Ollie Watkins", label: "Watkins", club: "Aston Villa" },
+  saka: { name: "Bukayo Saka", label: "Saka", club: "Arsenal", price: 100 },
+  fernandes: { name: "Bruno Fernandes", label: "Fernandes", club: "Man United" },
+  palmer: { name: "Cole Palmer", label: "Palmer", club: "Chelsea" },
+  son: { name: "Son Heung-min", label: "Son", club: "Tottenham Hotspur" },
+  saliba: { name: "William Saliba", label: "Saliba", club: "Arsenal" },
+  gvardiol: { name: "Josko Gvardiol", label: "Gvardiol", club: "Man City" },
+  konsa: { name: "Ezri Konsa", label: "Konsa", club: "Aston Villa" },
+  trippier: { name: "Kieran Trippier", label: "Trippier", club: "Newcastle United", price: 65 },
+  alisson: { name: "Alisson Becker", label: "Alisson", club: "Liverpool", price: 55 },
+  raya: { name: "David Raya", label: "Raya", club: "Arsenal" },
+  robertson: { name: "Andy Robertson", label: "Robertson", club: "Liverpool" },
+  gordon: { name: "Anthony Gordon", label: "Gordon", club: "Newcastle United" },
+  isak: { name: "Alexander Isak", label: "Isak", club: "Newcastle United" },
+} as const;
 
 function SquadScene() {
-  // A representative starting shape (1 GK, 4 DEF, 4 MID, 2 FWD = XI_SIZE),
-  // drawn by quota row order; each row's leftover quota sits, dimmed, in the
-  // bench tray below — the two counts always add back up to SQUAD_QUOTA.
-  const START: Record<FantasyPos, number> = { GK: 1, DEF: 4, MID: 4, FWD: 2 };
-  const benchTotal = SQUAD_SIZE - XI_SIZE;
-  const rows: { pos: FantasyPos; y: number }[] = [
-    { pos: "GK", y: 108 }, { pos: "DEF", y: 82 }, { pos: "MID", y: 54 }, { pos: "FWD", y: 26 },
+  // The real attacking-top row order (lib/fantasy/board's ATTACK_ORDER):
+  // forwards nearest the opposition goal, keeper at the back.
+  const rows: { pos: FantasyPos; size: number; players: (typeof P)[keyof typeof P][] }[] = [
+    { pos: "FWD", size: 32, players: [P.haaland, P.watkins] },
+    { pos: "MID", size: 25, players: [P.saka, P.fernandes, P.palmer, P.son] },
+    { pos: "DEF", size: 25, players: [P.saliba, P.gvardiol, P.konsa, P.trippier] },
+    { pos: "GK", size: 32, players: [P.alisson] },
   ];
-  const pitchX0 = 96, pitchX1 = 224, pad = 16;
-  const dotsFor = (n: number, y: number) => {
-    if (n <= 1) return [{ x: (pitchX0 + pitchX1) / 2, y }];
-    const x0 = pitchX0 + pad, x1 = pitchX1 - pad;
-    return Array.from({ length: n }, (_, i) => ({ x: x0 + (i * (x1 - x0)) / (n - 1), y }));
-  };
-
+  const bench = [P.raya, P.robertson, P.gordon, P.isak];
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <radialGradient id="squadGlow" cx="50%" cy="30%" r="65%">
-          <stop offset="0%" stopColor={TEAL} stopOpacity="0.16" />
-          <stop offset="100%" stopColor={TEAL} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect x="0" y="0" width="320" height="150" fill="url(#squadGlow)" />
-
-      <rect x={pitchX0} y="6" width={pitchX1 - pitchX0} height="112" rx="10" fill={PANEL_2} stroke={LINE} />
-      <path d={`M ${pitchX0 + 42} 6 A 22 22 0 0 0 ${pitchX1 - 42} 6`} fill="none" stroke={LINE} strokeWidth="1" />
-      <rect x={pitchX0 + 24} y="94" width={(pitchX1 - pitchX0) - 48} height="24" fill="none" stroke={LINE} strokeWidth="1" />
-      <rect x={pitchX0 + 44} y="108" width={(pitchX1 - pitchX0) - 88} height="10" fill="none" stroke={LINE} strokeWidth="1" />
-
-      {rows.map((r) => dotsFor(START[r.pos], r.y).map((d, i) => (
-        <circle key={`${r.pos}-${i}`} cx={d.x} cy={d.y} r="5" fill={TEAL} stroke={PANEL} strokeWidth="1.5" />
-      )))}
-
-      <g transform="translate(238,12)">
-        <rect x="0" y="0" width="66" height="20" rx="10" fill={PANEL_2} stroke={tint(GOLD, "55")} />
-        <text x="33" y="14" fontSize="10.5" fontWeight="800" fill={GOLD} textAnchor="middle">{money(BUDGET_TENTHS)}</text>
-      </g>
-
-      <rect x={pitchX0} y="126" width={pitchX1 - pitchX0} height="18" rx="6" fill={PANEL_2} stroke={LINE} />
-      {Array.from({ length: benchTotal }, (_, i) => (
-        <circle key={i} cx={pitchX0 + 22 + i * 27} cy="135" r="4.5" fill={TEAL} opacity="0.35" stroke={PANEL} strokeWidth="1.2" />
-      ))}
-    </svg>
+    <SceneFrame>
+      <div style={{ width: 250 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+          <Chip gold>{fmtM(BUDGET_TENTHS)}</Chip>
+        </div>
+        <div className="rounded-2xl" style={{ border: `1px solid ${LINE}`, display: "flex", alignItems: "stretch", overflow: "hidden" }}>
+          <PitchSurface round="left">
+            {rows.map((row) => (
+              <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 3 }}>
+                {row.players.map((p) => (
+                  <div key={p.label} style={{ flex: "1 1 0", maxWidth: 48, minWidth: 0 }}>
+                    <PlayerMarker name={p.name} label={p.label} club={p.club} size={row.size}
+                      datum={"price" in p ? fmtM(p.price) : undefined} />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </PitchSurface>
+          <BenchStrip>
+            {bench.map((p) => <PlayerMarker key={p.label} name={p.name} label={p.label} club={p.club} size={18} dim />)}
+          </BenchStrip>
+        </div>
+      </div>
+    </SceneFrame>
   );
 }
 
 function CaptainScene() {
-  const shirt = "M18 0 L36 0 Q40 10 54 14 L46 30 L40 24 L40 88 L-4 88 L-4 24 L-10 30 L-18 14 Q-4 10 0 0 Z";
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <radialGradient id="capGlow" cx="50%" cy="50%" r="58%">
-          <stop offset="0%" stopColor={GOLD} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={GOLD} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      <g transform="translate(70,30)">
-        <path d={shirt} fill={PANEL_2} stroke={TEAL} strokeWidth="2" strokeLinejoin="round" />
-        <path d="M12 0 Q18 8 24 0" fill="none" stroke={TEAL} strokeWidth="1.5" />
-        <rect x="-4" y="34" width="16" height="10" fill={GOLD} opacity="0.9" />
-        <rect x="-4" y="34" width="16" height="10" fill="none" stroke={GOLD} strokeWidth="1" />
-      </g>
-
-      <circle cx="205" cy="66" r="42" fill="url(#capGlow)" />
-      <text x="205" y="78" fontSize="40" fontWeight="800" fill={GOLD} textAnchor="middle">×2</text>
-
-      <g transform="translate(262,58) scale(0.52)" opacity="0.45">
-        <path d={shirt} fill={PANEL_2} stroke={MUTED} strokeWidth="2.6" strokeLinejoin="round" />
-      </g>
-      <g transform="translate(276,132)">
-        <rect x="-13" y="-9" width="26" height="15" rx="4" fill={PANEL_2} stroke={LINE} />
-        <text x="0" y="1.5" fontSize="9" fontWeight="800" fill={MUTED} textAnchor="middle">VC</text>
-      </g>
-    </svg>
+    <SceneFrame>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 30, width: "100%", paddingTop: 16 }}>
+        <PlayerMarker name={P.haaland.name} label={P.haaland.label} club={P.haaland.club}
+          size={56} isCaptain datum="scores ×2" />
+        <PlayerMarker name={P.saka.name} label={P.saka.label} club={P.saka.club}
+          size={44} isVice />
+      </div>
+    </SceneFrame>
   );
 }
 
 function DeadlineScene() {
-  const ticks = Array.from({ length: 12 }, (_, i) => i);
+  // Computed client-side at render, not a fixed date — the component is
+  // client-only ("use client" at the top of this file), so there is no
+  // server/client hydration mismatch to worry about.
+  const [iso] = useState(() => new Date(Date.now() + 40 * 3_600_000).toISOString());
+  const fixtures = [
+    { home: "Arsenal", away: "Man City", time: "17:30" },
+    { home: "Liverpool", away: "Chelsea", time: "20:00" },
+  ];
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <radialGradient id="clockGlow" cx="50%" cy="50%" r="65%">
-          <stop offset="0%" stopColor={TEAL} stopOpacity="0.14" />
-          <stop offset="100%" stopColor={TEAL} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <circle cx="80" cy="75" r="58" fill="url(#clockGlow)" />
-      <circle cx="80" cy="75" r="46" fill={PANEL_2} stroke={LINE} strokeWidth="1.5" />
-      {ticks.map((i) => {
-        const a = (i / 12) * Math.PI * 2;
-        const x1 = 80 + Math.sin(a) * 40, y1 = 75 - Math.cos(a) * 40;
-        const x2 = 80 + Math.sin(a) * 45, y2 = 75 - Math.cos(a) * 45;
-        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={LINE} strokeWidth="2" />;
-      })}
-      <line x1="80" y1="75" x2="80" y2="46" stroke={TEAL} strokeWidth="3" strokeLinecap="round" />
-      <line x1="80" y1="75" x2="104" y2="86" stroke={TEAL} strokeWidth="3" strokeLinecap="round" />
-      <circle cx="80" cy="75" r="3.5" fill={TEAL} />
-
-      <g transform="translate(178,58)">
-        <path d="M6 20 V12 A12 12 0 0 1 30 12 V20" fill="none" stroke={TEAL} strokeWidth="3" strokeLinecap="round" />
-        <rect x="0" y="20" width="36" height="30" rx="6" fill={PANEL_2} stroke={TEAL} strokeWidth="2" />
-        <circle cx="18" cy="34" r="3.4" fill={TEAL} />
-        <rect x="16.5" y="34" width="3" height="9" fill={TEAL} />
-      </g>
-
-      <g transform="translate(272,75)">
-        <circle cx="0" cy="0" r="4" fill={MUTED} />
-        <path d="M10 0 A10 10 0 0 1 3 9.5" fill="none" stroke={MUTED} strokeWidth="1.3" opacity="0.6" />
-        <path d="M17 0 A17 17 0 0 1 5 16.3" fill="none" stroke={MUTED} strokeWidth="1.3" opacity="0.35" />
-      </g>
-    </svg>
+    <SceneFrame>
+      <div style={{ width: "100%" }}>
+        <Deadline iso={iso} compact />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, opacity: 0.72 }}>
+          {fixtures.map((f) => (
+            <div key={f.home} style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "6px 10px",
+              borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`,
+            }}>
+              <Crest club={f.home} size={14} />
+              <span style={{ fontSize: 10.5, color: MUTED, fontWeight: 700 }}>v</span>
+              <Crest club={f.away} size={14} />
+              <span style={{ marginLeft: "auto", fontSize: 10.5, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{f.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SceneFrame>
   );
 }
 
 function RoundScene() {
-  const total = 11;
-  const lit = 6; // illustrative mid-round progress, not a scoring threshold
+  const options = [
+    { label: "Harry Kane", correct: false },
+    { label: "Son Heung-min", correct: true },
+  ];
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <radialGradient id="roundGlow" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stopColor={LIME} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={LIME} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {Array.from({ length: total }, (_, i) => {
-        const x = 14 + i * 19;
-        const on = i < lit;
-        return (
-          <g key={i}>
-            <rect x={x} y="46" width="14" height="22" rx="4" fill={on ? tint(TEAL, "26") : PANEL_2} stroke={on ? TEAL : LINE} strokeWidth="1.3" />
-            {on && <path d={`M ${x + 3} 57 L ${x + 6} 61 L ${x + 11} 51`} fill="none" stroke={TEAL} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />}
-          </g>
-        );
-      })}
-      <path d={`M ${14 + (lit - 1) * 19 + 14} 57 L 258 75`} fill="none" stroke={LIME} strokeWidth="1.3" strokeDasharray="3 3" opacity="0.6" />
-      <circle cx="284" cy="75" r="26" fill="url(#roundGlow)" />
-      <circle cx="284" cy="75" r="17" fill={PANEL_2} stroke={LIME} strokeWidth="2" />
-      <path d="M277 71 h10 l-3 -4 M287 79 h-10 l3 4" fill="none" stroke={LIME} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <SceneFrame>
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ background: PANEL_2, border: `1px solid ${LINE}`, borderRadius: 12, padding: "10px 11px" }}>
+          <div style={{ fontSize: 9, letterSpacing: "0.12em", color: MUTED, marginBottom: 5 }}>QUESTION 6 OF 11</div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: INK, marginBottom: 8, lineHeight: 1.35 }}>
+            Who scored the most goals against Spurs?
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {options.map((o) => (
+              <div key={o.label} style={{
+                padding: "7px 9px", borderRadius: 8, fontSize: 11.5, fontWeight: 600, color: INK,
+                background: o.correct ? "#1E3B2A" : PANEL,
+                border: `1.5px solid ${o.correct ? GOLD : LINE}`,
+              }}>{o.label}{o.correct ? "  ✓" : ""}</div>
+            ))}
+          </div>
+        </div>
+        <MovesBank held={BASELINE_CREDITS_PER_GW} cap={CREDIT_CAP} roundEarns />
+      </div>
+    </SceneFrame>
   );
 }
 
 function BankScene() {
-  const step = 12, baseY = 118;
-  const topY = baseY - (CREDIT_CAP - 1) * step;
-  const capY = topY - 8;
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <radialGradient id="bankGlow" cx="50%" cy="25%" r="70%">
-          <stop offset="0%" stopColor={TEAL} stopOpacity="0.14" />
-          <stop offset="100%" stopColor={TEAL} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect x="0" y="0" width="320" height="150" fill="url(#bankGlow)" />
-
-      {Array.from({ length: CREDIT_CAP }, (_, i) => (
-        <ellipse key={i} cx="130" cy={baseY - i * step} rx="26" ry="8" fill={PANEL_2} stroke={TEAL} strokeWidth="1.6" />
-      ))}
-
-      <line x1="100" y1={capY} x2="160" y2={capY} stroke={MUTED} strokeWidth="1.3" strokeDasharray="4 3" />
-
-      <ellipse cx="130" cy={topY - 22} rx="26" ry="8" fill={tint(GOLD, "26")} stroke={GOLD} strokeWidth="1.8" />
-      <g transform={`translate(168,${topY - 30})`}>
-        <rect x="0" y="0" width="46" height="18" rx="9" fill={PANEL_2} stroke={tint(GOLD, "55")} />
-        <text x="23" y="12.5" fontSize="9.5" fontWeight="800" fill={GOLD} textAnchor="middle">+pts</text>
-      </g>
-
-      <ellipse cx="130" cy={baseY + step} rx="24" ry="7" fill="none" stroke={CORAL} strokeWidth="1.3" strokeDasharray="3 3" opacity="0.6" />
-      <g transform={`translate(162,${baseY + step - 8})`}>
-        <rect x="0" y="0" width="42" height="17" rx="8.5" fill={PANEL_2} stroke={tint(CORAL, "55")} />
-        <text x="21" y="12" fontSize="9" fontWeight="800" fill={CORAL} textAnchor="middle">-pts</text>
-      </g>
-    </svg>
+    <SceneFrame>
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+        <MovesBank held={CREDIT_CAP} cap={CREDIT_CAP} chips={["Triple Captain"]} />
+        <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ flex: 1, background: PANEL_2, border: `1px solid ${LINE}`, borderRadius: 10, padding: "7px 9px" }}>
+            <div style={{ fontSize: 9.5, color: MUTED }}>Extra move</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: CORAL }}>−{HIT_POINTS}</div>
+          </div>
+          <div style={{ flex: 1, background: PANEL_2, border: `1px solid ${LINE}`, borderRadius: 10, padding: "7px 9px" }}>
+            <div style={{ fontSize: 9.5, color: MUTED }}>Cashed out</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>+{CASH_POINTS}</div>
+          </div>
+        </div>
+      </div>
+    </SceneFrame>
   );
 }
+
+// Reproduced from FantasyHub's own CHIP_META — that array is module-private,
+// so the labels and blurbs are copied here verbatim rather than imported.
+const CHIP_LOOK: Record<string, { label: string; blurb: string }> = {
+  triple_captain: { label: "Triple Captain", blurb: "Your captain scores ×3" },
+  bench_boost: { label: "Bench Boost", blurb: "All 15 players score, bench included" },
+  insight: { label: "Insight", blurb: "50/50 on one question of the round" },
+};
 
 function ChipsScene() {
-  const cx = [80, 160, 240];
-  const colorOf: Record<string, string> = { triple_captain: TEAL, bench_boost: LIME, insight: AMBER };
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      <g transform="translate(160,14)">
-        <rect x="-38" y="-2" width="76" height="17" rx="8.5" fill={PANEL_2} stroke={LINE} />
-        <text x="0" y="10.5" fontSize="9.5" fontWeight="700" fill={MUTED} textAnchor="middle">1 PER MONTH</text>
-      </g>
-
-      {CHIPS.map((chip, i) => {
-        const color = colorOf[chip] ?? TEAL;
-        const x = cx[i] ?? 160, y = 92;
-        const notches = Array.from({ length: 10 }, (_, n) => n);
-        return (
-          <g key={chip} transform={`translate(${x},${y})`}>
-            <circle r="30" fill={PANEL_2} stroke={color} strokeWidth="2" />
-            <circle r="22" fill="none" stroke={color} strokeWidth="1.2" strokeDasharray="3 3" opacity="0.7" />
-            {notches.map((n) => {
-              const a = (n / notches.length) * Math.PI * 2;
-              const x1 = Math.sin(a) * 27, y1 = -Math.cos(a) * 27;
-              const x2 = Math.sin(a) * 30, y2 = -Math.cos(a) * 30;
-              return <line key={n} x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="1.6" opacity="0.5" />;
-            })}
-            {chip === "triple_captain" && (
-              <text x="0" y="6" fontSize="15" fontWeight="800" fill={TEAL} textAnchor="middle">×3</text>
-            )}
-            {chip === "bench_boost" && (
-              <g stroke={LIME} strokeWidth="1.8" strokeLinecap="round">
-                <line x1="-11" y1="-5" x2="11" y2="-5" />
-                <line x1="-11" y1="0" x2="11" y2="0" />
-                <line x1="-11" y1="5" x2="11" y2="5" />
-              </g>
-            )}
-            {chip === "insight" && (
-              <path d="M-9 -9 L9 9 M-9 9 L9 -9" stroke={AMBER} strokeWidth="1.8" strokeLinecap="round" opacity="0.85" />
-            )}
-          </g>
-        );
-      })}
-    </svg>
+    <SceneFrame>
+      <div style={{ width: "100%" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+          <Chip teal>One chip a month</Chip>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {CHIPS.map((key, i) => {
+            const c = CHIP_LOOK[key];
+            const playable = i === 0;
+            return (
+              <div key={key} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+                padding: "8px 10px", borderRadius: 10,
+                background: PANEL, border: `1px solid ${LINE}`,
+                color: playable ? INK : MUTED, opacity: playable ? 1 : 0.55,
+              }}>
+                <span>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, display: "block" }}>{c.label}</span>
+                  <span style={{ fontSize: 10, display: "block" }}>{c.blurb}</span>
+                </span>
+                <span style={{ fontSize: 9.5, color: MUTED, flexShrink: 0 }}>{playable ? "Play" : "Held"}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </SceneFrame>
   );
 }
+
+// Sample match facts, run through the real scoring function — the points
+// shown are computed, never typed by hand.
+const SCORING_ROWS: { p: (typeof P)[keyof typeof P]; pos: FantasyPos; facts: MatchFacts }[] = [
+  {
+    p: P.haaland, pos: "FWD",
+    facts: { minutes: 90, goals: 1, assists: 0, cleanSheet: 0, conceded: 1, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
+  },
+  {
+    p: P.trippier, pos: "DEF",
+    facts: { minutes: 90, goals: 0, assists: 0, cleanSheet: 1, conceded: 0, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 12, dcRec: 0 },
+  },
+  {
+    p: P.palmer, pos: "MID",
+    facts: { minutes: 90, goals: 0, assists: 1, cleanSheet: 0, conceded: 1, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
+  },
+];
 
 function ScoringScene() {
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <radialGradient id="scoreGlow" cx="35%" cy="45%" r="65%">
-          <stop offset="0%" stopColor={TEAL} stopOpacity="0.14" />
-          <stop offset="100%" stopColor={TEAL} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect x="0" y="0" width="320" height="150" fill="url(#scoreGlow)" />
-
-      <g transform="translate(24,20)">
-        <rect x="0" y="0" width="110" height="76" fill="none" stroke={TEAL} strokeWidth="2.5" strokeLinejoin="round" />
-        {Array.from({ length: 6 }, (_, i) => (
-          <line key={`v${i}`} x1={(i + 1) * (110 / 7)} y1="0" x2={(i + 1) * (110 / 7)} y2="76" stroke={LINE} strokeWidth="0.8" />
+    <SceneFrame>
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
+        {SCORING_ROWS.map((r) => (
+          <div key={r.p.label} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
+            borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`,
+          }}>
+            <div style={{ width: 46, flexShrink: 0 }}>
+              <PlayerMarker name={r.p.name} label={r.p.label} club={r.p.club} size={26} />
+            </div>
+            <span style={{ flex: 1, fontSize: 10, color: MUTED, minWidth: 0 }}>{factLine(r.pos, r.facts)}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{pointsFor(r.pos, r.facts)}</span>
+          </div>
         ))}
-        {Array.from({ length: 4 }, (_, i) => (
-          <line key={`h${i}`} x1="0" y1={(i + 1) * (76 / 5)} x2="110" y2={(i + 1) * (76 / 5)} stroke={LINE} strokeWidth="0.8" />
-        ))}
-        <path d="M0 60 Q40 34 96 46" fill="none" stroke={LIME} strokeWidth="1.6" strokeDasharray="2 4" opacity="0.7" />
-        <circle cx="96" cy="46" r="7" fill={INK} />
-        <circle cx="96" cy="46" r="7" fill="none" stroke={PANEL} strokeWidth="1" />
-      </g>
-
-      {[{ x: 214, y: 96, s: 16 }, { x: 246, y: 60, s: 20 }, { x: 274, y: 104, s: 22 }].map((p, i) => (
-        <text key={i} x={p.x} y={p.y} fontSize={p.s} fontWeight="800" fill={LIME} opacity={0.85 - i * 0.15}>+</text>
-      ))}
-    </svg>
+      </div>
+    </SceneFrame>
   );
 }
+
+// Reproduced from GlobalStandings' own Row() — sample names, sample points.
+const STANDINGS_SAMPLE = [
+  { rank: 1, name: "Jordan K", points: 812, isMe: false },
+  { rank: 2, name: "You", points: 795, isMe: true },
+  { rank: 3, name: "Priya S", points: 780, isMe: false },
+  { rank: 4, name: "Marcus O", points: 754, isMe: false },
+];
 
 function TablesScene() {
-  const rows = 5, rowH = 18, gap = 4, startY = 14;
   return (
-    <svg aria-hidden width="100%" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet">
-      {Array.from({ length: rows }, (_, i) => {
-        const highlighted = i === 2;
-        const y = startY + i * (rowH + gap) - (highlighted ? rowH / 2 + gap / 2 : 0);
-        return (
-          <g key={i}>
-            <rect x="16" y={y} width="182" height={rowH} rx="6"
-              fill={highlighted ? tint(TEAL, "22") : PANEL_2}
-              stroke={highlighted ? TEAL : LINE} strokeWidth={highlighted ? 1.6 : 1} />
-            {i === 0 && <path d={`M24 ${y + 7} l4 -6 l4 4 l4 -7 l4 4 l4 -6 l4 8 z`} fill={GOLD} opacity="0.9" />}
-            {highlighted && <path d={`M206 ${y + rowH / 2 + 5} l5 -8 l5 8 z`} fill={LIME} />}
-          </g>
-        );
-      })}
-
-      <g transform="translate(258,44) rotate(-6)">
-        <rect x="0" y="0" width="46" height="52" rx="6" fill={PANEL_2} stroke={LINE} strokeWidth="1.2" />
-      </g>
-      <g transform="translate(252,40) rotate(4)">
-        <rect x="0" y="0" width="46" height="52" rx="6" fill={PANEL_2} stroke={tint(MUTED, "55")} strokeWidth="1.2" />
-        <line x1="0" y1="14" x2="46" y2="14" stroke={LINE} strokeWidth="1" />
-        <line x1="12" y1="0" x2="12" y2="10" stroke={MUTED} strokeWidth="1.6" strokeLinecap="round" />
-        <line x1="34" y1="0" x2="34" y2="10" stroke={MUTED} strokeWidth="1.6" strokeLinecap="round" />
-      </g>
-    </svg>
+    <SceneFrame>
+      <div style={{ width: "100%" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+          <span style={{ fontSize: 9, letterSpacing: "0.1em", color: MUTED }}>GLOBAL STANDINGS</span>
+          <Chip teal>AUGUST</Chip>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {STANDINGS_SAMPLE.map((r) => (
+            <div key={r.rank} style={{
+              display: "flex", alignItems: "center", gap: 7, padding: "5px 8px", borderRadius: 8,
+              background: r.isMe ? tint(TEAL, "18") : PANEL,
+              border: `1px solid ${r.isMe ? tint(TEAL, "66") : LINE}`,
+            }}>
+              <span style={{ width: 14, textAlign: "center", fontWeight: 800, fontSize: 10.5, color: r.rank <= 3 ? GOLD : MUTED }}>{r.rank}</span>
+              <PlayerAvatar name={r.name} size={17} />
+              <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: INK, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {r.name}{r.isMe && <span style={{ color: TEAL, fontWeight: 700 }}> · you</span>}
+              </span>
+              <span style={{ fontWeight: 800, fontSize: 11, color: INK }}>{r.points}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SceneFrame>
   );
 }
-
 // ── card content ───────────────────────────────────────────────────────────
 interface CardDef { title: string; body: string; factRow?: string; Scene: () => ReactNode }
 
