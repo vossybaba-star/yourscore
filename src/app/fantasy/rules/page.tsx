@@ -81,7 +81,7 @@ export default function RulesPage() {
     { title: "Build your squad", body: `Pick ${SQUAD_SIZE} players for ${money(BUDGET_TENTHS)}, no more than ${MAX_PER_CLUB} from any one club. Rebuild as often as you like until your first gameweek locks.` },
     { title: "Name your captain", body: "One player wears the armband and scores double. If he doesn't play, it passes to your vice-captain." },
     { title: "Beat the deadline", body: "Lock your team before the first match of the gameweek. Miss it and your team simply plays as it stands." },
-    { title: "Prove you know your football", body: `Play the ${KNOWLEDGE_NAME} round — eleven questions a gameweek. Everyone gets ${BASELINE_CREDITS_PER_GW} free transfer; right answers earn you more.` },
+    { title: "Earn extra transfers (optional)", body: `Everyone gets ${BASELINE_CREDITS_PER_GW} free transfer every gameweek, no strings. Want more? Play the ${KNOWLEDGE_NAME} round of eleven questions, and right answers earn extra transfers. It is completely optional: skip it and you still play the gameweek as normal. The round is a bonus, never a requirement.` },
     { title: "Bank your moves", body: `Transfers you earn this gameweek apply to the next one, banking up to ${CREDIT_CAP}. Go beyond what you hold and each extra move costs points.` },
     { title: "Play a chip", body: "One chip a month, your pick of three: Triple Captain, Bench Boost or Insight. It can't return until you've used the other two." },
     { title: "Score on the real matches", body: "Every point traces to something that happened on the pitch — goals, assists, clean sheets, minutes. No panel decides your bonus." },
@@ -224,7 +224,7 @@ export default function RulesPage() {
             listStyleType: "disc", display: "flex", flexDirection: "column", gap: 5,
           }}>
             <li>Everyone gets <b style={{ color: INK }}>{BASELINE_CREDITS_PER_GW}</b> free transfer every gameweek</li>
-            <li>The knowledge round earns you more. Unused transfers bank up to <b style={{ color: INK }}>{CREDIT_CAP}</b></li>
+            <li>The <b style={{ color: INK }}>optional</b> knowledge round earns you more. Unused transfers bank up to <b style={{ color: INK }}>{CREDIT_CAP}</b></li>
             <li>Beyond what you hold, each extra transfer costs <b style={{ color: "#E08A6B" }}>{HIT_POINTS} points</b></li>
             <li>
               Selling a player who has risen pays back <b style={{ color: INK }}>half the rise</b>; a player who
@@ -236,8 +236,13 @@ export default function RulesPage() {
 
       <Section title="THE ROUND">
         <Card>
-          <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 10px", lineHeight: 1.55 }}>
-            Eleven questions a gameweek. Right answers earn the transfers that improve your squad.
+          <p style={{ fontSize: 13.5, color: INK, margin: "0 0 10px", lineHeight: 1.55 }}>
+            <b>The round is a bonus, not a requirement.</b>{" "}
+            <span style={{ color: MUTED }}>
+              You never have to play it to take part. Everyone gets their free transfer, and your team
+              scores on the real matches whether you answer a single question or not. Play the eleven
+              questions and right answers earn extra transfers on top.
+            </span>
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
             {CREDIT_STEPS.map((s) => (
