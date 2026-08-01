@@ -68,7 +68,7 @@ surface failures with the actual output. Don't claim done-and-verified when it's
   navigation; `graphify-out/GRAPH_REPORT.md` only for broad architecture. Run `graphify
   update .` after code changes (AST-only, no API cost).
 - **Bugs — CHECK SENTRY FIRST** (before reading files or querying the DB). Read token in
-  `.env.local` as `SENTRY_READ_TOKEN`; org `yourscore-qx`, project `javascript-nextjs`:
+  `.env.local` as `SENTRY_READ_TOKEN`; org `yourscore`, project `javascript-nextjs`:
   ```bash
   SENTRY_READ_TOKEN=$(grep SENTRY_READ_TOKEN .env.local | cut -d= -f2) && \
   curl -s "https://de.sentry.io/api/0/projects/yourscore/javascript-nextjs/issues/?limit=10&statsPeriod=24h" \
