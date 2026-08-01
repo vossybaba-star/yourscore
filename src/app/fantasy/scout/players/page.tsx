@@ -13,7 +13,7 @@
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
 import { ScoutPlayersBrowser } from "@/components/fantasy/ScoutPlayersBrowser";
 import { CompareEntry } from "@/components/fantasy/CompareEntry";
-import { FantasyMasthead, MUTED, column, shell } from "@/components/fantasy/newsUi";
+import { FantasyMasthead, column, shell } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 export const metadata = { title: "Scout · Players · YourScore" };
@@ -24,9 +24,6 @@ export default function ScoutPlayers() {
       <main style={shell}>
         <div style={column}>
           <FantasyMasthead />
-          <div style={{ color: MUTED, fontSize: 12.5, marginTop: -6 }}>
-            Every player, priced and researched. Look before you move.
-          </div>
           <ScoutTabs active="/fantasy/scout/players" />
           {/* Compare lives with the players now (founder, 30 Jul). */}
           <CompareEntry />

@@ -120,11 +120,6 @@ export async function ScoutCover() {
       border: `1px solid ${TEAL}30`, background: "#081310", marginBottom: 14,
       aspectRatio: "720 / 230",
     }}>
-      <style>{`
-        @keyframes scoutSweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .scout-sweep { transform-origin: ${CX}px ${CY}px; animation: scoutSweep 6s linear infinite; }
-        @media (prefers-reduced-motion: reduce) { .scout-sweep { animation: none; } }
-      `}</style>
       <svg viewBox="0 0 720 230" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"
         role="img" aria-label={`The Scout radar. Most-owned players: ${featured.map((f) => f.name).join(", ")}.`}>
         <defs>
@@ -154,10 +149,8 @@ export async function ScoutCover() {
           })}
         </g>
 
-        {/* sweep beam */}
-        <g className="scout-sweep">
-          <path d={`M ${CX} ${CY} L ${CX + 96} ${CY - 38} A 103 103 0 0 1 ${CX + 100} ${CY + 6} Z`} fill="url(#scoutBeam)" />
-        </g>
+        {/* static sweep beam (a fixed radar wedge, no animation) */}
+        <path d={`M ${CX} ${CY} L ${CX + 96} ${CY - 38} A 103 103 0 0 1 ${CX + 100} ${CY + 6} Z`} fill="url(#scoutBeam)" />
         {/* centre */}
         <circle cx={CX} cy={CY} r="9" fill={TEAL} fillOpacity="0.25" />
         <circle cx={CX} cy={CY} r="5" fill={TEAL} />
@@ -169,17 +162,22 @@ export async function ScoutCover() {
             : <g key={i}><line x1={b.x - 5} y1={b.y - 5} x2={b.x + 5} y2={b.y + 5} /><line x1={b.x + 5} y1={b.y - 5} x2={b.x - 5} y2={b.y + 5} /></g>)}
         </g>
 
-        {/* Heading — overlays the left of the radar (founder's call). */}
-        <text x="40" y="42" fill={INK} fontSize="27" letterSpacing="0.5" fontFamily="var(--font-bebas), sans-serif">YOURSCORE</text>
-        <text x="40" y="70" fill={TEAL} fontSize="27" letterSpacing="0.5" fontFamily="var(--font-bebas), sans-serif">SCOUT</text>
+        {/* NEXT FIXTURES — the background layer. The Scout is reading the next
+            fixtures; the headline sits ON TOP of them (founder's call). Kept faint
+            so the big headline reads clearly over it. */}
+        <g opacity="0.3">
+          <text x="38" y="42" fill={TEAL} fontSize="13" letterSpacing="2" fontFamily="var(--font-bebas), sans-serif">NEXT FIXTURES</text>
+          {(fixtures.length ? fixtures.slice(0, 4) : [{ opp: "", home: true }]).map((f, i) => (
+            f.opp
+              ? <text key={i} x="38" y={68 + i * 27} fill={INK} fontSize="16" fontFamily="var(--font-dm-sans), sans-serif" letterSpacing="1">{f.opp} ({f.home ? "H" : "A"})</text>
+              : <text key={i} x="38" y="68" fill={MUTED} fontSize="14" fontFamily="var(--font-dm-sans), sans-serif">Fixtures land soon</text>
+          ))}
+        </g>
 
-        {/* NEXT FIXTURES list */}
-        <text x="40" y="104" fill={TEAL} fontSize="12" letterSpacing="2" fontFamily="var(--font-bebas), sans-serif">NEXT FIXTURES</text>
-        {(fixtures.length ? fixtures.slice(0, 4) : [{ opp: "", home: true }]).map((f, i) => (
-          f.opp
-            ? <text key={i} x="40" y={130 + i * 26} fill={INK} fontSize="15" fontFamily="var(--font-dm-sans), sans-serif" letterSpacing="1">{f.opp} ({f.home ? "H" : "A"})</text>
-            : <text key={i} x="40" y="130" fill={MUTED} fontSize="13" fontFamily="var(--font-dm-sans), sans-serif">Fixtures land soon</text>
-        ))}
+        {/* Heading — big, overlaying the fixtures (founder's call). The Scout
+            looks at the fixtures and works out the players. */}
+        <text x="34" y="112" fill={INK} fontSize="52" letterSpacing="0.5" fontFamily="var(--font-bebas), sans-serif">YOURSCORE</text>
+        <text x="34" y="166" fill={TEAL} fontSize="54" letterSpacing="0.5" fontFamily="var(--font-bebas), sans-serif">SCOUT</text>
 
         {/* player blips — real headshots, each a link into that player's profile
             (the Players tab opens the profile sheet from the ?focus id), so a
