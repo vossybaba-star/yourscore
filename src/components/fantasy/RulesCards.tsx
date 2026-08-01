@@ -61,7 +61,13 @@ const CREDIT_CURVE_TEXT = CREDIT_STEPS.map((s) => `${s.correct} right → ${s.cr
 // aria-hidden + pointer-events: none throughout, so a tap still lands on the
 // stepper's own left/right zones, never on the scene.
 
-function SceneFrame({ children }: { children: ReactNode }) {
+function SceneFrame({ children, align = "center", scale = 0.86 }: {
+  children: ReactNode;
+  /** "center" for short slices (no dead space around them); "top" for tall
+   *  content that is MEANT to crop at the bottom, like the full pitch. */
+  align?: "top" | "center";
+  scale?: number;
+}) {
   return (
     <div aria-hidden style={{ pointerEvents: "none", width: "100%", height: "100%", position: "relative" }}>
       <div style={{
@@ -74,7 +80,9 @@ function SceneFrame({ children }: { children: ReactNode }) {
         }} />
         <div style={{
           position: "absolute", inset: 0, display: "flex", justifyContent: "center",
-          padding: 10, transform: "scale(0.86)", transformOrigin: "top center",
+          alignItems: align === "center" ? "center" : "flex-start",
+          padding: 10, transform: `scale(${scale})`,
+          transformOrigin: align === "center" ? "center center" : "top center",
         }}>
           {children}
         </div>
@@ -108,16 +116,19 @@ const P = {
 function SquadScene() {
   // The real attacking-top row order (lib/fantasy/board's ATTACK_ORDER):
   // forwards nearest the opposition goal, keeper at the back.
+  // Sizes stay small: the pitch is a 1:1 square, so four full-height marker
+  // rows (as the 375px hub draws them) would overflow this miniature and crop
+  // the keeper out of the story.
   const rows: { pos: FantasyPos; size: number; players: (typeof P)[keyof typeof P][] }[] = [
-    { pos: "FWD", size: 32, players: [P.haaland, P.watkins] },
-    { pos: "MID", size: 25, players: [P.saka, P.fernandes, P.palmer, P.son] },
-    { pos: "DEF", size: 25, players: [P.saliba, P.gvardiol, P.konsa, P.trippier] },
-    { pos: "GK", size: 32, players: [P.alisson] },
+    { pos: "FWD", size: 24, players: [P.haaland, P.watkins] },
+    { pos: "MID", size: 20, players: [P.saka, P.fernandes, P.palmer, P.son] },
+    { pos: "DEF", size: 20, players: [P.saliba, P.gvardiol, P.konsa, P.trippier] },
+    { pos: "GK", size: 24, players: [P.alisson] },
   ];
   const bench = [P.raya, P.robertson, P.gordon, P.isak];
   return (
-    <SceneFrame>
-      <div style={{ width: 250 }}>
+    <SceneFrame align="top" scale={0.82}>
+      <div style={{ width: 270 }}>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
           <Chip gold>{fmtM(BUDGET_TENTHS)}</Chip>
         </div>
@@ -127,8 +138,7 @@ function SquadScene() {
               <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 3 }}>
                 {row.players.map((p) => (
                   <div key={p.label} style={{ flex: "1 1 0", maxWidth: 48, minWidth: 0 }}>
-                    <PlayerMarker name={p.name} label={p.label} club={p.club} size={row.size}
-                      datum={"price" in p ? fmtM(p.price) : undefined} />
+                    <PlayerMarker name={p.name} label={p.label} club={p.club} size={row.size} />
                   </div>
                 ))}
               </div>
@@ -146,11 +156,15 @@ function SquadScene() {
 function CaptainScene() {
   return (
     <SceneFrame>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 30, width: "100%", paddingTop: 16 }}>
-        <PlayerMarker name={P.haaland.name} label={P.haaland.label} club={P.haaland.club}
-          size={56} isCaptain datum="scores ×2" />
-        <PlayerMarker name={P.saka.name} label={P.saka.label} club={P.saka.club}
-          size={44} isVice />
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 44 }}>
+        <div style={{ width: 92 }}>
+          <PlayerMarker name={P.haaland.name} label={P.haaland.label} club={P.haaland.club}
+            size={72} isCaptain datum="scores ×2" />
+        </div>
+        <div style={{ width: 74, opacity: 0.85 }}>
+          <PlayerMarker name={P.saka.name} label={P.saka.label} club={P.saka.club}
+            size={52} isVice datum="steps up" />
+        </div>
       </div>
     </SceneFrame>
   );
@@ -317,7 +331,7 @@ function ScoringScene() {
 // Reproduced from GlobalStandings' own Row() — sample names, sample points.
 const STANDINGS_SAMPLE = [
   { rank: 1, name: "Jordan K", points: 812, isMe: false },
-  { rank: 2, name: "You", points: 795, isMe: true },
+  { rank: 2, name: "Alex M", points: 795, isMe: true },
   { rank: 3, name: "Priya S", points: 780, isMe: false },
   { rank: 4, name: "Marcus O", points: 754, isMe: false },
 ];
