@@ -716,6 +716,17 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-01** — **Fantasy "How it works" redesign + rules bot** (`/fantasy/rules`). The
+  numbered walkthrough is replaced by an eight-card story stepper (tap/swipe, segmented
+  progress) whose scenes are LIVE slices of the real app: real SportMonks player faces and
+  real prices from the public `/api/fantasy/pool`, this gameweek's real fixtures from
+  `/api/pl/fixtures`, scoring rows computed by `pointsFor` — static samples as silent
+  fallback. Reference detail sections and the computed scoring table stay below. New
+  floating rules bot: 16 canned engine-computed Q&As answer instantly; free text goes to
+  `POST /api/fantasy/rules-qa` (Haiku, grounded ONLY in `buildRulesDoc()` from
+  `rulesFaq.ts`, refuses off-topic, behind `withFantasyUser` auth + allowlist + rate
+  limit; degrades to canned-only if the model is unreachable). No migration.
+
 - **2026-07-30** — **Feed UX fixes.** (1) **Back from a profile returns to the same view** — scope +
   sort live in the feed URL (`?scope=&sort=`, kept via `history.replaceState`), so back restores
   the tab (and Next restores scroll) instead of dumping you on Following. (2) **No Following tab
