@@ -17,6 +17,7 @@ import { HttpError } from "@/lib/fantasy/server";
 import { commentRejection } from "@/lib/moderation";
 import { notifyUsers } from "@/lib/notify";
 import { groupGwsByMonth, monthKeyOf, monthLabel } from "./months";
+import { momentsForGw, type ChatMoment } from "./chat";
 import type { GwRow } from "./gameweeks";
 
 // fantasy_leagues / fantasy_league_members aren't in the generated Database
@@ -52,6 +53,7 @@ export interface LeagueRow {
 }
 interface LeagueRecord {
   id: string; owner_id: string; name: string; join_code: string; is_public: boolean;
+  stakes: string | null;
 }
 interface MemberRecord { user_id: string; joined_at: string }
 interface ProfileRecord { id: string; username: string | null; display_name: string | null; avatar_url: string | null }
@@ -68,7 +70,7 @@ async function findLeagueByCode(svc: Db, code: string): Promise<LeagueRecord> {
   const normCode = code.trim().toUpperCase();
   const { data } = await svc
     .from("fantasy_leagues")
-    .select("id, owner_id, name, join_code, is_public")
+    .select("id, owner_id, name, join_code, is_public, stakes")
     .eq("join_code", normCode)
     .maybeSingle();
   if (!data) throw new HttpError(404, "League not found");
@@ -317,7 +319,10 @@ export interface LeagueDetail {
   league: {
     id: string; name: string; code: string; memberCount: number;
     isPublic: boolean; isMember: boolean; isOwner: boolean;
+    stakes: string | null;
   };
+  /** The current gameweek and its phase, for the Hub's summary card. */
+  gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
   season: LeagueRow[];
   month: { key: string; label: string; gws: number[]; rows: LeagueRow[] };
   lastMonth: { key: string; label: string; winner: { userId: string; username: string | null; displayName: string | null; points: number } } | null;
@@ -405,11 +410,20 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
     break;
   }
 
+  // Current gameweek + its phase, for the Hub. `pre` before any member has a
+  // scored entry for it, `live` once one lands, `final` when the gw is settled.
+  const currentGw = gws.find((g) => g.status !== "final") ?? gws[gws.length - 1];
+  const currentScored = entries.some((e) => e.gw === currentGw.gw);
+  const phase: "pre" | "live" | "final" =
+    currentGw.status === "final" ? "final" : currentScored ? "live" : "pre";
+
   return {
     league: {
       id: league.id, name: league.name, code: league.join_code,
       memberCount: ids.length, isPublic: league.is_public, isMember, isOwner,
+      stakes: league.stakes,
     },
+    gw: { number: currentGw.gw, phase, deadline: currentGw.deadline },
     season, month, lastMonth,
   };
 }
@@ -451,4 +465,78 @@ export async function deleteLeague(userId: string, code: string): Promise<void> 
   // matches src/app/api/draft/league/[code]/route.ts's delete-mode shape.
   await svc.from("fantasy_league_members").delete().eq("league_id", league.id);
   await svc.from("fantasy_leagues").delete().eq("id", league.id);
+}
+
+// ── History ──────────────────────────────────────────────────────────────────
+
+export interface HistoryGw {
+  gw: number;
+  /** Who scored the most THAT gameweek. */
+  winner: { userId: string; name: string; points: number } | null;
+  /** The viewer's finish in that gameweek's scoring. */
+  yourGwRank: number | null;
+  yourGwPoints: number | null;
+  /** The cumulative season table as it stood after this gameweek — the snapshot. */
+  table: LeagueRow[];
+  highlights: ChatMoment[];
+}
+export interface LeagueHistory {
+  league: { name: string; code: string; isMember: boolean };
+  gameweeks: HistoryGw[]; // most recent first
+}
+
+const historyNameOf = (r: LeagueRow) =>
+  r.displayName ?? (r.username ? `@${r.username}` : "Player");
+
+/** The league's permanent per-gameweek memory: for every FINAL gameweek, the
+ *  gameweek winner, the viewer's finish, the cumulative table snapshot, and the
+ *  gameweek's derived talking points. Everything is recomputed from immutable
+ *  scored entries, so a snapshot never drifts. */
+export async function leagueHistory(code: string, viewerId: string | null): Promise<LeagueHistory> {
+  const svc = db();
+  const league = await findLeagueByCode(svc, code);
+
+  const { data: memberRows } = await svc
+    .from("fantasy_league_members").select("user_id, joined_at").eq("league_id", league.id);
+  const members = (memberRows ?? []) as MemberRecord[];
+  const ids = members.map((m) => m.user_id);
+  const isMember = !!viewerId && ids.includes(viewerId);
+
+  const base = { league: { name: league.name, code: league.join_code, isMember }, gameweeks: [] as HistoryGw[] };
+  if (!ids.length) return base;
+
+  const { data: profileRows } = await svc
+    .from("profiles").select("id, username, display_name, avatar_url").in("id", ids);
+  const profiles = new Map(((profileRows ?? []) as ProfileRecord[]).map((p) => [p.id, p]));
+
+  const { data: entryRows } = await svc
+    .from("fantasy_entries").select("user_id, gw, points, round_correct")
+    .in("user_id", ids).not("scored_at", "is", null).range(0, 9999);
+  const entries = (entryRows ?? []) as EntryRecord[];
+  if (!entries.length) return base;
+
+  const { data: gwRows } = await svc
+    .from("fantasy_gameweeks").select("gw, status").order("gw", { ascending: true });
+  const scored = new Set(entries.map((e) => e.gw));
+  const finalGws = ((gwRows ?? []) as { gw: number; status: string }[])
+    .filter((g) => g.status === "final" && scored.has(g.gw))
+    .map((g) => g.gw)
+    .sort((a, b) => b - a); // most recent first
+
+  const gameweeks: HistoryGw[] = [];
+  for (const gw of finalGws) {
+    const gwRanking = buildRows(entries.filter((e) => e.gw === gw), members, profiles, viewerId);
+    const winnerRow = gwRanking[0];
+    const yourRow = gwRanking.find((r) => r.isMe) ?? null;
+    const table = buildRows(entries.filter((e) => e.gw <= gw), members, profiles, viewerId);
+    gameweeks.push({
+      gw,
+      winner: winnerRow ? { userId: winnerRow.userId, name: historyNameOf(winnerRow), points: winnerRow.points } : null,
+      yourGwRank: yourRow?.rank ?? null,
+      yourGwPoints: yourRow?.points ?? null,
+      table,
+      highlights: await momentsForGw(svc, ids, gw),
+    });
+  }
+  return { league: { name: league.name, code: league.join_code, isMember }, gameweeks };
 }
