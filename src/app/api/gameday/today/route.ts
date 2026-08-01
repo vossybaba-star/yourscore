@@ -9,9 +9,12 @@ import { packName } from "@/lib/gameday/shared";
  * this, and it also feeds the standalone halftime prediction poll on the
  * matchweek page (second_half_started_at).
  *
- * Deliberately UNCACHED — a published pack must appear the moment the daily
- * cron flips it, and second_half_started_at must be fresh for the standalone
- * poll to open on time.
+ * Cached at the CDN for 15s on the success path only (see shortCache below).
+ * It was fully uncached for the reasons that still apply — a published pack
+ * should appear as soon as the daily cron flips it, and second_half_started_at
+ * drives when the standalone poll opens — but at ~190ms it was the slowest step
+ * in a /play tab switch, so the window is 15s rather than nothing. The failure
+ * paths stay no-store.
  *
  * Playable now means state='published' (AC29/AC10) — 'approved'/'base_ready'
  * rows are pre-publish and must stay invisible here, same rule as before the
@@ -76,14 +79,39 @@ export async function GET() {
       second_half_started_at: r.second_half_started_at,
     }));
 
-    return NextResponse.json({ fixtures }, { headers: noStore() });
+    return NextResponse.json({ fixtures }, { headers: shortCache() });
   } catch (err) {
     console.error("[gameday/today] failed", err);
     return NextResponse.json({ fixtures: [] }, { headers: noStore() });
   }
 }
 
-/** No CDN cache, no browser cache. */
+/**
+ * Short CDN cache for the SUCCESS path only (founder call, 2026-08-01).
+ *
+ * This route was fully uncached, and at ~190ms warm it was the slowest step in a
+ * /play tab switch — the rail waits on it after hydration. The freshness rules it
+ * was protecting still hold, so the window is deliberately small rather than the
+ * 60s used elsewhere: a published pack appears at most ~15s after the cron flips
+ * it, and the halftime poll opens at most ~15s late (up to ~30s in the
+ * stale-while-revalidate tail, during which the refresh is already in flight).
+ *
+ * s-maxage is CDN-only; there is no max-age, so a browser never holds its own
+ * stale copy — a hard refresh always reaches the edge.
+ *
+ * To revert, swap this back to noStore() and the old behaviour returns exactly.
+ * If a live matchday ever needs true real-time here, gate it: serve noStore()
+ * when any fixture is in its second half and shortCache() otherwise.
+ */
+function shortCache(): Record<string, string> {
+  return { "Cache-Control": "public, s-maxage=15, stale-while-revalidate=15" };
+}
+
+/**
+ * No CDN cache, no browser cache. Kept for the FAILURE paths: an empty-fixtures
+ * fallback must never be cached, or a transient Supabase blip would pin "no games
+ * today" across the CDN for the whole window and hide the real rail.
+ */
 function noStore(): Record<string, string> {
   return { "Cache-Control": "no-store, max-age=0, must-revalidate" };
 }
