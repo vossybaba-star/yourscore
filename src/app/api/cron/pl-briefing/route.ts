@@ -59,18 +59,23 @@ export async function GET(req: NextRequest) {
   }
 
   /**
-   * A MANUAL call never sends. Only Vercel's own scheduled invocation does.
+   * A MANUAL call never sends. The scheduled run always does.
    *
-   * This exists because a hand-run of this route — made to check the off-hour
-   * guard, at 18:00 London, without the dry flag — delivered a real push to 298
-   * users with a broken headline pointing at a page that wasn't deployed yet.
-   * "Be careful when testing" is not a control. The clock deciding whether a
-   * request sends is the bug; an explicit opt-in is the fix.
+   * The guard exists because a hand-run of this route — made to check the
+   * off-hour guard, at 18:00 London, without the dry flag — delivered a real
+   * push to 298 users with a broken headline pointing at a page that wasn't
+   * deployed yet. The clock deciding whether a request sends was the bug.
    *
-   * Vercel stamps its cron invocations with x-vercel-cron. Anything else has to
-   * pass confirm=send on purpose, and typing that is the acknowledgement.
+   * The SIGNAL is `send=1`, carried in the cron path in vercel.json, because
+   * that is something we control and can read here. The first version keyed off
+   * an `x-vercel-cron` request header, which Vercel does not actually send — so
+   * the scheduler's own invocation was classified as manual and silently
+   * suppressed. The 31 July briefing built correctly and notified nobody.
+   *
+   * The header is still accepted if it ever shows up, but nothing depends on it.
    */
-  const scheduled = !!req.headers.get("x-vercel-cron");
+  const scheduled =
+    req.nextUrl.searchParams.get("send") === "1" || !!req.headers.get("x-vercel-cron");
   const confirmed = req.nextUrl.searchParams.get("confirm") === "send";
   const dry = req.nextUrl.searchParams.get("dry") === "1" || !(scheduled || confirmed);
 
@@ -123,12 +128,30 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  /**
+   * At the send hour, sending nothing is an INCIDENT, not a quiet outcome.
+   *
+   * The 31 July run built a perfect briefing and notified nobody, and it looked
+   * like a success in every log line — ok:true, a date, five stories. The only
+   * evidence was an empty notification_log a day later, found because the
+   * founder asked why his phone was quiet. Anything that silently does nothing
+   * at the moment it exists to do something has to say so loudly.
+   */
+  const shouldHaveSent = !force && !dry && !pushOff;
+  const silentlyQuiet = shouldHaveSent && targeted === 0;
+  if (silentlyQuiet) {
+    console.error(`[cron/pl-briefing] SENT NOTHING at the send hour — ${notified}`);
+  }
+
   return NextResponse.json({
     ok: true,
     date: briefing.date,
     compiledBy: briefing.compiledBy,
     rejected: rejected ?? 0,
     notification: { title, body, url, dedupeKey, targeted, notified },
+    // Present only when a scheduled run reached nobody. Absent on a healthy run,
+    // so it stands out in a log rather than blending into the normal shape.
+    alert: silentlyQuiet ? "scheduled run notified nobody" : undefined,
     stories: briefing.stories.map((s) => ({ source: s.source, desks: s.desks, title: s.title })),
     issue,
   });
