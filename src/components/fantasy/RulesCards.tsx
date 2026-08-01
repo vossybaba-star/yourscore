@@ -15,7 +15,7 @@
  * same as the existing walkthrough body does.
  */
 import {
-  useCallback, useMemo, useRef, useState,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
   type KeyboardEvent, type ReactNode, type TouchEvent,
 } from "react";
 import {
@@ -27,7 +27,7 @@ import { pointsFor, type MatchFacts } from "@/lib/fantasy/values";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 import {
   Chip, CORAL, Crest, Deadline, factLine, fmtM, GOLD, INK, LINE, MUTED,
-  PANEL, PANEL_2, PITCH, TEAL, tint,
+  PANEL, PANEL_2, PITCH, TEAL, tint, type ClientPoolPlayer,
 } from "@/components/fantasy/shared";
 import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
 import { PitchSurface } from "@/components/fantasy/board/PitchSurface";
@@ -49,6 +49,52 @@ const CREDIT_STEPS = (() => {
   return steps;
 })();
 const CREDIT_CURVE_TEXT = CREDIT_STEPS.map((s) => `${s.correct} right → ${s.credits}`).join(" · ");
+
+// ── live data — the two PUBLIC endpoints, fetched once on mount ─────────────
+// Founder feedback: these scenes should read as the real screen, not a stand
+// in. /api/fantasy/pool (edge cached 1h) and /api/pl/fixtures (this
+// gameweek's real fixtures) are both public, no auth. Every scene renders
+// instantly with its static sample as fallback and swaps in live data the
+// moment the fetch lands — silently, on any failure (non-200, empty payload,
+// the 409 a missing gameweek returns), the sample simply stays put.
+interface LiveFixture { home: string; away: string; kickoff_at: string }
+interface LiveData { pool: ClientPoolPlayer[] | null; fixtures: LiveFixture[] | null }
+const EMPTY_LIVE: LiveData = { pool: null, fixtures: null };
+const LiveDataContext = createContext<LiveData>(EMPTY_LIVE);
+
+function useLiveFantasyData(): LiveData {
+  const [live, setLive] = useState<LiveData>(EMPTY_LIVE);
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      const [poolRes, fixturesRes] = await Promise.allSettled([
+        fetch("/api/fantasy/pool", { signal: controller.signal }),
+        fetch("/api/pl/fixtures", { signal: controller.signal }),
+      ]);
+      let pool: ClientPoolPlayer[] | null = null;
+      let fixtures: LiveFixture[] | null = null;
+      if (poolRes.status === "fulfilled" && poolRes.value.ok) {
+        const json = await poolRes.value.json().catch(() => null);
+        if (Array.isArray(json?.players) && json.players.length) pool = json.players;
+      }
+      if (fixturesRes.status === "fulfilled" && fixturesRes.value.ok) {
+        const json = await fixturesRes.value.json().catch(() => null);
+        if (Array.isArray(json?.fixtures) && json.fixtures.length) fixtures = json.fixtures;
+      }
+      if (!controller.signal.aborted && (pool || fixtures)) setLive({ pool, fixtures });
+    })();
+    return () => controller.abort();
+  }, []);
+  return live;
+}
+
+/** Live players carry a full name only — surname it for the marker label, the
+ *  same shape the static P sample's `.label` already provides. */
+const surname = (name: string) => name.trim().split(/\s+/).slice(-1)[0] ?? name;
+/** The pool's `price` is £m (e.g. 14.5), not tenths — fmtM and the engine's
+ *  BUDGET_TENTHS/MAX_PER_CLUB math want tenths, same units the static P
+ *  sample's prices already use. */
+const liveTenths = (p: ClientPoolPlayer) => Math.round(p.price * 10);
 
 // ── scene fragments — miniature slices of the REAL fantasy screens ──────────
 // Founder feedback: abstract SVG diagrams don't teach a user what to actually
@@ -99,9 +145,9 @@ const P = {
   haaland: { name: "Erling Haaland", label: "Haaland", club: "Man City", price: 145 },
   watkins: { name: "Ollie Watkins", label: "Watkins", club: "Aston Villa" },
   saka: { name: "Bukayo Saka", label: "Saka", club: "Arsenal", price: 100 },
-  fernandes: { name: "Bruno Fernandes", label: "Fernandes", club: "Man United" },
-  palmer: { name: "Cole Palmer", label: "Palmer", club: "Chelsea" },
-  son: { name: "Son Heung-min", label: "Son", club: "Tottenham Hotspur" },
+  fernandes: { name: "Bruno Fernandes", label: "Fernandes", club: "Man United", price: 85 },
+  palmer: { name: "Cole Palmer", label: "Palmer", club: "Chelsea", price: 105 },
+  son: { name: "Son Heung-min", label: "Son", club: "Tottenham Hotspur", price: 75 },
   saliba: { name: "William Saliba", label: "Saliba", club: "Arsenal" },
   gvardiol: { name: "Josko Gvardiol", label: "Gvardiol", club: "Man City" },
   konsa: { name: "Ezri Konsa", label: "Konsa", club: "Aston Villa" },
@@ -113,19 +159,79 @@ const P = {
   isak: { name: "Alexander Isak", label: "Isak", club: "Newcastle United" },
 } as const;
 
+/** Shape every squad/captain/scoring marker renders from, whether it's a
+ *  static P sample entry or a live pool player mapped through this. */
+interface MarkerPlayer { name: string; label: string; club: string; avatarUrl?: string | null; price?: number }
+const toLiveMarker = (p: ClientPoolPlayer): MarkerPlayer =>
+  ({ name: p.name, label: surname(p.name), club: p.club, avatarUrl: p.avatarUrl, price: liveTenths(p) });
+
+/** Mid build on the real builder: for each position, the priciest players the
+ *  live pool has, respecting MAX_PER_CLUB across the whole 15 — same rule
+ *  validateSquad enforces server side. Returns null if the pool can't fill a
+ *  full XI + bench (too few players for a position, or too club-concentrated),
+ *  in which case the scene falls back to the static sample. */
+function pickLiveSquad(pool: ClientPoolPlayer[]) {
+  const used = new Set<number>();
+  const clubCount = new Map<number, number>();
+  const takeTop = (pos: FantasyPos, n: number): ClientPoolPlayer[] => {
+    const picked: ClientPoolPlayer[] = [];
+    for (const p of pool.filter((x) => x.pos === pos && !used.has(x.id)).sort((a, b) => b.price - a.price)) {
+      if (picked.length >= n) break;
+      const count = clubCount.get(p.clubId) ?? 0;
+      if (count >= MAX_PER_CLUB) continue;
+      picked.push(p); used.add(p.id); clubCount.set(p.clubId, count + 1);
+    }
+    return picked;
+  };
+  const fwd = takeTop("FWD", 2);
+  const mid = takeTop("MID", 4);
+  const def = takeTop("DEF", 4);
+  const gk = takeTop("GK", 1);
+  const benchGk = takeTop("GK", 1);
+  const benchOutfield: ClientPoolPlayer[] = [];
+  for (const p of pool.filter((x) => x.pos !== "GK" && !used.has(x.id)).sort((a, b) => b.price - a.price)) {
+    if (benchOutfield.length >= 3) break;
+    const count = clubCount.get(p.clubId) ?? 0;
+    if (count >= MAX_PER_CLUB) continue;
+    benchOutfield.push(p); used.add(p.id); clubCount.set(p.clubId, count + 1);
+  }
+  if (fwd.length < 2 || mid.length < 4 || def.length < 4 || gk.length < 1
+    || benchGk.length < 1 || benchOutfield.length < 3) return null;
+  // The picker strip: the next best players still on the market, not yet on
+  // this squad — mirrors what the builder's own list shows mid session.
+  const extra = pool.filter((x) => !used.has(x.id)).sort((a, b) => b.price - a.price).slice(0, 3);
+  return {
+    rows: [
+      { pos: "FWD" as FantasyPos, size: 24, players: fwd.map(toLiveMarker) },
+      { pos: "MID" as FantasyPos, size: 20, players: mid.map(toLiveMarker) },
+      { pos: "DEF" as FantasyPos, size: 20, players: def.map(toLiveMarker) },
+      { pos: "GK" as FantasyPos, size: 24, players: gk.map(toLiveMarker) },
+    ],
+    bench: [...benchGk, ...benchOutfield].map(toLiveMarker),
+    picker: extra.map(toLiveMarker),
+  };
+}
+
 function SquadScene() {
+  const { pool } = useContext(LiveDataContext);
+  const live = useMemo(() => (pool ? pickLiveSquad(pool) : null), [pool]);
+
   // The real attacking-top row order (lib/fantasy/board's ATTACK_ORDER):
   // forwards nearest the opposition goal, keeper at the back.
   // Sizes stay small: the pitch is a 1:1 square, so four full-height marker
   // rows (as the 375px hub draws them) would overflow this miniature and crop
   // the keeper out of the story.
-  const rows: { pos: FantasyPos; size: number; players: (typeof P)[keyof typeof P][] }[] = [
+  const rows: { pos: FantasyPos; size: number; players: MarkerPlayer[] }[] = live?.rows ?? [
     { pos: "FWD", size: 24, players: [P.haaland, P.watkins] },
     { pos: "MID", size: 20, players: [P.saka, P.fernandes, P.palmer, P.son] },
     { pos: "DEF", size: 20, players: [P.saliba, P.gvardiol, P.konsa, P.trippier] },
     { pos: "GK", size: 24, players: [P.alisson] },
   ];
-  const bench = [P.raya, P.robertson, P.gordon, P.isak];
+  const bench: MarkerPlayer[] = live?.bench ?? [P.raya, P.robertson, P.gordon, P.isak];
+  // The picker strip below the pitch — a slim slice of the builder's own
+  // browse list: face, name, crest, real price, a quiet + Add affordance.
+  const picker: MarkerPlayer[] = live?.picker ?? [P.fernandes, P.palmer, P.son];
+
   return (
     <SceneFrame align="top" scale={0.82}>
       <div style={{ width: 270 }}>
@@ -138,15 +244,35 @@ function SquadScene() {
               <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 3 }}>
                 {row.players.map((p) => (
                   <div key={p.label} style={{ flex: "1 1 0", maxWidth: 48, minWidth: 0 }}>
-                    <PlayerMarker name={p.name} label={p.label} club={p.club} size={row.size} />
+                    <PlayerMarker name={p.name} label={p.label} club={p.club} avatarUrl={p.avatarUrl} size={row.size} />
                   </div>
                 ))}
               </div>
             ))}
           </PitchSurface>
           <BenchStrip>
-            {bench.map((p) => <PlayerMarker key={p.label} name={p.name} label={p.label} club={p.club} size={18} dim />)}
+            {bench.map((p) => <PlayerMarker key={p.label} name={p.name} label={p.label} club={p.club} avatarUrl={p.avatarUrl} size={18} dim />)}
           </BenchStrip>
+        </div>
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+          {picker.map((p) => (
+            <div key={p.label} style={{
+              display: "flex", alignItems: "center", gap: 6, padding: "5px 8px",
+              borderRadius: 8, background: PANEL_2, border: `1px solid ${LINE}`,
+            }}>
+              <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size={20} />
+              <span style={{
+                fontSize: 10, fontWeight: 600, color: INK, flex: 1, minWidth: 0,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{p.label}</span>
+              <Crest club={p.club} size={12} />
+              <span style={{ fontSize: 9.5, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{fmtM(p.price ?? 0)}</span>
+              <span style={{
+                fontSize: 8.5, fontWeight: 700, color: TEAL, background: tint(TEAL, "1e"),
+                border: `1px solid ${tint(TEAL, "44")}`, borderRadius: 999, padding: "2px 6px", flexShrink: 0,
+              }}>+ Add</span>
+            </div>
+          ))}
         </div>
       </div>
     </SceneFrame>
@@ -154,20 +280,40 @@ function SquadScene() {
 }
 
 function CaptainScene() {
+  const { pool } = useContext(LiveDataContext);
+  const attackers = useMemo(() => {
+    if (!pool) return null;
+    const fwds = pool.filter((p) => p.pos === "FWD").sort((a, b) => b.price - a.price);
+    return fwds.length >= 2 ? [fwds[0], fwds[1]].map(toLiveMarker) : null;
+  }, [pool]);
+  const captain: MarkerPlayer = attackers?.[0] ?? P.haaland;
+  const vice: MarkerPlayer = attackers?.[1] ?? P.saka;
   return (
     <SceneFrame>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 44 }}>
         <div style={{ width: 92 }}>
-          <PlayerMarker name={P.haaland.name} label={P.haaland.label} club={P.haaland.club}
-            size={72} isCaptain datum="scores ×2" />
+          <PlayerMarker name={captain.name} label={captain.label} club={captain.club} avatarUrl={captain.avatarUrl}
+            size={76} isCaptain datum="scores ×2" />
         </div>
         <div style={{ width: 74, opacity: 0.85 }}>
-          <PlayerMarker name={P.saka.name} label={P.saka.label} club={P.saka.club}
-            size={52} isVice datum="steps up" />
+          <PlayerMarker name={vice.name} label={vice.label} club={vice.club} avatarUrl={vice.avatarUrl}
+            size={56} isVice datum="steps up" />
         </div>
       </div>
     </SceneFrame>
   );
+}
+
+/** "Sat 17:30" — weekday plus a 24h clock, in the viewer's own timezone (same
+ *  convention as the Deadline pill above it), built by hand rather than via
+ *  toLocaleTimeString so the hour never grows an AM/PM suffix in a locale
+ *  that defaults to 12h. */
+function formatKickoff(iso: string): string {
+  const d = new Date(iso);
+  const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${weekday} ${hh}:${mm}`;
 }
 
 function DeadlineScene() {
@@ -175,17 +321,22 @@ function DeadlineScene() {
   // client-only ("use client" at the top of this file), so there is no
   // server/client hydration mismatch to worry about.
   const [iso] = useState(() => new Date(Date.now() + 40 * 3_600_000).toISOString());
-  const fixtures = [
+  const { fixtures: liveFixtures } = useContext(LiveDataContext);
+  const fallback = [
     { home: "Arsenal", away: "Man City", time: "17:30" },
     { home: "Liverpool", away: "Chelsea", time: "20:00" },
   ];
+  const rows = liveFixtures?.length
+    ? liveFixtures.slice(0, 4).map((f) => ({ home: f.home, away: f.away, time: formatKickoff(f.kickoff_at) }))
+    : fallback;
+  const more = liveFixtures && liveFixtures.length > 4 ? liveFixtures.length - 4 : 0;
   return (
     <SceneFrame>
       <div style={{ width: "100%" }}>
         <Deadline iso={iso} compact />
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, opacity: 0.72 }}>
-          {fixtures.map((f) => (
-            <div key={f.home} style={{
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {rows.map((f, i) => (
+            <div key={`${f.home}-${i}`} style={{
               display: "flex", alignItems: "center", gap: 6, padding: "6px 10px",
               borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`,
             }}>
@@ -196,6 +347,11 @@ function DeadlineScene() {
             </div>
           ))}
         </div>
+        {more > 0 && (
+          <div style={{ fontSize: 9.5, color: MUTED, marginTop: 5, textAlign: "right" }}>
+            +{more} more this gameweek
+          </div>
+        )}
       </div>
     </SceneFrame>
   );
@@ -291,38 +447,66 @@ function ChipsScene() {
 }
 
 // Sample match facts, run through the real scoring function — the points
-// shown are computed, never typed by hand.
-const SCORING_ROWS: { p: (typeof P)[keyof typeof P]; pos: FantasyPos; facts: MatchFacts }[] = [
-  {
-    p: P.haaland, pos: "FWD",
-    facts: { minutes: 90, goals: 1, assists: 0, cleanSheet: 0, conceded: 1, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
-  },
-  {
-    p: P.trippier, pos: "DEF",
-    facts: { minutes: 90, goals: 0, assists: 0, cleanSheet: 1, conceded: 0, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 12, dcRec: 0 },
-  },
-  {
-    p: P.palmer, pos: "MID",
-    facts: { minutes: 90, goals: 0, assists: 1, cleanSheet: 0, conceded: 1, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
-  },
-];
+// shown are computed, never typed by hand. Five slots so the card fills
+// (founder feedback: three left dead space): keeper, defender, two
+// midfielders, forward — the forward wears the armband, so his row doubles.
+type ScoringSlot = "GK" | "DEF" | "MID1" | "MID2" | "FWD";
+const SCORING_POS: Record<ScoringSlot, FantasyPos> = { GK: "GK", DEF: "DEF", MID1: "MID", MID2: "MID", FWD: "FWD" };
+const SCORING_FACTS: Record<ScoringSlot, MatchFacts> = {
+  GK: { minutes: 90, goals: 0, assists: 0, cleanSheet: 1, conceded: 0, saves: 3, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
+  DEF: { minutes: 90, goals: 0, assists: 0, cleanSheet: 1, conceded: 0, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 12, dcRec: 0 },
+  MID1: { minutes: 90, goals: 1, assists: 1, cleanSheet: 0, conceded: 1, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
+  MID2: { minutes: 90, goals: 0, assists: 1, cleanSheet: 0, conceded: 1, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
+  FWD: { minutes: 90, goals: 2, assists: 0, cleanSheet: 0, conceded: 1, saves: 0, pensSaved: 0, pensMissed: 0, yellows: 0, reds: 0, ownGoals: 0, dc: 0, dcRec: 0 },
+};
+const SCORING_ORDER: ScoringSlot[] = ["GK", "DEF", "MID1", "MID2", "FWD"];
+const SCORING_CAPTAIN: ScoringSlot = "FWD";
+const SCORING_FALLBACK: Record<ScoringSlot, MarkerPlayer> = {
+  GK: P.alisson, DEF: P.trippier, MID1: P.palmer, MID2: P.son, FWD: P.haaland,
+};
+
+/** The priciest GK, DEF, two MIDs and a FWD the live pool can offer — same
+ *  "well known, real face" idea as the squad and captain scenes. Returns null
+ *  (falls back to the static sample) if the pool is missing a position. */
+function pickScoringFive(pool: ClientPoolPlayer[]): Partial<Record<ScoringSlot, MarkerPlayer>> | null {
+  const byPos = (pos: FantasyPos) => pool.filter((p) => p.pos === pos).sort((a, b) => b.price - a.price);
+  const gk = byPos("GK")[0];
+  const def = byPos("DEF")[0];
+  const mids = byPos("MID");
+  const fwd = byPos("FWD")[0];
+  if (!gk || !def || mids.length < 2 || !fwd) return null;
+  return { GK: toLiveMarker(gk), DEF: toLiveMarker(def), MID1: toLiveMarker(mids[0]), MID2: toLiveMarker(mids[1]), FWD: toLiveMarker(fwd) };
+}
 
 function ScoringScene() {
+  const { pool } = useContext(LiveDataContext);
+  const live = useMemo(() => (pool ? pickScoringFive(pool) : null), [pool]);
   return (
     <SceneFrame>
-      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
-        {SCORING_ROWS.map((r) => (
-          <div key={r.p.label} style={{
-            display: "flex", alignItems: "center", gap: 8, padding: "6px 8px",
-            borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`,
-          }}>
-            <div style={{ width: 46, flexShrink: 0 }}>
-              <PlayerMarker name={r.p.name} label={r.p.label} club={r.p.club} size={26} />
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4 }}>
+        {SCORING_ORDER.map((slot) => {
+          const player = live?.[slot] ?? SCORING_FALLBACK[slot];
+          const pos = SCORING_POS[slot];
+          const facts = SCORING_FACTS[slot];
+          const isCaptain = slot === SCORING_CAPTAIN;
+          const points = pointsFor(pos, facts) * (isCaptain ? 2 : 1);
+          return (
+            <div key={slot} style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", minHeight: 44,
+              borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`,
+            }}>
+              <div style={{ width: 42, flexShrink: 0 }}>
+                <PlayerMarker name={player.name} label={player.label} club={player.club} avatarUrl={player.avatarUrl}
+                  size={24} isCaptain={isCaptain} />
+              </div>
+              <span style={{ flex: 1, fontSize: 10, color: MUTED, minWidth: 0 }}>{factLine(pos, facts)}</span>
+              {isCaptain && (
+                <span style={{ fontSize: 9, fontWeight: 800, color: GOLD }}>×2</span>
+              )}
+              <span style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{points}</span>
             </div>
-            <span style={{ flex: 1, fontSize: 10, color: MUTED, minWidth: 0 }}>{factLine(r.pos, r.facts)}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{pointsFor(r.pos, r.facts)}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </SceneFrame>
   );
@@ -413,6 +597,7 @@ const CARDS: CardDef[] = [
 ];
 
 export function RulesCards({ onDone }: { onDone?: () => void } = {}) {
+  const live = useLiveFantasyData();
   const rootRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
   const [index, setIndex] = useState(0);
@@ -457,6 +642,7 @@ export function RulesCards({ onDone }: { onDone?: () => void } = {}) {
   const lastCardActions = useMemo(() => (isLast ? { handleDone, askQuestion } : null), [isLast, handleDone, askQuestion]);
 
   return (
+    <LiveDataContext.Provider value={live}>
     <div ref={rootRef} style={{ margin: "18px 0 4px" }}>
       <div
         tabIndex={0}
@@ -560,5 +746,6 @@ export function RulesCards({ onDone }: { onDone?: () => void } = {}) {
         </div>
       </div>
     </div>
+    </LiveDataContext.Provider>
   );
 }
