@@ -76,12 +76,14 @@ async function latestScoredGw(db: Db, memberIds: string[]): Promise<number | nul
  *  History recap (a specific past gw) are the same derivation. */
 export async function momentsForGw(db: Db, memberIds: string[], gw: number): Promise<ChatMoment[]> {
   const { data: entries } = await db.from("fantasy_entries")
-    .select("user_id, points, hits, cash_points, chip, captain, captain_used, round_done_at, round_correct")
+    .select("user_id, points, hits, cash_points, chip, captain, captain_used, round_done_at, round_correct, transfers, points_breakdown")
     .eq("gw", gw).in("user_id", memberIds).not("scored_at", "is", null).range(0, 9999);
   const rows = (entries ?? []) as {
     user_id: string; points: number | null; hits: number; cash_points: number;
     chip: string | null; captain: number | null; captain_used: number | null;
     round_done_at: string | null; round_correct: number;
+    transfers: { out: number; in: number }[] | null;
+    points_breakdown: { id: number; points: number }[] | null;
   }[];
   if (rows.length < 2) return []; // a league of one has nobody to rib
 
@@ -115,6 +117,33 @@ export async function momentsForGw(db: Db, memberIds: string[], gw: number): Pro
     if (r.chip === "triple_captain") moments.push({ emoji: "©️", text: `${nameOf(r.user_id)} went Triple Captain this week.`, gw });
     if (r.cash_points > 0) moments.push({ emoji: "🧠", text: `${nameOf(r.user_id)}'s quiz bank overflowed — +${r.cash_points} points straight from knowledge.`, gw });
     if (!r.round_done_at) moments.push({ emoji: "😴", text: `${nameOf(r.user_id)} forgot the round this week. The team played itself.`, gw });
+
+    // TRANSFER EVENTS — derived from the entry's own transfer log + point
+    // breakdown, so they only exist when a real move was made.
+    const transfers = (r.transfers ?? []).filter((t) => t && typeof t.in === "number");
+    if (transfers.length) {
+      const ptOf = new Map((r.points_breakdown ?? []).map((b) => [b.id, b.points]));
+      // The move that landed: the incoming player who returned the most, if he hauled.
+      let bestIn: number | null = null, bestPts = -1;
+      for (const t of transfers) {
+        const p = ptOf.get(t.in) ?? 0;
+        if (p > bestPts) { bestPts = p; bestIn = t.in; }
+      }
+      if (bestIn != null && bestPts >= 8) {
+        moments.push({ emoji: "🔁", text: `${nameOf(r.user_id)} brought in ${playerName.get(bestIn) ?? "a player"} and he returned ${bestPts}.`, gw });
+      }
+      // A points hit — did the incomings out-earn the −4s? (Skip the topper: the
+      // 👑 line already tells that story.)
+      if (r.hits > 0 && r.user_id !== top?.user_id) {
+        const cost = r.hits * 4;
+        const inPts = transfers.reduce((s, t) => s + (ptOf.get(t.in) ?? 0), 0);
+        moments.push({
+          emoji: "💸",
+          text: `${nameOf(r.user_id)} took a −${cost} hit for extra transfers${inPts >= cost ? ` and it paid off (+${inPts} from them)` : ""}.`,
+          gw,
+        });
+      }
+    }
   }
   return moments.slice(0, 6);
 }
