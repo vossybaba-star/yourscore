@@ -19,6 +19,9 @@ type State = "idle" | "working" | "unsubscribed" | "paused" | "subscribed" | "er
 
 function EmailPrefsInner() {
   const params = useSearchParams();
+  // Prefer the signed token; keep reading `u` so links in already-delivered mail
+  // still work until LEGACY_LINKS_UNTIL (see api/email/unsubscribe).
+  const t = params.get("t") ?? "";
   const u = params.get("u") ?? "";
   const intent: "pause" | "unsub" = params.get("pause") ? "pause" : "unsub";
   const scope = params.get("pause") ?? params.get("scope") ?? "all";
@@ -32,7 +35,7 @@ function EmailPrefsInner() {
       const res = await fetch("/api/email/unsubscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ u, action, scope }),
+        body: JSON.stringify({ t, u, action, scope }),
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || "Something went wrong. Please try again.");

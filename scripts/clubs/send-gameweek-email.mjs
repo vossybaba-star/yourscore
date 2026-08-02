@@ -24,6 +24,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,12 +70,29 @@ function render(tpl, tokens) {
   if (missing) throw new Error(`unfilled tokens: ${[...new Set(missing)].join(", ")}`);
   return html;
 }
+// Signed unsubscribe token.
+//
+// ⚠️ MUST STAY BYTE-COMPATIBLE WITH src/lib/email/unsubToken.ts — same label, same
+// sha256-derived key, same base64url truncation, same `<id>.<exp>.<sig>` shape. This
+// is a .mjs script and cannot import the TS module, hence the duplication. If you
+// change one, change both, or every link this script sends fails to verify.
+const UNSUB_LABEL = "yourscore:email-unsub:v1";
+const UNSUB_TTL_SECONDS = 180 * 24 * 60 * 60;
+function signUnsubToken(userId) {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error("signUnsubToken: SUPABASE_SERVICE_ROLE_KEY missing");
+  const key = crypto.createHash("sha256").update(`${UNSUB_LABEL}:${secret}`).digest();
+  const payload = `${userId}.${Math.floor(Date.now() / 1000) + UNSUB_TTL_SECONDS}`;
+  const sig = crypto.createHmac("sha256", key).update(payload).digest("base64url").slice(0, 24);
+  return `${payload}.${sig}`;
+}
+
 const footer = (userId) => {
-  const u = encodeURIComponent(userId);
-  return { PAUSE_URL: `${APP_URL}/settings/email?pause=all&u=${u}`, UNSUB_URL: `${APP_URL}/settings/email?unsub=all&u=${u}` };
+  const t = encodeURIComponent(signUnsubToken(userId));
+  return { PAUSE_URL: `${APP_URL}/settings/email?pause=all&t=${t}`, UNSUB_URL: `${APP_URL}/settings/email?unsub=all&t=${t}` };
 };
 const unsubHeaders = (userId) => ({
-  "List-Unsubscribe": `<${APP_URL}/api/email/unsubscribe?u=${encodeURIComponent(userId)}>`,
+  "List-Unsubscribe": `<${APP_URL}/api/email/unsubscribe?t=${encodeURIComponent(signUnsubToken(userId))}&unsub=all>`,
   "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
 });
 

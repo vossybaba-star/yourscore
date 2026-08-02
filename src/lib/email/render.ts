@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { signUnsubToken } from "./unsubToken";
 
 /**
  * Load a lifecycle email HTML file from /emails/lifecycle and substitute tokens.
@@ -41,11 +42,13 @@ export async function renderEmail(
  */
 export function buildFooterUrls(userId: string, scope: string = "all") {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
-  const u = encodeURIComponent(userId);
+  // Signed token, not the raw user id — see lib/email/unsubToken. The id alone is
+  // published by public endpoints, so it could never authorise a suppression.
+  const t = encodeURIComponent(signUnsubToken(userId));
   const s = encodeURIComponent(scope);
   return {
-    PAUSE_URL: `${base}/settings/email?pause=${s}&u=${u}`,
-    UNSUB_URL: `${base}/settings/email?unsub=all&u=${u}`,
+    PAUSE_URL: `${base}/settings/email?pause=${s}&t=${t}`,
+    UNSUB_URL: `${base}/settings/email?unsub=all&t=${t}`,
   };
 }
 
@@ -56,9 +59,9 @@ export function buildFooterUrls(userId: string, scope: string = "all") {
  */
 export function listUnsubscribeHeaders(userId: string): Record<string, string> {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
-  const u = encodeURIComponent(userId);
+  const t = encodeURIComponent(signUnsubToken(userId));
   return {
-    "List-Unsubscribe": `<${base}/api/email/unsubscribe?u=${u}&unsub=all>, <mailto:unsubscribe@yourscore.app?subject=unsubscribe>`,
+    "List-Unsubscribe": `<${base}/api/email/unsubscribe?t=${t}&unsub=all>, <mailto:unsubscribe@yourscore.app?subject=unsubscribe>`,
     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
   };
 }
