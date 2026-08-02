@@ -449,7 +449,7 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
 const MODE_TILES = [
   { href: "/38-0", label: "38-0", sub: "Draft XI", accent: LIME, rgba: "174,234,0" },
   { href: "/play", label: "QUIZZES", sub: "Fast Qs", accent: TEAL, rgba: "0,216,192" },
-  { href: "/38-0/wc", label: "MASTERMIND", sub: "Daily · £100", accent: GOLD, rgba: "255,194,51" },
+  { href: "/38-0/wc", label: "MASTERMIND", sub: "WC quiz", accent: GOLD, rgba: "255,194,51" },
 ];
 
 function ModeTiles() {
