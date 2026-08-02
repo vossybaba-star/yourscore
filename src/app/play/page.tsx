@@ -827,23 +827,32 @@ function PlayPageInner() {
             <div className="max-w-lg mx-auto px-4 pt-4">
               <button
                 onClick={() => router.push("/versus")}
-                aria-label="Versus: play real people. Find an opponent, challenge a friend or battle for your league"
+                aria-label="Versus: play with people. Find an opponent, challenge a friend or battle for your league"
                 className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
                 style={{
-                  background: "linear-gradient(135deg, rgba(174,234,0,0.14) 0%, rgba(0,216,192,0.07) 100%)",
-                  border: "1px solid rgba(174,234,0,0.35)",
-                  padding: "16px 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  boxShadow: "0 0 24px rgba(174,234,0,0.08)",
+                  background:
+                    "radial-gradient(120% 160% at 100% 0%, rgba(0,216,192,0.12) 0%, rgba(174,234,0,0.1) 45%, rgba(10,16,11,0.9) 100%), linear-gradient(160deg, #0e1611 0%, #131f16 100%)",
+                  border: "1px solid rgba(174,234,0,0.4)",
+                  padding: "22px 20px 20px",
+                  textAlign: "left",
+                  boxShadow: "0 0 32px rgba(174,234,0,0.1)",
                 }}
               >
-                <div style={{ textAlign: "left" }}>
-                  <p className="font-display text-sm tracking-wide text-green">⚔️ VERSUS · PLAY REAL PEOPLE</p>
-                  <p className="font-body text-xs mt-0.5 text-text-muted">Find an opponent now, challenge a friend or battle for your league</p>
-                </div>
-                <span className="font-display text-lg text-green">→</span>
+                <p className="font-display text-xs tracking-widest text-green mb-1">⚔️ TIME TO PLAY</p>
+                <p className="font-display leading-none" style={{ fontSize: 34 }}>
+                  <span className="text-green">VERSUS</span>
+                  <br />
+                  <span className="text-white">PLAY WITH PEOPLE</span>
+                </p>
+                <p className="font-body text-xs mt-2 text-text-muted">
+                  Find an opponent now, challenge a friend or battle for your league
+                </p>
+                <span
+                  className="font-display text-sm tracking-wide inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full"
+                  style={{ background: "#aeea00", color: "#0a0f0a" }}
+                >
+                  FIND A RIVAL →
+                </span>
               </button>
             </div>
           )}
