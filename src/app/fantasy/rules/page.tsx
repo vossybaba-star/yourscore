@@ -82,7 +82,7 @@ export default function RulesPage() {
       textAlign: "center", padding: "9px 3px", borderTop: `1px solid ${LINE}`,
       fontVariantNumeric: "tabular-nums", fontWeight: v === null ? 400 : 700,
       color: v === null ? "#3f4744" : v > 0 ? INK : "#E08A6B", width: 34,
-    }}>{v === null ? "–" : v > 0 ? `+${v}` : v}</td>
+    }}>{v === null ? "·" : v > 0 ? `+${v}` : v}</td>
   );
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (

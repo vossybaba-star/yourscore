@@ -13,6 +13,24 @@ export async function withFantasyUser(
   op: string,
   fn: (db: Db, userId: string) => Promise<unknown>,
 ): Promise<NextResponse> {
+  return runAuthed(op, fn, { allowlistOnly: true });
+}
+
+/** Same plumbing without the launch allowlist — for routes that serve any
+ *  signed-in user (the rules bot: its page is public and it answers only from
+ *  the grounded rules doc, so the game's launch gate has no business here). */
+export async function withSignedInUser(
+  op: string,
+  fn: (db: Db, userId: string) => Promise<unknown>,
+): Promise<NextResponse> {
+  return runAuthed(op, fn, { allowlistOnly: false });
+}
+
+async function runAuthed(
+  op: string,
+  fn: (db: Db, userId: string) => Promise<unknown>,
+  opts: { allowlistOnly: boolean },
+): Promise<NextResponse> {
   try {
     const auth = await createClient();
     const { data: { user } } = await auth.auth.getUser();
@@ -21,7 +39,8 @@ export async function withFantasyUser(
     // SEEING fantasy, this keeps them from CREATING anything in it by URL — no
     // stray squads or entries land in the live season before it opens. 404 rather
     // than 403, so the feature doesn't announce itself to someone poking around.
-    if (!fantasyAllowed(user.id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (opts.allowlistOnly && !fantasyAllowed(user.id))
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
     const { ok } = await rateLimitDistributed(`fantasy:${op}:${user.id}`, 30, 60_000);
     if (!ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     const db = createServiceClient();

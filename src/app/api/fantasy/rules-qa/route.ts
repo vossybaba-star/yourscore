@@ -10,11 +10,12 @@
  * the rules page uses, so this route can never state a rule the game itself
  * does not enforce.
  *
- * Auth, the founder allowlist, the 30/min rate limit and the error shape all
- * come from withFantasyUser — nothing here reinvents that.
+ * Auth, the 30/min rate limit and the error shape all come from
+ * withSignedInUser — any signed-in user, no launch allowlist, because the
+ * rules page is public and this route can only speak the grounded rules doc.
  */
 import { NextRequest } from "next/server";
-import { withFantasyUser } from "../_lib";
+import { withSignedInUser } from "../_lib";
 import { HttpError } from "@/lib/fantasy/server";
 import { buildRulesDoc } from "@/lib/fantasy/rulesFaq";
 
@@ -52,7 +53,12 @@ interface AnthropicResponse {
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
 
-  return withFantasyUser("rules-qa", async () => {
+  // Any signed-in user, NOT just the fantasy allowlist: the rules page is
+  // public, the bot answers only from the grounded rules doc, and the sheet
+  // invites typed questions — gating the answers behind the game's launch
+  // flag made that invitation a lie (ux-walk, 2 Aug). Auth + the same
+  // distributed rate limit stay.
+  return withSignedInUser("rules-qa", async () => {
     const raw = body?.question;
     if (typeof raw !== "string") throw new HttpError(400, "question must be a string", "bad-input");
     const question = raw.trim().slice(0, MAX_QUESTION);

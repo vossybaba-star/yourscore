@@ -24,6 +24,14 @@ import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fanta
 const MAX_QUESTION = 300;
 const FALLBACK_NOTICE = "I can only answer from the saved questions right now, friend. Tap one below.";
 const RATE_LIMIT_NOTICE = "One moment, friend, you are asking faster than I can answer.";
+/** The honest signed-out reply: the sheet says "ask anything", so when auth is
+ *  what blocks a typed question, say that and open the door (ux-walk, 2 Aug —
+ *  the generic notice read as an outage and dead-ended the keenest readers). */
+const SIGNED_OUT_MSG: Msg = {
+  role: "bot",
+  text: "I can answer anything about the rules once you are signed in, friend. For now, tap a question below.",
+  cta: { label: "Sign in", href: "/auth/sign-in?next=%2Ffantasy%2Frules" },
+};
 
 /** When the grounded model is unreachable, answer with the nearest canned
  *  answer PLAINLY — no hedging preamble (founder, 2 Aug: "the closest saved
@@ -34,7 +42,12 @@ function rescue(question: string): string {
   return nearestFaq(question)?.a ?? FALLBACK_NOTICE;
 }
 
-interface Msg { role: "user" | "bot"; text: string }
+interface Msg {
+  role: "user" | "bot";
+  text: string;
+  /** Optional action rendered under the text — the signed-out nudge's door. */
+  cta?: { label: string; href: string };
+}
 
 /** Strip punctuation, lowercase, collapse whitespace — for the rescue tier's
  *  loose match against the canned questions, not a real NLP pass. */
@@ -154,6 +167,15 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
         setMessages((m) => [...m, { role: "bot", text: RATE_LIMIT_NOTICE }]);
         return;
       }
+      // Signed out is not an outage: if a canned answer fits, give it; the
+      // nudge with the sign-in door follows either way.
+      if (res.status === 401) {
+        const near = nearestFaq(question);
+        setMessages((m) => near
+          ? [...m, { role: "bot", text: near.a }, SIGNED_OUT_MSG]
+          : [...m, SIGNED_OUT_MSG]);
+        return;
+      }
       if (!res.ok) {
         setMessages((m) => [...m, { role: "bot", text: rescue(question) }]);
         return;
@@ -239,6 +261,15 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
                 color: INK,
               }}>
                 {m.text}
+                {m.cta && (
+                  <a href={m.cta.href} className="font-body rounded-lg" style={{
+                    display: "block", textAlign: "center", marginTop: 8, padding: "8px 14px",
+                    fontSize: 13, fontWeight: 700, background: TEAL, color: "#03211d",
+                    textDecoration: "none",
+                  }}>
+                    {m.cta.label}
+                  </a>
+                )}
               </div>
             </div>
           ))}
