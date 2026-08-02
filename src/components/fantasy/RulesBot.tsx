@@ -3,12 +3,13 @@
  * The rules bot — a floating "ask me" button on /fantasy/rules for the
  * question the eight cards and the walkthrough did not answer directly.
  *
- * Two tiers, cheapest first:
- *   1. A tap on a canned pill, or typed text that matches a canned question
- *      closely enough, answers INSTANTLY from FAQ in rulesFaq.ts. Zero network.
- *   2. Anything else goes to POST /api/fantasy/rules-qa, which is itself
- *      grounded to the same rules document (see rulesFaq.ts buildRulesDoc())
- *      and refuses to use the model's own football knowledge.
+ * Two tiers:
+ *   1. A tap on a suggested pill answers INSTANTLY from FAQ in rulesFaq.ts —
+ *      zero network. Only a handful of pills show (founder, 2 Aug: listing
+ *      all of them read as a wall, not a helper).
+ *   2. EVERY typed question goes to POST /api/fantasy/rules-qa — the grounded
+ *      model decides the right answer (founder, 2 Aug), rather than a local
+ *      text match guessing which canned answer is close enough.
  *
  * Every failure mode degrades to the canned-only notice rather than crashing
  * or showing a raw error: no key, a non-200, a thrown fetch, a 401/404/429/500
@@ -16,6 +17,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FAQ, type FaqItem } from "@/lib/fantasy/rulesFaq";
+import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
 
 const MAX_QUESTION = 300;
@@ -31,24 +33,25 @@ function rescue(question: string): string {
 
 interface Msg { role: "user" | "bot"; text: string }
 
-/** Strip punctuation, lowercase, collapse whitespace — for a loose text match
- *  against the canned questions, not a real NLP pass. */
+/** Strip punctuation, lowercase, collapse whitespace — for the rescue tier's
+ *  loose match against the canned questions, not a real NLP pass. */
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-/** Exact-ish only: a substring hit against a canned question. Anything looser
- *  goes to the grounded model instead — a fuzzy word-overlap match here gave a
- *  confident wrong canned answer to near-miss questions ("what if my captain
- *  gets a red card" matched the captain-does-not-play answer). */
-function localMatch(input: string): FaqItem | null {
-  const norm = normalize(input);
-  if (!norm) return null;
-  return FAQ.find((f) => {
-    const nq = normalize(f.q);
-    return nq.includes(norm) || norm.includes(nq);
-  }) ?? null;
-}
+/** The handful of suggestions shown as pills — the questions new managers
+ *  actually ask first. The rest of FAQ still exists for the rescue tier and
+ *  the model's grounding doc; it just is not a wall of eighteen buttons. */
+const SUGGESTED = [
+  "How many players do I pick, and what is my budget?",
+  "How does the captain work?",
+  `How do I earn extra transfers with ${KNOWLEDGE_NAME}?`,
+  "What is the deadline, and what happens if I miss it?",
+  "When is my score final?",
+];
+const PILLS: FaqItem[] = SUGGESTED
+  .map((q) => FAQ.find((f) => f.q === q))
+  .filter((f): f is FaqItem => Boolean(f));
 
 /** The rescue tier, used ONLY when the grounded model is unavailable: the
  *  closest canned question by shared significant words, offered as a nearby
@@ -92,12 +95,6 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
     if (!question) return;
     setMessages((m) => [...m, { role: "user", text: question }]);
     setInput("");
-
-    const hit = localMatch(question);
-    if (hit) {
-      setMessages((m) => [...m, { role: "bot", text: hit.a }]);
-      return;
-    }
 
     setThinking(true);
     try {
@@ -162,22 +159,27 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
 
         <div ref={listRef} className="no-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "0 18px" }}>
           {messages.length === 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7, paddingBottom: 6 }}>
-              {FAQ.map((f) => (
-                <button
-                  key={f.q}
-                  type="button"
-                  onClick={() => tapPill(f)}
-                  className="font-body rounded-full"
-                  style={{
-                    fontSize: 12, padding: "7px 12px", textAlign: "left",
-                    background: PANEL_2, border: `1px solid ${LINE}`, color: INK, cursor: "pointer",
-                  }}
-                >
-                  {f.q}
-                </button>
-              ))}
-            </div>
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, paddingBottom: 6 }}>
+                {PILLS.map((f) => (
+                  <button
+                    key={f.q}
+                    type="button"
+                    onClick={() => tapPill(f)}
+                    className="font-body rounded-full"
+                    style={{
+                      fontSize: 12, padding: "7px 12px", textAlign: "left",
+                      background: PANEL_2, border: `1px solid ${LINE}`, color: INK, cursor: "pointer",
+                    }}
+                  >
+                    {f.q}
+                  </button>
+                ))}
+              </div>
+              <p style={{ fontSize: 12, color: MUTED, margin: "4px 2px 10px", lineHeight: 1.4 }}>
+                Or ask anything about the rules in your own words below.
+              </p>
+            </>
           )}
 
           {messages.map((m, i) => (
@@ -205,7 +207,7 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
 
           {messages.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 0 10px" }}>
-              {FAQ.slice(0, 4).map((f) => (
+              {PILLS.slice(0, 3).map((f) => (
                 <button
                   key={f.q}
                   type="button"
