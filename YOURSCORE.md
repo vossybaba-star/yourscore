@@ -6,7 +6,17 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-01 (**Profile Fantasy tab → "Fantasy PL", now with a world rank and a
+> **Confirmed:** 2026-08-02 (**Versus promo tile at the top of the Play tab.** Versus lost its
+> bottom-nav slot when Fantasy took the fifth tab, and a full app audit the same day measured the
+> cost: 7 friend challenges and 34 new friendships in 30 days — the social layer had no door.
+> Founder call: not a nav change; an ad tile instead. First content element of the Solo view on
+> `/play` (above the Gameday rail, hidden on the Build a Quiz sub-tab which leads with its own
+> CTA): "⚔️ VERSUS · PLAY REAL PEOPLE / Find an opponent now, challenge a friend or battle for
+> your league" → `/versus`. Lime Versus styling, aria-labelled, matches the Build-a-Quiz button
+> pattern in `src/app/play/page.tsx`. Verified in-browser at 375px: renders above the fold, tap
+> lands on the Versus hub.)
+>
+> **Previously confirmed:** 2026-08-01 (**Profile Fantasy tab → "Fantasy PL", now with a world rank and a
 > weekly streak.** Branch `feat/fantasy-pl-profile`, migration **238 APPLIED to prod**.
 > The tab is renamed **Fantasy PL**, and above the XI-by-gameweek pitch it now shows real detail:
 > a **world rank** ("#8,421 of N managers · 214 pts") and a **fantasy streak** = consecutive
@@ -715,6 +725,10 @@
 
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
+
+- **2026-08-02** — **Versus promo tile at the top of the Play tab** (see Confirmed preamble).
+  Versus has no bottom-nav slot, so the games tab now opens with an ad tile for it →
+  `/versus`. Hidden on the Build a Quiz sub-tab. `src/app/play/page.tsx` only, no migration.
 
 - **2026-08-02** — **Fantasy tab is now feed-first.** Tapping **Fantasy** lands on a social
   **Home** instead of the squad. App nav is unchanged (Home · Play · Premier League · Fantasy ·

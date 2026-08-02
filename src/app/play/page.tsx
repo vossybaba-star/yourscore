@@ -819,6 +819,35 @@ function PlayPageInner() {
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (
         <>
+          {/* Versus promo tile (founder call 2026-08-02): Versus lost its bottom-nav
+              slot to Fantasy, so this is its ad at the top of the games tab — the
+              one nav-level surface every player still opens. Hidden on the Build
+              tab, which leads with its own CTA. */}
+          {soloTab !== "build" && (
+            <div className="max-w-lg mx-auto px-4 pt-4">
+              <button
+                onClick={() => router.push("/versus")}
+                aria-label="Versus: play real people. Find an opponent, challenge a friend or battle for your league"
+                className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
+                style={{
+                  background: "linear-gradient(135deg, rgba(174,234,0,0.14) 0%, rgba(0,216,192,0.07) 100%)",
+                  border: "1px solid rgba(174,234,0,0.35)",
+                  padding: "16px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxShadow: "0 0 24px rgba(174,234,0,0.08)",
+                }}
+              >
+                <div style={{ textAlign: "left" }}>
+                  <p className="font-display text-sm tracking-wide text-green">⚔️ VERSUS · PLAY REAL PEOPLE</p>
+                  <p className="font-body text-xs mt-0.5 text-text-muted">Find an opponent now, challenge a friend or battle for your league</p>
+                </div>
+                <span className="font-display text-lg text-green">→</span>
+              </button>
+            </div>
+          )}
+
           {/* Gameday rail (AC29) — every PL fixture with a published pack, playable
               now (day-before model, §0.1). Self-hides via useGamedayToday when
               /api/gameday/today has no rows, so an off-matchday /play looks
