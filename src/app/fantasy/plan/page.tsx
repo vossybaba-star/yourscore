@@ -104,7 +104,7 @@ export default function PlanPage() {
 
   if (needsAuth) return (
     <main data-fantasy style={page}>
-      <Header exit={{ label: "Fantasy", onClick: () => router.push("/fantasy") }} />
+      <Header exit={{ label: "Squad", onClick: () => router.push("/fantasy/squad") }} />
       <Card style={{ marginTop: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Sign in to plan ahead</div>
         <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/plan")}>Sign in</Btn>
@@ -113,7 +113,7 @@ export default function PlanPage() {
     </main>
   );
   if (err) return (
-    <main data-fantasy style={page}><Header exit={{ label: "Fantasy", onClick: () => router.push("/fantasy") }} />
+    <main data-fantasy style={page}><Header exit={{ label: "Squad", onClick: () => router.push("/fantasy/squad") }} />
       <ErrorState message={err} onRetry={() => { setErr(null); load(); }} /><BottomNav /></main>
   );
   if (!state?.squad || !planned) return (
@@ -185,7 +185,7 @@ export default function PlanPage() {
 
   return (
     <main data-fantasy style={page}>
-      <Header exit={{ label: "Fantasy", onClick: () => router.push("/fantasy") }} />
+      <Header exit={{ label: "Squad", onClick: () => router.push("/fantasy/squad") }} />
       <h1 style={{ fontSize: 24, margin: "0 0 4px", fontWeight: 700 }}>Plan ahead</h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
         Line up moves against the fixtures and see how your squad would look. Nothing here is
@@ -312,7 +312,7 @@ export default function PlanPage() {
 
       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
         <div style={{ flex: 1 }}><Btn gold onClick={() => router.push("/fantasy/transfers")}>Make a transfer</Btn></div>
-        <div style={{ flex: 1 }}><Btn onClick={() => router.push("/fantasy")}>Back to my team</Btn></div>
+        <div style={{ flex: 1 }}><Btn onClick={() => router.push("/fantasy/squad")}>Back to my team</Btn></div>
       </div>
       <BottomNav />
     </main>

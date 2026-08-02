@@ -12,7 +12,7 @@
  * resolve to whichever the visitor is entitled to — no dead ends.
  */
 import { useEffect, useState } from "react";
-import { FantasyHub } from "@/components/fantasy/FantasyHub";
+import { FantasyHome } from "@/components/fantasy/FantasyHome";
 import { FantasyTeaser } from "@/components/fantasy/FantasyTeaser";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { fantasyVisible } from "@/lib/fantasy/flag";
@@ -36,7 +36,7 @@ export default function FantasyPage() {
 
   return (
     <>
-      {full ? <FantasyHub /> : <FantasyTeaser />}
+      {full ? <FantasyHome /> : <FantasyTeaser />}
       <BottomNav />
     </>
   );

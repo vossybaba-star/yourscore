@@ -87,7 +87,7 @@ export default function RoundPage() {
   // where you left off — the honest "try again" for a load that failed.
   if (err) return (
     <main data-fantasy style={page}>
-      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy") }} />
+      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy/squad") }} />
       <ErrorState message={err} onRetry={() => window.location.reload()} />
     </main>
   );
@@ -168,7 +168,7 @@ export default function RoundPage() {
       {/* Every answer is banked server-side as you go, so leaving is safe and the
           hub offers "Continue round". Without a visible exit this screen trapped
           you: a running timer, no back, and no URL bar in the native app. */}
-      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy") }} right={<>
+      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy/squad") }} right={<>
         <Chip>Q {k + 1}/11</Chip>
         <Chip gold>✓ {correctCount}</Chip>
         {/* The countdown is decoration for a screen reader — it would read every

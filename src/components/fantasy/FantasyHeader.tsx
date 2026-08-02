@@ -18,13 +18,14 @@ const INK = "#eef2f0";
 const MUTED = "#8a948f";
 
 const TABS = [
-  { href: "/fantasy", label: "Squad", match: (p: string) => p === "/fantasy" },
+  // Home is the feed-first landing; the old standalone Feed folds into it.
+  { href: "/fantasy", label: "Home", match: (p: string) => p === "/fantasy" || p.startsWith("/fantasy/feed") },
+  { href: "/fantasy/squad", label: "Squad", match: (p: string) => p === "/fantasy/squad" },
   {
     href: "/fantasy/news",
     label: "Scout",
     match: (p: string) => p.startsWith("/fantasy/news") || p.startsWith("/fantasy/scout"),
   },
-  { href: "/fantasy/feed", label: "Feed", match: (p: string) => p.startsWith("/fantasy/feed") },
   { href: "/fantasy/leagues", label: "Leagues", match: (p: string) => p.startsWith("/fantasy/leagues") },
 ] as const;
 

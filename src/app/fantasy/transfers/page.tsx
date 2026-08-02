@@ -417,7 +417,7 @@ export default function TransfersPage() {
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, marginTop: 10 }}>{err}</p>}
       <div style={{ marginTop: 14 }}>
-        <Btn onClick={() => router.push("/fantasy")}>
+        <Btn onClick={() => router.push("/fantasy/squad")}>
           {closed ? "Back to my team" : "Done, back to my team"}
         </Btn>
       </div>

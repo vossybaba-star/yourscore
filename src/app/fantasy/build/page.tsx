@@ -65,7 +65,7 @@ export default function BuildPage() {
         setRestored(true);
         return;
       }
-      if (!s.canRebuild) { router.replace("/fantasy"); return; } // season started → transfers only
+      if (!s.canRebuild) { router.replace("/fantasy/squad"); return; } // season started → transfers only
       setEditing(true);
       setPicked(s.squad.picks.map((p) => p.id));
       setRestored(true);
@@ -184,7 +184,7 @@ export default function BuildPage() {
     try {
       await api("squad", { pickIds: picked });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* private mode */ }
-      router.push("/fantasy");
+      router.push("/fantasy/squad");
     } catch (e) {
       setErr((e as Error).message); setBusy(false);
     }
@@ -387,7 +387,7 @@ export default function BuildPage() {
       <Header
         exit={view === "add"
           ? { label: "Squad", onClick: () => { setView("squad"); setPicking("squad"); setNotice(null); } }
-          : { label: "Fantasy", onClick: () => router.push("/fantasy") }}
+          : { label: "Squad", onClick: () => router.push("/fantasy/squad") }}
         right={<Chip gold>{fmtM(bank)} left</Chip>}
       />
       <h1 style={{ fontSize: 24, margin: "0 0 4px", fontWeight: 700 }}>

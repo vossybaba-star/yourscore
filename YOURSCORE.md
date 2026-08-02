@@ -716,6 +716,15 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-02** — **Fantasy tab is now feed-first.** Tapping **Fantasy** lands on a social
+  **Home** instead of the squad. App nav is unchanged (Home · Play · Premier League · Fantasy ·
+  Profile); this is all *inside* the tab. Two layers: a **"You" strip** (where you stand — squad
+  in / build it, deadline, rank once scored) and a **feed** that degrades so it is NEVER blank —
+  your leagues' chatter (one-tap into chat) → other managers' moves (people you follow, else the
+  global game) → get-started nudges (start a league / follow) → a cold floor. The squad moved to
+  **`/fantasy/squad`**; the internal nav is now **Home · Squad · Scout · Leagues** (the old
+  standalone Feed folds into Home). New: `fantasyHome()` + `GET /api/fantasy/home` + `FantasyHome`.
+  Squad-return links in build/round/transfers/plan repointed to `/fantasy/squad`. (§9)
 - **2026-08-01** — **Private league polish 2 + a league feed.** (1) **Chat composer is now a
   slim bar PINNED above the nav** (`position: fixed`, not the earlier sticky that scrolled away);
   (2) **tighter message spacing** — reactions are tap-to-open (no dead ＋ row padding every
