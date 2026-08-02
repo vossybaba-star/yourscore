@@ -290,14 +290,14 @@ function CaptainScene() {
   const vice: MarkerPlayer = attackers?.[1] ?? P.saka;
   return (
     <SceneFrame>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 44 }}>
-        <div style={{ width: 92 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 40 }}>
+        <div style={{ width: 154 }}>
           <PlayerMarker name={captain.name} label={captain.label} club={captain.club} avatarUrl={captain.avatarUrl}
-            size={76} isCaptain datum="scores ×2" />
+            size={128} isCaptain datum="scores ×2" />
         </div>
-        <div style={{ width: 74, opacity: 0.85 }}>
+        <div style={{ width: 118, opacity: 0.85 }}>
           <PlayerMarker name={vice.name} label={vice.label} club={vice.club} avatarUrl={vice.avatarUrl}
-            size={56} isVice datum="steps up" />
+            size={94} isVice datum="steps up" />
         </div>
       </div>
     </SceneFrame>
