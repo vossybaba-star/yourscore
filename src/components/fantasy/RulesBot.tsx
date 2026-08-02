@@ -112,8 +112,19 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, thinking]);
 
+  // A beat of "thinking" before every answer, even the instant canned ones —
+  // a reply that lands in the same frame as the tap reads as a lookup table,
+  // not a helper (founder, 2 Aug).
+  const THINK_MS = 500;
+  const think = (fn: () => void) => {
+    setThinking(true);
+    setTimeout(() => { setThinking(false); fn(); }, THINK_MS);
+  };
+
   const tapPill = (f: FaqItem) => {
-    setMessages((m) => [...m, { role: "user", text: f.q }, { role: "bot", text: f.a }]);
+    if (thinking) return;
+    setMessages((m) => [...m, { role: "user", text: f.q }]);
+    think(() => setMessages((m) => [...m, { role: "bot", text: f.a }]));
   };
 
   const ask = useCallback(async (raw: string) => {
@@ -122,20 +133,23 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
     setMessages((m) => [...m, { role: "user", text: question }]);
     setInput("");
 
-    // A question we hold verbatim answers instantly and with full confidence.
+    // A question we hold verbatim answers from the canned set, full
+    // confidence, after the same beat of thinking as everything else.
     const exact = exactMatch(question);
     if (exact) {
-      setMessages((m) => [...m, { role: "bot", text: exact.a }]);
+      think(() => setMessages((m) => [...m, { role: "bot", text: exact.a }]));
       return;
     }
 
     setThinking(true);
+    const minThink = new Promise((r) => setTimeout(r, THINK_MS));
     try {
       const res = await fetch("/api/fantasy/rules-qa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question }),
       });
+      await minThink;
       if (res.status === 429) {
         setMessages((m) => [...m, { role: "bot", text: RATE_LIMIT_NOTICE }]);
         return;
@@ -151,6 +165,7 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
       }
       setMessages((m) => [...m, { role: "bot", text: json.answer }]);
     } catch {
+      await minThink.catch(() => undefined);
       setMessages((m) => [...m, { role: "bot", text: rescue(question) }]);
     } finally {
       setThinking(false);
