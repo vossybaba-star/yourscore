@@ -27,14 +27,36 @@ const LABEL = "yourscore:email-unsub:v1";
  *  link that silently fails is worse than a slightly long-lived one. */
 const TTL_SECONDS = 180 * 24 * 60 * 60;
 
-function key(): Buffer {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) throw new Error("unsubToken: SUPABASE_SERVICE_ROLE_KEY missing");
-  return createHash("sha256").update(`${LABEL}:${secret}`).digest();
+/**
+ * Keys this deployment will ACCEPT, best first. Signing always uses the first.
+ *
+ * Two sources, because a single one has a failure mode either way:
+ *   - EMAIL_UNSUB_SECRET (preferred): a shared secret, so a link minted by the VPS
+ *     send scripts verifies on Vercel. Deriving from the service-role key alone does
+ *     NOT survive that hop — the keys drift between environments, and a link that
+ *     can't be verified is an unsubscribe that doesn't work.
+ *   - the service-role key (fallback): guaranteed present wherever this route runs,
+ *     so nothing breaks before the shared secret is set anywhere.
+ *
+ * Verification tries every candidate, which is also what makes rotation safe: set
+ * the new secret, and links already in inboxes keep verifying under the old one.
+ */
+function candidateKeys(): Buffer[] {
+  const keys: Buffer[] = [];
+  const dedicated = process.env.EMAIL_UNSUB_SECRET;
+  if (dedicated) keys.push(createHash("sha256").update(`${LABEL}:${dedicated}`).digest());
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (service) keys.push(createHash("sha256").update(`${LABEL}:${service}`).digest());
+  if (keys.length === 0) throw new Error("unsubToken: no EMAIL_UNSUB_SECRET or SUPABASE_SERVICE_ROLE_KEY");
+  return keys;
+}
+
+function signWith(k: Buffer, payload: string): string {
+  return createHmac("sha256", k).update(payload).digest("base64url").slice(0, 24);
 }
 
 function sign(payload: string): string {
-  return createHmac("sha256", key()).update(payload).digest("base64url").slice(0, 24);
+  return signWith(candidateKeys()[0], payload);
 }
 
 /** `<userId>.<expiryUnixSeconds>.<sig>` — URL-safe, ~70 chars. */
@@ -54,12 +76,14 @@ export function verifyUnsubToken(token: string): string | null {
   const exp = Number(expRaw);
   if (!Number.isFinite(exp) || exp * 1000 < Date.now()) return null;
 
-  const expected = sign(`${userId}.${expRaw}`);
-  // Compare via fixed-length digests so a length mismatch can't throw and the
-  // comparison stays constant-time.
+  // Accept a signature from ANY candidate key (see candidateKeys) so a link minted
+  // by another environment, or under a pre-rotation secret, still verifies.
   const a = createHash("sha256").update(sig).digest();
-  const b = createHash("sha256").update(expected).digest();
-  if (!timingSafeEqual(a, b)) return null;
-
-  return userId;
+  for (const k of candidateKeys()) {
+    const b = createHash("sha256").update(signWith(k, `${userId}.${expRaw}`)).digest();
+    // Fixed-length digests: a length mismatch can't throw, and the compare is
+    // constant-time.
+    if (timingSafeEqual(a, b)) return userId;
+  }
+  return null;
 }

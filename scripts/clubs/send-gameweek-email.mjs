@@ -79,8 +79,12 @@ function render(tpl, tokens) {
 const UNSUB_LABEL = "yourscore:email-unsub:v1";
 const UNSUB_TTL_SECONDS = 180 * 24 * 60 * 60;
 function signUnsubToken(userId) {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) throw new Error("signUnsubToken: SUPABASE_SERVICE_ROLE_KEY missing");
+  // Prefer the shared secret so links minted here verify on Vercel; the service-role
+  // key is only a fallback and DRIFTS between environments (confirmed 2026-08-01:
+  // this machine's key does not match prod's). Set EMAIL_UNSUB_SECRET on the VPS and
+  // in Vercel to the same value, or links from this script won't verify.
+  const secret = process.env.EMAIL_UNSUB_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error("signUnsubToken: EMAIL_UNSUB_SECRET / SUPABASE_SERVICE_ROLE_KEY missing");
   const key = crypto.createHash("sha256").update(`${UNSUB_LABEL}:${secret}`).digest();
   const payload = `${userId}.${Math.floor(Date.now() / 1000) + UNSUB_TTL_SECONDS}`;
   const sig = crypto.createHmac("sha256", key).update(payload).digest("base64url").slice(0, 24);
