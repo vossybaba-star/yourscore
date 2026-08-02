@@ -12,25 +12,37 @@
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
 
 const TEAL = "#00d8c0";
+const LIME = "#aeea00";
+const GOLD = "#ffc233";
 const INK = "#eef2f0";
 const MUTED = "#8a948f";
 
+// Each area carries its own accent so the tab you're on is colour-coded, not all
+// teal: Home + Scout teal (the feed/radar brand), Squad lime, Leagues gold.
 const TABS = [
   // Home is the feed-first landing; the old standalone Feed folds into it.
-  { href: "/fantasy", label: "Home", match: (p: string) => p === "/fantasy" || p.startsWith("/fantasy/feed") },
-  { href: "/fantasy/squad", label: "Squad", match: (p: string) => p === "/fantasy/squad" },
+  { href: "/fantasy", label: "Home", accent: TEAL, match: (p: string) => p === "/fantasy" || p.startsWith("/fantasy/feed") },
+  { href: "/fantasy/squad", label: "Squad", accent: LIME, match: (p: string) => p === "/fantasy/squad" },
   {
     href: "/fantasy/news",
     label: "Scout",
+    accent: TEAL,
     match: (p: string) => p.startsWith("/fantasy/news") || p.startsWith("/fantasy/scout"),
   },
-  { href: "/fantasy/leagues", label: "Leagues", match: (p: string) => p.startsWith("/fantasy/leagues") },
+  { href: "/fantasy/leagues", label: "Leagues", accent: GOLD, match: (p: string) => p.startsWith("/fantasy/leagues") },
 ] as const;
 
 export function FantasyHeader({ subtitle }: { subtitle?: string }) {
   const pathname = usePathname() || "/fantasy";
+  const { user } = useUser();
+  // Signed out, Home (the public browse) and Scout (cover + a walled preview) are
+  // open to browse; Squad and Leagues assume an account, so route those through
+  // sign-in rather than into a page that assumes a player.
+  const publicHref = (href: string) => href === "/fantasy" || href === "/fantasy/news";
+  const hrefFor = (href: string) => (!user && !publicHref(href)) ? `/auth/sign-in?next=${encodeURIComponent(href)}` : href;
   return (
     <div style={{ marginBottom: 14 }}>
       <h1 className="font-display" style={{ fontSize: 27, color: INK, lineHeight: 1, letterSpacing: "-0.005em", margin: 0 }}>
@@ -46,12 +58,12 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
         {TABS.map((t) => {
           const on = t.match(pathname);
           return (
-            <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined}
+            <Link key={t.href} href={hrefFor(t.href)} aria-current={on ? "page" : undefined}
               className="font-display"
               style={{
                 flex: 1, textAlign: "center", padding: "9px 6px", borderRadius: 12,
                 fontSize: 16, fontWeight: 700, letterSpacing: "0.01em", textDecoration: "none",
-                background: on ? TEAL : "transparent", color: on ? "#062018" : MUTED,
+                background: on ? t.accent : "transparent", color: on ? "#062018" : MUTED,
                 whiteSpace: "nowrap",
               }}>
               {t.label}

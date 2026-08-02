@@ -14,7 +14,7 @@ import "server-only";
  * idiom), so a re-tick can never double-send.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { notifyUsers } from "@/lib/notify";
+import { notifyFantasy } from "@/lib/fantasy/notify";
 import { sendFantasyDeadlineEmail, sendFantasyGwResultEmail } from "@/lib/email/senders";
 import { enginePool } from "./pool";
 import { groupGwsByMonth, monthKeyOf, monthLabel } from "./months";
@@ -100,13 +100,14 @@ export async function resultComms(db: Db, gw: SeasonGw): Promise<{ pushed: numbe
   }[];
   if (!rows.length) return { pushed: 0, emailed: 0 };
 
-  // Push: one dedupe key for the gameweek; the tap lands on the result card.
-  const { targeted } = await notifyUsers({
+  // Push + inbox: one dedupe key for the gameweek; the tap lands on the result card.
+  const { targeted } = await notifyFantasy({
     userIds: rows.map((r) => r.user_id),
     title: `Gameweek ${gw.gw} is in`,
     body: "Your team has scored — see the breakdown and who earned the armband.",
     url: "/fantasy",
     dedupeKey: `fantasy-result:${gw.gw}`,
+    type: "fantasy_result",
   });
 
   let emailed = 0;
@@ -176,12 +177,15 @@ export async function monthWinnerComms(db: Db, gw: SeasonGw, allGws: SeasonGw[])
     const { data: prof } = await db.from("profiles")
       .select("display_name, username").eq("id", win.u).maybeSingle();
     const who = prof?.display_name ?? (prof?.username ? `@${prof.username}` : "Someone");
-    await notifyUsers({
+    await notifyFantasy({
       userIds: ms,
       title: `${monthLabel(key)} is settled`,
       body: `${who} takes the month in ${l.name} with ${win.pts} points. Fresh table from the next gameweek.`,
       url: `/fantasy/leagues/${l.join_code}`,
       dedupeKey: `fantasy-month:${l.id}:${key}`,
+      type: "fantasy_month_winner",
+      subjectType: "fantasy_league",
+      subjectId: l.id,
     });
     announced++;
   }

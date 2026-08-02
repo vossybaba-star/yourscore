@@ -45,7 +45,11 @@ export const shell: CSSProperties = {
     "calc(16px + env(safe-area-inset-top)) 14px calc(88px + env(safe-area-inset-bottom))",
 };
 export const column: CSSProperties = {
-  maxWidth: 512, margin: "0 auto", display: "grid", gap: 14,
+  // minmax(0,1fr), not a bare auto track: a single `auto` grid track adopts its
+  // widest child's MIN-content (the header's 4 nowrap nav pills ≈ 428px) and
+  // overflows the viewport, dragging every child off-centre. Capping the track at
+  // the container keeps wide children (pill scrollers, tables) inside their own box.
+  maxWidth: 512, margin: "0 auto", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 14,
 };
 
 /** The Scout surfaces' top chrome — just the shared FantasyHeader (big FANTASY

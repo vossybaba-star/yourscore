@@ -11,6 +11,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
+import { notifyFantasy } from "./notify";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -38,6 +39,9 @@ export interface FeedEvent {
   actorId: string;
   actorName: string;
   actorAvatar: string | null;
+  /** The manager's captain's club — the crest we show beside them (no stored
+   *  favourite club exists, so the player they backed most stands in for it). */
+  actorClub: string | null;
   type: FeedType;
   gw: number | null;
   sentence: string;
@@ -65,6 +69,35 @@ export async function emitFeedEvent(
   db: Db, actorId: string, type: FeedType, gw: number | null, payload: Record<string, unknown>,
 ): Promise<void> {
   await db.from("fantasy_feed_events").insert({ actor_id: actorId, type, gw, payload });
+  // Only the two moves worth a ping to your followers — a squad reveal and a big
+  // haul — never every transfer (the spam trap). Fire-and-forget.
+  if (type === "squad_complete" || type === "haul") void notifyFollowersOfMove(db, actorId, type, gw, payload);
+}
+
+/** Ping a manager's followers when they reveal a squad or post a big haul. Deduped
+ *  per (follower, type, actor, gw) inside notifyFantasy, so at most one of each per
+ *  gameweek. */
+async function notifyFollowersOfMove(
+  db: Db, actorId: string, type: FeedType, gw: number | null, payload: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const { data: fRows } = await db.from("user_follows").select("follower_id").eq("followee_id", actorId);
+    const followers = ((fRows ?? []) as { follower_id: string }[]).map((f) => f.follower_id);
+    if (!followers.length) return;
+    const { data: prof } = await db.from("profiles").select("display_name, username").eq("id", actorId).maybeSingle();
+    const who = prof?.display_name ?? (prof?.username ? `@${prof.username}` : "A manager");
+    const [title, body] = type === "squad_complete"
+      ? [`${who} picked their squad`, "See who they're backing this gameweek."]
+      : [`${who} hauled ${Number(payload.points ?? 0)} points`, "Big gameweek — see how they did it."];
+    await notifyFantasy({
+      userIds: followers,
+      title, body,
+      url: `/profile/${actorId}#fantasy-xi`,
+      dedupeKey: `fantasy-follow-move:${type}:${actorId}:${gw ?? "x"}`,
+      type: `fantasy_follow_${type}`,
+      actorId,
+    });
+  } catch (e) { console.error("[fantasy:feed] follower notify failed:", e); }
 }
 
 /** Best-effort emit — swallows errors so a feed hiccup can't break a transfer. */
@@ -205,15 +238,21 @@ async function hydrateEvents(
     return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: p?.pos ?? "MID", club: p?.club, avatarUrl: p?.avatarUrl ?? null };
   };
 
-  const [{ data: profs }, { data: likeRows }, { data: commentRows }] = await Promise.all([
+  const [{ data: profs }, { data: likeRows }, { data: commentRows }, { data: squadRows }] = await Promise.all([
     db.from("profiles").select("id, display_name, avatar_url").in("id", actorIds),
     db.from("fantasy_feed_likes").select("event_id, user_id").in("event_id", eventIds),
     db.from("comments").select("subject_id").eq("subject_type", "fantasy_feed").in("subject_id", eventIds).is("deleted_at", null),
+    db.from("fantasy_squads").select("user_id, captain").in("user_id", actorIds),
   ]);
 
   const profById = new Map<string, { display_name: string | null; avatar_url: string | null }>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (profs ?? []).forEach((p: any) => profById.set(p.id, p));
+
+  // The crest beside each manager = their captain's club (their headline pick).
+  const clubByActor = new Map<string, string | null>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (squadRows ?? []).forEach((s: any) => clubByActor.set(s.user_id, s.captain != null ? (poolById.get(s.captain)?.club ?? null) : null));
 
   const likeCount = new Map<string, number>();
   const likedByMe = new Set<string>();
@@ -253,6 +292,7 @@ async function hydrateEvents(
       actorId: e.actor_id,
       actorName: profById.get(e.actor_id)?.display_name ?? "A manager",
       actorAvatar: profById.get(e.actor_id)?.avatar_url ?? null,
+      actorClub: clubByActor.get(e.actor_id) ?? null,
       type,
       gw: e.gw ?? null,
       sentence: sentenceFor(type, payload, e.gw ?? null, nameOf),

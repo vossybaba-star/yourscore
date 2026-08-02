@@ -21,6 +21,7 @@ import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { enginePool, fantasyPool, pricedPool } from "./pool";
 import { tryEmitFeedEvent } from "./feed";
+import { notifyFantasy } from "./notify";
 import { loadFixtureSet, fixtureStatusFor } from "./captainAssist";
 import { isOpenForEdits, type GwRow } from "./gameweeks";
 import { FORM_WINDOW_GWS, type NewsClubRun, type NewsTickerCell, type NewsDoc } from "./news";
@@ -467,6 +468,18 @@ export async function stepRound(db: Db, userId: string, k: number, optionId: num
   if (isLast && written?.length) {
     const squad = (await getSquad(db, userId))!;
     await completeRound(db, userId, squad, minted);
+    // "You earned a transfer" — only when the round actually banked a move, once
+    // per (user, gw). Gated + deduped inside notifyFantasy; never blocks the round.
+    if (minted > 0) {
+      void notifyFantasy({
+        userIds: [userId],
+        title: minted === 1 ? "You earned a transfer" : `You earned ${minted} transfers`,
+        body: `Your knowledge round banked ${minted === 1 ? "an extra move" : `${minted} extra moves`} for the next gameweek.`,
+        url: "/fantasy/squad",
+        dedupeKey: `fantasy-transfer-earned:${userId}:${gw.gw}`,
+        type: "fantasy_transfer_earned",
+      });
+    }
   }
   return {
     correct, answerId: q.answerId, correctCount,

@@ -2,7 +2,7 @@
 
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
-import { GOLD, AMBER, INK, MUTED } from "@/components/fantasy/shared";
+import { GOLD, AMBER, INK, MUTED, POS_COLOR, tint, type Pos } from "@/components/fantasy/shared";
 
 /**
  * One player on the tactical pitch — a PORTRAIT marker (founder, 25 Jul: the
@@ -17,7 +17,7 @@ import { GOLD, AMBER, INK, MUTED } from "@/components/fantasy/shared";
  * the calm state is the default.
  */
 export function PlayerMarker({
-  name, label, avatarUrl, club, size = 34, isCaptain = false, isVice = false, doubt, datum, dim = false,
+  name, label, avatarUrl, club, size = 34, isCaptain = false, isVice = false, doubt, datum, dim = false, pos,
 }: {
   /** Full name — seeds the monogram fallback. */
   name: string;
@@ -34,9 +34,12 @@ export function PlayerMarker({
   /** One datum under the name (price, opponent, points — the lens decides). */
   datum?: string;
   dim?: boolean;
+  /** Position — colours the name plate so the pitch reads by role, not one hue. */
+  pos?: Pos;
 }) {
   const ring = isCaptain ? GOLD : isVice ? "rgba(0,216,192,0.75)" : undefined;
   const badge = size >= 30 ? 15 : 13;
+  const posC = pos ? POS_COLOR[pos] : undefined;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, opacity: dim ? 0.85 : 1, minWidth: 0, width: "100%" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
@@ -70,6 +73,12 @@ export function PlayerMarker({
         fontSize: size >= 30 ? 10 : 9.5, fontWeight: 700, color: INK, lineHeight: 1.05, textAlign: "center",
         maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         textShadow: "0 1px 2px rgba(0,0,0,0.7)",
+        // A faint position-coloured plate so the pitch reads by role at a glance:
+        // GK amber, DEF teal, MID lime, FWD coral — not one flat hue.
+        ...(posC ? {
+          padding: "1px 6px", borderRadius: 6,
+          background: tint(posC, "40"), boxShadow: `inset 0 0 0 1px ${tint(posC, "cc")}`,
+        } : null),
       }}>{label}</span>
       {datum && (
         <span style={{ fontSize: 8.5, color: MUTED, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{datum}</span>

@@ -22,7 +22,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   api, Crest, DoubtFlag, EMPTY_CONTEXT, FixtureRun, Btn,
-  INK, LINE, MUTED, PANEL, PANEL_2, TEAL, AMBER, tint,
+  INK, LINE, MUTED, PANEL, PANEL_2, TEAL, AMBER, tint, PosTag,
   Sheet, SectionLabel,
   type ClientPoolPlayer, type FantasyContext, type Difficulty, type ContextFixture, type Pos,
 } from "@/components/fantasy/shared";
@@ -259,7 +259,7 @@ function IdentityHead({ side, onRemove, onReplace }: {
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, lineHeight: 1.15 }}>{p.name}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 3 }}>
             <Crest club={p.club} size={13} />
-            <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · {p.pos}</span>
+            <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · <PosTag pos={p.pos} /></span>
           </div>
         </div>
         <div style={{ fontSize: 14, fontWeight: 800, color: INK }}>£{p.price.toFixed(1)}m</div>
@@ -420,7 +420,7 @@ function PlayerPicker({ pool, ctx, slot, onCancel, onPick }: {
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
                     <Crest club={p.club} size={12} />
-                    <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · {p.pos}</span>
+                    <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · <PosTag pos={p.pos} /></span>
                   </span>
                 </span>
               </span>

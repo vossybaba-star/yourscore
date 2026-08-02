@@ -14,7 +14,7 @@
  * what it is handed, in order.
  */
 import { useEffect, useState } from "react";
-import { api, Card, Btn, INK, MUTED, TEAL, GOLD } from "./shared";
+import { api, Card, Btn, INK, MUTED, TEAL, GOLD, PosTag } from "./shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 
@@ -268,7 +268,7 @@ export function PlayerProfile({ playerId, onClose, onConsider }: {
           <PlayerAvatar name={data.name} avatarUrl={faceUrlById(p.playerId) ?? faceFor(data.name)} size={44} />
           <div style={{ minWidth: 0 }}>
             <div id="fantasy-player-profile-name" style={{ fontSize: 17, fontWeight: 800, color: INK }}>{data.name}</div>
-            <div style={{ fontSize: 12, color: MUTED }}>{data.club} · {p.pos}</div>
+            <div style={{ fontSize: 12, color: MUTED }}>{data.club} · <PosTag pos={p.pos} /></div>
           </div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>

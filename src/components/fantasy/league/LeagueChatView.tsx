@@ -10,7 +10,7 @@
  *  (position: fixed — genuinely stays put while the thread scrolls). */
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AMBER, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, TEAL, tint } from "@/components/fantasy/shared";
+import { AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, PosTag, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { CHAT_EMOJI, type ChatData, type ChatMessage } from "./types";
@@ -31,7 +31,11 @@ function KindLabel({ text, color }: { text: string; color: string }) {
 function CardShell({ accent, full, children }: { accent: string; full?: boolean; children: React.ReactNode }) {
   return (
     <div style={{
-      background: PANEL, border: `1px solid ${tint(accent, "33")}`, borderRadius: 12,
+      // A coloured left stripe + faint wash so the kind reads at a glance, not just
+      // a thin tinted border. Same idiom as the feed cards.
+      background: `linear-gradient(100deg, ${tint(accent, "12")}, ${PANEL} 60%)`,
+      border: `1px solid ${tint(accent, "3a")}`, borderLeft: `3px solid ${accent}`,
+      borderRadius: 12,
       padding: 10, width: full ? "100%" : undefined, maxWidth: full ? "100%" : "94%",
       // Squad boards overflow their square a touch at the keeper's name; never clip.
       overflow: full ? "visible" : "hidden",
@@ -83,7 +87,7 @@ function SharedPlayer({ msg, onView }: { msg: ChatMessage; onView: () => void })
         </div>
         <div style={{ minWidth: 0 }}>
           <div className="font-display" style={{ fontSize: 15, fontWeight: 700, color: INK, lineHeight: 1.2 }}>{p.name}</div>
-          <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>{p.club} · {p.pos} · <span style={{ color: GOLD, fontWeight: 700 }}>£{p.price}m</span></div>
+          <div style={{ fontSize: 11.5, color: MUTED, marginTop: 2 }}>{p.club} · <PosTag pos={p.pos} /> · <span style={{ color: GOLD, fontWeight: 700 }}>£{p.price}m</span></div>
         </div>
       </div>
       {p.note && <p style={{ fontSize: 12.5, color: INK, margin: "8px 0 0", lineHeight: 1.45 }}>{p.note}</p>}
@@ -97,8 +101,8 @@ function SharedPlayer({ msg, onView }: { msg: ChatMessage; onView: () => void })
 function SharedSquad({ msg }: { msg: ChatMessage }) {
   const s = msg.squad!;
   return (
-    <CardShell accent={TEAL} full>
-      <KindLabel color={TEAL} text={msg.isMe ? "YOUR SQUAD" : `${msg.name.toUpperCase()}'S SQUAD`} />
+    <CardShell accent={LIME} full>
+      <KindLabel color={LIME} text={msg.isMe ? "YOUR SQUAD" : `${msg.name.toUpperCase()}'S SQUAD`} />
       <SquadBoard mode="complete" players={s.players} xi={s.xi} bench={s.bench} captain={s.captain ?? undefined} vice={s.vice ?? undefined} />
     </CardShell>
   );
@@ -107,7 +111,7 @@ function SharedSquad({ msg }: { msg: ChatMessage }) {
 function SharedNews({ msg, onOpen }: { msg: ChatMessage; onOpen: () => void }) {
   const n = msg.news!;
   return (
-    <div style={{ background: PANEL, border: `1px solid ${tint(AMBER, "33")}`, borderRadius: 12, overflow: "hidden", maxWidth: "94%" }}>
+    <div style={{ background: `linear-gradient(100deg, ${tint(AMBER, "12")}, ${PANEL} 60%)`, border: `1px solid ${tint(AMBER, "3a")}`, borderLeft: `3px solid ${AMBER}`, borderRadius: 12, overflow: "hidden", maxWidth: "94%" }}>
       {n.image && (
         <div style={{ aspectRatio: "16 / 9", background: PITCH, overflow: "hidden" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -133,7 +137,7 @@ function CompareSide({ p, onView }: { p: NonNullable<ChatMessage["compare"]>["a"
     <button onClick={(e) => { e.stopPropagation(); onView(); }} style={{ flex: 1, minWidth: 0, textAlign: "center", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 6px" }}>
       <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size={38} />
       <div style={{ fontSize: 12, fontWeight: 700, color: INK, marginTop: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-      <div style={{ fontSize: 10.5, color: MUTED, marginTop: 2 }}>{p.club} · {p.pos}</div>
+      <div style={{ fontSize: 10.5, color: MUTED, marginTop: 2 }}>{p.club} · <PosTag pos={p.pos} /></div>
       <div style={{ fontSize: 11.5, color: GOLD, fontWeight: 700, marginTop: 3 }}>£{p.price}m</div>
     </button>
   );
@@ -142,8 +146,8 @@ function CompareSide({ p, onView }: { p: NonNullable<ChatMessage["compare"]>["a"
 function SharedCompare({ msg, onView }: { msg: ChatMessage; onView: (id: number) => void }) {
   const c = msg.compare!;
   return (
-    <CardShell accent={TEAL}>
-      <KindLabel color={TEAL} text={`${msg.isMe ? "YOU SHARED" : `${msg.name.toUpperCase()} SHARED`} · COMPARE`} />
+    <CardShell accent={CORAL}>
+      <KindLabel color={CORAL} text={`${msg.isMe ? "YOU SHARED" : `${msg.name.toUpperCase()} SHARED`} · COMPARE`} />
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <CompareSide p={c.a} onView={() => onView(c.a.id)} />
         <span className="font-display" style={{ fontSize: 12, color: MUTED, fontWeight: 700 }}>vs</span>
@@ -357,14 +361,15 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
 
       {err && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "8px 0 0" }}>{err}</p>}
 
-      {/* Space for the fixed composer so the last message never hides behind it. */}
-      {!readOnly && <div style={{ height: 58 }} />}
+      {/* Space for the fixed composer + the (tall, two-line) bottom nav so the
+          last message never hides behind either. */}
+      {!readOnly && <div style={{ height: 96 }} />}
 
       {/* Composer — FIXED just above the bottom nav, so it never scrolls away. An
           archived gameweek takes no new posts. */}
       {!readOnly && (
         <div style={{
-          position: "fixed", left: 0, right: 0, bottom: "calc(53px + env(safe-area-inset-bottom))", zIndex: 30,
+          position: "fixed", left: 0, right: 0, bottom: "calc(84px + env(safe-area-inset-bottom))", zIndex: 30,
           background: "rgba(9,14,11,0.9)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
           borderTop: `1px solid ${LINE}`,
         }}>

@@ -13,9 +13,17 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadGlobalStandings } from "./standings";
 import { loadFeed, type FeedEvent } from "./feed";
+import { loadPublishedScoutPicks } from "./scoutPicks";
+import { clientPool, enginePool } from "./pool";
+import { pitchName, type BoardPlayer } from "./board";
+import { PRESETS, buildPreset } from "./presets";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
+
+export interface HomeBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain: number | null; vice: number | null }
+
+export interface HomeScoutPick { category: string; id: number; name: string; club: string; pos: string; price: number; avatarUrl: string | null }
 
 export interface HomeYou {
   hasSquad: boolean;
@@ -28,6 +36,8 @@ export interface HomeYou {
   played: number;
   totalPlayers: number;
   gapToFirst: number | null;
+  /** The viewer's XI as a pitch board — so "Your squad is in" shows the squad. */
+  board: HomeBoard | null;
 }
 
 export interface HomeLeagueCard {
@@ -45,9 +55,32 @@ export interface FantasyHomeData {
   moves: FeedEvent[];
   movesScope: "following" | "global";
   followingCount: number;
+  /** The Scout's picks this week — a highlight rail on the home. */
+  scout: HomeScoutPick[];
+  /** A ready-made legal squad for someone who hasn't picked yet — shown on the
+   *  home so they can adopt it in one tap and start playing. Null once they have
+   *  a squad (or if the pool is too thin to solve one). */
+  proposed: { pickIds: number[]; players: BoardPlayer[] } | null;
   /** Get-started nudges the user hasn't cleared — the client turns these into
    *  action cards, highest-value first. */
   todo: { squad: boolean; league: boolean; follow: boolean };
+}
+
+/** The PUBLIC home for no-account browsers — the best of the live feed (real
+ *  squads + portraits) with no personal data. Read-only; the join hook lives in
+ *  the client. Kept deliberately thin so it never leaks anything private. */
+export async function fantasyHomePublic(db: Db): Promise<{ moves: FeedEvent[]; scout: HomeScoutPick[] }> {
+  const feed = await loadFeed(db, null, "global", "recent", 20);
+  const poolById = new Map(clientPool().players.map((p) => [p.id, p]));
+  let scout: HomeScoutPick[] = [];
+  try {
+    const picks = await loadPublishedScoutPicks(db);
+    scout = picks.filter((p) => !p.isBackup).map((p) => {
+      const face = poolById.get(p.player.id);
+      return { category: p.category, id: p.player.id, name: p.player.name, club: p.player.club, pos: p.player.pos, price: p.player.priceTenths / 10, avatarUrl: face?.avatarUrl ?? null };
+    });
+  } catch { /* none published */ }
+  return { moves: feed.events, scout };
 }
 
 /** A chat message summarised to one line for a league card — kind-aware so a
@@ -69,11 +102,25 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
   // ── current gameweek + squad presence ──────────────────────────────────────
   const [{ data: gwRows }, { data: squadRow }] = await Promise.all([
     db.from("fantasy_gameweeks").select("gw, deadline, status, mode").eq("mode", "live").order("gw", { ascending: true }),
-    db.from("fantasy_squads").select("user_id, xi").eq("user_id", userId).maybeSingle(),
+    db.from("fantasy_squads").select("xi, bench, captain, vice").eq("user_id", userId).maybeSingle(),
   ]);
   const gws = (gwRows ?? []) as { gw: number; deadline: string | null; status: string }[];
   const current = gws.find((g) => g.status !== "final") ?? gws[gws.length - 1] ?? null;
-  const hasSquad = !!squadRow && Array.isArray((squadRow as { xi?: unknown }).xi) && ((squadRow as { xi: unknown[] }).xi.length > 0);
+  const sq = squadRow as { xi?: number[]; bench?: number[]; captain?: number | null; vice?: number | null } | null;
+  const hasSquad = !!sq && Array.isArray(sq.xi) && sq.xi.length > 0;
+
+  // The viewer's XI as a pitch board, resolved from the pool (never trust the row
+  // for names) — so the "You" strip can show the actual squad, not just words.
+  const poolById = new Map(clientPool().players.map((p) => [p.id, p]));
+  const markerOf = (id: number): BoardPlayer => {
+    const p = poolById.get(id);
+    return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: (p?.pos ?? "MID") as BoardPlayer["pos"], club: p?.club, avatarUrl: p?.avatarUrl ?? null };
+  };
+  const xi = hasSquad ? sq!.xi! : [];
+  const bench = hasSquad && Array.isArray(sq!.bench) ? sq!.bench! : [];
+  const board: HomeBoard | null = hasSquad
+    ? { players: [...xi, ...bench].map(markerOf), xi, bench, captain: sq!.captain ?? null, vice: sq!.vice ?? null }
+    : null;
   const deadline = current?.deadline ?? null;
   const dl = deadline ? new Date(deadline).getTime() : null;
   const phase: HomeYou["phase"] = current?.status === "final" ? "final"
@@ -91,7 +138,18 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
     played: you?.played ?? 0,
     totalPlayers: standings.totalPlayers,
     gapToFirst: you && leader && you.played > 0 ? Math.max(0, leader.points - you.points) : null,
+    board,
   };
+
+  // ── Scout highlight — this week's four picks, as a home rail ────────────────
+  let scout: HomeScoutPick[] = [];
+  try {
+    const picks = await loadPublishedScoutPicks(db);
+    scout = picks.filter((p) => !p.isBackup).map((p) => {
+      const face = poolById.get(p.player.id);
+      return { category: p.category, id: p.player.id, name: p.player.name, club: p.player.club, pos: p.player.pos, price: p.player.priceTenths / 10, avatarUrl: face?.avatarUrl ?? null };
+    });
+  } catch { /* no picks published yet — the tile just doesn't render */ }
 
   // ── league summary cards ───────────────────────────────────────────────────
   const { data: memberships } = await db.from("fantasy_league_members").select("league_id").eq("user_id", userId);
@@ -136,25 +194,31 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
   }
 
   // ── other managers' moves (the feed spine) ─────────────────────────────────
-  // Prefer the people you follow; fall back to the global feed so a cold user
-  // still sees the game being played around them.
-  const following = await loadFeed(db, userId, "following", "recent", 15);
-  let moves = following.events;
-  let movesScope: "following" | "global" = "following";
-  if (moves.length < 4) {
-    const global = await loadFeed(db, userId, "global", "recent", 15);
-    // De-dupe against what we already have.
-    const seen = new Set(moves.map((m) => m.id));
-    moves = [...moves, ...global.events.filter((e) => !seen.has(e.id))].slice(0, 15);
-    movesScope = following.events.length ? "following" : "global";
-  }
+  // The home feed is the WHOLE game — every manager's moves, not just the people
+  // you follow (founder, 2 Aug). A manager sees the game being played around them
+  // from day one, and following becomes a way to shape a feed that's already full.
+  const global = await loadFeed(db, userId, "global", "recent", 15);
+  const moves = global.events;
 
   return {
     you: youOut,
     leagues,
     moves,
-    movesScope,
-    followingCount: following.followingCount,
-    todo: { squad: !hasSquad, league: leagueIds.length === 0, follow: following.followingCount === 0 },
+    movesScope: "global",
+    followingCount: global.followingCount,
+    scout,
+    proposed: hasSquad ? null : buildProposedSquad(markerOf),
+    todo: { squad: !hasSquad, league: leagueIds.length === 0, follow: global.followingCount === 0 },
   };
+}
+
+/** A one-tap ready-made squad — a solved, legal "Balanced" preset. Returns null
+ *  if the pool can't form a legal 15 (then the home just shows the build CTA). */
+function buildProposedSquad(markerOf: (id: number) => BoardPlayer): { pickIds: number[]; players: BoardPlayer[] } | null {
+  try {
+    const shape = PRESETS.find((p) => p.id === "balanced") ?? PRESETS[0];
+    const pickIds = buildPreset(shape, enginePool());
+    if (pickIds.length !== 15) return null;
+    return { pickIds, players: pickIds.map(markerOf) };
+  } catch { return null; }
 }

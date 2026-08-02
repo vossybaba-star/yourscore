@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "r
 import { useRouter } from "next/navigation";
 import {
   api, Btn, Card, Deadline, EMPTY_CONTEXT, ErrorState, fmtM, GOLD, INK,
-  LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
+  LIME, LINE, Loading, MUTED, page, PANEL, PANEL_2, POS_COLOR, Sheet, Skel, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { MovesBank } from "@/components/fantasy/MovesBank";
@@ -40,12 +40,12 @@ const EMBEDDED_PAGE: CSSProperties = { padding: "4px 16px 8px", color: INK };
  *  saw three names, three effects and three "None held" labels, with no way to
  *  learn how any of them arrives — so the whole mechanic read as something the
  *  game might give you one day for reasons of its own. */
-const CHIP_META: { key: ChipName; label: string; blurb: string; earn: string; comingSoon?: boolean }[] = [
-  { key: "triple_captain", label: "Triple Captain", blurb: "Your captain scores ×3",
+const CHIP_META: { key: ChipName; label: string; blurb: string; earn: string; accent: string; comingSoon?: boolean }[] = [
+  { key: "triple_captain", label: "Triple Captain", blurb: "Your captain scores ×3", accent: GOLD,
     earn: "One a month — use the other two before it comes back" },
-  { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included",
+  { key: "bench_boost", label: "Bench Boost", blurb: "All 15 players score, bench included", accent: LIME,
     earn: "One a month — use the other two before it comes back" },
-  { key: "insight", label: "Insight", blurb: "50/50 on one question of the round",
+  { key: "insight", label: "Insight", blurb: "50/50 on one question of the round", accent: TEAL,
     earn: "One a month — use the other two before it comes back" },
 ];
 const CHIP_LABEL: Record<ChipName, string> = Object.fromEntries(CHIP_META.map((c) => [c.key, c.label])) as Record<ChipName, string>;
@@ -300,8 +300,8 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                 <div style={{ display: "grid", gap: 14, justifyItems: "center", position: "relative" }}>
                   {starterPicks.map((p) => (
                     <div key={p.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                      <span className="font-display" style={{ fontSize: 9, color: TEAL, letterSpacing: "0.1em" }}>{p.pos}</span>
-                      <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={54} ring={tint(TEAL, "66")} />
+                      <span className="font-display" style={{ fontSize: 9, color: POS_COLOR[p.pos as Pos] ?? TEAL, letterSpacing: "0.1em" }}>{p.pos}</span>
+                      <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={54} ring={tint(POS_COLOR[p.pos as Pos] ?? TEAL, "88")} />
                       <span className="font-body" style={{ fontSize: 13, fontWeight: 700, color: INK, marginTop: 2 }}>{p.name}</span>
                       <span className="font-body" style={{ fontSize: 11, color: MUTED }}>
                         {p.club} · <span style={{ color: GOLD, fontWeight: 700 }}>£{p.price}m</span>
@@ -678,68 +678,55 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   return (
     <main data-fantasy style={embedded ? EMBEDDED_PAGE : page} onClick={() => menuFor !== null && setMenuFor(null)}>
       <div className="relative">
-      {!embedded && <FantasyHeader subtitle="Your squad, moves and chips for the gameweek." />}
+      {!embedded && <FantasyHeader />}
 
       {/* HERO — the you-are-here, sold rather than announced. Gradient wash +
           formation art bleeding off the tile, the house pattern from the PL tab. */}
-      <div className="rounded-2xl relative overflow-hidden"
-        style={{
-          background: `linear-gradient(150deg, ${tint(TEAL, "14")}, ${tint(TEAL, "03")})`,
-          border: `1px solid ${tint(TEAL, "22")}`,
-          padding: "18px 18px 18px", marginBottom: 12,
-        }}>
-        <FormationArt />
-        <div className="relative">
-          <p className="font-display tracking-widest" style={{ fontSize: 11.5, color: TEAL, marginBottom: 8 }}>
-            {b.tag}
-          </p>
-          {/* THE SCORE IS THE HEADLINE once a gameweek lands. It used to sit
-              below the pitch, 1.6 screens down, while the top of the "result"
-              screen was pixel-identical to the "open" screen — you could finish
-              the week unsure anything had happened. */}
-          {result ? (
-            <>
-              {/* GOLD IS FOR WHAT YOU'VE WON (house rule), and a running total
-                  hasn't been won yet — it can still go down on a stat
-                  correction. Live totals are teal and labelled; only a settled
-                  gameweek gets the gold. */}
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span className="font-display" style={{
-                  fontSize: 64, lineHeight: 0.86, letterSpacing: "-0.02em",
-                  color: isLive ? TEAL : GOLD,
-                }}>
-                  {result.points}
-                </span>
-                <span className="font-display" style={{ fontSize: 22, color: isLive ? TEAL : GOLD, opacity: 0.85 }}>pts</span>
-                {isLive && (
-                  <span className="font-body" style={{
-                    fontSize: 10.5, letterSpacing: "0.08em", color: TEAL, fontWeight: 700,
-                    border: `1px solid ${tint(TEAL, "55")}`, borderRadius: 999, padding: "3px 9px",
-                    marginLeft: 2, whiteSpace: "nowrap",
-                  }}>SO FAR</span>
-                )}
-              </div>
-              <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "92%" }}>
-                {topLine}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-display text-white" style={{ fontSize: 38, lineHeight: 0.92, letterSpacing: "-0.015em" }}>
-                {b.head}
-              </p>
-              <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "88%" }}>
-                {b.sub}
-              </p>
-            </>
-          )}
+      {/* THE SCORE IS THE HEADLINE once a gameweek lands — big gold tile. But
+          pre-season that tile carried no real value, so it's just a header then;
+          the squad board below is the star (founder, 2 Aug). */}
+      {result ? (
+        <div className="rounded-2xl relative overflow-hidden"
+          style={{
+            background: `linear-gradient(150deg, ${tint(TEAL, "14")}, ${tint(TEAL, "03")})`,
+            border: `1px solid ${tint(TEAL, "22")}`,
+            padding: "18px 18px 18px", marginBottom: 12,
+          }}>
+          <FormationArt />
+          <div className="relative">
+            <p className="font-display tracking-widest" style={{ fontSize: 11.5, color: TEAL, marginBottom: 8 }}>{b.tag}</p>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span className="font-display" style={{ fontSize: 64, lineHeight: 0.86, letterSpacing: "-0.02em", color: isLive ? TEAL : GOLD }}>
+                {result.points}
+              </span>
+              <span className="font-display" style={{ fontSize: 22, color: isLive ? TEAL : GOLD, opacity: 0.85 }}>pts</span>
+              {isLive && (
+                <span className="font-body" style={{
+                  fontSize: 10.5, letterSpacing: "0.08em", color: TEAL, fontWeight: 700,
+                  border: `1px solid ${tint(TEAL, "55")}`, borderRadius: 999, padding: "3px 9px",
+                  marginLeft: 2, whiteSpace: "nowrap",
+                }}>SO FAR</span>
+              )}
+            </div>
+            <p className="font-body" style={{ fontSize: 13, color: MUTED, marginTop: 8, lineHeight: 1.5, maxWidth: "92%" }}>{topLine}</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ margin: "2px 0 14px" }}>
+          <p className="font-display tracking-widest" style={{ fontSize: 11, color: TEAL, marginBottom: 6 }}>{b.tag}</p>
+          <h1 className="font-display text-white" style={{ fontSize: 25, lineHeight: 1.05, letterSpacing: "-0.01em", margin: 0 }}>{b.head}</h1>
+        </div>
+      )}
+
+      {/* When it closes — sits ABOVE the quiz tile (founder, 2 Aug) so "how long
+          have I got?" is the first thing answered. Replay has no deadline; once
+          points exist the deadline is history and the live panel takes over. */}
+      {!isDemo && !result && <Deadline iso={state.gw.deadline} />}
 
       {/* Pre-season, the one thing worth doing beyond your squad is the quiz —
           it's how transfers are earned. A tappable explainer, not dead copy. */}
       {preseason && !result && (
-        <button onClick={() => router.push("/fantasy/rules")} style={{
+        <button onClick={() => router.push("/fantasy/quiz-guide")} style={{
           display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", cursor: "pointer",
           background: `linear-gradient(150deg, ${tint(GOLD, "16")}, ${tint(GOLD, "04")})`,
           border: `1px solid ${tint(GOLD, "3a")}`, borderRadius: 16, padding: "13px 15px", marginBottom: 12,
@@ -752,12 +739,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           <span style={{ color: GOLD, fontSize: 20, flexShrink: 0 }}>›</span>
         </button>
       )}
-
-      {/* When it closes. Directly under the hero, above the week's action, so the
-          answer to "how long have I got?" is never more than a glance away.
-          Replay is self-paced and has no deadline to show, and once points exist
-          the deadline is history — the live panel takes over. */}
-      {!isDemo && !result && <Deadline iso={state.gw.deadline} />}
 
       {/* WHAT NEEDS ATTENTION, before it's too late to act on it. Sits between
           the deadline and the week's action because that's the order the
@@ -868,15 +849,15 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           this fantasy game ours. The two money figures sit beside it. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
         <MovesBank held={squad.credits} cap={CREDIT_CAP}
-          roundEarns={!roundDone && roundPlayable} chips={CHIP_META.map((c) => c.label)} />
+          roundEarns={!roundDone && roundPlayable} chips={CHIP_META.map((c) => ({ label: c.label, accent: c.accent }))} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
           {([
-            { label: "In the bank", value: fmtM(squad.bankTenths) },
-            { label: "Team value", value: valueKnown ? fmtM(teamValueTenths) : "—" },
+            { label: "In the bank", value: fmtM(squad.bankTenths), accent: TEAL },
+            { label: "Team value", value: valueKnown ? fmtM(teamValueTenths) : "—", accent: GOLD },
           ] as const).map((t) => (
-            <div key={t.label} className="rounded-2xl" style={{ background: PANEL, border: `1px solid ${LINE}`, padding: "12px 12px" }}>
-              <div className="font-display" style={{ fontSize: 22, lineHeight: 1, color: INK }}>{t.value}</div>
-              <div className="font-body" style={{ fontSize: 10.5, color: MUTED, marginTop: 5, letterSpacing: "0.04em" }}>{t.label}</div>
+            <div key={t.label} className="rounded-xl" style={{ background: `linear-gradient(150deg, ${tint(t.accent, "12")}, ${PANEL} 70%)`, border: `1px solid ${tint(t.accent, "33")}`, padding: "9px 12px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+              <div className="font-body" style={{ fontSize: 11, color: MUTED, letterSpacing: "0.04em" }}>{t.label}</div>
+              <div className="font-display" style={{ fontSize: 18, lineHeight: 1, color: t.accent }}>{t.value}</div>
             </div>
           ))}
         </div>
@@ -916,12 +897,19 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           pitch is the thing being shared. Hidden once a result exists — the
           result card carries its own, better share. */}
       {!result && (
-        <div style={{ marginBottom: 12 }}>
-          <Btn disabled={busy} onClick={() => share("squad")}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+          {state.canRebuild && !isDemo && (
+            <button onClick={() => router.push("/fantasy/build")} className="font-body rounded-xl"
+              style={{ width: "100%", padding: "10px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer", background: TEAL, color: "#03211d", border: `1px solid ${TEAL}` }}>
+              Edit my squad
+            </button>
+          )}
+          <button disabled={busy} onClick={() => share("squad")} className="font-body rounded-xl"
+            style={{ width: "100%", padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: busy ? "default" : "pointer", background: PANEL_2, color: INK, border: `1px solid ${LINE}`, opacity: busy ? 0.5 : 1 }}>
             {busy ? "…" : "Share my squad"}
-          </Btn>
+          </button>
           {notice && (
-            <p className="font-body" style={{ fontSize: 12, color: GOLD, margin: "7px 0 0", textAlign: "center" }}>
+            <p className="font-body" style={{ fontSize: 12, color: GOLD, margin: "3px 0 0", textAlign: "center" }}>
               {notice}
             </p>
           )}
@@ -1027,11 +1015,14 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                   <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key)} style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
                     padding: "9px 12px", borderRadius: 10, textAlign: "left",
-                    background: PANEL, border: `1px solid ${LINE}`, color: playable ? INK : MUTED,
+                    // Each chip owns a colour so the row isn't three identical tiles.
+                    background: `linear-gradient(150deg, ${tint(c.accent, "16")}, ${tint(c.accent, "04")})`,
+                    border: `1px solid ${tint(c.accent, "3a")}`, borderLeft: `3px solid ${c.accent}`,
+                    color: playable ? INK : MUTED,
                     cursor: playable ? "pointer" : "default", opacity: playable ? 1 : 0.55,
                   }}>
                     <span>
-                      <span style={{ fontSize: 13.5, fontWeight: 700, display: "block" }}>{c.label}</span>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, display: "block", color: c.accent }}>{c.label}</span>
                       <span style={{ fontSize: 11.5, display: "block" }}>{c.comingSoon ? "Coming soon" : c.blurb}</span>
                       {/* How it's earned, shown only while you don't hold it —
                           once you do, the effect is the only thing that matters. */}
@@ -1042,7 +1033,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                       )}
                     </span>
                     {!c.comingSoon && (
-                      <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: playable ? c.accent : MUTED, fontWeight: 700, flexShrink: 0 }}>
                         {held ? "Play" : chips.playedThisMonth ? "Next month" : "Used this set"}
                       </span>
                     )}
@@ -1136,16 +1127,10 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
 
       {!locked && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {/* Free rebuild sits ABOVE transfers while it's still available. It used
-            to be a small underlined link at the very bottom of the page, under a
-            prominent "Transfers (0 free · extras −4 pts)" button — so the paid
-            route was the obvious one and the free route was the hidden one. */}
-        {state.canRebuild && !isDemo && (
-          <Btn onClick={() => router.push("/fantasy/build")}>
-            Edit my squad (free until the season starts)
-          </Btn>
-        )}
-        {(!preseason || !isDemo) && (
+        {/* Editing lives above the pitch now (Edit my squad, by Share). In-season
+            the transfer route stays here; pre-season there are no transfers to
+            make (you rebuild freely), so it's hidden. */}
+        {!preseason && !isDemo && (
           <Btn onClick={() => router.push("/fantasy/transfers")}>
             {`Transfers (${squad.credits} free · extras −4 pts)`}
           </Btn>

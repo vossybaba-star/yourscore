@@ -34,9 +34,13 @@ export default function FantasyPage() {
 
   if (full === null) return null; // deciding
 
+  // Signed OUT (no account) → the public browse home (best of the feed + a join
+  // hook), whether or not the game is gated — a visitor always sees it being
+  // played. Signed in + allowed/released → the personal home. Signed in but not
+  // allowed (still gated) → the teaser.
   return (
     <>
-      {full ? <FantasyHome /> : <FantasyTeaser />}
+      {!user ? <FantasyHome mode="public" /> : full ? <FantasyHome /> : <FantasyTeaser />}
       <BottomNav />
     </>
   );

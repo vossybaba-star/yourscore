@@ -18,7 +18,7 @@ import {
   loadPublishedScoutPicks, type ResolvedScoutPick, type ScoutCategory, type Db,
 } from "@/lib/fantasy/scoutPicks";
 import {
-  Card, SectionLabel, Crest, INK, MUTED, PANEL, TEAL, LIME, GOLD,
+  Card, SectionLabel, Crest, INK, MUTED, PANEL, TEAL, LIME, GOLD, POS_COLOR, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
@@ -86,7 +86,7 @@ function PickCard({ pick }: { pick: ResolvedScoutPick }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 4 }}>
           <Crest club={pick.player.club} size={13} />
           <span className="font-body" style={{ color: MUTED, fontSize: 11.5 }}>
-            {pick.player.pos} · £{price}m
+            <span style={{ color: POS_COLOR[pick.player.pos as Pos] ?? MUTED, fontWeight: 700 }}>{pick.player.pos}</span> · £{price}m
           </span>
         </div>
         <div style={{ marginTop: 5 }}><OwnedBadge playerId={pick.player.id} /></div>

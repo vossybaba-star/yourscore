@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
 import { PitchSurface } from "@/components/fantasy/board/PitchSurface";
 import { BenchStrip } from "@/components/fantasy/board/BenchStrip";
-import { LINE, MUTED, TEAL, tint } from "@/components/fantasy/shared";
+import { LINE, MUTED, POS_COLOR, TEAL, tint } from "@/components/fantasy/shared";
 import {
   xiRows, rosterBands, datumFor, isDim,
   type BoardMode, type BoardPlayer, type LiveDatum,
@@ -51,10 +51,6 @@ export interface SquadBoardProps {
 // Bigger faces read better and show the crest clearly — the founder wants the
 // pitch to use the space. Still sized down as a row gets more crowded so five
 // across never collide. The dugout keeps a compact size (its own layout below).
-// Position tag colours for the dugout — the four subs each show what they are,
-// so it's clear who covers whom on an auto-sub. Standard fantasy position hues.
-const POS_COLOR: Record<string, string> = { GK: "#f4a63a", DEF: "#00d8c0", MID: "#8ad14f", FWD: "#ff7a85" };
-
 const sizeForRow = (n: number, onBench: boolean) =>
   onBench ? 30 : n >= 5 ? 34 : n === 4 ? 40 : 46;
 
@@ -75,6 +71,7 @@ export function SquadBoard(props: SquadBoardProps) {
         avatarUrl={p?.avatarUrl}
         club={p?.club}
         size={sizeForRow(crowd, onBench)}
+        pos={p?.pos}
         isCaptain={props.captain === id}
         isVice={props.vice === id}
         doubt={doubts[id]}

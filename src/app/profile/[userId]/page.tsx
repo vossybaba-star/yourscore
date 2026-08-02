@@ -5,7 +5,6 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
-import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { fantasyAllowed } from "@/lib/fantasy/flag";
 import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
 import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
@@ -74,7 +73,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
 
   const { data: profile } = await db
     .from("profiles")
-    .select("id, display_name, avatar_url")
+    .select("id, display_name, avatar_url, username")
     .eq("id", userId)
     .single();
 
@@ -195,6 +194,9 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
           <AvatarCircle name={name} size={72} avatarUrl={profile.avatar_url} />
           <div className="flex-1 min-w-0">
             <p className="font-display text-3xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
+            {profile.username && (
+              <p className="font-body text-sm truncate" style={{ color: "#8a948f", marginTop: 2 }}>@{profile.username}</p>
+            )}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {rank && (
                 <span className="font-body text-xs px-2 py-0.5 rounded-full"
@@ -225,8 +227,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
           <FollowButton userId={userId} refreshOnChange />
         </div>
 
-        {/* Connect: add friend (hides itself when you already are) + challenge */}
-        <AddFriendCard userId={userId} displayName={name} showFollow={false} />
+        {/* Connect: challenge + play their runs */}
         <div className="flex gap-2">
           <Link href={`/versus/quiz?to=${userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: TEAL, color: "#04231f" }}>
             CHALLENGE THEM
