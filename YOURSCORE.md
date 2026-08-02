@@ -727,6 +727,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-02** — **Home Mastermind tile no longer promises "Daily · £100".** The signed-in
+  home's compact mode-tile row (Dashboard `ModeTiles`) still sold the Mastermind tile with a
+  cash prize, but all giveaways were retired on 13 Jul and the WC daily run ended with the
+  tournament (19 Jul) — a false cash promise on every signed-in home. Sub-copy is now
+  **"WC quiz"**, matching the row's mode-blurb style (Draft XI / Fast Qs). One line in
+  `src/components/home/Dashboard.tsx`, shipped `02fabd3`. Closes app-audit S4.
+
 - **2026-08-02** — **Versus promo tile at the top of the Play tab** (see Confirmed preamble).
   Versus has no bottom-nav slot, so the games tab now opens with an ad tile for it →
   `/versus`. Hidden on the Build a Quiz sub-tab. `src/app/play/page.tsx` only, no migration.
