@@ -4,10 +4,11 @@
  * question the eight cards and the walkthrough did not answer directly.
  *
  * Two tiers:
- *   1. A tap on a suggested pill answers INSTANTLY from FAQ in rulesFaq.ts —
- *      zero network. Only a handful of pills show (founder, 2 Aug: listing
- *      all of them read as a wall, not a helper).
- *   2. EVERY typed question goes to POST /api/fantasy/rules-qa — the grounded
+ *   1. A tap on a suggested pill, or typed text that IS one of the canned
+ *      questions (normalized substring), answers INSTANTLY from FAQ in
+ *      rulesFaq.ts — zero network, full confidence. Only a handful of pills
+ *      show (founder, 2 Aug: listing all of them read as a wall).
+ *   2. Everything else goes to POST /api/fantasy/rules-qa — the grounded
  *      model decides the right answer (founder, 2 Aug), rather than a local
  *      text match guessing which canned answer is close enough.
  *
@@ -24,11 +25,13 @@ const MAX_QUESTION = 300;
 const FALLBACK_NOTICE = "I can only answer from the saved questions right now, friend. Tap one below.";
 const RATE_LIMIT_NOTICE = "One moment, friend, you are asking faster than I can answer.";
 
-/** When the grounded model is unreachable, offer the nearest canned answer,
- *  clearly framed as the closest saved one, before giving up entirely. */
+/** When the grounded model is unreachable, answer with the nearest canned
+ *  answer PLAINLY — no hedging preamble (founder, 2 Aug: "the closest saved
+ *  answer I have" read terribly). The confidence is paid for by a stricter
+ *  match threshold in nearestFaq; a weak match gets the generic notice
+ *  instead of a confidently wrong answer. */
 function rescue(question: string): string {
-  const near = nearestFaq(question);
-  return near ? `The closest saved answer I have: ${near.a}` : FALLBACK_NOTICE;
+  return nearestFaq(question)?.a ?? FALLBACK_NOTICE;
 }
 
 interface Msg { role: "user" | "bot"; text: string }
@@ -53,17 +56,40 @@ const PILLS: FaqItem[] = SUGGESTED
   .map((q) => FAQ.find((f) => f.q === q))
   .filter((f): f is FaqItem => Boolean(f));
 
+/** A typed question that IS a canned question (normalized substring either
+ *  way) answers instantly and plainly — no model round trip for a question we
+ *  hold the exact answer to. Anything looser goes to the model, which decides. */
+function exactMatch(input: string): FaqItem | null {
+  const norm = normalize(input);
+  if (!norm) return null;
+  return FAQ.find((f) => {
+    const nq = normalize(f.q);
+    return nq.includes(norm) || norm.includes(nq);
+  }) ?? null;
+}
+
 /** The rescue tier, used ONLY when the grounded model is unavailable: the
- *  closest canned question by shared significant words, offered as a nearby
- *  answer rather than passed off as the exact one. */
+ *  closest canned question by shared significant words. Threshold is three
+ *  shared words, not two — rescue answers speak with full confidence now, so
+ *  a near miss must fail to the generic notice, never to a wrong answer. */
+// Words that carry no meaning for matching a rules question — every canned
+// question contains them, so they only manufacture false overlap. ("what"
+// appearing twice in one canned question once pushed a keeper-injury question
+// to the deadline answer.)
+const STOP = new Set(["what", "when", "does", "happens", "happen", "will", "gets", "have", "much", "many", "with", "there"]);
+const significant = (s: string) =>
+  new Set(normalize(s).split(" ").filter((w) => w.length >= 4 && !STOP.has(w)));
+
 function nearestFaq(input: string): FaqItem | null {
-  const inputWords = new Set(normalize(input).split(" ").filter((w) => w.length >= 4));
+  const exact = exactMatch(input);
+  if (exact) return exact;
+  const inputWords = significant(input);
   if (!inputWords.size) return null;
   let best: FaqItem | null = null;
   let bestScore = 0;
   for (const f of FAQ) {
-    const qWords = normalize(f.q).split(" ").filter((w) => w.length >= 4);
-    const overlap = qWords.filter((w) => inputWords.has(w)).length;
+    let overlap = 0;
+    significant(f.q).forEach((w) => { if (inputWords.has(w)) overlap++; });
     if (overlap > bestScore) { bestScore = overlap; best = f; }
   }
   return bestScore >= 2 ? best : null;
@@ -95,6 +121,13 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
     if (!question) return;
     setMessages((m) => [...m, { role: "user", text: question }]);
     setInput("");
+
+    // A question we hold verbatim answers instantly and with full confidence.
+    const exact = exactMatch(question);
+    if (exact) {
+      setMessages((m) => [...m, { role: "bot", text: exact.a }]);
+      return;
+    }
 
     setThinking(true);
     try {
