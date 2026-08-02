@@ -86,6 +86,14 @@ export const FAQ: FaqItem[] = [
     q: "What do I get for selling a player?",
     a: "Selling a player who has risen in price pays you back half the rise. A player who has fallen sells for exactly what he is worth now.",
   },
+  {
+    q: "When is my score final?",
+    a: "Your score updates live while the matches are on, so it can move all weekend. It settles a few hours after the gameweek's last kickoff, and the gameweek finalises the day after, once the full match data is in.",
+  },
+  {
+    q: "What happens in a blank or double gameweek?",
+    a: "In a blank gameweek a club has no fixture, so its players simply score nothing that week, with no penalty, and your bench steps in where it legally can. In a double gameweek a club plays twice: each match is scored separately and the two scores add up.",
+  },
 ];
 
 /** A compact plain text rules document, built from the same constants and the
@@ -151,8 +159,12 @@ export function buildRulesDoc(): string {
     "SCORING: every point comes from a real match fact. There is no bonus points panel and no judged score. The exact values by position (GK, DEF, MID, FWD):",
     ...scoringLines(),
     "The captain's points count double after all facts are scored.",
+    "ASSISTS AND MATCH FACTS: goals, assists and every other fact come from the official match data the game scores from. An assist is whatever that data credits, including the touch before a goal and a won penalty that is scored.",
+    "LIVE SCORES: scores update live while matches are on and can move all weekend. The score settles a few hours after the gameweek's last kickoff, and the gameweek finalises the day after, once the full match data is in. Only then do season totals and the transfer tray bank.",
+    "BLANK GAMEWEEK: a club with no fixture that week scores nothing, with no penalty; the bench steps in where it legally can. DOUBLE GAMEWEEK: a club that plays twice has each match scored separately and the two scores add up.",
+    "PRICES: set once when a gameweek opens and held for the whole week. Nothing moves mid week.",
     `TABLES: the season total is every gameweek added up. Each calendar month is also its own competition that resets. Level on points, the manager with the better round record wins, and ${KNOWLEDGE_NAME} is the final tiebreak.`,
-    "SELLING A PLAYER: a player who has risen in price pays back half the rise. A player who has fallen sells for exactly what he is worth now. Prices move once a week, never mid week.",
+    "SELLING A PLAYER: a player who has risen in price pays back half the rise. A player who has fallen sells for exactly what he is worth now.",
     "",
     "FREQUENTLY ASKED",
     ...FAQ.map((f) => `Q: ${f.q}\nA: ${f.a}`),

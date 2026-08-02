@@ -143,8 +143,34 @@ export default function RulesPage() {
           </div>
           <p style={{ fontSize: 11.5, color: MUTED, margin: "12px 0 0", lineHeight: 1.5 }}>
             No panel decides your bonus. Every point traces to something that happened in the match,
-            so two managers with the same players always get the same score.
+            so two managers with the same players always get the same score. Goals, assists and every
+            other fact come straight from the official match data we score from: an assist is
+            whatever that data credits, including the touch before a goal and a won penalty that is
+            scored.
           </p>
+        </Card>
+      </Section>
+
+      <Section title="LIVE SCORES AND THE CALENDAR">
+        <Card>
+          <ul style={{
+            fontSize: 13.5, color: MUTED, lineHeight: 1.55, margin: 0, paddingLeft: 18,
+            listStyleType: "disc", display: "flex", flexDirection: "column", gap: 5,
+          }}>
+            <li>
+              <b style={{ color: INK }}>Scores update live</b> while matches are on, so your total
+              can move all weekend. It settles a few hours after the gameweek&apos;s last kickoff,
+              and the gameweek finalises the day after, once the full match data is in
+            </li>
+            <li>
+              <b style={{ color: INK }}>Blank gameweek</b>: if a club has no fixture, its players
+              simply score nothing that week. No penalty, and the bench steps in where it legally can
+            </li>
+            <li>
+              <b style={{ color: INK }}>Double gameweek</b>: if a club plays twice, each match is
+              scored separately and the two scores add up. One player, two chances to score
+            </li>
+          </ul>
         </Card>
       </Section>
 
@@ -198,7 +224,11 @@ export default function RulesPage() {
             <li>Beyond what you hold, each extra transfer costs <b style={{ color: "#E08A6B" }}>{HIT_POINTS} points</b></li>
             <li>
               Selling a player who has risen pays back <b style={{ color: INK }}>half the rise</b>; a player who
-              has fallen sells for what he is worth now. Prices move once a week, never mid-week
+              has fallen sells for what he is worth now
+            </li>
+            <li>
+              <b style={{ color: INK }}>Prices are set once</b>, when a gameweek opens, and hold for
+              the whole week. Nothing moves mid week, so the price you see is the price you pay
             </li>
           </ul>
         </Card>

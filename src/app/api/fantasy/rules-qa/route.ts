@@ -77,7 +77,13 @@ export async function POST(req: NextRequest) {
         console.error("[fantasy rules-qa] no text block in response");
         return { fallback: true };
       }
-      return { answer: text };
+      // The prompt bans dashes but the model still slips on compound words
+      // ("mid-week") — the house zero-dash rule is absolute, so enforce it
+      // here rather than trusting instruction following.
+      const answer = text
+        .replace(/\s*[—–]\s*/g, ", ")
+        .replace(/([A-Za-z])-([A-Za-z])/g, "$1 $2");
+      return { answer };
     } catch (e) {
       console.error("[fantasy rules-qa] exception", e);
       return { fallback: true };
