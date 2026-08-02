@@ -1,16 +1,16 @@
-# Graph Report - yourscore-rules  (2026-08-01)
+# Graph Report - yourscore-rules  (2026-08-02)
 
 ## Corpus Check
-- 1245 files · ~3,270,341 words
+- 1254 files · ~3,299,179 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 11206 nodes · 20711 edges · 596 communities (529 shown, 67 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 349 edges (avg confidence: 0.8)
+- 11283 nodes · 20914 edges · 607 communities (539 shown, 68 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 353 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7cfcdda8`
+- Built from commit: `4380877a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -557,10 +557,19 @@
 - [[_COMMUNITY_Community 580|Community 580]]
 - [[_COMMUNITY_Community 581|Community 581]]
 - [[_COMMUNITY_Community 582|Community 582]]
+- [[_COMMUNITY_Community 583|Community 583]]
 - [[_COMMUNITY_Community 584|Community 584]]
+- [[_COMMUNITY_Community 585|Community 585]]
 - [[_COMMUNITY_Community 586|Community 586]]
+- [[_COMMUNITY_Community 587|Community 587]]
 - [[_COMMUNITY_Community 588|Community 588]]
 - [[_COMMUNITY_Community 589|Community 589]]
+- [[_COMMUNITY_Community 590|Community 590]]
+- [[_COMMUNITY_Community 591|Community 591]]
+- [[_COMMUNITY_Community 592|Community 592]]
+- [[_COMMUNITY_Community 593|Community 593]]
+- [[_COMMUNITY_Community 594|Community 594]]
+- [[_COMMUNITY_Community 595|Community 595]]
 - [[_COMMUNITY_Community 596|Community 596]]
 - [[_COMMUNITY_Community 597|Community 597]]
 - [[_COMMUNITY_Community 598|Community 598]]
@@ -568,30 +577,32 @@
 - [[_COMMUNITY_Community 600|Community 600]]
 - [[_COMMUNITY_Community 601|Community 601]]
 - [[_COMMUNITY_Community 602|Community 602]]
+- [[_COMMUNITY_Community 605|Community 605]]
+- [[_COMMUNITY_Community 606|Community 606]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `faces` - 498 edges
 2. `photos` - 271 edges
 3. `createServiceClient()` - 271 edges
 4. `rateLimitDistributed()` - 131 edges
-5. `useUser()` - 128 edges
+5. `useUser()` - 130 edges
 6. `createClient()` - 108 edges
-7. `BottomNav()` - 78 edges
-8. `withFantasyUser()` - 74 edges
+7. `BottomNav()` - 82 edges
+8. `withFantasyUser()` - 80 edges
 9. `createDraftDb()` - 69 edges
 10. `seededRng()` - 54 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `POST()` --calls--> `fetchActive()`  [INFERRED]
   src/app/api/draft/match/route.ts → scripts/quiz-factory/clean-live.mjs
+- `flipReport()` --calls--> `flip()`  [INFERRED]
+  src/lib/draft/live-score.ts → scripts/verify-pack-release.mjs
 - `buildSquad()` --calls--> `priceOf()`  [INFERRED]
   scripts/fantasy/analysis.mjs → src/lib/gates/warmup-economy.ts
 - `playWeek()` --calls--> `curve()`  [INFERRED]
   scripts/fantasy/analysis.mjs → src/lib/playerCard.ts
 - `award()` --calls--> `fmt()`  [INFERRED]
   src/app/38-0/season/share/page.tsx → scripts/fantasy/build-calendar.mjs
-- `yourScore()` --calls--> `pointsFor()`  [INFERRED]
-  scripts/fantasy/familiarity.mjs → src/lib/fantasy/values.ts
 
 ## Import Cycles
 - 1-file cycle: `src/lib/draft/pl-quiz.ts -> src/lib/draft/pl-quiz.ts`
@@ -599,7 +610,7 @@
 - 1-file cycle: `src/lib/fantasy/pool.ts -> src/lib/fantasy/pool.ts`
 - 2-file cycle: `src/lib/fantasy/captainAssist.ts -> src/lib/fantasy/server.ts -> src/lib/fantasy/captainAssist.ts`
 
-## Communities (596 total, 67 thin omitted)
+## Communities (607 total, 68 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.13
@@ -642,8 +653,8 @@ Cohesion: 0.10
 Nodes (19): Admin Panel (`/admin`), App (authenticated), Auth, Challenges (async quizzes), Core Concept, Current Focus, Database Tables, Features (+11 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.03
-Nodes (71): CardPage(), generateMetadata(), ogQuery(), one(), pair(), SP, GoalEvent, MatchReport (+63 more)
+Cohesion: 0.04
+Nodes (55): CardPage(), generateMetadata(), ogQuery(), one(), pair(), SP, GoalEvent, MatchReport (+47 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.12
@@ -654,16 +665,16 @@ Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.12
-Nodes (29): ChatMoment, momentsForGw(), buildRows(), Db, deleteLeague(), EntryRecord, findLeagueByCode(), HistoryGw (+21 more)
+Cohesion: 0.10
+Nodes (35): ChatMoment, momentsForGw(), EntryLockView, GwRow, buildRows(), createLeague(), Db, deleteLeague() (+27 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.05
 Nodes (37): dependencies, @anthropic-ai/sdk, @capacitor/android, @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @capacitor/push-notifications (+29 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.10
-Nodes (15): CONSOLE_ALLOWLIST, PAGES, TELEMETRY_URLS, args, ctx, finish(), LAYERS, only (+7 more)
+Cohesion: 0.08
+Nodes (16): CONSOLE_ALLOWLIST, PAGES, TELEMETRY_URLS, LETTERS, args, ctx, finish(), LAYERS (+8 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.06
@@ -674,16 +685,16 @@ Cohesion: 0.06
 Nodes (33): 1. Leagues, 1. Short-form video (TikTok, Instagram Reels, YouTube Shorts), 1. United Kingdom, 2. Football communities (Reddit, Discord, Twitter/X), 2. Nigeria and Ghana, 2. Rooms, 3. Challenges, 3. USA (+25 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.12
-Nodes (25): attEndX(), boxTarget(), clamp(), clamp01(), dist(), Ent, Home, homes() (+17 more)
+Cohesion: 0.06
+Nodes (55): HalfSim, attEndX(), boxTarget(), buildPassages(), clamp(), clamp01(), dist(), Ent (+47 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.26
 Nodes (12): background_color, categories, description, display, icons, lang, name, orientation (+4 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.09
-Nodes (50): db(), opApprove(), opBase(), opCancel(), opDedup(), POST(), cancelStaleFixture(), db() (+42 more)
+Cohesion: 0.14
+Nodes (18): assembleQuestions(), canTransition(), Difficulty, GamedayKind, GamedayState, hashSeed(), isPublished(), Letter (+10 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.13
@@ -698,8 +709,8 @@ Cohesion: 0.18
 Nodes (10): App Store 4.2 mitigation, Apple Developer Program, Architecture, Bundle / package identifiers, Commands, Mobile Wrap — Capacitor, OAuth flow on native, Push notifications (+2 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.15
-Nodes (25): cleanField(), isProseGrounded(), autoBold(), BriefingStory, capBold(), Cluster, clusterStories(), DESK_ORDER (+17 more)
+Cohesion: 0.13
+Nodes (28): NewsTips, groundPickCopy(), allowedClaimWords(), ALLOWLIST, AnthropicResponse, CLAIM_TERMS, cleanField(), collectPayloadTokens() (+20 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.07
@@ -714,8 +725,8 @@ Cohesion: 0.06
 Nodes (55): Db, asUtc(), autosyncEnabled(), BAD_STATE_IDS, buildAlertText(), CalendarFinding, correctedFieldsFromRound(), CorrectedGwFields (+47 more)
 
 ### Community 28 - "Community 28"
-Cohesion: 0.23
-Nodes (18): CommentRow, DELETE(), SUBJECT_TYPES, commentDeepLink(), createNotification(), NOTIFIABLE_SUBJECT_TYPES, pushCommentReply(), recordCommentLike() (+10 more)
+Cohesion: 0.19
+Nodes (20): CommentRow, DELETE(), SUBJECT_TYPES, BLOCKED, commentRejection(), commentDeepLink(), createNotification(), NOTIFIABLE_SUBJECT_TYPES (+12 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.22
@@ -746,8 +757,8 @@ Cohesion: 0.32
 Nodes (6): client, configuration_version, project_info, project_id, project_number, storage_bucket
 
 ### Community 36 - "Community 36"
-Cohesion: 0.05
-Nodes (37): PitchSurface(), PlayerMarker(), CardDef, CARDS, CHIP_LOOK, CREDIT_CURVE_TEXT, CREDIT_STEPS, EMPTY_LIVE (+29 more)
+Cohesion: 0.06
+Nodes (24): MovesBank(), CardDef, CARDS, CHIP_LOOK, CREDIT_CURVE_TEXT, CREDIT_STEPS, EMPTY_LIVE, LiveDataContext (+16 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.29
@@ -807,7 +818,7 @@ Nodes (6): Test, Test, ExampleInstrumentedTest, ExampleUnitTest, Test, Test
 
 ### Community 51 - "Community 51"
 Cohesion: 0.03
-Nodes (67): DownloadAppButton(), Dashboard(), LEAGUE_PLAYERS, LeagueTab, LiveMatch, metadata, PALETTES, StandingRow (+59 more)
+Nodes (69): DownloadAppButton(), Dashboard(), fetchUpcomingMatches(), LEAGUE_PLAYERS, LeagueTab, LiveMatch, metadata, PALETTES (+61 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.40
@@ -826,8 +837,8 @@ Cohesion: 0.16
 Nodes (21): ackCb(), argIds, downloadMedia(), draftButtons(), editCaption(), editDraftMsg(), editText(), fetchT() (+13 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.18
-Nodes (21): authHeader(), DATA_DIR, __dirname, draftEngagement(), fetchImage(), parseModelJSON(), pct(), postTweet() (+13 more)
+Cohesion: 0.16
+Nodes (24): authHeader(), DATA_DIR, __dirname, draftEngagement(), fetchImage(), getBearer(), parseModelJSON(), pct() (+16 more)
 
 ### Community 76 - "Community 76"
 Cohesion: 0.08
@@ -838,8 +849,8 @@ Cohesion: 0.08
 Nodes (23): 10. Roadmap (near-term, in rough order), 11. Admin Panel (`/admin`), 12. Tech Stack, 13. Navigation Canon, 14. Discontinued / Shelved — DO NOT reference as current, 15. Maintenance Rule, 1. The One-Liner, 2. Glossary — Locked Terms (+15 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.33
-Nodes (6): GET(), LANDSCAPE, parseHex(), PITCH, PORTRAIT, ROWS
+Cohesion: 0.08
+Nodes (57): aggregate(), nextPhase(), acceptChallenge(), advanceMatch(), aggregateOf(), bothReadyFor(), botSwapPatch(), createBotMatch() (+49 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.10
@@ -854,8 +865,8 @@ Cohesion: 0.11
 Nodes (19): bump(), candidates, COMMIT, COUNTRY_TZ, db, EVENING_BAND, hist, localHourOf() (+11 more)
 
 ### Community 85 - "Community 85"
-Cohesion: 0.02
-Nodes (108): buildInviteLink(), AuthProviders(), EmailMode, OAuthButton(), Provider, SignInWithGoogle(), Row, WorldCupBoard() (+100 more)
+Cohesion: 0.05
+Nodes (34): OpponentType, EmailMode, EmailSignIn(), OAuthButton(), Provider, SignInWithGoogle(), inputStyle, JoinLeagueInner() (+26 more)
 
 ### Community 86 - "Community 86"
 Cohesion: 0.05
@@ -871,15 +882,15 @@ Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModu
 
 ### Community 89 - "Community 89"
 Cohesion: 0.07
-Nodes (44): args, buildPackName(), COMMIT, fetchAllPublishedPackNames(), fetchByDifficulty(), fetchExistingTopicPacks(), fetchInRotationClubs(), main() (+36 more)
+Nodes (42): args, buildPackName(), COMMIT, fetchAllPublishedPackNames(), fetchByDifficulty(), fetchExistingTopicPacks(), fetchInRotationClubs(), main() (+34 more)
 
 ### Community 90 - "Community 90"
 Cohesion: 0.08
 Nodes (23): bucketMap, buckets, byId, clubs, CSV, __dirname, header, leagues (+15 more)
 
 ### Community 91 - "Community 91"
-Cohesion: 0.11
-Nodes (12): CACHE_HEADERS, GET(), generateMetadata(), getPack(), PackMeta, CACHE_HEADERS, TOPICS, GET() (+4 more)
+Cohesion: 0.05
+Nodes (42): ActiveTab, Challenge, ClubCard(), END_OF_SEASON_EMOJI, ParsedChallenge, ParsedQuestion, parseQuizText(), QuizPack (+34 more)
 
 ### Community 92 - "Community 92"
 Cohesion: 0.10
@@ -890,8 +901,8 @@ Cohesion: 0.13
 Nodes (12): CANON, cClub, cLeague, cName, cOvr, cPos, __dirname, header (+4 more)
 
 ### Community 94 - "Community 94"
-Cohesion: 0.04
-Nodes (43): firedOnce(), hasFired(), DebateCard(), localVotes(), rememberVote(), TodayPayload, CommentRow, DiscussionThread() (+35 more)
+Cohesion: 0.08
+Nodes (22): firedOnce(), hasFired(), CountdownTimer(), CountdownTimerProps, accuracy(), fmtSpeed(), Leaderboard(), LeaderboardCard() (+14 more)
 
 ### Community 95 - "Community 95"
 Cohesion: 0.12
@@ -902,8 +913,8 @@ Cohesion: 0.15
 Nodes (12): Activation — DONE (applied to the live Supabase project), Cloud layer — BUILT, dormant until the migration is applied, Code map, Custom leagues — BUILT (dormant until migration), fails soft, Data, Draft XI — build status, Friend challenges + shareable results — BUILT (dormant until migration), Live H2H multiplayer — BUILT (live, simultaneous two-half match) (+4 more)
 
 ### Community 97 - "Community 97"
-Cohesion: 0.09
-Nodes (44): GET(), cases, __dirname, e, missing, out, tokens, tpl (+36 more)
+Cohesion: 0.17
+Nodes (29): GET(), clubGameweekBeats(), clubsForRound(), clubsForSeason(), currentSeasonId(), db(), defaultGameweek(), fetchReleaseRows() (+21 more)
 
 ### Community 98 - "Community 98"
 Cohesion: 0.09
@@ -931,7 +942,7 @@ Nodes (7): 38-0 — "Watch the Half" — implementation plan, Phase 1 — Playba
 
 ### Community 104 - "Community 104"
 Cohesion: 0.06
-Nodes (32): LeagueDetail, LeaguePage(), LeagueRow, nameOf(), Tab, TABS, Sheet(), LeagueChatView() (+24 more)
+Nodes (33): LeagueDetail, LeaguePage(), LeagueRow, nameOf(), Tab, TABS, Btn(), LeagueChatView() (+25 more)
 
 ### Community 105 - "Community 105"
 Cohesion: 0.47
@@ -943,7 +954,7 @@ Nodes (497): faces, 1, 10, 100, 101, 103, 104, 105 (+489 more)
 
 ### Community 108 - "Community 108"
 Cohesion: 0.04
-Nodes (83): InviteMastermind(), SingleMatchResult, makeOpponentAt(), GROUP_OF, groupOpponents(), NATION_INDEX, WC2026_GROUPS, WC_STAGE_LABEL (+75 more)
+Nodes (83): InviteMastermind(), applyLiveSwap(), getNation(), getPlayer(), isWCEligible(), validateAndScore(), GROUP_OF, groupOpponents() (+75 more)
 
 ### Community 109 - "Community 109"
 Cohesion: 0.18
@@ -954,12 +965,12 @@ Cohesion: 0.13
 Nodes (14): 0. Blocker — fix before optimizing for signups, 1. Audiences to build now (populate while you set up), 2. Campaign structure (2 campaigns — do NOT fragment further at this budget), 38-0 — X (Twitter) Ads Campaign, 3. Budget — $63/day (account bills USD; ≈ £50). Geo: majority UK+IE, small US., 4. Creative, 5. Launch sequence, 6. What I need from you to finalize (+6 more)
 
 ### Community 115 - "Community 115"
-Cohesion: 0.08
-Nodes (34): CASH_POINTS, creditsForRound(), EntryResult, PlayerScore, aggregateFixtures(), fetchGwFixtures(), GwPlayerScore, SmDetail (+26 more)
+Cohesion: 0.31
+Nodes (7): localMatch(), Msg, nearestFaq(), normalize(), rescue(), FAQ, FaqItem
 
 ### Community 116 - "Community 116"
-Cohesion: 0.10
-Nodes (29): claimOnce(), Db, deadlineComms(), EMAILS_ON(), emailsFor(), monthWinnerComms(), resultComms(), SCOPES (+21 more)
+Cohesion: 0.12
+Nodes (26): claimOnce(), Db, deadlineComms(), EMAILS_ON(), emailsFor(), monthWinnerComms(), resultComms(), cutGws() (+18 more)
 
 ### Community 117 - "Community 117"
 Cohesion: 0.33
@@ -970,8 +981,8 @@ Cohesion: 0.50
 Nodes (3): Deploy on Vercel, Getting Started, Learn More
 
 ### Community 119 - "Community 119"
-Cohesion: 0.09
-Nodes (32): SquadUpdateItem, PoolPlayer, SQUAD_QUOTA, PoolEntry, buildPreset(), cheapestLegal(), POSITIONS, PresetPlayer (+24 more)
+Cohesion: 0.16
+Nodes (18): PresetPlayer, countArg, DRY, FIRST, main(), makeHandles(), makePreseasonEvents(), pick() (+10 more)
 
 ### Community 129 - "Community 129"
 Cohesion: 0.12
@@ -994,8 +1005,8 @@ Cohesion: 0.07
 Nodes (34): args, bebas, bgPrompt(), bgPromptWithRef(), COMPOSITIONS, coverPath, dateKey, __dirname (+26 more)
 
 ### Community 134 - "Community 134"
-Cohesion: 0.06
-Nodes (54): afGameComplete(), afInviteSent(), afLeagueCreate(), afLeagueJoin(), afOnboardingComplete(), afPushOptIn(), afRegistration(), afReturnPlay() (+46 more)
+Cohesion: 0.10
+Nodes (42): afGameComplete(), afInviteSent(), afLeagueCreate(), afLeagueJoin(), afOnboardingComplete(), afRegistration(), afReturnPlay(), afVersusMatchmake() (+34 more)
 
 ### Community 135 - "Community 135"
 Cohesion: 0.15
@@ -1026,8 +1037,8 @@ Cohesion: 0.10
 Nodes (19): isFinishedState(), apiToken(), getFinalScores(), getLivePhases(), getLivescores(), getPhasesForFixtures(), getStates(), REQUIRED_RESOURCES (+11 more)
 
 ### Community 142 - "Community 142"
-Cohesion: 0.05
-Nodes (83): expired(), POST(), aggregate(), assistWeight(), botOf(), buildReport(), flipReport(), goalWeight() (+75 more)
+Cohesion: 0.08
+Nodes (53): expired(), POST(), assistWeight(), botOf(), buildReport(), flipReport(), goalWeight(), LIVE_CONFIG (+45 more)
 
 ### Community 143 - "Community 143"
 Cohesion: 0.11
@@ -1039,11 +1050,11 @@ Nodes (33): clientList, ClientRung, createOrLoadAttempt(), FoundEntry, gradeGues
 
 ### Community 145 - "Community 145"
 Cohesion: 0.09
-Nodes (34): api(), DATA_DIR, __dirname, draftReply(), fetchRss(), getToken(), hasApiCreds(), listPosts() (+26 more)
+Nodes (33): api(), DATA_DIR, __dirname, draftReply(), fetchRss(), getToken(), hasApiCreds(), listPosts() (+25 more)
 
 ### Community 146 - "Community 146"
-Cohesion: 0.11
-Nodes (13): Fixture, FixtureLookup, Gameweek, NotifyButton(), MatchweekPage(), dayKey(), Fixture, PlFixtures() (+5 more)
+Cohesion: 0.08
+Nodes (25): HowItWorksTile(), dayLabel(), Fixture, Gameweek, NextClubQuiz(), timeLabel(), NotifyButton(), MatchweekPage() (+17 more)
 
 ### Community 147 - "Community 147"
 Cohesion: 0.50
@@ -1070,16 +1081,16 @@ Cohesion: 0.22
 Nodes (9): args, BLOCKED_DOMAINS, chunk(), __dirname, FAST, main(), renderTemplate(), resend (+1 more)
 
 ### Community 153 - "Community 153"
-Cohesion: 0.04
-Nodes (72): POST(), requireAdmin(), ALLOWED_CATEGORIES, ALLOWED_ERAS, GET(), GET(), findUserByEmail(), GET() (+64 more)
+Cohesion: 0.03
+Nodes (83): ALLOWED_CATEGORIES, ALLOWED_ERAS, GET(), GET(), GET(), GET(), londonHour(), buildDailyGameCopy() (+75 more)
 
 ### Community 154 - "Community 154"
 Cohesion: 0.08
-Nodes (43): hashSeed(), rngFrom(), seededRng(), BELONGS, buildRound(), clientRound(), dailySeed(), difficultyBand() (+35 more)
+Nodes (44): hashSeed(), rngFrom(), seededRng(), shuffle(), BELONGS, buildRound(), clientRound(), dailySeed() (+36 more)
 
 ### Community 155 - "Community 155"
-Cohesion: 0.07
-Nodes (31): buildSummary(), CompareButton(), dash(), deriveRecord(), DIFF_WEIGHT, fixtureEase(), goalsAssists(), nextOpponent() (+23 more)
+Cohesion: 0.09
+Nodes (22): buildSummary(), dash(), deriveRecord(), DIFF_WEIGHT, fixtureEase(), goalsAssists(), nextOpponent(), PickAvail (+14 more)
 
 ### Community 156 - "Community 156"
 Cohesion: 0.12
@@ -1094,20 +1105,20 @@ Cohesion: 0.09
 Nodes (30): baseFixture(), currentEntry(), HERE, HT, inLatestFeed(), instantOf(), json(), kickoffMin() (+22 more)
 
 ### Community 160 - "Community 160"
-Cohesion: 0.14
-Nodes (15): BriefingPage(), getBriefing(), metadata, cache(), GET(), BriefingTile(), dayLabel(), leadImage() (+7 more)
+Cohesion: 0.08
+Nodes (32): BriefingPage(), getBriefing(), metadata, cache(), GET(), BriefingTile(), dayLabel(), leadImage() (+24 more)
 
 ### Community 161 - "Community 161"
 Cohesion: 0.11
 Nodes (24): 1. What it is, 2. Architecture decision, 3. Data model — migration `35_club_leagues.sql`, 3. Data model — migration `36_club_leagues.sql`, 3. Data model — migration `38_club_leagues.sql`, 4. Scoring & boards, 5. Surfaces & flows, 6. Error handling & integrity (+16 more)
 
 ### Community 162 - "Community 162"
-Cohesion: 0.08
-Nodes (42): CHAT_EMOJI, ChatEmoji, ChatKind, ChatMessage, ChatReaction, CompareCard, Db, latestScoredGw() (+34 more)
+Cohesion: 0.09
+Nodes (34): GET(), PATCH(), POST(), CHAT_EMOJI, ChatEmoji, ChatKind, ChatMessage, ChatReaction (+26 more)
 
 ### Community 163 - "Community 163"
 Cohesion: 0.04
-Nodes (134): BoardData, DraftHome(), DraftTab, LEAGUE_TABS, medal(), SeasonBoardRow, VerifiedBoard(), WcBoardRow (+126 more)
+Nodes (142): BoardData, DraftHome(), DraftTab, LEAGUE_TABS, medal(), SeasonBoardRow, VerifiedBoard(), WcBoardRow (+134 more)
 
 ### Community 164 - "Community 164"
 Cohesion: 0.33
@@ -1122,24 +1133,24 @@ Cohesion: 0.06
 Nodes (31): dependencies, @anthropic-ai/sdk, appsflyer-capacitor-plugin, @capacitor/android, @capacitor/app, @capacitor/browser, @capacitor-community/in-app-review, @capacitor/core (+23 more)
 
 ### Community 167 - "Community 167"
-Cohesion: 0.11
-Nodes (15): getBearer(), requireReadCreds(), commits, DRY, fresh, key12(), norm(), out (+7 more)
+Cohesion: 0.07
+Nodes (28): fetchRecent(), loadJSON(), resolveUser(), searchViral(), xGet(), commits, DRY, fresh (+20 more)
 
 ### Community 168 - "Community 168"
 Cohesion: 0.09
 Nodes (22): assertEntitlements(), BASE, cache, EVENT_TYPE, fetchAll(), fixture(), fixtureLineup(), fixturesBetween() (+14 more)
 
 ### Community 169 - "Community 169"
-Cohesion: 0.20
-Nodes (8): ClubPicker(), ClubTable(), ClubTableTile(), Crest(), useClubMe(), useClubTable(), GamedayNotifyPrompt(), Row
+Cohesion: 0.10
+Nodes (18): ClubPicker(), ClubTable(), ClubTableTile(), Crest(), ClubStanding, ClubMeResponse, ClubTableResponse, useClubMe() (+10 more)
 
 ### Community 170 - "Community 170"
 Cohesion: 0.10
 Nodes (16): factsReviewText(), ALL, avoid, CAT, CATEGORIES, CLUB, COMMIT, COST (+8 more)
 
 ### Community 171 - "Community 171"
-Cohesion: 0.20
-Nodes (12): HalftimeState, londonDayRange(), londonMatchday(), MatchPhase, ACTIONABLE, checkHeartbeat(), GET(), Row (+4 more)
+Cohesion: 0.25
+Nodes (9): londonDayRange(), londonMatchday(), MatchPhase, ACTIONABLE, checkHeartbeat(), GET(), SETTLEABLE, WATCHED (+1 more)
 
 ### Community 172 - "Community 172"
 Cohesion: 0.12
@@ -1154,8 +1165,8 @@ Cohesion: 0.22
 Nodes (8): Accuracy guardrails (internal), How to explain the numbers (if asked), Ready-to-use soundbites, Sample 15-second script, The 30-second version, The hooks (use these), The one-liner, YourScore Leaderboard — Marketing Explainer (v2, LIVE)
 
 ### Community 175 - "Community 175"
-Cohesion: 0.09
-Nodes (36): resolveFifaAbsent(), resolveFifaRating(), resolveFifaTop(), resolveFixtureScorer(), resolvePlayerGoalsVs(), RESOLVERS, validateQuestions(), ANCHOR_PATTERNS (+28 more)
+Cohesion: 0.16
+Nodes (14): resolveFifaAbsent(), resolveFifaRating(), resolveFifaTop(), resolveFixtureScorer(), resolvePlayerGoalsVs(), RESOLVERS, buildNameIndex(), normName() (+6 more)
 
 ### Community 176 - "Community 176"
 Cohesion: 0.14
@@ -1171,7 +1182,7 @@ Nodes (33): answerText(), digitTokens(), isNearDuplicate(), jaccard(), norm(), S
 
 ### Community 179 - "Community 179"
 Cohesion: 0.05
-Nodes (51): Bucket, buildIndexes(), byId, byNation, Club, DATA, getBucketPlayers(), getNation() (+43 more)
+Nodes (50): Bucket, buildIndexes(), byId, byNation, Club, DATA, getBucketPlayers(), leagueOpponents() (+42 more)
 
 ### Community 180 - "Community 180"
 Cohesion: 0.18
@@ -1183,7 +1194,7 @@ Nodes (8): angle, date, icon, name, parameter, questions, sources, type
 
 ### Community 182 - "Community 182"
 Cohesion: 0.05
-Nodes (79): POST(), POST(), DELETE(), PATCH(), commentsOff(), GET(), POST(), CompleteBody (+71 more)
+Nodes (81): POST(), POST(), DELETE(), PATCH(), commentsOff(), GET(), POST(), CompleteBody (+73 more)
 
 ### Community 183 - "Community 183"
 Cohesion: 0.25
@@ -1202,12 +1213,12 @@ Cohesion: 0.05
 Nodes (41): 1. Read the screenshot (if present), 2. Wrap the element, 3. Load the action's reference, 4. Plan three variants: identity first, then mode, then axes, 5. Apply the freeform prompt (if present), 6. Write all variants in a single edit, 7. Parameters (composition-sized, 0–4 per variant), 8. Signal done (+33 more)
 
 ### Community 188 - "Community 188"
-Cohesion: 0.03
-Nodes (57): AcquisitionCapture(), getDeviceId(), PostHogIdentify(), PostHogProvider(), AppStoreBanner(), useOnErrorRoute(), bebasNeue, dmMono (+49 more)
+Cohesion: 0.07
+Nodes (21): AcquisitionCapture(), getDeviceId(), PostHogIdentify(), PostHogProvider(), SignupPixel(), Window, AppStoreBanner(), bebasNeue (+13 more)
 
 ### Community 189 - "Community 189"
-Cohesion: 0.15
-Nodes (25): buildPassages(), Anchor, ANCHORS, attackEndX(), BeatPhase, buildReel(), candidateBeats(), carrier() (+17 more)
+Cohesion: 0.06
+Nodes (34): Friend, Row, Scorecard, TodaysGamePlayable(), TodaysGameCard(), coverUrl(), CoverImg(), HeroPackCard() (+26 more)
 
 ### Community 190 - "Community 190"
 Cohesion: 0.11
@@ -1222,24 +1233,24 @@ Cohesion: 0.09
 Nodes (20): ANCHORS, anchorText(), applyGuards(), LEVELS, numericTightness(), rateBatch(), seasonYear(), COMMIT (+12 more)
 
 ### Community 193 - "Community 193"
-Cohesion: 0.11
-Nodes (32): buildOne(), londonDay(), main(), MIX, normalise(), renderPrompt(), buildOne(), fact() (+24 more)
+Cohesion: 0.17
+Nodes (21): buildOne(), londonDay(), MIX, normalise(), renderPrompt(), buildOne(), fact(), mineRecapFacts() (+13 more)
 
 ### Community 194 - "Community 194"
 Cohesion: 0.35
 Nodes (12): isPick(), Tally, FixtureRow, FixtureState, GET(), isPhase(), myPickFor(), PackContext (+4 more)
 
 ### Community 195 - "Community 195"
-Cohesion: 0.13
-Nodes (13): AppNudge(), HowItWorksTile(), PL_TABS, PlTab, Section, SECTIONS, PlNews(), PlTable() (+5 more)
+Cohesion: 0.07
+Nodes (28): CATEGORIES, CLUBS, CreateQuizPage(), DIFF_OPTIONS, ERA_OPTIONS, FocusType, NATIONAL_TEAMS, RECORD_TOPICS (+20 more)
 
 ### Community 196 - "Community 196"
 Cohesion: 0.09
 Nodes (16): byRound, children, gw1Clubs, HERE, hl, news, profiles, releases (+8 more)
 
 ### Community 197 - "Community 197"
-Cohesion: 0.13
-Nodes (12): FantasyHeader(), TABS, daysLeftInMonth(), LeagueCompetition(), MONTHS, nextMonthName(), PODIUM_RING, inputStyle (+4 more)
+Cohesion: 0.05
+Nodes (39): BenchStrip(), SCOPES, daysLeftInMonth(), LeagueCompetition(), MONTHS, nextMonthName(), PODIUM_RING, PlayerProfile() (+31 more)
 
 ### Community 198 - "Community 198"
 Cohesion: 0.06
@@ -1262,12 +1273,12 @@ Cohesion: 0.08
 Nodes (39): adoptSquad(), applySwap(), args, BASE, bestReplacement(), boot, buildAvailability(), buildCalendar() (+31 more)
 
 ### Community 203 - "Community 203"
-Cohesion: 0.17
-Nodes (11): ClubStanding, ClubMeResponse, ClubTableResponse, useViewerClub(), LiveQuizIntro(), PAGES, dayLabel(), Fixture (+3 more)
+Cohesion: 0.07
+Nodes (22): AuthProviders(), ClubLeagueCard, DraftLeague, GameChip, GlobalPlayer, LeaguesPanel(), LeaguesView, MainTab (+14 more)
 
 ### Community 204 - "Community 204"
-Cohesion: 0.15
-Nodes (14): CHIP_LABEL, Db, emitFeedEvent(), emitScoringFeedEvents(), FeedBoard, FeedEvent, FeedFace, FeedResult (+6 more)
+Cohesion: 0.10
+Nodes (24): CHIP_LABEL, Db, emitFeedEvent(), emitScoringFeedEvents(), FeedBoard, FeedEvent, FeedFace, FeedResult (+16 more)
 
 ### Community 205 - "Community 205"
 Cohesion: 0.10
@@ -1286,8 +1297,8 @@ Cohesion: 0.07
 Nodes (27): Accessibility Considerations, Anti-reflexes worth defending against, Assess Current Typography, Classic Typography Principles, Establish Hierarchy, Fix Readability, Fluid Type, Font Selection (+19 more)
 
 ### Community 209 - "Community 209"
-Cohesion: 0.20
-Nodes (23): allResolved(), cmdReminder(), cmdSend(), cmdWatch(), dueForDeadlineCancel(), fetchSchedule(), gatable(), handleTap() (+15 more)
+Cohesion: 0.21
+Nodes (22): allResolved(), cmdReminder(), cmdSend(), cmdWatch(), dueForDeadlineCancel(), fetchSchedule(), gatable(), handleTap() (+14 more)
 
 ### Community 210 - "Community 210"
 Cohesion: 0.08
@@ -1295,7 +1306,7 @@ Nodes (25): Assess Adaptation Challenge, Breakpoints: Content-Driven, Content Ad
 
 ### Community 211 - "Community 211"
 Cohesion: 0.06
-Nodes (55): CHIP_LABEL, CHIP_META, EMBEDDED_PAGE, FantasyHub(), Result, GameweekBreakdown(), Result, SquadScene() (+47 more)
+Nodes (62): SquadUpdateItem, bestWorst(), faceFor(), key(), CHIP_LABEL, CHIP_META, EMBEDDED_PAGE, FantasyHub() (+54 more)
 
 ### Community 212 - "Community 212"
 Cohesion: 0.11
@@ -1334,8 +1345,8 @@ Cohesion: 0.08
 Nodes (21): args, COUNT, lines, TELEGRAM, used, args, built, COMMIT (+13 more)
 
 ### Community 221 - "Community 221"
-Cohesion: 0.43
-Nodes (5): ARCHETYPES, CardInputs, computeAttributes(), curve(), scale()
+Cohesion: 0.17
+Nodes (20): afPushOptIn(), authCallbackUrl(), closeOAuthBrowser(), exchangeCodeFromDeepLink(), isNative(), platform(), hasPromptedPush(), hasPromptedQuizNotify() (+12 more)
 
 ### Community 222 - "Community 222"
 Cohesion: 0.10
@@ -1358,8 +1369,8 @@ Cohesion: 0.10
 Nodes (19): Clean Up, Code Quality, Color & Contrast, Content & Copy, Design System Discovery, Edge Cases & Error States, Final Verification, Forms & Inputs (+11 more)
 
 ### Community 227 - "Community 227"
-Cohesion: 0.10
-Nodes (29): ATTACK_ORDER, bestWorst(), BoardMode, BoardPlayer, datumFor(), isDim(), LiveDatum, pitchName() (+21 more)
+Cohesion: 0.08
+Nodes (40): DiscussionThread(), ATTACK_ORDER, BoardMode, BoardPlayer, datumFor(), isDim(), LiveDatum, pitchName() (+32 more)
 
 ### Community 228 - "Community 228"
 Cohesion: 0.11
@@ -1370,8 +1381,8 @@ Cohesion: 0.10
 Nodes (19): args, BLOCKED_DOMAINS, chunk(), dayArg, descArg, __dirname, escHtml(), FAST (+11 more)
 
 ### Community 230 - "Community 230"
-Cohesion: 0.15
-Nodes (32): GET(), isFirstSignIn(), GET(), sendDeferredEmails(), getResend(), buildFooterUrls(), listUnsubscribeHeaders(), renderEmail() (+24 more)
+Cohesion: 0.12
+Nodes (39): GET(), isFirstSignIn(), GET(), sendDeferredEmails(), getResend(), buildFooterUrls(), listUnsubscribeHeaders(), renderEmail() (+31 more)
 
 ### Community 231 - "Community 231"
 Cohesion: 0.17
@@ -1390,11 +1401,11 @@ Cohesion: 0.12
 Nodes (16): Absolute bans, Color, Color & Theme, Commands, Design guidance, General rules, Hooks, Interaction (+8 more)
 
 ### Community 235 - "Community 235"
-Cohesion: 0.14
-Nodes (16): BenchStrip(), FantasyTeaser(), IconArrowRight(), IconBall(), IconCheck(), IconClock(), IconProps, IconSwap() (+8 more)
+Cohesion: 0.24
+Nodes (10): IconArrowRight(), IconBall(), IconCheck(), IconClock(), IconProps, IconSwap(), IconTrophy(), IconUsers() (+2 more)
 
 ### Community 236 - "Community 236"
-Cohesion: 0.13
+Cohesion: 0.14
 Nodes (28): AcqColumns, clean(), sanitizeAcq(), POST(), POST(), SubmittedAnswer, calculateBasePoints(), calculateComebackBonus() (+20 more)
 
 ### Community 237 - "Community 237"
@@ -1442,8 +1453,8 @@ Cohesion: 0.14
 Nodes (13): Animation Performance, Assess Performance Issues, Core Web Vitals Optimization, Cumulative Layout Shift (CLS < 0.1), First Input Delay (FID < 100ms) / INP (< 200ms), Largest Contentful Paint (LCP < 2.5s), Loading Performance, Network Optimization (+5 more)
 
 ### Community 248 - "Community 248"
-Cohesion: 0.03
-Nodes (55): subs, useHideGamesNav(), readTrail(), recordVisit(), smartBackTarget(), TRANSIENT, writeTrail(), ChallengeSummary (+47 more)
+Cohesion: 0.05
+Nodes (38): haptic, readTrail(), recordVisit(), smartBackTarget(), TRANSIENT, writeTrail(), ChallengeSummary, ClientListData (+30 more)
 
 ### Community 249 - "Community 249"
 Cohesion: 0.16
@@ -1458,12 +1469,12 @@ Cohesion: 0.29
 Nodes (10): ClubGrid(), ClubPrompt(), ClubSetting(), formatChangeDate(), shortClubName(), clearGuestClub(), loadGuestClub(), saveGuestClub() (+2 more)
 
 ### Community 252 - "Community 252"
-Cohesion: 0.21
-Nodes (10): canRemind(), devPreview(), doGrantConsent(), EMPTY, listeners, load(), postToggle(), readPending() (+2 more)
+Cohesion: 0.16
+Nodes (12): AppNudge(), canRemind(), devPreview(), doGrantConsent(), EMPTY, listeners, load(), postToggle() (+4 more)
 
 ### Community 253 - "Community 253"
-Cohesion: 0.10
-Nodes (17): charLen(), PATHS, saveJSON(), accounts, candidates, d, DRY, queue (+9 more)
+Cohesion: 0.07
+Nodes (26): charLen(), PATHS, saveJSON(), shortId(), byId, DRY, QUERIES, queue (+18 more)
 
 ### Community 254 - "Community 254"
 Cohesion: 0.24
@@ -1502,12 +1513,12 @@ Cohesion: 0.24
 Nodes (10): ack(), API(), call(), initOffset(), poll(), send(), sleep(), stripButtons() (+2 more)
 
 ### Community 263 - "Community 263"
-Cohesion: 0.23
-Nodes (12): ATTRIBUTE_LABELS, ATTRIBUTE_META, ATTRIBUTE_ORDER, Attributes, AV, AVATAR_FRAME, PlayerCard(), ROWS (+4 more)
+Cohesion: 0.09
+Nodes (18): subs, useHideGamesNav(), AnswerRecord, BoardEntry, clearGuestRun(), GAME_CONFIG, GameType, GameTypeGame() (+10 more)
 
 ### Community 264 - "Community 264"
-Cohesion: 0.21
-Nodes (8): API_BASE, args, chunk(), __dirname, isSendable(), loadTemplate(), main(), supabase
+Cohesion: 0.22
+Nodes (11): API_BASE, args, chunk(), __dirname, footer(), isSendable(), loadTemplate(), main() (+3 more)
 
 ### Community 265 - "Community 265"
 Cohesion: 0.33
@@ -1546,12 +1557,12 @@ Cohesion: 0.22
 Nodes (9): 1. The Wall of Options, 2. The Memory Bridge, 3. The Hidden Navigation, 4. The Jargon Barrier, 5. The Visual Noise Floor, 6. The Inconsistent Pattern, 7. The Multi-Task Demand, 8. The Context Switch (+1 more)
 
 ### Community 274 - "Community 274"
-Cohesion: 0.12
-Nodes (5): ErrorRouteMarker(), listeners, metadata, isStaleChunkError(), RouteError()
+Cohesion: 0.08
+Nodes (11): ErrorRouteMarker(), listeners, useOnErrorRoute(), metadata, Stage, WcThanksPrompt(), NEVER_ON, Status (+3 more)
 
 ### Community 275 - "Community 275"
 Cohesion: 0.03
-Nodes (56): Resp, Versus380Page(), ContactEntry, Friend, FriendsPanel(), SearchResult, ContactEntry, Friend (+48 more)
+Nodes (57): Resp, Versus380Page(), ContactEntry, Friend, FriendsPanel(), SearchResult, EMPTY_RECORD, Game (+49 more)
 
 ### Community 276 - "Community 276"
 Cohesion: 0.17
@@ -1622,8 +1633,8 @@ Cohesion: 0.16
 Nodes (20): fetchFeeds(), fetchPlNews(), parseItems(), pickImage(), sha1(), SOURCES, strip(), upscale() (+12 more)
 
 ### Community 293 - "Community 293"
-Cohesion: 0.07
-Nodes (40): CATEGORY, PickDetail(), serviceClient(), CompareEntry(), DIFF, FixturesGrid(), NewsClubRun, NewsTab (+32 more)
+Cohesion: 0.06
+Nodes (53): CATEGORY, PickDetail(), serviceClient(), CompareEntry(), faceUrlById(), CATEGORY, Chip(), fixtureLabel() (+45 more)
 
 ### Community 294 - "Community 294"
 Cohesion: 0.20
@@ -1639,15 +1650,15 @@ Nodes (8): How do I earn transfers?, How do leagues work?, How do wildcards work
 
 ### Community 297 - "Community 297"
 Cohesion: 0.07
-Nodes (37): adoptSquad(), applySwap(), ARCHETYPES, args, BASELINE, bestReplacement(), boot, buildAvailability() (+29 more)
+Nodes (38): adoptSquad(), applySwap(), ARCHETYPES, args, BASELINE, bestReplacement(), boot, buildAvailability() (+30 more)
 
 ### Community 298 - "Community 298"
 Cohesion: 0.11
 Nodes (15): args, bad(), check(), CLEAN_ONLY, clubCount, db, deadline, expectedCredits (+7 more)
 
 ### Community 299 - "Community 299"
-Cohesion: 0.23
-Nodes (11): groupByDate(), HistoryPage(), MatchRow(), OpponentRow(), relativeDate(), ResultBadge(), TypeTag(), HistoryEntry (+3 more)
+Cohesion: 0.05
+Nodes (46): buildInviteLink(), GuestAuthButton(), Row, WorldCupBoard(), TimezoneSync(), DebateCard(), localVotes(), rememberVote() (+38 more)
 
 ### Community 300 - "Community 300"
 Cohesion: 0.36
@@ -1658,8 +1669,8 @@ Cohesion: 0.22
 Nodes (8): bars, __dirname, FONT_PATH, fontBuffer, OUT_PATH, png, resvg, ROOT
 
 ### Community 302 - "Community 302"
-Cohesion: 0.12
-Nodes (48): flagSquad(), unwrapRead(), Chip, SquadPick, tryEmitFeedEvent(), EntryLockView, GwRow, isOpenForEdits() (+40 more)
+Cohesion: 0.08
+Nodes (59): appearances(), AvailabilityInfo, buildPlayerProfile(), FlagKind, flagSquad(), LastSeasonLine, MatchFactsLike, ProfileGw (+51 more)
 
 ### Community 303 - "Community 303"
 Cohesion: 0.29
@@ -1702,12 +1713,12 @@ Cohesion: 0.15
 Nodes (13): devDependencies, @capacitor/assets, @capacitor/cli, eslint, eslint-config-next, @gltf-transform/cli, playwright, postcss (+5 more)
 
 ### Community 313 - "Community 313"
-Cohesion: 0.27
+Cohesion: 0.25
 Nodes (9): generateMetadata(), Db, Debate, debateSplit, todaysDebate(), ukDayNumber(), ukToday(), GET() (+1 more)
 
 ### Community 314 - "Community 314"
-Cohesion: 0.18
-Nodes (15): ageFrom(), ages(), CLUB_ALIASES, difficultyFor(), DRY, FORMAT_FOR, formatOf(), main() (+7 more)
+Cohesion: 0.16
+Nodes (17): ageFrom(), ages(), CLUB_ALIASES, difficultyFor(), DRY, FORMAT_FOR, formatOf(), main() (+9 more)
 
 ### Community 315 - "Community 315"
 Cohesion: 0.23
@@ -1746,8 +1757,8 @@ Cohesion: 0.11
 Nodes (16): Async Multiplayer — Phase 1 Implementation Plan, NATIVE TRACK (one TestFlight rebuild, parallel), Out of scope (Phases 2–3), Step 0 — DB migration: extend `h2h_challenges`, Step 1 — Server: create, status, guards, Step 2 — Inbox data + badge hook, Step 3 — Your-Turns inbox = new MP home, Step 4 — Challenge entry points (+8 more)
 
 ### Community 327 - "Community 327"
-Cohesion: 0.08
-Nodes (40): buildFameIndex(), clamp01(), closeness(), comparisonDifficulty(), FAME_WEIGHTS, FameIndex, FplBootstrap, FplElement (+32 more)
+Cohesion: 0.10
+Nodes (37): buildFameIndex(), clamp01(), closeness(), comparisonDifficulty(), FameIndex, FplBootstrap, FplElement, FplTeam (+29 more)
 
 ### Community 328 - "Community 328"
 Cohesion: 0.12
@@ -1770,8 +1781,8 @@ Cohesion: 0.24
 Nodes (12): args, authHeader(), DRY, fail(), pct(), postTweet(), qs(), sleep() (+4 more)
 
 ### Community 333 - "Community 333"
-Cohesion: 0.19
-Nodes (16): pensSeed(), BY_CLUB, DOC, eligiblePool(), gateQuestion(), NEUTRAL, PLQuizQuestion, resolveClubEntity() (+8 more)
+Cohesion: 0.21
+Nodes (15): BY_CLUB, DOC, eligiblePool(), gateQuestion(), NEUTRAL, PLQuizQuestion, resolveClubEntity(), serve() (+7 more)
 
 ### Community 334 - "Community 334"
 Cohesion: 0.15
@@ -1874,16 +1885,16 @@ Cohesion: 0.26
 Nodes (12): FANTASY_SOURCES, decode(), parseDate(), parseFeed(), pickImage(), RssItem, RssSource, sha1() (+4 more)
 
 ### Community 359 - "Community 359"
-Cohesion: 0.16
-Nodes (9): apiToken(), REQUIRED_RESOURCES, sleep(), SmEnvelope, smFetch(), SmH2HFixture, SmScheduledFixture, SmSeasonAggregate (+1 more)
+Cohesion: 0.14
+Nodes (12): getDueRows(), GET(), apiToken(), getScheduledFixtureIds(), REQUIRED_RESOURCES, sleep(), SmEnvelope, smFetch() (+4 more)
 
 ### Community 360 - "Community 360"
 Cohesion: 0.13
 Nodes (15): devDependencies, @capacitor/assets, @capacitor/cli, eslint, eslint-config-next, @gltf-transform/cli, playwright, postcss (+7 more)
 
 ### Community 361 - "Community 361"
-Cohesion: 0.31
-Nodes (12): absUrl(), cleanName(), collectCandidates(), decodeEntities(), enrichAI(), fetchPage(), isBlockedHost(), linkHref() (+4 more)
+Cohesion: 0.10
+Nodes (31): POST(), requireAdmin(), findUserByEmail(), GET(), PATCH(), POST(), GET(), LANDSCAPE (+23 more)
 
 ### Community 362 - "Community 362"
 Cohesion: 0.20
@@ -1967,7 +1978,7 @@ Nodes (4): id, name, username, fabrizioromano
 
 ### Community 382 - "Community 382"
 Cohesion: 0.24
-Nodes (11): loadJSON(), ackCb(), age(), buttons(), card(), doPost(), editText(), queue (+3 more)
+Nodes (11): PATHS, ackCb(), age(), buttons(), card(), doPost(), editText(), queue (+3 more)
 
 ### Community 383 - "Community 383"
 Cohesion: 0.50
@@ -1975,15 +1986,15 @@ Nodes (4): id, name, username, footballtweet
 
 ### Community 384 - "Community 384"
 Cohesion: 0.22
-Nodes (9): id, name, username, id, name, username, users, bbcsport (+1 more)
+Nodes (9): id, name, username, id, name, username, users, 433 (+1 more)
 
 ### Community 385 - "Community 385"
 Cohesion: 0.18
 Nodes (9): Gameday Quiz — deploy runbook, Not in this deploy (deferred / follow-up), Pre-flight (all must be true before step 1), Rollback, Step 1 — apply migration 110 to prod, THEN deploy immediately (one motion), Step 2 — set the Vercel env + cron, Step 3 — verify the prediction poll did NOT regress (AC37-39), Step 4 — VPS generation crontab (off the Vercel deploy) (+1 more)
 
 ### Community 386 - "Community 386"
-Cohesion: 0.18
-Nodes (10): name, pnpm, ignoredBuiltDependencies, private, scripts, build, dev, lint (+2 more)
+Cohesion: 0.33
+Nodes (5): name, pnpm, ignoredBuiltDependencies, private, version
 
 ### Community 387 - "Community 387"
 Cohesion: 0.50
@@ -2009,13 +2020,17 @@ Nodes (11): Changed since last audit (07-04 → 07-05, `a7f46bf` → `b55674c`),
 Cohesion: 0.43
 Nodes (5): fixtures, harness, watchdog_at_min, name, notes
 
+### Community 408 - "Community 408"
+Cohesion: 0.13
+Nodes (15): cases, __dirname, e, missing, out, tokens, tpl, emailContent() (+7 more)
+
 ### Community 409 - "Community 409"
 Cohesion: 0.31
 Nodes (7): BLOCKED_DOMAINS, COMMIT, DOMAIN_TYPOS, domainAcceptsMail(), hasAddressRecord(), supabase, withTimeout()
 
 ### Community 410 - "Community 410"
-Cohesion: 0.15
-Nodes (9): searchViral(), byId, DRY, QUERIES, queue, seen, state, targets (+1 more)
+Cohesion: 0.12
+Nodes (19): FantasyHome(), FantasyTeaser(), FANTASY_ALLOWLIST, fantasyAllowed(), fantasyEnabledByEnv(), fantasyVisible(), FantasyPage(), ProfileFantasyTeams() (+11 more)
 
 ### Community 411 - "Community 411"
 Cohesion: 0.29
@@ -2026,16 +2041,16 @@ Cohesion: 0.33
 Nodes (4): Blog authoring guide, Body (MDX), Checking your post, Frontmatter
 
 ### Community 414 - "Community 414"
-Cohesion: 0.08
-Nodes (36): seenBefore(), playRun(), builtAt, currentPlayers, questions, version, budgetWeight(), buildRound() (+28 more)
+Cohesion: 0.11
+Nodes (28): seenBefore(), builtAt, currentPlayers, questions, version, budgetWeight(), buildRound(), clientView() (+20 more)
 
 ### Community 415 - "Community 415"
 Cohesion: 0.12
 Nodes (15): allReviewPairs, answerText(), args, byEntity, COMMIT, EXACT_ONLY, groupEntity(), jaccard() (+7 more)
 
 ### Community 416 - "Community 416"
-Cohesion: 0.13
-Nodes (26): byId, NOW, POOL, ageFrom(), buildEnrichment(), CLUB_ALIASES, enrichPlayers(), expandAliases() (+18 more)
+Cohesion: 0.14
+Nodes (25): byId, NOW, POOL, ageFrom(), buildEnrichment(), CLUB_ALIASES, enrichPlayers(), expandAliases() (+17 more)
 
 ### Community 417 - "Community 417"
 Cohesion: 0.47
@@ -2050,8 +2065,8 @@ Cohesion: 0.27
 Nodes (8): _comment, defaults, maxAgeHours, maxQueuedPerRun, minUps, perRun, searches, subreddits
 
 ### Community 423 - "Community 423"
-Cohesion: 0.02
-Nodes (106): Acq, getAcq(), trackGameComplete(), Friend, Row, Scorecard, Friend, GroupChallengeButton() (+98 more)
+Cohesion: 0.06
+Nodes (47): Acq, getAcq(), trackGameComplete(), trackGamePlay(), AnswerButtons(), AnswerButtonsProps, LETTERS, AnswerRecord (+39 more)
 
 ### Community 424 - "Community 424"
 Cohesion: 0.40
@@ -2106,8 +2121,8 @@ Cohesion: 0.60
 Nodes (3): The rules. All of them are absolute., What makes one of these good, What you are being given
 
 ### Community 440 - "Community 440"
-Cohesion: 0.05
-Nodes (72): ballTarget(), colX(), fill, GOAL, KEEPER, KEEPER_BASE, keeperCenter(), keeperFrame() (+64 more)
+Cohesion: 0.06
+Nodes (69): ballTarget(), colX(), fill, GOAL, KEEPER, KEEPER_BASE, keeperCenter(), keeperFrame() (+61 more)
 
 ### Community 441 - "Community 441"
 Cohesion: 0.60
@@ -2134,8 +2149,8 @@ Cohesion: 0.33
 Nodes (5): alreadySent, db, hasToken, optedIn, targets
 
 ### Community 447 - "Community 447"
-Cohesion: 0.15
-Nodes (11): shortId(), accounts, args, DRY, inQueue, ONLY, PER, queue (+3 more)
+Cohesion: 0.17
+Nodes (21): ANCHOR_PATTERNS, anchorViolations(), answerLeakViolations(), buildLeakIgnore(), CLAIM_TYPES, CURRENT_AFFAIRS_PATTERNS, currentAffairsViolations(), entityViolations() (+13 more)
 
 ### Community 448 - "Community 448"
 Cohesion: 0.60
@@ -2154,7 +2169,7 @@ Cohesion: 0.39
 Nodes (7): generateCode(), MODE_LIMITS, POST(), VALID_COUNTS, VALID_DIFFICULTIES, VALID_MODES, POST()
 
 ### Community 461 - "Community 461"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (40): POST(), POST(), GET(), cancelQuizQueue(), createBotQuizLobby(), createShadowLobby(), createShadowOfLobby(), Db (+32 more)
 
 ### Community 462 - "Community 462"
@@ -2178,28 +2193,28 @@ Cohesion: 0.31
 Nodes (8): PollState, Pick, PendingRow, PredictionPhase, settleFinishedFixtures(), SettleOutcome, settlePhase(), svc()
 
 ### Community 467 - "Community 467"
-Cohesion: 0.22
-Nodes (3): bebasFont, dmSans500, dmSans700
+Cohesion: 0.29
+Nodes (7): bebasFont, BlankRung(), dmSans500, dmSans700, Dot(), SolvedRung(), Tiles()
 
 ### Community 468 - "Community 468"
-Cohesion: 0.27
-Nodes (7): Card(), cardBase, ago(), filterByCategory(), PL_CLUB_TERMS, PL_NEWS_CATEGORIES, PlNewsCategory
+Cohesion: 0.24
+Nodes (19): db(), emailForFixture(), ensurePackRow(), isRecap(), nameFor(), publishFixture(), PublishOutcome, pushForFixture() (+11 more)
 
 ### Community 469 - "Community 469"
-Cohesion: 0.09
-Nodes (24): AI_CRAWLERS, OG_IMAGE_PATHS, SOCIAL_CRAWLERS, sitemap(), BlogIndexPage(), metadata, WaitlistCard(), BLOG_DIR (+16 more)
+Cohesion: 0.11
+Nodes (21): sitemap(), BlogIndexPage(), metadata, WaitlistCard(), BLOG_DIR, BlogFaqItem, BlogPost, formatPostDate() (+13 more)
 
 ### Community 470 - "Community 470"
 Cohesion: 0.08
 Nodes (14): GAME_VISUALS, DETAIL, DRAFT_FAQS, DRAFT_STEPS, FANTASY_POINTS, HALFTIME_POINTS, QUIZ_FAQS, QUIZ_STEPS (+6 more)
 
 ### Community 471 - "Community 471"
-Cohesion: 0.18
-Nodes (14): SHORT, GET(), ROWS, STRIPES, avatarInitial(), avatarPalette(), PALETTE, avatarDataUri() (+6 more)
+Cohesion: 0.19
+Nodes (12): PitchSurface(), SHORT, GET(), KEYS, loadPayload(), ogUrl(), ordinal(), parseAward() (+4 more)
 
 ### Community 472 - "Community 472"
-Cohesion: 0.15
-Nodes (25): ageAtSeason(), buildCareers(), fetchPlSeasons(), fetchSeasonStandings(), fetchSeasonTopScorers(), SeasonStanding, seasonStartYear(), SeasonTopScorer (+17 more)
+Cohesion: 0.13
+Nodes (29): careerDifficulty(), generateCareerPath(), sequenceKey(), ageAtSeason(), buildCareers(), fetchPlSeasons(), fetchSeasonStandings(), fetchSeasonTopScorers() (+21 more)
 
 ### Community 473 - "Community 473"
 Cohesion: 0.13
@@ -2214,12 +2229,12 @@ Cohesion: 0.09
 Nodes (23): clubs, AFC Bournemouth, Arsenal, Aston Villa, Brentford, Brighton & Hove Albion, Chelsea, Coventry City (+15 more)
 
 ### Community 476 - "Community 476"
-Cohesion: 0.70
-Nodes (4): GET(), getAudienceId(), POST(), resend()
+Cohesion: 0.12
+Nodes (9): resetOnboarding(), NativeOnboarding(), OnboardingFlow(), PanelDef, PANELS, Phase, OnboardingPanel(), OnboardingShell() (+1 more)
 
 ### Community 477 - "Community 477"
-Cohesion: 0.07
-Nodes (52): accrueChip(), applyTransfer(), AutoSubResult, autoSubs(), availableChips(), bankCredits(), byId(), cashOverflow() (+44 more)
+Cohesion: 0.04
+Nodes (85): accrueChip(), applyTransfer(), AutoSubResult, autoSubs(), availableChips(), bankCredits(), byId(), CASH_POINTS (+77 more)
 
 ### Community 478 - "Community 478"
 Cohesion: 0.22
@@ -2231,11 +2246,11 @@ Nodes (7): CATS, cell, db, MIX, ONLY, PL, rows
 
 ### Community 480 - "Community 480"
 Cohesion: 0.04
-Nodes (46): EmailSignIn(), AdminLeague, inputStyle, TIERS, State, PlayerPageProps, NotificationRow, renderRow() (+38 more)
+Nodes (36): AdminLeague, TIERS, State, BoardEntry, ClubEventPage(), EventPayload, EventQuestion, Phase (+28 more)
 
 ### Community 481 - "Community 481"
-Cohesion: 0.50
-Nodes (4): id, name, username, 433
+Cohesion: 0.24
+Nodes (13): main(), main(), recapExists(), SEASON, main(), decideReentries(), londonDayRange(), main() (+5 more)
 
 ### Community 482 - "Community 482"
 Cohesion: 0.22
@@ -2263,7 +2278,7 @@ Nodes (4): deployId(), GET(), SELF_DESTRUCT, worker()
 
 ### Community 488 - "Community 488"
 Cohesion: 0.16
-Nodes (21): assertRehearsalAllowed(), assignArm(), captureDeadlineSquads(), captureForGameweek(), Db, DeadlineReport, effective(), EventRow (+13 more)
+Nodes (20): assertRehearsalAllowed(), assignArm(), captureDeadlineSquads(), captureForGameweek(), Db, DeadlineReport, effective(), EventRow (+12 more)
 
 ### Community 489 - "Community 489"
 Cohesion: 0.08
@@ -2274,16 +2289,16 @@ Cohesion: 0.22
 Nodes (8): name, private, scripts, build, dev, lint, start, version
 
 ### Community 491 - "Community 491"
-Cohesion: 0.47
-Nodes (5): dateLabel(), GET(), ResolvedRun, resolveRun(), STAGE_LABEL
+Cohesion: 0.16
+Nodes (14): askGapGames(), GET(), POST(), service(), buildOgQuery(), CARD_PARAMS, resolveTitleBits(), WcSharePage() (+6 more)
 
 ### Community 492 - "Community 492"
 Cohesion: 0.39
 Nodes (7): loadQuiz(), __dirname, gate(), main(), quizPath, ROOT, run()
 
 ### Community 493 - "Community 493"
-Cohesion: 0.33
-Nodes (5): HalfSim, PITCH_CONFIG, mkHalf(), P(), Pair
+Cohesion: 0.27
+Nodes (11): clientPricedPool(), Db, enginePool(), faceUrl(), FantasyPoolFile, gwPrices(), POOL, pricedPool() (+3 more)
 
 ### Community 494 - "Community 494"
 Cohesion: 0.17
@@ -2310,8 +2325,8 @@ Cohesion: 0.11
 Nodes (16): boot, both, cacheDir, clubAlias(), fplByKey, fplPos, fplPts, fplRank (+8 more)
 
 ### Community 505 - "Community 505"
-Cohesion: 0.04
-Nodes (70): appearances(), AvailabilityInfo, buildPlayerProfile(), FlagKind, FplStatus, LastSeasonLine, MatchFactsLike, PlayerProfile (+62 more)
+Cohesion: 0.08
+Nodes (36): FplStatus, PlayerProfile, CLUB_ALIASES, clubKey(), ContextFixture, Db, fantasyContext, POOL_NAMES (+28 more)
 
 ### Community 506 - "Community 506"
 Cohesion: 0.20
@@ -2326,24 +2341,24 @@ Cohesion: 0.10
 Nodes (18): Build phasing, Context — why we're building this, Data & media providers, Gate formats & content base, Gate generator (build blueprint), Launch strategy (go-to-market), Monetisation (later — retention first), Open items (tuning, settle during build) (+10 more)
 
 ### Community 509 - "Community 509"
-Cohesion: 0.05
-Nodes (61): POST(), Alternative, applyCaptainRecommendation(), ApplyResult, availabilityLabel(), CaptainAssist, captainAssistEnabled(), Db (+53 more)
+Cohesion: 0.06
+Nodes (51): Alternative, ApplyResult, availabilityLabel(), CaptainAssist, captainAssistEnabled(), Db, Evidence, fingerprint() (+43 more)
 
 ### Community 510 - "Community 510"
 Cohesion: 0.12
 Nodes (17): 1. Scoring familiarity — PASS, at the theoretical ceiling, 1. What the research established, 2. Question supply — data formats infinite; archive formats need guards, 2. The gap in our current design, 3. The fix: knowledge earns TRANSFERS, not a weekly team, 3. Time-to-cheat per format (live lookups on real questions) → timer calibration, FPL's transfer economy (2025/26, verified), FPL transfer/wildcard research → the missing layer in YourScore Fantasy Football (+9 more)
 
 ### Community 511 - "Community 511"
-Cohesion: 0.33
-Nodes (6): GET(), HIDDEN_STATES, noStore(), Row, isReleased(), packName()
+Cohesion: 0.28
+Nodes (8): GET(), HIDDEN_STATES, noStore(), Row, HalftimeState, isReleased(), packName(), Row
 
 ### Community 512 - "Community 512"
 Cohesion: 0.11
 Nodes (16): 1. What this is, 2. Routes, 3. Data-serving strategy, 4.1 Fixture ticker · Sportmonks, 4.2 Team news (predicted XI) · Sportmonks + content pipeline  ← anchor section, 4.3 Form / stat leaders · **our own DB — zero new Sportmonks calls**, 4.3a Insight cards ("Worth knowing") · generated from our own data, 4.4 Transfers & performances feed · content pipeline (+ Sportmonks transfers) (+8 more)
 
 ### Community 513 - "Community 513"
-Cohesion: 0.21
-Nodes (16): fetchRecent(), resolveUser(), tweetUrl(), xGet(), args, cfg, cleanTweet(), CLUBS (+8 more)
+Cohesion: 0.26
+Nodes (12): tweetUrl(), args, cfg, cleanTweet(), CLUBS, collectArticles(), collectTweets(), decodeEntities() (+4 more)
 
 ### Community 514 - "Community 514"
 Cohesion: 0.13
@@ -2354,8 +2369,8 @@ Cohesion: 0.12
 Nodes (13): all, BUNDLE, CHECKPOINT, CONCURRENCY, done, LETTERS, LIMIT, queue (+5 more)
 
 ### Community 516 - "Community 516"
-Cohesion: 0.15
-Nodes (11): args, bad(), check(), claims, CLEAN_ONLY, clubCount, db, deadline (+3 more)
+Cohesion: 0.14
+Nodes (12): args, bad(), check(), claims, CLEAN_ONLY, clubCount, db, deadline (+4 more)
 
 ### Community 517 - "Community 517"
 Cohesion: 0.13
@@ -2374,8 +2389,8 @@ Cohesion: 0.23
 Nodes (14): base, correctSet(), f1(), maxCost, maxStr, opponents, pool, runs11 (+6 more)
 
 ### Community 521 - "Community 521"
-Cohesion: 0.03
-Nodes (30): BEATS, metadata, usePendingFriends(), usePendingTurns(), DRAFT_FAQS, DRAFT_STEPS, FAQS, QUIZ_FAQS (+22 more)
+Cohesion: 0.05
+Nodes (12): ContactEntry, Friend, SearchResult, BEATS, metadata, BOARD, GAMES, SOCIALS (+4 more)
 
 ### Community 522 - "Community 522"
 Cohesion: 0.37
@@ -2383,7 +2398,7 @@ Nodes (11): SeasonAward, SeasonData, award(), generateMetadata(), ogUrl(), one()
 
 ### Community 523 - "Community 523"
 Cohesion: 0.05
-Nodes (43): GET(), POST(), GET(), PATCH(), POST(), DELETE(), POST(), POST() (+35 more)
+Nodes (42): POST(), GET(), POST(), DELETE(), POST(), POST(), POST(), applyCaptainRecommendation() (+34 more)
 
 ### Community 524 - "Community 524"
 Cohesion: 0.60
@@ -2399,7 +2414,7 @@ Nodes (10): boot, byFormat, capacity, countPairs(), els, MIN_TOP, pool, root (+2
 
 ### Community 527 - "Community 527"
 Cohesion: 0.05
-Nodes (56): AppMomentPrompt(), fetchUpcomingMatches(), resolveGamedayFixture(), resolveTodaysCompletion(), RootPage(), REDIRECT(), CatchUpRetired(), ChallengesRedirect() (+48 more)
+Nodes (59): ROWS, STRIPES, fantasyStreak(), LeaderboardPage(), RankRow, Scope, avatarInitial(), avatarPalette() (+51 more)
 
 ### Community 528 - "Community 528"
 Cohesion: 0.28
@@ -2418,12 +2433,12 @@ Cohesion: 0.18
 Nodes (3): db, pool, root
 
 ### Community 532 - "Community 532"
-Cohesion: 0.07
-Nodes (31): NewsInsight, NewsItem, ago(), cardBase, draftedLabel(), Filter, FILTERS, ItemCard() (+23 more)
+Cohesion: 0.08
+Nodes (28): NewsInsight, NewsItem, ago(), cardBase, draftedLabel(), EditorialCard(), Filter, FILTERS (+20 more)
 
 ### Community 533 - "Community 533"
-Cohesion: 0.13
-Nodes (20): rand, shuffle(), careerDifficulty(), CareerPathOpts, generateCareerPath(), sequenceKey(), Career, hashSeed() (+12 more)
+Cohesion: 0.15
+Nodes (14): CareerPathOpts, Career, hashSeed(), rngFrom(), seededRng(), Clue, WhoAmIOpts, careerDifficulty() (+6 more)
 
 ### Community 534 - "Community 534"
 Cohesion: 0.36
@@ -2442,8 +2457,8 @@ Cohesion: 0.48
 Nodes (5): builtAt, currentPlayers, questions, seasonLabel, version
 
 ### Community 538 - "Community 538"
-Cohesion: 0.07
-Nodes (32): faceFor(), faceUrlById(), key(), CATEGORY, Chip(), fixtureLabel(), FourPicks(), ORDER (+24 more)
+Cohesion: 0.10
+Nodes (15): CommentRow, PlayerMarker(), DIFF_COLOUR, LastSeasonLine, PlayerProfileResponse, ProfileFixture, ProfileStat, ProfileTab (+7 more)
 
 ### Community 539 - "Community 539"
 Cohesion: 0.80
@@ -2462,24 +2477,24 @@ Cohesion: 0.52
 Nodes (5): base, byId, fame, players, show()
 
 ### Community 545 - "Community 545"
-Cohesion: 0.70
-Nodes (4): askGapGames(), GET(), POST(), service()
+Cohesion: 0.13
+Nodes (11): REDIRECT(), CatchUpRetired(), ChallengesRedirect(), DRAFT_FAQS, DRAFT_STEPS, FAQS, HowItWorksRedirect(), QUIZ_FAQS (+3 more)
 
 ### Community 546 - "Community 546"
 Cohesion: 0.53
 Nodes (4): mode, players, smSeasonId, version
 
 ### Community 547 - "Community 547"
-Cohesion: 0.13
-Nodes (19): weightedPick(), cap(), pickFrom(), realisticOpponentName(), deciderQuestion(), drawQuestion(), questionsForDate(), serve() (+11 more)
+Cohesion: 0.22
+Nodes (7): FAKE_IDS, generateScore(), PACK_IDS, randInt(), recentDate(), sb, shuffle()
 
 ### Community 548 - "Community 548"
 Cohesion: 0.24
 Nodes (14): GamedayFixture, HalftimeFixture, hasKickedOff(), kickoffLabel(), lobbyHref(), packHref(), TodayResponse, useGamedayToday() (+6 more)
 
 ### Community 549 - "Community 549"
-Cohesion: 0.43
-Nodes (5): audienceEmailSet(), syncAndBroadcast(), args, __dirname, main()
+Cohesion: 0.17
+Nodes (12): audienceEmailSet(), syncAndBroadcast(), args, BLOCKED_DOMAINS, __dirname, FAST, main(), renderTemplate() (+4 more)
 
 ### Community 550 - "Community 550"
 Cohesion: 0.50
@@ -2494,12 +2509,12 @@ Cohesion: 0.43
 Nodes (5): Card, db(), fromParams(), GET(), resolve()
 
 ### Community 553 - "Community 553"
-Cohesion: 0.33
-Nodes (3): GET(), PackInfo, WC2026LeaderboardRow
+Cohesion: 0.24
+Nodes (11): allMedals(), Medal, medalColor(), MedalGroup, MedalInputs, remain(), shelfOrder(), MedalShelf() (+3 more)
 
 ### Community 554 - "Community 554"
 Cohesion: 0.11
-Nodes (38): attackRating(), defenceRating(), HomeSide, linesFallback(), MATCH_CONFIG, matchLambdas(), poisson(), resolveHalfGoals() (+30 more)
+Nodes (38): attackRating(), attackShare(), defenceRating(), HomeSide, linesFallback(), MATCH_CONFIG, matchLambdas(), poisson() (+30 more)
 
 ### Community 573 - "Community 573"
 Cohesion: 0.50
@@ -2514,8 +2529,8 @@ Cohesion: 0.53
 Nodes (4): £15.5m is a tax, not a pick, The catch nothing here fixes, The prices, quickly, The rules are the real change
 
 ### Community 577 - "Community 577"
-Cohesion: 0.12
-Nodes (33): bandForGrade(), gradeAnswer(), nextStreak(), QuizGrade, upgradeBand(), getPlayer(), EditionCell, editionStrip() (+25 more)
+Cohesion: 0.10
+Nodes (38): bandForGrade(), gradeAnswer(), nextStreak(), QuizGrade, upgradeBand(), EditionCell, editionStrip(), lockedFor() (+30 more)
 
 ### Community 578 - "Community 578"
 Cohesion: 0.40
@@ -2530,40 +2545,76 @@ Cohesion: 0.24
 Nodes (4): CDN_CACHE, GET(), todaysDebate(), todaysQuestion()
 
 ### Community 581 - "Community 581"
-Cohesion: 0.53
-Nodes (5): buildOgQuery(), CARD_PARAMS, resolveTitleBits(), WcSharePage(), generateMetadata()
+Cohesion: 0.19
+Nodes (9): countdown(), FeedEvent, HomeData, LeagueCard, MOVE_ICON, MoveRow(), ordinal(), timeAgo() (+1 more)
+
+### Community 583 - "Community 583"
+Cohesion: 0.24
+Nodes (11): code(), daysAgoIso(), db, ensureAccount(), FANS, findUserByEmail(), LEAGUES, OFFICIAL (+3 more)
 
 ### Community 584 - "Community 584"
 Cohesion: 0.50
 Nodes (4): id, name, username, fifaworldcup
 
+### Community 585 - "Community 585"
+Cohesion: 0.45
+Nodes (10): db(), opApprove(), opBase(), opCancel(), opDedup(), POST(), cancelStaleFixture(), getGamedayRow() (+2 more)
+
 ### Community 586 - "Community 586"
 Cohesion: 0.60
 Nodes (3): generatedFrom, smSeasonId, version
+
+### Community 587 - "Community 587"
+Cohesion: 0.22
+Nodes (6): QuestionClues, budgetWeight(), buildRound(), EMPTY_SET, formationSlots(), roundBudget()
 
 ### Community 589 - "Community 589"
 Cohesion: 0.50
 Nodes (4): id, name, username, fourfourtwo
 
+### Community 591 - "Community 591"
+Cohesion: 0.33
+Nodes (6): ScoutCategory, Body, Db, PickRow, PickStatus, GET()
+
+### Community 593 - "Community 593"
+Cohesion: 0.33
+Nodes (4): Friend, GroupChallengeButton(), Props, Row
+
+### Community 594 - "Community 594"
+Cohesion: 0.40
+Nodes (3): FAME_WEIGHTS, buildFameIndex(), clamp01()
+
+### Community 595 - "Community 595"
+Cohesion: 0.40
+Nodes (3): AI_CRAWLERS, OG_IMAGE_PATHS, SOCIAL_CRAWLERS
+
+### Community 605 - "Community 605"
+Cohesion: 0.40
+Nodes (5): scripts, build, dev, lint, start
+
+### Community 606 - "Community 606"
+Cohesion: 0.50
+Nodes (4): id, name, username, bbcsport
+
 ## Knowledge Gaps
-- **4849 isolated node(s):** `SessionStart`, `extends`, `project_number`, `project_id`, `storage_bucket` (+4844 more)
+- **4862 isolated node(s):** `SessionStart`, `extends`, `project_number`, `project_id`, `storage_bucket` (+4857 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **67 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **68 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createServiceClient()` connect `Community 153` to `Community 10`, `Community 523`, `Community 13`, `Community 142`, `Community 527`, `Community 144`, `Community 20`, `Community 154`, `Community 27`, `Community 28`, `Community 539`, `Community 540`, `Community 160`, `Community 545`, `Community 162`, `Community 163`, `Community 292`, `Community 553`, `Community 171`, `Community 179`, `Community 182`, `Community 440`, `Community 313`, `Community 442`, `Community 574`, `Community 194`, `Community 452`, `Community 581`, `Community 460`, `Community 76`, `Community 333`, `Community 461`, `Community 466`, `Community 469`, `Community 89`, `Community 91`, `Community 476`, `Community 477`, `Community 94`, `Community 480`, `Community 97`, `Community 230`, `Community 488`, `Community 491`, `Community 236`, `Community 108`, `Community 364`, `Community 116`, `Community 509`, `Community 511`?**
-  _High betweenness centrality (0.070) - this node is a cross-community bridge._
 - **Why does `faces` connect `Community 106` to `Community 586`?**
-  _High betweenness centrality (0.064) - this node is a cross-community bridge._
+  _High betweenness centrality (0.069) - this node is a cross-community bridge._
+- **Why does `createServiceClient()` connect `Community 153` to `Community 523`, `Community 13`, `Community 142`, `Community 527`, `Community 144`, `Community 410`, `Community 27`, `Community 28`, `Community 539`, `Community 540`, `Community 154`, `Community 160`, `Community 292`, `Community 171`, `Community 51`, `Community 179`, `Community 182`, `Community 440`, `Community 313`, `Community 442`, `Community 574`, `Community 194`, `Community 452`, `Community 585`, `Community 460`, `Community 76`, `Community 333`, `Community 461`, `Community 591`, `Community 466`, `Community 468`, `Community 469`, `Community 89`, `Community 91`, `Community 477`, `Community 480`, `Community 97`, `Community 230`, `Community 361`, `Community 491`, `Community 236`, `Community 108`, `Community 493`, `Community 364`, `Community 509`, `Community 511`?**
+  _High betweenness centrality (0.055) - this node is a cross-community bridge._
 - **Why does `photos` connect `Community 1` to `Community 524`?**
-  _High betweenness centrality (0.040) - this node is a cross-community bridge._
+  _High betweenness centrality (0.045) - this node is a cross-community bridge._
 - **Are the 24 inferred relationships involving `createServiceClient()` (e.g. with `DELETE()` and `PATCH()`) actually correct?**
   _`createServiceClient()` has 24 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 24 inferred relationships involving `rateLimitDistributed()` (e.g. with `POST()` and `POST()`) actually correct?**
   _`rateLimitDistributed()` has 24 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 20 inferred relationships involving `useUser()` (e.g. with `Versus380Page()` and `AcceptChallenge()`) actually correct?**
-  _`useUser()` has 20 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 21 inferred relationships involving `useUser()` (e.g. with `Versus380Page()` and `AcceptChallenge()`) actually correct?**
+  _`useUser()` has 21 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `SessionStart`, `extends`, `project_number` to the rest of the system?**
-  _4849 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _4862 weakly-connected nodes found - possible documentation gaps or missing edges._

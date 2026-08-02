@@ -727,6 +727,15 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-02** — **Rules page: four missing definitions added** (`/fantasy/rules` + rules bot
+  grounding). Gap analysis vs the Premier League's own FPL explainer ecosystem found four rules
+  the engine enforces but nothing user facing defined; all four are now in THE DETAIL (new LIVE
+  SCORES AND THE CALENDAR section) and `buildRulesDoc()`, engine verified: live provisional
+  scores settle a few hours after the last kickoff and finalise the day after; assists are
+  whatever the official match data credits; a double gameweek scores each match separately and
+  sums; prices snapshot at gameweek open and hold all week. Two new bot pills (score finality,
+  blank/double). The `rules-qa` route now strips dashes from model output.
+
 - **2026-08-02** — **Home Mastermind tile no longer promises "Daily · £100".** The signed-in
   home's compact mode-tile row (Dashboard `ModeTiles`) still sold the Mastermind tile with a
   cash prize, but all giveaways were retired on 13 Jul and the WC daily run ended with the
