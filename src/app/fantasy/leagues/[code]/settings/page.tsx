@@ -2,7 +2,7 @@
 /** League Settings — everything administrative, moved off the Hub: name, code +
  *  invite, stakes, visibility, the member list, and the danger zone. Only the
  *  controls that are actually wired are shown (no dead toggles). */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Btn, Card, Chip, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Skel, TEAL, tint,
@@ -46,6 +46,8 @@ export default function LeagueSettingsPage() {
   const [stakes, setStakes] = useState<string | null>(null); // null = not editing
   const [copied, setCopied] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
@@ -72,6 +74,25 @@ export default function LeagueSettingsPage() {
     if (navigator.share) { navigator.share({ title: "YourScore Fantasy league", text, url }).catch(() => {}); return; }
     try { await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ }
   };
+  const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = "";
+    if (!f) return;
+    setUploading(true); setErr(null);
+    try {
+      const fd = new FormData(); fd.append("file", f);
+      const res = await fetch(`/api/fantasy/leagues/${code}/image`, { method: "POST", body: fd });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Upload failed");
+      await load();
+    } catch (e2) { setErr((e2 as Error).message); }
+    setUploading(false);
+  };
+  const removeImage = async () => {
+    setBusy(true); setErr(null);
+    try { await apiRaw(`leagues/${code}/image`, { method: "DELETE" }); await load(); }
+    catch (e2) { setErr((e2 as Error).message); }
+    setBusy(false);
+  };
   const leaveOrDelete = async () => {
     if (!detail) return;
     setBusy(true); setErr(null);
@@ -83,7 +104,7 @@ export default function LeagueSettingsPage() {
 
   if (!detail) return (
     <main data-fantasy style={page}>
-      <Header right={<Btn small onClick={back}>← League</Btn>} />
+      <Header exit={{ label: "League", onClick: back }} />
       <Loading label="Loading settings"><Skel h={40} r={10} /><Skel h={160} r={10} style={{ marginTop: 8 }} /></Loading>
     </main>
   );
@@ -94,7 +115,7 @@ export default function LeagueSettingsPage() {
   return (
     <>
     <main data-fantasy style={page}>
-      <Header right={<Btn small onClick={back}>← League</Btn>} />
+      <Header exit={{ label: "League", onClick: back }} />
       <h1 style={{ fontSize: 22, margin: "2px 0 2px", fontWeight: 700 }}>Settings</h1>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 16px" }}>{league.name}</p>
 
@@ -126,6 +147,33 @@ export default function LeagueSettingsPage() {
           </div>
         </Card>
       </Section>
+
+      {isOwner && (
+        <Section title="LEAGUE PICTURE">
+          <Card>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              {league.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={league.imageUrl} alt="" width={56} height={56} style={{ width: 56, height: 56, borderRadius: 14, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
+              ) : (
+                <span style={{ width: 56, height: 56, flexShrink: 0, borderRadius: 14, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
+                </span>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.4 }}>Give your league a crest or photo. Shows on the cards and header.</p>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <Btn small gold disabled={uploading} onClick={() => fileRef.current?.click()}>{uploading ? "Uploading…" : league.imageUrl ? "Change" : "Upload picture"}</Btn>
+                  {league.imageUrl && (
+                    <button onClick={removeImage} disabled={busy} style={{ background: "none", border: "none", color: "#E08A6B", fontSize: 12.5, cursor: "pointer", padding: 0, textDecoration: "underline" }}>Remove</button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} style={{ display: "none" }} />
+          </Card>
+        </Section>
+      )}
 
       <Section title="STAKES">
         <Card>

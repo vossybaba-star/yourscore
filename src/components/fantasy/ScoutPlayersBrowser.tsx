@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   api, Crest, DoubtFlag, EMPTY_CONTEXT, FixtureRun, GOLD, INK, LINE, MUTED, PANEL,
-  TEAL, tint, Sheet, Loading, ErrorState,
+  TEAL, tint, Sheet, Loading, ErrorState, PosTag,
   type ClientPoolPlayer, type FantasyContext, type Difficulty, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -212,7 +212,7 @@ export function ScoutPlayersBrowser() {
   if (!pool) return <Loading label="Loading players" />;
 
   return (
-    <div style={{ display: "grid", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 12 }}>
       {/* Search */}
       <input
         value={q}
@@ -338,7 +338,7 @@ export function ScoutPlayersBrowser() {
                     </span>
                     <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
                       <Crest club={p.club} size={13} />
-                      <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · {p.pos}</span>
+                      <span style={{ fontSize: 11.5, color: MUTED }}>{p.club} · <PosTag pos={p.pos} /></span>
                       <FixtureRun cells={ctx.fixtures[p.clubId]} max={2} />
                     </span>
                   </span>

@@ -15,7 +15,7 @@ export interface LeagueRow {
 export interface LeagueDetail {
   league: {
     id: string; name: string; code: string; memberCount: number;
-    isPublic: boolean; isMember: boolean; isOwner: boolean; stakes: string | null;
+    isPublic: boolean; isMember: boolean; isOwner: boolean; stakes: string | null; imageUrl: string | null;
   };
   gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
   season: LeagueRow[];

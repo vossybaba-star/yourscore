@@ -11,7 +11,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  api, Crest, INK, LINE, MUTED, PANEL, TEAL,
+  api, Crest, INK, LINE, MUTED, PANEL, TEAL, PosTag,
   type ClientPoolPlayer,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -65,7 +65,7 @@ export function ShortlistPreview() {
               <span style={{ fontSize: 13.5, fontWeight: 600, color: INK }}>{p.name}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Crest club={p.club} size={12} />
-                <span style={{ fontSize: 11, color: MUTED }}>{p.club} · {p.pos}</span>
+                <span style={{ fontSize: 11, color: MUTED }}>{p.club} · <PosTag pos={p.pos} /></span>
               </span>
             </span>
           </div>

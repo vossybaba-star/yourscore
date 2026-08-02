@@ -2,6 +2,7 @@
 /** The League Hub — the default screen. Tells the league's story right now:
  *  the gameweek state, where you stand, the key moments, and the latest banter.
  *  Not a full table or a full chat — it points at both. */
+import { useState } from "react";
 import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { LeagueTableRows } from "./LeagueTableRows";
@@ -47,17 +48,22 @@ export function LeagueHub({ detail, chat, onTab }: {
   chat: ChatData | null;
   onTab: (t: "chat" | "table" | "history") => void;
 }) {
-  const { gw, season } = detail;
+  const { gw, season, month } = detail;
   const phase = PHASE[gw.phase];
   const you = season.find((r) => r.isMe) ?? null;
   const leader = season[0] ?? null;
   const scored = season.some((r) => r.played > 0);
   const gapToFirst = you && leader && !you.isMe ? leader.points - you.points : null;
 
-  // Top 4, plus your row when you sit below it.
-  const top = season.slice(0, 4);
-  const youBelow = you && !top.some((r) => r.isMe) ? you : null;
-  const miniRows: LeagueRow[] = youBelow ? [...top, youBelow] : top;
+  // The mini table can show the season race or just this month's — the month
+  // competition is what's live now, so it's one tap away on the landing, not
+  // buried in the Table tab.
+  const [tableTab, setTableTab] = useState<"season" | "month">("season");
+  const tblSrc = tableTab === "season" ? season : month.rows;
+  const tblTop = tblSrc.slice(0, 4);
+  const tblYou = tblSrc.find((r) => r.isMe) ?? null;
+  const tblYouBelow = tblYou && !tblTop.some((r) => r.isMe) ? tblYou : null;
+  const miniRows: LeagueRow[] = tblYouBelow ? [...tblTop, tblYouBelow] : tblTop;
 
   const moments = (chat?.moments ?? []).slice(0, 4);
   const preview = (chat?.messages ?? []).slice(-3);
@@ -105,15 +111,28 @@ export function LeagueHub({ detail, chat, onTab }: {
         )}
       </div>
 
-      {/* MINI TABLE */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>THE TABLE</span>
-        <button onClick={() => onTab("table")} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
-          View full table →
+      {/* MINI TABLE — Season / This month toggle, so both are visible up front. */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 }}>
+        <div style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: PANEL, border: `1px solid ${LINE}` }}>
+          {(["season", "month"] as const).map((t) => {
+            const on = tableTab === t;
+            const accent = t === "month" ? GOLD : TEAL;
+            return (
+              <button key={t} onClick={() => setTableTab(t)} style={{
+                padding: "5px 12px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                background: on ? tint(accent, "22") : "transparent", color: on ? accent : MUTED,
+                border: `1px solid ${on ? tint(accent, "55") : "transparent"}`,
+              }}>{t === "season" ? "Season" : month.label}</button>
+            );
+          })}
+        </div>
+        <button onClick={() => onTab("table")} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, flexShrink: 0 }}>
+          Full table →
         </button>
       </div>
       <div style={{ marginBottom: 14 }}>
-        <LeagueTableRows rows={miniRows} emptyLabel="No members yet." />
+        <LeagueTableRows rows={miniRows}
+          emptyLabel={tableTab === "month" ? `No scores in ${month.label} yet.` : "No members yet."} />
       </div>
 
       {/* RIVAL CONTEXT — what the table means. */}

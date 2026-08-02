@@ -18,6 +18,7 @@ import { HttpError } from "./server";
 import { enginePool, clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
 import { loadLeagueFeed, type FeedEvent } from "./feed";
+import { notifyFantasy } from "./notify";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -71,6 +72,23 @@ export interface ChatMessage {
 export interface ChatMoment { emoji: string; text: string; gw: number }
 
 const MAX_POLL_OPTIONS = 4;
+
+/** One-line, emoji-free summary of a league message for a card/tile — kind-aware
+ *  so a shared card never leaks its raw internal body ("shared their captain").
+ *  The tile draws its own SVG icon, so unlike the home feed's previewOf this
+ *  returns plain words (no leading emoji), per the no-emoji-as-UI-chrome rule. */
+export function summariseLeagueMessage(kind: string | null, body: string, payload: unknown): string {
+  const p = (payload ?? {}) as Record<string, unknown>;
+  switch (kind) {
+    case "player": return "shared a player";
+    case "captain": return "shared their captain";
+    case "squad": return "shared their squad";
+    case "news": return typeof p.title === "string" ? p.title : "shared some news";
+    case "compare": return "shared a comparison";
+    case "poll": return typeof p.question === "string" ? p.question : "started a poll";
+    default: return body;
+  }
+}
 
 async function requireMemberLeague(db: Db, code: string, userId: string) {
   const { data: league } = await db.from("fantasy_leagues")
@@ -365,10 +383,67 @@ export async function postChat(db: Db, userId: string, code: string, body: unkno
   if (!text || text.length > 280) throw new HttpError(400, "1-280 characters");
   const why = commentRejection(text);
   if (why) throw new HttpError(400, why);
-  const { error } = await db.from("comments")
-    .insert({ subject_type: "fantasy_league", subject_id: league.id, user_id: userId, body: text });
+  const { data: inserted, error } = await db.from("comments")
+    .insert({ subject_type: "fantasy_league", subject_id: league.id, user_id: userId, body: text })
+    .select("id").single();
   if (error) throw new HttpError(500, error.message);
+  // @mentions only — never a push for every message (the spam trap). Fire-and-forget.
+  void notifyChatMentions(db, league.id, code, league.name, userId, text, (inserted as { id: string } | null)?.id ?? null);
   return { ok: true };
+}
+
+/** Parse @handles in a chat message and notify the mentioned league members. */
+async function notifyChatMentions(db: Db, leagueId: string, code: string, leagueName: string, actorId: string, text: string, commentId: string | null) {
+  try {
+    if (!commentId) return;
+    const handles = Array.from(new Set((text.match(/@([a-zA-Z0-9_]{2,30})/g) ?? []).map((h) => h.slice(1).toLowerCase())));
+    if (!handles.length) return;
+    const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", leagueId);
+    const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== actorId);
+    if (!memberIds.length) return;
+    const { data: profs } = await db.from("profiles").select("id, username, display_name").in("id", memberIds);
+    const mentioned = ((profs ?? []) as { id: string; username: string | null; display_name: string | null }[])
+      .filter((p) => p.username && handles.includes(p.username.toLowerCase()));
+    if (!mentioned.length) return;
+    const { data: actor } = await db.from("profiles").select("display_name, username").eq("id", actorId).maybeSingle();
+    const who = actor?.display_name ?? (actor?.username ? `@${actor.username}` : "A manager");
+    await notifyFantasy({
+      userIds: mentioned.map((p) => p.id),
+      title: `${who} mentioned you in ${leagueName}`,
+      body: text.slice(0, 140),
+      url: `/fantasy/leagues/${code}?t=chat`,
+      dedupeKey: `fantasy-mention:${commentId}`,
+      type: "fantasy_chat_mention",
+      actorId,
+      subjectType: "fantasy_league",
+      subjectId: leagueId,
+    });
+  } catch (e) { console.error("[fantasy:chat] mention notify failed:", e); }
+}
+
+/** Notify the other league members that someone shared their squad/captain — the
+ *  two deliberate "here's my team" moments. Rate-limited to one per sharer per
+ *  league per day so a chatty sharer can't spam the league. */
+async function notifyLeagueShare(db: Db, leagueId: string, code: string, leagueName: string, actorId: string, what: string) {
+  try {
+    const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", leagueId);
+    const others = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== actorId);
+    if (!others.length) return;
+    const { data: actor } = await db.from("profiles").select("display_name, username").eq("id", actorId).maybeSingle();
+    const who = actor?.display_name ?? (actor?.username ? `@${actor.username}` : "A manager");
+    const dayBucket = Math.floor(Date.now() / 86_400_000);
+    await notifyFantasy({
+      userIds: others,
+      title: `${who} ${what} in ${leagueName}`,
+      body: "Take a look and weigh in.",
+      url: `/fantasy/leagues/${code}?t=chat`,
+      dedupeKey: `fantasy-share:${leagueId}:${actorId}:${dayBucket}`,
+      type: "fantasy_league_share",
+      actorId,
+      subjectType: "fantasy_league",
+      subjectId: leagueId,
+    });
+  } catch (e) { console.error("[fantasy:chat] share notify failed:", e); }
 }
 
 export async function setStakes(db: Db, userId: string, code: string, stakes: unknown) {
@@ -453,6 +528,7 @@ export async function shareSquad(db: Db, userId: string, code: string) {
     payload: { xi, bench: (squad!.bench as number[]) ?? [], captain: squad!.captain ?? null, vice: squad!.vice ?? null },
   });
   if (error) throw new HttpError(500, error.message);
+  void notifyLeagueShare(db, league.id, code, league.name, userId, "shared their squad");
   return { ok: true };
 }
 
@@ -467,6 +543,7 @@ export async function shareCaptain(db: Db, userId: string, code: string) {
     body: "shared their captain", kind: "captain", payload: { playerId: squad.captain },
   });
   if (error) throw new HttpError(500, error.message);
+  void notifyLeagueShare(db, league.id, code, league.name, userId, "shared their captain");
   return { ok: true };
 }
 

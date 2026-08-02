@@ -1,70 +1,76 @@
 /**
- * YourScore Scout — the Briefing.
+ * YourScore Scout — one page, five seamless sections (founder, 2 Aug). The
+ * Briefing / Picks / Players / Shortlist / Your Squad tabs used to be five routes;
+ * now the cover sits up top and a client shell (ScoutTabsShell) slides between the
+ * content slots with no page load. Signed out, the cover + tabs still show but the
+ * content is behind a sign-up wall.
  *
- * Reskin of the old fantasy news hub. The general Scout Report (the cron-built
- * feed) is unchanged and still renders from the fantasy_news_feed doc as a server
- * component (ISR, SEO-indexable). What's new is the head of the page: SquadUpdate,
- * a client block about the fifteen players YOU own — the one personalised, facts-
- * only read that the general feed can't give.
- *
- * The route is deliberately still /fantasy/news (nothing that links here breaks);
- * the surface is now branded Scout.
+ * Still served at /fantasy/news so nothing linking here breaks; the old
+ * /fantasy/scout/* routes redirect in with the right tab.
  */
-import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
+import { createClient } from "@/lib/supabase/server";
 import { ScoutCover } from "@/components/fantasy/ScoutCover";
+import { ScoutTabsShell, type ScoutTabKey } from "@/components/fantasy/ScoutTabsShell";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
+import { FourPicks } from "@/components/fantasy/FourPicks";
+import { ScoutPlayersBrowser } from "@/components/fantasy/ScoutPlayersBrowser";
+import { CompareEntry } from "@/components/fantasy/CompareEntry";
+import { ShortlistView } from "@/components/fantasy/ShortlistView";
+import { ScoutYourSquad } from "@/components/fantasy/ScoutYourSquad";
 import { FantasyMasthead, GOLD, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic"; // reads the auth cookie to wall the content
 
 export const metadata = {
   title: "Scout · YourScore",
-  description:
-    "Facts, not noise, for your YourScore fantasy squad: team news, availability and the moves worth knowing.",
+  description: "Facts, not noise, for your YourScore fantasy squad: team news, availability and the moves worth knowing.",
 };
 
-/** Hide feed items older than ten days — a stale source must never read as today's
- *  news. Empty beats misleading. */
 const MAX_ITEM_AGE_MS = 10 * 24 * 60 * 60 * 1000;
 function fresh<T extends { createdAt: string }>(items?: T[]): T[] {
   return (items ?? []).filter((i) => Date.now() - new Date(i.createdAt).getTime() < MAX_ITEM_AGE_MS);
 }
+const VALID: ScoutTabKey[] = ["briefing", "picks", "players", "shortlist", "squad"];
 
-export default async function ScoutBriefing() {
-  const doc = await loadFeedDoc();
+export default async function ScoutBriefing({ searchParams }: { searchParams?: { tab?: string } }) {
+  const [{ data: { user } }, doc] = await Promise.all([
+    (await createClient()).auth.getUser(),
+    loadFeedDoc(),
+  ]);
+  const signedIn = !!user;
+  const initial = (VALID.includes(searchParams?.tab as ScoutTabKey) ? searchParams!.tab : "briefing") as ScoutTabKey;
+
+  const slots = signedIn ? {
+    briefing: (
+      <NewsFeed
+        tips={doc?.tips}
+        doubts={doc?.teamNews?.doubts ?? []}
+        insights={doc?.insights?.items ?? []}
+        teamItems={fresh(doc?.teamNews?.items)}
+        transferItems={fresh(doc?.transfers?.items)}
+      />
+    ),
+    picks: <FourPicks />,
+    players: <><CompareEntry /><ScoutPlayersBrowser /></>,
+    shortlist: <ShortlistView />,
+    squad: <ScoutYourSquad />,
+  } : undefined;
 
   return (
     <>
-    <main style={shell}>
-      <div style={column}>
-        <FantasyMasthead />
-        <ScoutCover />
-        {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
-          <div style={{ color: GOLD, fontSize: 12, marginTop: -8, marginBottom: 2 }}>
-            GW{doc.gw} deadline · {ukTime(doc.deadline)}
-          </div>
-        )}
-
-        <ScoutTabs active="/fantasy/news" />
-
-        {/* Briefing is general news only now (founder, 30 Jul): Squad Update
-            moved to the "Your Squad" tab, the shortlist peek is gone (it lives on
-            the Shortlist tab), and Compare moved to the Players tab. */}
-
-        {/* The general Scout Report. Stale-item guard (founder, 30 Jul): the
-            team-news source stopped feeding on 14 Jul, so anything older than ten
-            days is hidden rather than shown as if it were current. Better an empty
-            section than 16-day-old "news". (The dead ingest still needs fixing.) */}
-        <NewsFeed
-          tips={doc?.tips}
-          doubts={doc?.teamNews?.doubts ?? []}
-          insights={doc?.insights?.items ?? []}
-          teamItems={fresh(doc?.teamNews?.items)}
-          transferItems={fresh(doc?.transfers?.items)}
-        />
-      </div>
-    </main>
+      <main style={shell}>
+        <div style={column}>
+          <FantasyMasthead />
+          <ScoutCover />
+          {doc?.deadline && new Date(doc.deadline).getTime() > Date.now() && (
+            <div style={{ color: GOLD, fontSize: 12, marginTop: -8, marginBottom: 2 }}>
+              GW{doc.gw} deadline · {ukTime(doc.deadline)}
+            </div>
+          )}
+          <ScoutTabsShell initial={initial} signedIn={signedIn} slots={slots} />
+        </div>
+      </main>
       <BottomNav />
     </>
   );

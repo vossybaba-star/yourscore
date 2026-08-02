@@ -6,9 +6,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Btn, Card, Header, LINE, Loading, MUTED, page, PANEL, Skel, TEAL, tint,
+  Btn, Card, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { BottomNav } from "@/components/ui/BottomNav";
+
+/** One channel in the invite sheet — an icon in its brand colour, a label, a hint. */
+function InviteRow({ onClick, accent, label, sub, icon }: { onClick: () => void; accent: string; label: string; sub: string; icon: React.ReactNode }) {
+  return (
+    <button onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", cursor: "pointer",
+      background: PANEL_2, border: `1px solid ${LINE}`, borderRadius: 12, padding: "11px 13px",
+    }}>
+      <span style={{ width: 38, height: 38, flexShrink: 0, borderRadius: 10, background: tint(accent, "1e"), border: `1px solid ${tint(accent, "44")}`, color: accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+      </span>
+      <span style={{ minWidth: 0, flex: 1 }}>
+        <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: INK }}>{label}</span>
+        <span style={{ display: "block", fontSize: 11.5, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</span>
+      </span>
+      <span style={{ color: MUTED, fontSize: 18, flexShrink: 0 }}>›</span>
+    </button>
+  );
+}
 import { LeagueHub } from "@/components/fantasy/league/LeagueHub";
 import { LeagueChatView } from "@/components/fantasy/league/LeagueChatView";
 import { LeagueTableView } from "@/components/fantasy/league/LeagueTableView";
@@ -35,6 +54,7 @@ export default function LeaguePage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("hub");
   const [chatGw, setChatGw] = useState<number | null>(null);
 
@@ -83,12 +103,13 @@ export default function LeaguePage() {
     return () => clearInterval(t);
   }, [detail?.league.isMember, loadChat]);
 
-  const invite = async () => {
-    const url = `${window.location.origin}/fantasy/leagues/${code}`;
-    const text = `Join my YourScore Fantasy league "${detail?.league.name ?? ""}" · code ${code}`;
-    if (navigator.share) { navigator.share({ title: "YourScore Fantasy league", text, url }).catch(() => {}); return; }
-    try { await navigator.clipboard.writeText(`${text} ${url}`); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ }
-  };
+  const inviteUrl = () => `${window.location.origin}/fantasy/leagues/${code}`;
+  const inviteText = () => `Join my YourScore Fantasy league "${detail?.league.name ?? ""}" · code ${code}`;
+  const inviteMsg = () => `${inviteText()} ${inviteUrl()}`;
+  const shareNative = () => { if (navigator.share) navigator.share({ title: "YourScore Fantasy league", text: inviteText(), url: inviteUrl() }).catch(() => {}); setInviteOpen(false); };
+  const shareWhatsApp = () => { window.open(`https://wa.me/?text=${encodeURIComponent(inviteMsg())}`, "_blank", "noopener,noreferrer"); setInviteOpen(false); };
+  const shareSms = () => { window.location.href = `sms:?&body=${encodeURIComponent(inviteMsg())}`; };
+  const copyLink = async () => { try { await navigator.clipboard.writeText(inviteMsg()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ } };
   const join = async () => {
     if (busy) return;
     setBusy(true); setErr(null);
@@ -129,18 +150,28 @@ export default function LeaguePage() {
   return (
     <>
     <main data-fantasy style={page}>
-      <Header right={<Btn small onClick={() => router.push("/fantasy/leagues")}>← Leagues</Btn>} />
+      <Header exit={{ label: "Leagues", onClick: () => router.push("/fantasy/leagues") }} />
 
       {/* Header: name, private label + members, invite, settings. */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: 22, margin: 0, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis" }}>{league.name}</h1>
-          <div style={{ fontSize: 12.5, color: MUTED, marginTop: 3 }}>
-            {league.isPublic ? "Public" : "Private"} league · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
+        <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
+          {league.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={league.imageUrl} alt="" width={44} height={44} style={{ width: 44, height: 44, borderRadius: 12, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
+          ) : (
+            <span style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
+            </span>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: 22, margin: 0, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis" }}>{league.name}</h1>
+            <div style={{ fontSize: 12.5, color: MUTED, marginTop: 3 }}>
+              {league.isPublic ? "Public" : "Private"} league · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          {league.isMember && <Btn small onClick={invite}>{copied ? "Copied" : "Invite"}</Btn>}
+          {league.isMember && <Btn small onClick={() => setInviteOpen(true)}>Invite</Btn>}
           {league.isMember && (
             <button aria-label="League settings" onClick={() => router.push(`/fantasy/leagues/${code}/settings`)} style={{
               width: 34, height: 34, borderRadius: 10, cursor: "pointer", fontSize: 16,
@@ -188,6 +219,25 @@ export default function LeaguePage() {
       {tab === "chat" && league.isMember && <LeagueChatView code={code} initialGw={chatGw} />}
       {tab === "table" && <LeagueTableView detail={detail} code={code} />}
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
+
+      {inviteOpen && (
+        <Sheet onClose={() => setInviteOpen(false)} labelledBy="invite-title">
+          <div id="invite-title" className="font-display" style={{ fontSize: 20, color: INK, lineHeight: 1.1 }}>Invite friends</div>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "4px 0 14px", lineHeight: 1.45 }}>Anyone with the link joins straight away · code <b style={{ color: INK }}>{code}</b></p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {typeof navigator !== "undefined" && !!navigator.share && (
+              <InviteRow onClick={shareNative} accent={TEAL} label="Share…" sub="Your phone's share sheet"
+                icon={<><path d="M12 16V4m0 0l-4 4m4-4l4 4" /><path d="M4 14v4a2 2 0 002 2h12a2 2 0 002-2v-4" /></>} />
+            )}
+            <InviteRow onClick={shareWhatsApp} accent="#25D366" label="WhatsApp" sub="Send to a chat or group"
+              icon={<path d="M12 3a9 9 0 00-7.7 13.6L3 21l4.5-1.3A9 9 0 1012 3z" />} />
+            <InviteRow onClick={shareSms} accent="#3aa0ff" label="Messages" sub="Text the link"
+              icon={<path d="M21 11.5a8.5 8.5 0 01-12.5 7.5L3 21l2-5.5A8.5 8.5 0 1121 11.5z" />} />
+            <InviteRow onClick={copyLink} accent={GOLD} label={copied ? "Link copied" : "Copy link"} sub={inviteUrl()}
+              icon={<><path d="M10 13a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1" /><path d="M14 11a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1" /></>} />
+          </div>
+        </Sheet>
+      )}
     </main>
       <BottomNav />
     </>

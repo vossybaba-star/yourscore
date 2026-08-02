@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/auth/admin";
 import { generateScoutPicks, type ScoutCategory } from "@/lib/fantasy/scoutPicks";
+import { notifyFantasy } from "@/lib/fantasy/notify";
 
 // Vercel data cache pins service-role GETs (constant cache key) — see CLAUDE.md §4.
 export const fetchCache = "force-no-store";
@@ -140,6 +141,20 @@ export async function POST(req: NextRequest) {
       .update({ status: "published", published_at: new Date().toISOString() })
       .eq("id", body.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Tell managers the Scout is live — ONCE per gameweek (the per-(user,gw) dedupe
+    // swallows the other three categories publishing right after). Fire-and-forget.
+    void (async () => {
+      const { data: squads } = await db.from("fantasy_squads").select("user_id").range(0, 9999);
+      const uids = ((squads ?? []) as { user_id: string }[]).map((s) => s.user_id);
+      if (uids.length) await notifyFantasy({
+        userIds: uids,
+        title: "The Scout's picks are in",
+        body: "This week's Value, Safe, In-form and Gamble picks are live.",
+        url: "/fantasy/news?tab=picks",
+        dedupeKey: `fantasy-scout-picks:${row.gw}`,
+        type: "fantasy_scout_picks",
+      });
+    })();
     return NextResponse.json({ ok: true });
   }
 

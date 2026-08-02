@@ -10,6 +10,7 @@
  *  everyone and bounce to sign-in on tap. */
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyFantasy } from "@/lib/fantasy/notify";
 
 export const fetchCache = "force-no-store";
 
@@ -62,6 +63,23 @@ export async function POST(req: NextRequest) {
   const { error } = await (db as any).from("user_follows")
     .upsert({ follower_id: user.id, followee_id: userId }, { onConflict: "follower_id,followee_id" });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // "You gained a follower" — gated + deduped per pair inside notifyFantasy, so a
+  // repeat follow never re-pings. Fire-and-forget; never blocks the follow.
+  void (async () => {
+    const { data: prof } = await db.from("profiles").select("display_name, username").eq("id", user.id).maybeSingle();
+    const who = prof?.display_name ?? (prof?.username ? `@${prof.username}` : "A manager");
+    await notifyFantasy({
+      userIds: [userId],
+      title: `${who} started following you`,
+      body: "They'll see your fantasy moves in their feed.",
+      url: `/profile/${user.id}`,
+      dedupeKey: `fantasy-follow:${user.id}:${userId}`,
+      type: "fantasy_follow",
+      actorId: user.id,
+    });
+  })();
+
   return NextResponse.json({ following: true });
 }
 

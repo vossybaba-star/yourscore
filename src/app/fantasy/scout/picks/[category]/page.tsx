@@ -12,6 +12,7 @@ import {
 } from "@/lib/fantasy/scoutPicks";
 import { FantasyMasthead, column, shell, MUTED } from "@/components/fantasy/newsUi";
 import { ScoutTabs } from "@/components/fantasy/ScoutTabs";
+import { ScoutCover } from "@/components/fantasy/ScoutCover";
 import { BottomNav } from "@/components/ui/BottomNav";
 import {
   Card, SectionLabel, Crest, INK, PANEL_2, LINE, TEAL, LIME, GOLD,
@@ -70,6 +71,7 @@ export default async function PickDetail({ params }: { params: Promise<{ categor
       <main style={shell}>
         <div style={column}>
           <FantasyMasthead />
+          <ScoutCover />
           <ScoutTabs active="/fantasy/news" />
 
           <div className="font-display tracking-widest" style={{ fontSize: 11, color: meta.color, letterSpacing: "0.12em", marginTop: 4 }}>

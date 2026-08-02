@@ -390,7 +390,7 @@ function BankScene() {
   return (
     <SceneFrame>
       <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
-        <MovesBank held={CREDIT_CAP} cap={CREDIT_CAP} chips={["Triple Captain"]} />
+        <MovesBank held={CREDIT_CAP} cap={CREDIT_CAP} chips={[{ label: "Triple Captain", accent: GOLD }]} />
         <div style={{ display: "flex", gap: 6 }}>
           <div style={{ flex: 1, background: PANEL_2, border: `1px solid ${LINE}`, borderRadius: 10, padding: "7px 9px" }}>
             <div style={{ fontSize: 9.5, color: MUTED }}>Extra move</div>

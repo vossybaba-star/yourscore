@@ -300,7 +300,7 @@ export function PlayerDetailSheet({
           </div>
           <div className="font-body" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: MUTED, marginTop: 3 }}>
             <Crest club={player.club} size={15} />
-            {player.pos} · {player.club} · £{player.price.toFixed(1)}m
+            <PosTag pos={player.pos} /> · {player.club} · £{player.price.toFixed(1)}m
           </div>
         </div>
         {doubt && <DoubtFlag reason={doubt} />}
@@ -603,3 +603,14 @@ export function extrasLine(pos: Pos, f?: MatchFacts): string {
 export const fmtM = (tenths: number) => `£${(tenths / 10).toFixed(1)}m`;
 export const POS_ORDER: Pos[] = ["GK", "DEF", "MID", "FWD"];
 export const QUOTA: Record<Pos, number> = { GK: 2, DEF: 5, MID: 5, FWD: 3 };
+/** The one canonical position palette — standard fantasy hues (GK amber, DEF teal,
+ *  MID lime, FWD coral). The single source so the pitch, dugout, player lists and
+ *  chips all colour a position the same way. */
+export const POS_COLOR: Record<Pos, string> = { GK: "#f4a63a", DEF: "#00d8c0", MID: "#8ad14f", FWD: "#ff7a85" };
+
+/** The position abbreviation, coloured by role — the one way to print a position
+ *  in a list or meta line so GK/DEF/MID/FWD read at a glance everywhere. */
+export function PosTag({ pos }: { pos: Pos | string }) {
+  const c = POS_COLOR[pos as Pos] ?? MUTED;
+  return <span style={{ color: c, fontWeight: 700 }}>{pos}</span>;
+}

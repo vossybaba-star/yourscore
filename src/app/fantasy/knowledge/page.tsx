@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import {
-  Btn, Card, GOLD, Header, INK, LINE, MUTED, page, PANEL, tint,
+  Card, GOLD, Header, INK, LINE, MUTED, page, PANEL, tint,
 } from "@/components/fantasy/shared";
 import { BottomNav } from "@/components/ui/BottomNav";
 
@@ -56,7 +56,7 @@ export default function KnowledgePage() {
   return (
     <>
     <main data-fantasy style={page}>
-      <Header right={<Btn small onClick={() => router.push("/fantasy")}>← My team</Btn>} />
+      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy") }} />
 
       {/* What this is — a tile with a heading, a clear explanation, and a graphic. */}
       <div style={{

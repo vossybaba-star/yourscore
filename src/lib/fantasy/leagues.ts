@@ -15,9 +15,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { genJoinCode } from "@/lib/draft/server";
 import { HttpError } from "@/lib/fantasy/server";
 import { commentRejection } from "@/lib/moderation";
-import { notifyUsers } from "@/lib/notify";
+import { notifyFantasy } from "@/lib/fantasy/notify";
 import { groupGwsByMonth, monthKeyOf, monthLabel } from "./months";
-import { momentsForGw, type ChatMoment } from "./chat";
+import { momentsForGw, summariseLeagueMessage, type ChatMoment } from "./chat";
 import type { GwRow } from "./gameweeks";
 
 // fantasy_leagues / fantasy_league_members aren't in the generated Database
@@ -33,11 +33,23 @@ const NAME_MAX = 40;
 const MAX_OWNED = 20;
 const MAX_MEMBERS = 50;
 
+/** A short "what's happening" line for a My Leagues tile, so the list feels alive
+ *  instead of a row of names. Priority: latest chat > a recent joiner > a quiet
+ *  nudge > an invite prompt. `at` drives the relative timestamp; null = static. */
+export interface LeagueHighlight {
+  tone: "chat" | "join" | "quiet" | "empty";
+  /** The manager to bold (chat author or new joiner); null for static nudges. */
+  author: string | null;
+  text: string;
+  at: string | null;
+  msgCount: number;
+}
 export interface LeagueSummary {
-  id: string; name: string; code: string; memberCount: number; isPublic: boolean; isOwner: boolean;
+  id: string; name: string; code: string; memberCount: number; isPublic: boolean; isOwner: boolean; imageUrl: string | null;
+  highlight: LeagueHighlight;
 }
 export interface PublicLeagueSummary {
-  id: string; name: string; code: string; memberCount: number;
+  id: string; name: string; code: string; memberCount: number; imageUrl: string | null;
 }
 export interface LeagueRow {
   rank: number; userId: string; username: string | null; displayName: string | null;
@@ -53,7 +65,7 @@ export interface LeagueRow {
 }
 interface LeagueRecord {
   id: string; owner_id: string; name: string; join_code: string; is_public: boolean;
-  stakes: string | null;
+  stakes: string | null; image_url: string | null;
 }
 interface MemberRecord { user_id: string; joined_at: string }
 interface ProfileRecord { id: string; username: string | null; display_name: string | null; avatar_url: string | null }
@@ -70,7 +82,7 @@ async function findLeagueByCode(svc: Db, code: string): Promise<LeagueRecord> {
   const normCode = code.trim().toUpperCase();
   const { data } = await svc
     .from("fantasy_leagues")
-    .select("id, owner_id, name, join_code, is_public, stakes")
+    .select("id, owner_id, name, join_code, is_public, stakes, image_url")
     .eq("join_code", normCode)
     .maybeSingle();
   if (!data) throw new HttpError(404, "League not found");
@@ -161,22 +173,38 @@ export async function joinLeague(
     .upsert({ league_id: league.id, user_id: userId }, { onConflict: "league_id,user_id" });
   if (error) throw new HttpError(500, "Could not join");
 
-  // Fire-and-forget owner ping — notifyUsers dedupes per (user, key) itself, so
-  // a duplicate join call never double-notifies.
-  if (userId !== league.owner_id) {
-    void notifyUsers({
-      userIds: [league.owner_id],
-      title: "New league member",
-      body: `A friend joined ${league.name}`,
+  // Ping the EXISTING members that someone new joined (never the joiner). Fire-
+  // and-forget; notifyFantasy dedupes per (user, key), so a duplicate join call
+  // never double-notifies.
+  const { data: memberRows } = await svc
+    .from("fantasy_league_members").select("user_id").eq("league_id", league.id);
+  const others = ((memberRows ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== userId);
+  if (others.length) {
+    const { data: prof } = await svc
+      .from("profiles").select("display_name, username").eq("id", userId).maybeSingle();
+    const who = prof?.display_name ?? (prof?.username ? `@${prof.username}` : "A new manager");
+    void notifyFantasy({
+      userIds: others,
+      title: `${who} joined ${league.name}`,
+      body: "Say hello and settle who really knows their football.",
       url: `/fantasy/leagues/${league.join_code}`,
       dedupeKey: `fantasy-league-join:${league.id}:${userId}`,
-    }).catch(() => {});
+      type: "fantasy_league_join",
+      actorId: userId,
+      subjectType: "fantasy_league",
+      subjectId: league.id,
+    });
   }
 
   return { id: league.id, name: league.name, code: league.join_code };
 }
 
 // ── lists ─────────────────────────────────────────────────────────────────────
+
+/** How recently someone joined still reads as "news" on a tile. Past this, a
+ *  chat-less league shows the quiet-banter nudge instead of a stale "joined". */
+const JOIN_FRESH_MS = 21 * 24 * 60 * 60 * 1000;
+const TONE_RANK: Record<LeagueHighlight["tone"], number> = { chat: 0, join: 1, quiet: 2, empty: 3 };
 
 export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
   const svc = db();
@@ -185,14 +213,76 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
   const ids = ((memberships ?? []) as { league_id: string }[]).map((m) => m.league_id);
   if (!ids.length) return [];
 
-  const { data: leagues } = await svc
-    .from("fantasy_leagues").select("id, owner_id, name, join_code, is_public").in("id", ids);
-  const counts = await memberCounts(svc, ids);
+  // Three batched reads across ALL the user's leagues at once (never per-league):
+  // the leagues, every membership (count + newest joiner), and every chat message
+  // (latest line + count). .range past PostgREST's 1000-row default — a chatty set
+  // of leagues would silently truncate otherwise, dropping the newest line.
+  const [{ data: leagues }, { data: memberRows }, { data: msgRows }] = await Promise.all([
+    svc.from("fantasy_leagues").select("id, owner_id, name, join_code, is_public, image_url").in("id", ids),
+    svc.from("fantasy_league_members").select("league_id, user_id, joined_at").in("league_id", ids).range(0, 9999),
+    svc.from("comments").select("subject_id, user_id, body, kind, payload, created_at")
+      .eq("subject_type", "fantasy_league").in("subject_id", ids).is("deleted_at", null)
+      .order("created_at", { ascending: false }).range(0, 9999),
+  ]);
 
-  return ((leagues ?? []) as LeagueRecord[]).map((l) => ({
-    id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1,
-    isPublic: l.is_public, isOwner: l.owner_id === userId,
-  }));
+  // Member count + the newest OTHER joiner (not the viewer, so "you joined" never
+  // becomes a league's headline) per league.
+  const counts = new Map<string, number>();
+  const newestOther = new Map<string, { userId: string; joinedAt: string }>();
+  for (const m of (memberRows ?? []) as { league_id: string; user_id: string; joined_at: string }[]) {
+    counts.set(m.league_id, (counts.get(m.league_id) ?? 0) + 1);
+    if (m.user_id === userId) continue;
+    const cur = newestOther.get(m.league_id);
+    if (!cur || Date.parse(m.joined_at) > Date.parse(cur.joinedAt)) newestOther.set(m.league_id, { userId: m.user_id, joinedAt: m.joined_at });
+  }
+
+  // Latest message + total count per league (msgRows already newest-first).
+  const latestMsg = new Map<string, { userId: string; body: string; kind: string | null; payload: unknown; at: string }>();
+  const msgCount = new Map<string, number>();
+  for (const m of (msgRows ?? []) as { subject_id: string; user_id: string; body: string; kind: string | null; payload: unknown; created_at: string }[]) {
+    msgCount.set(m.subject_id, (msgCount.get(m.subject_id) ?? 0) + 1);
+    if (!latestMsg.has(m.subject_id)) latestMsg.set(m.subject_id, { userId: m.user_id, body: m.body, kind: m.kind, payload: m.payload, at: m.created_at });
+  }
+
+  // One profiles batch for every name we'll show (chat authors + new joiners).
+  const nameIds = new Set<string>();
+  Array.from(latestMsg.values()).forEach((v) => nameIds.add(v.userId));
+  Array.from(newestOther.values()).forEach((v) => nameIds.add(v.userId));
+  const nameOf = new Map<string, string>();
+  if (nameIds.size) {
+    const { data: profs } = await svc.from("profiles").select("id, display_name, username").in("id", Array.from(nameIds));
+    for (const p of (profs ?? []) as ProfileRecord[]) nameOf.set(p.id, p.display_name ?? (p.username ? `@${p.username}` : "A manager"));
+  }
+
+  const highlightFor = (leagueId: string, memberCount: number): LeagueHighlight => {
+    const count = msgCount.get(leagueId) ?? 0;
+    const msg = latestMsg.get(leagueId);
+    if (msg) {
+      return { tone: "chat", author: nameOf.get(msg.userId) ?? "A manager", text: summariseLeagueMessage(msg.kind, msg.body, msg.payload), at: msg.at, msgCount: count };
+    }
+    const joiner = newestOther.get(leagueId);
+    if (joiner && Date.now() - Date.parse(joiner.joinedAt) < JOIN_FRESH_MS) {
+      return { tone: "join", author: nameOf.get(joiner.userId) ?? "A manager", text: "joined", at: joiner.joinedAt, msgCount: 0 };
+    }
+    if (memberCount > 1) return { tone: "quiet", author: null, text: "Quiet so far. Start the banter.", at: null, msgCount: 0 };
+    return { tone: "empty", author: null, text: "Invite your friends to get going.", at: null, msgCount: 0 };
+  };
+
+  const out = ((leagues ?? []) as LeagueRecord[]).map((l) => {
+    const memberCount = counts.get(l.id) ?? 1;
+    return {
+      id: l.id, name: l.name, code: l.join_code, memberCount,
+      isPublic: l.is_public, isOwner: l.owner_id === userId, imageUrl: l.image_url ?? null,
+      highlight: highlightFor(l.id, memberCount),
+    };
+  });
+
+  // Liveliest first: chat over joins over quiet, and within a tone the most recent.
+  out.sort((a, b) =>
+    TONE_RANK[a.highlight.tone] - TONE_RANK[b.highlight.tone]
+    || Date.parse(b.highlight.at ?? "0") - Date.parse(a.highlight.at ?? "0")
+    || a.name.localeCompare(b.name));
+  return out;
 }
 
 /** Public leagues the user is NOT already in — newest first, cap 30. */
@@ -206,16 +296,16 @@ export async function publicLeagues(userId: string): Promise<PublicLeagueSummary
   // excluding those still leaves a full page where enough public leagues exist.
   const { data: pub } = await svc
     .from("fantasy_leagues")
-    .select("id, name, join_code, created_at")
+    .select("id, name, join_code, created_at, image_url")
     .eq("is_public", true)
     .order("created_at", { ascending: false })
     .limit(30 + mine.size);
-  const filtered = ((pub ?? []) as { id: string; name: string; join_code: string }[])
+  const filtered = ((pub ?? []) as { id: string; name: string; join_code: string; image_url: string | null }[])
     .filter((l) => !mine.has(l.id))
     .slice(0, 30);
 
   const counts = await memberCounts(svc, filtered.map((l) => l.id));
-  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1 }));
+  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null }));
 }
 
 // ── table math (read-time only — see file header) ───────────────────────────
@@ -319,7 +409,7 @@ export interface LeagueDetail {
   league: {
     id: string; name: string; code: string; memberCount: number;
     isPublic: boolean; isMember: boolean; isOwner: boolean;
-    stakes: string | null;
+    stakes: string | null; imageUrl: string | null;
   };
   /** The current gameweek and its phase, for the Hub's summary card. */
   gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
@@ -421,7 +511,7 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
     league: {
       id: league.id, name: league.name, code: league.join_code,
       memberCount: ids.length, isPublic: league.is_public, isMember, isOwner,
-      stakes: league.stakes,
+      stakes: league.stakes, imageUrl: league.image_url ?? null,
     },
     gw: { number: currentGw.gw, phase, deadline: currentGw.deadline },
     season, month, lastMonth,

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { sellPrice } from "@/lib/fantasy/engine";
 import {
   api, Btn, Card, Chip, Deadline, DoubtFlag, EMPTY_CONTEXT, FixtureRun, fmtM, GOLD, Header,
-  INK, LINE, Loading, MUTED, page, PANEL, PlayerDetailSheet, Skel,
+  INK, LINE, Loading, MUTED, page, PANEL, PlayerDetailSheet, PosTag, Skel,
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
@@ -278,7 +278,7 @@ export default function TransfersPage() {
                         </span>
                         <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                           <span style={{ fontSize: 11, color: MUTED }}>
-                            {p.pos} · {p.club} · £{p.price.toFixed(1)}m
+                            <PosTag pos={p.pos} /> · {p.club} · £{p.price.toFixed(1)}m
                           </span>
                           <FixtureRun cells={ctx.fixtures[p.clubId]} max={2} />
                         </span>

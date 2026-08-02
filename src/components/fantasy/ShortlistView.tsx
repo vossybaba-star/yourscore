@@ -17,7 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   api, Crest, DoubtFlag, EMPTY_CONTEXT, FixtureRun, INK, LINE, MUTED, PANEL,
-  TEAL, tint, Sheet, Loading, ErrorState,
+  TEAL, tint, Sheet, Loading, ErrorState, PosTag,
   type ClientPoolPlayer, type FantasyContext,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -121,7 +121,7 @@ export function ShortlistView() {
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
                     <Crest club={p.club} size={14} />
-                    <span style={{ fontSize: 12.5, color: MUTED }}>{p.club} · {p.pos}</span>
+                    <span style={{ fontSize: 12.5, color: MUTED }}>{p.club} · <PosTag pos={p.pos} /></span>
                     <FixtureRun cells={ctx.fixtures[p.clubId]} max={2} />
                   </span>
                 </span>

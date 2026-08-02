@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Btn, Header, INK, LINE, Loading, MUTED, page, PANEL, TEAL } from "@/components/fantasy/shared";
+import { Header, INK, LINE, Loading, MUTED, page, PANEL, TEAL } from "@/components/fantasy/shared";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
@@ -94,7 +94,7 @@ export default function LeagueFeedPage() {
   return (
     <>
       <main data-fantasy style={page}>
-        <Header right={<Btn small onClick={() => router.push(`/fantasy/leagues/${code}`)}>← League</Btn>} />
+        <Header exit={{ label: "League", onClick: () => router.push(`/fantasy/leagues/${code}`) }} />
         <h1 style={{ fontSize: 20, margin: "0 0 3px", fontWeight: 700 }}>League activity</h1>
         <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 14px" }}>Every move your league makes, newest first.</p>
 

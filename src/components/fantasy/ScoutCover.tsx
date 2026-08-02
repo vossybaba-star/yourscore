@@ -16,6 +16,8 @@ import { faceUrlById, faceFor } from "@/lib/fantasy/faces";
 const TEAL = "#00d8c0";
 const INK = "#eef2f0";
 const MUTED = "#8a948f";
+// Local copy of the position palette (this is a server component; matches shared.tsx POS_COLOR).
+const POS_HUE: Record<string, string> = { GK: "#f4a63a", DEF: "#00d8c0", MID: "#8ad14f", FWD: "#ff7a85" };
 
 type Featured = { id: number; name: string; pos: string; club: string; face: string };
 type Fix = { opp: string; home: boolean };
@@ -117,8 +119,8 @@ export async function ScoutCover() {
   return (
     <div style={{
       position: "relative", width: "100%", borderRadius: 16, overflow: "hidden",
-      border: `1px solid ${TEAL}30`, background: "#081310", marginBottom: 14,
-      aspectRatio: "720 / 230",
+      border: `1px solid ${TEAL}30`, background: "#081310", marginBottom: 12,
+      aspectRatio: "720 / 165",
     }}>
       <svg viewBox="0 0 720 230" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"
         role="img" aria-label={`The Scout radar. Most-owned players: ${featured.map((f) => f.name).join(", ")}.`}>
@@ -190,7 +192,7 @@ export async function ScoutCover() {
               <image href={f.face} x={s.cx - 24} y={s.cy - 24} width="48" height="48" clipPath={`url(#scoutFace${i})`} preserveAspectRatio="xMidYMid slice" />
               <circle cx={s.cx} cy={s.cy} r="24" fill="none" stroke={TEAL} strokeWidth="2" />
               <text x={s.cx} y={s.cy + 40} fill={INK} fontSize="13.5" fontWeight="700" textAnchor="middle" fontFamily="var(--font-dm-sans), sans-serif">{f.name}</text>
-              <text x={s.cx} y={s.cy + 55} fill={MUTED} fontSize="10.5" letterSpacing="1" textAnchor="middle" fontFamily="var(--font-dm-sans), sans-serif">{f.pos}</text>
+              <text x={s.cx} y={s.cy + 55} fill={POS_HUE[f.pos] ?? MUTED} fontSize="10.5" fontWeight="700" letterSpacing="1" textAnchor="middle" fontFamily="var(--font-dm-sans), sans-serif">{f.pos}</text>
             </a>
           );
         })}
