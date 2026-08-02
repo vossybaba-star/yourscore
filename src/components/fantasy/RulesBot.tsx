@@ -333,8 +333,10 @@ export function RulesBot() {
         onClick={() => setOpen(true)}
         style={{
           position: "fixed", right: 16,
-          // Clears the fixed BottomNav (~58px) plus the home-indicator safe area.
-          bottom: "calc(58px + env(safe-area-inset-bottom) + 14px)",
+          // Clears the fixed BottomNav (measured 80px on web, icons + labels
+          // + padding, NOT the 58 first assumed) plus the home-indicator safe
+          // area, with a 14px breathing gap.
+          bottom: "calc(80px + env(safe-area-inset-bottom) + 14px)",
           zIndex: 45,
           width: 48, height: 48, borderRadius: 999,
           display: "flex", alignItems: "center", justifyContent: "center",
