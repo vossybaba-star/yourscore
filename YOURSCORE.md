@@ -11,10 +11,11 @@
 > cost: 7 friend challenges and 34 new friendships in 30 days — the social layer had no door.
 > Founder call: not a nav change; an ad tile instead. First content element of the Solo view on
 > `/play` (above the Gameday rail, hidden on the Build a Quiz sub-tab which leads with its own
-> CTA): "⚔️ VERSUS · PLAY REAL PEOPLE / Find an opponent now, challenge a friend or battle for
-> your league" → `/versus`. Lime Versus styling, aria-labelled, matches the Build-a-Quiz button
-> pattern in `src/app/play/page.tsx`. Verified in-browser at 375px: renders above the fold, tap
-> lands on the Versus hub.)
+> CTA): a big ad banner — eyebrow "⚔️ TIME TO PLAY", display heading "VERSUS / PLAY WITH
+> PEOPLE" (34px, lime + white), subline "Find an opponent now, challenge a friend or battle for
+> your league", lime "FIND A RIVAL →" pill → `/versus`. Aria-labelled, whole banner tappable,
+> in `src/app/play/page.tsx`. Verified in-browser at 375px: renders above the fold, tap lands
+> on the Versus hub. Founder sized it up from a slim tile to the banner same day.)
 >
 > **Previously confirmed:** 2026-08-01 (**Profile Fantasy tab → "Fantasy PL", now with a world rank and a
 > weekly streak.** Branch `feat/fantasy-pl-profile`, migration **238 APPLIED to prod**.
