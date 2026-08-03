@@ -3,27 +3,29 @@
  * The Social tab — a first-class Fantasy destination (founder, 3 Aug). The feed
  * is OPEN: it shows activity from everyone, not just who you follow, so there's
  * always something happening. Three segments:
- *   Top       — everyone's activity, most-talked-about first (the default open feed).
+ *   Feed      — everyone's activity (the default open feed), sortable Top / Recent.
  *   Following — narrowed to the managers you follow.
  *   Discover  — reason-ranked suggestions + username search (<DiscoverManagers/>).
  *
- * Top/Following reuse <FeedStream/> in controlled mode (this shell owns the
- * scope, so FeedStream draws no chrome of its own). The active segment rides the
- * URL (?tab=) and the nav trail, so opening a manager's profile and pressing back
- * returns to the segment you left.
+ * Feed/Following reuse <FeedStream/> in controlled mode (this shell owns the
+ * scope + sort, so FeedStream draws no chrome of its own). The active segment
+ * rides the URL (?tab=) and the nav trail, so opening a manager's profile and
+ * pressing back returns to the segment you left.
  */
 import { useCallback, useEffect, useState } from "react";
-import { INK, LIME, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
+import { INK, LIME, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { FeedStream } from "@/components/fantasy/FeedStream";
 import { DiscoverManagers } from "@/components/fantasy/DiscoverManagers";
 import { recordVisit } from "@/lib/nav";
 
-type SocialTab = "top" | "following" | "discover";
+type SocialTab = "feed" | "following" | "discover";
 const TABS: { id: SocialTab; label: string }[] = [
-  { id: "top", label: "Top" },
+  { id: "feed", label: "Feed" },
   { id: "following", label: "Following" },
   { id: "discover", label: "Discover" },
 ];
+
+type FeedSort = "top" | "recent";
 
 /** The Following empty state (spec §4) — the feed starts with people. */
 function FollowingEmpty({ onFind }: { onFind: () => void }) {
@@ -33,7 +35,7 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
         FOLLOW MANAGERS TO NARROW YOUR FEED
       </div>
       <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, margin: "0 0 16px" }}>
-        Follow people to see just their squads, moves and gameweek results here. Everything else is over on Top.
+        Follow people to see just their squads, moves and gameweek results here. Everything else is over on Feed.
       </p>
       <button onClick={onFind} style={{
         padding: "11px 20px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
@@ -44,19 +46,20 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
 }
 
 export function SocialHome() {
-  const [tab, setTab] = useState<SocialTab>("top");
+  const [tab, setTab] = useState<SocialTab>("feed");
+  const [feedSort, setFeedSort] = useState<FeedSort>("top");
 
   // Restore the segment from the URL on mount (so links and a refresh land right).
   useEffect(() => {
     try {
       const t = new URLSearchParams(window.location.search).get("tab");
       if (t === "following" || t === "discover") setTab(t);
-    } catch { /* no search params — Latest */ }
+    } catch { /* no search params — Feed */ }
   }, []);
 
   const select = useCallback((t: SocialTab) => {
     setTab(t);
-    const url = t === "top" ? "/fantasy/social" : `/fantasy/social?tab=${t}`;
+    const url = t === "feed" ? "/fantasy/social" : `/fantasy/social?tab=${t}`;
     try {
       window.history.replaceState(null, "", url);
       recordVisit(url);
@@ -85,8 +88,23 @@ export function SocialHome() {
         })}
       </div>
 
-      {tab === "top" && (
-        <FeedStream controlledScope="global" controlledSort="top" chrome={false} signInNext="/fantasy/social" />
+      {tab === "feed" && (
+        <>
+          {/* Sort the open feed by engagement (Top) or newest (Recent). */}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginBottom: 12 }}>
+            {([["top", "Top"], ["recent", "Recent"]] as [FeedSort, string][]).map(([s, label]) => {
+              const active = feedSort === s;
+              return (
+                <button key={s} onClick={() => setFeedSort(s)} style={{
+                  padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                  background: active ? tint(TEAL, "18") : "transparent", color: active ? TEAL : MUTED,
+                  border: `1px solid ${active ? tint(TEAL, "55") : LINE}`,
+                }}>{label}</button>
+              );
+            })}
+          </div>
+          <FeedStream controlledScope="global" controlledSort={feedSort} chrome={false} signInNext="/fantasy/social" />
+        </>
       )}
       {tab === "following" && (
         <FeedStream controlledScope="following" controlledSort="recent" chrome={false} signInNext="/fantasy/social?tab=following"
