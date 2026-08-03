@@ -86,6 +86,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   // 38-0 season card, unfurling a season record the sharer never played.
   if (p.fsq) {
     const qp = new URLSearchParams({ xi: p.fxi ?? "" });
+    if (p.fbench) qp.set("bench", p.fbench);
     if (p.fcapn) qp.set("cap", p.fcapn);
     if (p.fval) qp.set("val", p.fval);
     if (p.fname) qp.set("name", p.fname);
@@ -163,10 +164,12 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
       return parts.length > 1 ? parts[parts.length - 1] : full;
     };
     const capShort = p.fcapn ? short(p.fcapn) : "";
-    const xi = (p.fxi ?? "").split("|").map((chunk) => {
+    const parse = (raw: string) => raw.split("|").map((chunk) => {
       const [pos, name, club, face, priceTenths] = chunk.split("~");
       return { pos: pos ?? "", name: name ?? "", club: club ?? "", face: face || null, priceTenths: Number(priceTenths || 0) };
     }).filter((x) => x.name);
+    const xi = parse(p.fxi ?? "");
+    const bench = parse(p.fbench ?? "");
     // Top-down: forwards attack the top of the pitch, keeper at the back — the
     // same shape the in-app board draws, so the tap-through matches the unfurl.
     const rows = (["FWD", "MID", "DEF", "GK"] as const)
@@ -192,7 +195,7 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
               <div className="font-body text-xs tracking-widest" style={{ color: "#8a948f" }}>
                 {who.toUpperCase()}{p.fgw1 ? ` · GW ${p.fgw1}` : ""}
               </div>
-              <p className="font-display text-white" style={{ fontSize: 18 }}>This is my eleven.</p>
+              <p className="font-display text-white" style={{ fontSize: 18 }}>This is my squad.</p>
             </div>
 
             {/* The squad on the ACTUAL in-app pitch — the same PitchSurface +
@@ -219,6 +222,28 @@ export default async function SeasonShortSharePage({ params }: { params: { id: s
                 ))}
               </PitchSurface>
             </div>
+
+            {/* The bench — the four subs, so a shared squad shows all fifteen. */}
+            {bench.length > 0 && (
+              <div className="mt-3">
+                <div className="font-body text-[10px] tracking-widest mb-2" style={{ color: "#586058" }}>BENCH</div>
+                <div className="flex items-start" style={{ gap: 6 }}>
+                  {bench.map((pl, i) => (
+                    <div key={i} style={{ flex: 1, minWidth: 0, maxWidth: 90, display: "flex", justifyContent: "center" }}>
+                      <PlayerMarker
+                        name={pl.name}
+                        label={short(pl.name)}
+                        avatarUrl={pl.face}
+                        club={pl.club}
+                        size={34}
+                        isCaptain={!!capShort && short(pl.name) === capShort}
+                        datum={pl.priceTenths > 0 ? `£${(pl.priceTenths / 10).toFixed(1)}` : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {spent && (
               <p className="font-body text-xs mt-4" style={{ color: "#5b645e" }}>

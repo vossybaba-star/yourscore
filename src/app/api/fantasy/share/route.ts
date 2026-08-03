@@ -73,11 +73,19 @@ export async function POST(req: Request) {
       // gameweek's snapshot, so the per-player prices agree with the "spent" total;
       // a player with no snapshot keeps his seed price. Shape: "POS~Name~Club~face~priceTenths".
       const priceOf = gw ? await gwPrices(db, gw.gw) : new Map<number, number>();
+      const chunk = (p: NonNullable<ReturnType<typeof pool.get>>) =>
+        `${p.pos}~${p.name}~${p.club}~${faceUrlById(p.id) ?? ""}~${priceOf.get(p.id) ?? p.priceTenths}`;
       payload.fsq = "1";
-      payload.fxi = xi.map((p) => {
-        const pt = priceOf.get(p.id) ?? p.priceTenths;
-        return `${p.pos}~${p.name}~${p.club}~${faceUrlById(p.id) ?? ""}~${pt}`;
-      }).join("|");
+      payload.fxi = xi.map(chunk).join("|");
+      // The bench (the 4 not in the XI) — a squad is fifteen, so the share card
+      // shows all fifteen, not just the eleven (founder, 3 Aug). GK first, like a dugout.
+      const xiIds = new Set((squad.xi ?? []) as number[]);
+      const bench = ((squad.picks ?? []) as number[])
+        .filter((id) => !xiIds.has(id))
+        .map((id) => pool.get(id))
+        .filter((p): p is NonNullable<typeof p> => !!p)
+        .sort((a, b) => (posRank[a.pos] ?? 9) - (posRank[b.pos] ?? 9));
+      if (bench.length) payload.fbench = bench.map(chunk).join("|");
       payload.fcapn = nameOf.get(squad.captain) ?? "";
       payload.fval = String(1000 - (squad.bank_tenths ?? 0));
       if (gw) payload.fgw1 = String(gw.gw);
