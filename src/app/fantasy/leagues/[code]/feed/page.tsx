@@ -14,10 +14,11 @@ import type { BoardPlayer } from "@/lib/fantasy/board";
 
 interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number; vice?: number }
 interface FeedFace { name: string; avatarUrl: string | null }
+interface FeedReaction { emoji: string; count: number }
 interface FeedEvent {
   id: string; actorId: string; actorName: string; actorAvatar: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
-  likeCount: number; commentCount: number;
+  reactions: FeedReaction[]; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
 }
 
@@ -65,12 +66,16 @@ function FeedCard({ ev }: { ev: FeedEvent }) {
         </Link>
       )}
 
-      {(ev.likeCount > 0 || ev.commentCount > 0) && (
-        <div style={{ display: "flex", gap: 14, marginTop: 10, fontSize: 12, color: MUTED }}>
-          {ev.likeCount > 0 && <span>♥ {ev.likeCount}</span>}
-          {ev.commentCount > 0 && <span>💬 {ev.commentCount}</span>}
-        </div>
-      )}
+      {(() => {
+        const reactCount = ev.reactions.reduce((s, r) => s + r.count, 0);
+        if (reactCount === 0 && ev.commentCount === 0) return null;
+        return (
+          <div style={{ display: "flex", gap: 14, marginTop: 10, fontSize: 12, color: MUTED }}>
+            {reactCount > 0 && <span>{ev.reactions.map((r) => r.emoji).join("")} {reactCount}</span>}
+            {ev.commentCount > 0 && <span>💬 {ev.commentCount}</span>}
+          </div>
+        );
+      })()}
     </div>
   );
 }
