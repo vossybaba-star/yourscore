@@ -13,6 +13,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { FollowButton } from "@/components/social/FollowButton";
+import { InviteToLeagueButton } from "@/components/fantasy/InviteToLeagueButton";
 import { BottomNav } from "@/components/ui/BottomNav";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 
@@ -65,8 +66,30 @@ function ManagerHead({ m }: { m: Manager }) {
   );
 }
 
+interface SearchUser { userId: string; username: string | null; displayName: string; avatarUrl: string | null }
+
+/** A username-search result: tap to open their profile, follow, or invite. */
+function SearchRow({ u }: { u: SearchUser }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 11 }}>
+      <Link href={`/profile/${u.userId}`} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0, textDecoration: "none" }}>
+        <PlayerAvatar name={u.displayName} avatarUrl={u.avatarUrl} size={40} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.displayName}</div>
+          {u.username && <div style={{ fontSize: 11.5, color: MUTED }}>@{u.username}</div>}
+        </div>
+      </Link>
+      <FollowButton userId={u.userId} size="sm" initialFollowing={false} />
+      <InviteToLeagueButton userId={u.userId} userName={u.displayName} variant="chip" />
+    </div>
+  );
+}
+
 export default function DiscoverManagersPage() {
   const [managers, setManagers] = useState<Manager[] | null>(null);
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<SearchUser[] | null>(null);
+  const query = q.trim();
 
   useEffect(() => {
     let live = true;
@@ -76,6 +99,20 @@ export default function DiscoverManagersPage() {
       .catch(() => { if (live) setManagers([]); });
     return () => { live = false; };
   }, []);
+
+  // Debounced username search — results replace the suggestions while typing.
+  useEffect(() => {
+    if (query.length < 2) { setResults(null); return; }
+    let live = true;
+    setResults(null);
+    const t = setTimeout(() => {
+      fetch(`/api/fantasy/users/search?q=${encodeURIComponent(query)}`)
+        .then((r) => (r.ok ? r.json() : { users: [] }))
+        .then((d) => { if (live) setResults(d.users ?? []); })
+        .catch(() => { if (live) setResults([]); });
+    }, 300);
+    return () => { live = false; clearTimeout(t); };
+  }, [query]);
 
   // The most relevant few become activity tiles (their squad shown); the rest rows.
   const tiles = (managers ?? []).slice(0, 3);
@@ -92,7 +129,22 @@ export default function DiscoverManagersPage() {
           Follow them and their transfers, captains and big weeks land in your feed.
         </p>
 
-        {managers === null ? (
+        {/* Search anyone by username — follow them or invite them to a league. */}
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by username…"
+          style={{ width: "100%", boxSizing: "border-box", fontSize: 14, padding: "10px 14px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none", marginBottom: 14 }} />
+
+        {query.length >= 2 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, margin: "0 2px 2px" }}>SEARCH RESULTS</div>
+            {results === null ? (
+              <p style={{ fontSize: 13, color: MUTED }}>Searching…</p>
+            ) : results.length === 0 ? (
+              <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5 }}>No one found for &ldquo;{query}&rdquo;. Search by their username.</p>
+            ) : (
+              results.map((u) => <SearchRow key={u.userId} u={u} />)
+            )}
+          </div>
+        ) : managers === null ? (
           <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>
         ) : managers.length === 0 ? (
           <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5 }}>No one to suggest yet. Check back once more managers join.</p>
