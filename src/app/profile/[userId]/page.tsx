@@ -8,6 +8,7 @@ import { BackPill } from "@/components/ui/BackPill";
 import { fantasyAllowed } from "@/lib/fantasy/flag";
 import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
 import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
+import { InviteToLeagueButton } from "@/components/fantasy/InviteToLeagueButton";
 import { FollowButton } from "@/components/social/FollowButton";
 
 // Public player profile — any signed-in player can look up any other player:
@@ -236,6 +237,12 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
             PLAY THEIR RUNS
           </Link>
         </div>
+
+        {/* Invite them to one of your fantasy leagues (shows once Fantasy is live
+            for the viewer, i.e. everyone). */}
+        {fantasyAllowed(user?.id) && (
+          <InviteToLeagueButton userId={userId} userName={name} variant="full" />
+        )}
 
         {/* Games record — head-to-heads across both games (rank RPC W-D-L) */}
         {rank && (rank.wins + rank.draws + rank.losses > 0) && (
