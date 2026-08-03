@@ -556,6 +556,7 @@ export async function buildNewsDoc(
     // Prefer the 5 GWs before the current one; when none exist (GW1, or the
     // replay demo where "current" stays at 1 while scores span 1..30), fall
     // back to the latest 5 scored GWs so the section still has content.
+    let rows: NewsFormRow[] = [];
     let lastGw = gwRow.gw - 1;
     if (lastGw < 1) {
       const { data: maxRow } = await db
@@ -568,9 +569,14 @@ export async function buildNewsDoc(
       const { data: scores } = await db
         .from("fantasy_player_scores").select("player_id, points, facts")
         .gte("gw", fromGw).lte("gw", lastGw);
-      if (scores?.length)
-        doc.form = { rows: aggregateForm(scores, lastGw - fromGw + 1), updatedAt: iso };
+      if (scores?.length) rows = aggregateForm(scores, lastGw - fromGw + 1);
     }
+    // Always write the section, even when empty. Pre-season the scores table is
+    // empty, and the old code only overwrote `if (scores?.length)` — so the LAST
+    // build's rows stayed frozen in place, and July's replay-season form ("26
+    // points in his last 5") kept rendering months later as if it were live.
+    // Empty beats misleading: clear it until the season produces real scores.
+    doc.form = { rows, updatedAt: iso };
   }
 
   // Insights derive from form + fixtures, so rebuild whenever EITHER moved.
@@ -589,6 +595,15 @@ export async function buildNewsDoc(
   // exception: a doubt now naming the tipped captain/differential forces an
   // early redraft — advice that survives its own subject being ruled out is
   // worse than no advice.
+  // Tips are entirely form-grounded (generateTips may only speak from the listed
+  // form and fixtures). With no current-season scores yet, there is nothing to
+  // ground a captaincy call on — and the previous draft, written back when the
+  // replay data was still present, named a fixture that no longer exists (a
+  // hallucinated "Hull City" survived grounding because it traced to that stale
+  // data). Clear rather than carry it; real tips resume once GW scores land.
+  if (doc.form.rows.length === 0) {
+    doc.tips = { gw: gwRow.gw, updatedAt: iso };
+  } else {
   const doubtNamesLower = new Set(doc.teamNews.doubts.map((d) => d.name.toLowerCase()));
   const tippedNames = [doc.tips.captain?.player, doc.tips.differential?.player]
     .filter((n): n is string => !!n)
@@ -618,6 +633,7 @@ export async function buildNewsDoc(
     // left over from an earlier failed attempt.
     doc.tips = { ...doc.tips };
     delete doc.tips.issue;
+  }
   }
 
   if (todo.transfers) {
