@@ -6,7 +6,9 @@
  *           The Marketing plan caps contacts at 5,000, so the audience is pruned
  *           to exactly the segment before the broadcast fires. Ranking:
  *             1. fantasy participants (has a squad or a shortlist row)
- *             2. everyone else by most recent activity =
+ *             2. games played, most first (player_game_counts — the live counter
+ *                the review-ask pacing maintains)
+ *             3. tiebreak: most recent activity =
  *                max(auth last_sign_in_at, email last_clicked_at, last_opened_at)
  *           Suppressions (bounces/unsubs/manual) are excluded as always.
  *
@@ -115,22 +117,39 @@ async function engagedSegment(users) {
     }
   }
 
+  const games = new Map();
+  {
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("player_game_counts")
+        .select("user_id,games")
+        .range(from, from + 999);
+      if (error) throw new Error(`player_game_counts read failed: ${error.message}`);
+      for (const r of data ?? []) games.set(r.user_id, r.games ?? 0);
+      if ((data ?? []).length < 1000) break;
+      from += 1000;
+    }
+  }
+
   const ts = (v) => (v ? Date.parse(v) || 0 : 0);
   const scored = users.map((u) => {
     const eng = engagement.get(u.email.trim().toLowerCase());
     return {
       email: u.email,
       fantasy: fantasyIds.has(u.id),
+      games: games.get(u.id) ?? 0,
       activity: Math.max(ts(u.last_sign_in_at), ts(eng?.last_clicked_at), ts(eng?.last_opened_at)),
     };
   });
-  scored.sort((a, b) => (b.fantasy - a.fantasy) || (b.activity - a.activity));
+  scored.sort((a, b) => (b.fantasy - a.fantasy) || (b.games - a.games) || (b.activity - a.activity));
   const seg = scored.slice(0, CAP);
 
   const fantasyCount = seg.filter((s) => s.fantasy).length;
   const cutoff = seg[seg.length - 1];
   console.log(`   Segment: ${seg.length} of ${scored.length} sendable`);
   console.log(`   · fantasy participants: ${fantasyCount}`);
+  console.log(`   · 10+ games: ${seg.filter((s) => s.games >= 10).length} · 3+ games: ${seg.filter((s) => s.games >= 3).length} · 1+ games: ${seg.filter((s) => s.games >= 1).length}`);
   console.log(`   · least-recent activity included: ${cutoff.activity ? new Date(cutoff.activity).toISOString().slice(0, 10) : "none on record"}`);
   return seg;
 }
