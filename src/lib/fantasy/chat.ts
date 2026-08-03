@@ -201,6 +201,14 @@ export async function momentsForGw(db: Db, memberIds: string[], gw: number): Pro
 
 export async function leagueChat(db: Db, userId: string, code: string, gwParam?: number | null) {
   const league = await requireMemberLeague(db, code, userId);
+  // Opening the chat marks it read — advance this member's last_read_at so the
+  // league's unread badge clears. AWAITED (not fire-and-forget): a serverless
+  // handler can be frozen the moment it returns, dropping an un-awaited write, so
+  // the read would never persist. A failed write just leaves the badge up.
+  await db.from("fantasy_league_reads").upsert(
+    { league_id: league.id, user_id: userId, last_read_at: new Date().toISOString() },
+    { onConflict: "league_id,user_id" },
+  );
   const { data: members } = await db.from("fantasy_league_members")
     .select("user_id").eq("league_id", league.id).range(0, 9999);
   const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id);

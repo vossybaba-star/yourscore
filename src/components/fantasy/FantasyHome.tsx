@@ -28,7 +28,7 @@ interface FeedEvent {
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
 }
 interface ScoutPick { category: string; id: number; name: string; club: string; pos: string; price: number; avatarUrl: string | null }
-interface LeagueCard { code: string; name: string; memberCount: number; latest: { author: string; preview: string } | null; msgCount: number }
+interface LeagueCard { code: string; name: string; memberCount: number; latest: { author: string; preview: string } | null; msgCount: number; unread: number }
 interface HomeData {
   you: { hasSquad: boolean; gw: number | null; phase: "pre" | "live" | "final"; deadline: string | null;
     rank: number | null; points: number; played: number; totalPlayers: number; gapToFirst: number | null;
@@ -236,7 +236,10 @@ function LeagueChats({ leagues }: { leagues: LeagueCard[] }) {
                   <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.5 8.5 0 01-12.5 7.5L3 21l2-5.5A8.5 8.5 0 1121 11.5z" /></svg>
                 </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
+                    {l.unread > 0 && <span aria-label={`${l.unread} unread`} style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 800, color: "#04231f", background: TEAL, borderRadius: 999, padding: "1px 6px", minWidth: 16, textAlign: "center" }}>{l.unread > 99 ? "99+" : l.unread}</span>}
+                  </div>
                   <div style={{ fontSize: 11, color: MUTED }}>{l.memberCount} member{l.memberCount === 1 ? "" : "s"}</div>
                 </div>
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL, whiteSpace: "nowrap" }}>{l.latest ? "Open chat →" : "Say something →"}</span>

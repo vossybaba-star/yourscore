@@ -47,6 +47,8 @@ export interface HomeLeagueCard {
   /** The most recent chat line, already summarised for a card. */
   latest: { author: string; preview: string } | null;
   msgCount: number;
+  /** Messages from other members since the viewer last opened this chat. */
+  unread: number;
 }
 
 export interface FantasyHomeData {
@@ -152,26 +154,36 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
   } catch { /* no picks published yet — the tile just doesn't render */ }
 
   // ── league summary cards ───────────────────────────────────────────────────
-  const { data: memberships } = await db.from("fantasy_league_members").select("league_id").eq("user_id", userId);
-  const leagueIds = ((memberships ?? []) as { league_id: string }[]).map((m) => m.league_id);
+  const { data: memberships } = await db.from("fantasy_league_members").select("league_id, joined_at").eq("user_id", userId);
+  const leagueIds = ((memberships ?? []) as { league_id: string; joined_at: string }[]).map((m) => m.league_id);
+  const joinedByLeague = new Map<string, number>();
+  ((memberships ?? []) as { league_id: string; joined_at: string }[]).forEach((m) => joinedByLeague.set(m.league_id, Date.parse(m.joined_at)));
   let leagues: HomeLeagueCard[] = [];
   if (leagueIds.length) {
-    const [{ data: leagueRows }, { data: memberRows }, { data: msgRows }] = await Promise.all([
+    const [{ data: leagueRows }, { data: memberRows }, { data: msgRows }, { data: readRows }] = await Promise.all([
       db.from("fantasy_leagues").select("id, name, join_code").in("id", leagueIds),
       db.from("fantasy_league_members").select("league_id").in("league_id", leagueIds),
       db.from("comments").select("subject_id, user_id, body, kind, payload, created_at")
         .eq("subject_type", "fantasy_league").in("subject_id", leagueIds).is("deleted_at", null)
         .order("created_at", { ascending: false }),
+      db.from("fantasy_league_reads").select("league_id, last_read_at").eq("user_id", userId).in("league_id", leagueIds),
     ]);
     const counts = new Map<string, number>();
     ((memberRows ?? []) as { league_id: string }[]).forEach((m) => counts.set(m.league_id, (counts.get(m.league_id) ?? 0) + 1));
-    // latest message + count per league
+    const lastReadByLeague = new Map<string, number>();
+    ((readRows ?? []) as { league_id: string; last_read_at: string }[]).forEach((r) => lastReadByLeague.set(r.league_id, Date.parse(r.last_read_at)));
+    // latest message + count + unread (from other members, since last read) per league
     const latestByLeague = new Map<string, { user_id: string; body: string; kind: string | null; payload: unknown }>();
     const msgCount = new Map<string, number>();
+    const unread = new Map<string, number>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ((msgRows ?? []) as any[]).forEach((m) => {
       msgCount.set(m.subject_id, (msgCount.get(m.subject_id) ?? 0) + 1);
       if (!latestByLeague.has(m.subject_id)) latestByLeague.set(m.subject_id, m);
+      if (m.user_id !== userId) {
+        const line = lastReadByLeague.get(m.subject_id) ?? joinedByLeague.get(m.subject_id) ?? 0;
+        if (Date.parse(m.created_at) > line) unread.set(m.subject_id, (unread.get(m.subject_id) ?? 0) + 1);
+      }
     });
     const authorIds = Array.from(new Set(Array.from(latestByLeague.values()).map((m) => m.user_id)));
     const profById = new Map<string, string>();
@@ -186,11 +198,12 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
       return {
         code: l.join_code, name: l.name, memberCount: counts.get(l.id) ?? 1,
         msgCount: msgCount.get(l.id) ?? 0,
+        unread: unread.get(l.id) ?? 0,
         latest: latest ? { author: profById.get(latest.user_id) ?? "A manager", preview: previewOf(latest.kind, latest.body, latest.payload) } : null,
       };
     });
-    // Busiest / most-recently-active leagues first.
-    leagues.sort((a, b) => (b.latest ? 1 : 0) - (a.latest ? 1 : 0) || b.msgCount - a.msgCount);
+    // Unread first (attention), then busiest / most-recently-active.
+    leagues.sort((a, b) => (b.unread > 0 ? 1 : 0) - (a.unread > 0 ? 1 : 0) || (b.latest ? 1 : 0) - (a.latest ? 1 : 0) || b.msgCount - a.msgCount);
   }
 
   // ── other managers' moves (the feed spine) ─────────────────────────────────

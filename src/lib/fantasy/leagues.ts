@@ -49,6 +49,8 @@ export interface LeagueHighlight {
 export interface LeagueSummary {
   id: string; name: string; code: string; memberCount: number; isPublic: boolean; isOwner: boolean; imageUrl: string | null;
   highlight: LeagueHighlight;
+  /** Messages from OTHER members since this viewer last opened the chat. */
+  unread: number;
 }
 export interface PublicLeagueSummary {
   id: string; name: string; code: string; memberCount: number; imageUrl: string | null;
@@ -277,31 +279,44 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
   // the leagues, every membership (count + newest joiner), and every chat message
   // (latest line + count). .range past PostgREST's 1000-row default — a chatty set
   // of leagues would silently truncate otherwise, dropping the newest line.
-  const [{ data: leagues }, { data: memberRows }, { data: msgRows }] = await Promise.all([
+  const [{ data: leagues }, { data: memberRows }, { data: msgRows }, { data: readRows }] = await Promise.all([
     svc.from("fantasy_leagues").select("id, owner_id, name, join_code, is_public, image_url").in("id", ids),
     svc.from("fantasy_league_members").select("league_id, user_id, joined_at").in("league_id", ids).range(0, 9999),
     svc.from("comments").select("subject_id, user_id, body, kind, payload, created_at")
       .eq("subject_type", "fantasy_league").in("subject_id", ids).is("deleted_at", null)
       .order("created_at", { ascending: false }).range(0, 9999),
+    svc.from("fantasy_league_reads").select("league_id, last_read_at").eq("user_id", userId).in("league_id", ids),
   ]);
 
   // Member count + the newest OTHER joiner (not the viewer, so "you joined" never
   // becomes a league's headline) per league.
   const counts = new Map<string, number>();
   const newestOther = new Map<string, { userId: string; joinedAt: string }>();
+  const joinedByLeague = new Map<string, number>(); // the VIEWER's join time per league
   for (const m of (memberRows ?? []) as { league_id: string; user_id: string; joined_at: string }[]) {
     counts.set(m.league_id, (counts.get(m.league_id) ?? 0) + 1);
-    if (m.user_id === userId) continue;
+    if (m.user_id === userId) { joinedByLeague.set(m.league_id, Date.parse(m.joined_at)); continue; }
     const cur = newestOther.get(m.league_id);
     if (!cur || Date.parse(m.joined_at) > Date.parse(cur.joinedAt)) newestOther.set(m.league_id, { userId: m.user_id, joinedAt: m.joined_at });
   }
 
-  // Latest message + total count per league (msgRows already newest-first).
+  // When the viewer last opened each chat; before their first open, treat their
+  // join time as the read line so old backlog never shows as unread.
+  const lastReadByLeague = new Map<string, number>();
+  for (const r of (readRows ?? []) as { league_id: string; last_read_at: string }[]) lastReadByLeague.set(r.league_id, Date.parse(r.last_read_at));
+
+  // Latest message + total count + UNREAD (from other members, since last read) per
+  // league (msgRows already newest-first).
   const latestMsg = new Map<string, { userId: string; body: string; kind: string | null; payload: unknown; at: string }>();
   const msgCount = new Map<string, number>();
+  const unread = new Map<string, number>();
   for (const m of (msgRows ?? []) as { subject_id: string; user_id: string; body: string; kind: string | null; payload: unknown; created_at: string }[]) {
     msgCount.set(m.subject_id, (msgCount.get(m.subject_id) ?? 0) + 1);
     if (!latestMsg.has(m.subject_id)) latestMsg.set(m.subject_id, { userId: m.user_id, body: m.body, kind: m.kind, payload: m.payload, at: m.created_at });
+    if (m.user_id !== userId) {
+      const line = lastReadByLeague.get(m.subject_id) ?? joinedByLeague.get(m.subject_id) ?? 0;
+      if (Date.parse(m.created_at) > line) unread.set(m.subject_id, (unread.get(m.subject_id) ?? 0) + 1);
+    }
   }
 
   // One profiles batch for every name we'll show (chat authors + new joiners).
@@ -334,12 +349,15 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
       id: l.id, name: l.name, code: l.join_code, memberCount,
       isPublic: l.is_public, isOwner: l.owner_id === userId, imageUrl: l.image_url ?? null,
       highlight: highlightFor(l.id, memberCount),
+      unread: unread.get(l.id) ?? 0,
     };
   });
 
-  // Liveliest first: chat over joins over quiet, and within a tone the most recent.
+  // Unread leagues first (the ones wanting your attention), then liveliest: chat
+  // over joins over quiet, and within a tone the most recent.
   out.sort((a, b) =>
-    TONE_RANK[a.highlight.tone] - TONE_RANK[b.highlight.tone]
+    (b.unread > 0 ? 1 : 0) - (a.unread > 0 ? 1 : 0)
+    || TONE_RANK[a.highlight.tone] - TONE_RANK[b.highlight.tone]
     || Date.parse(b.highlight.at ?? "0") - Date.parse(a.highlight.at ?? "0")
     || a.name.localeCompare(b.name));
   return out;

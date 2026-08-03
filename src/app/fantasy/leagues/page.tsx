@@ -32,6 +32,7 @@ interface LeagueHighlight {
 interface MyLeague {
   id: string; name: string; code: string; memberCount: number; isPublic: boolean; isOwner: boolean; imageUrl?: string | null;
   highlight: LeagueHighlight;
+  unread: number;
 }
 interface PublicLeague { id: string; name: string; code: string; memberCount: number; imageUrl?: string | null }
 type Tab = "competition" | "leagues";
@@ -182,6 +183,9 @@ export default function LeaguesHome() {
           <span style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
+              {l.unread > 0 && (
+                <span aria-label={`${l.unread} unread`} style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#04231f", background: TEAL, borderRadius: 999, padding: "1px 7px", minWidth: 18, textAlign: "center" }}>{l.unread > 99 ? "99+" : l.unread}</span>
+              )}
               {l.isPublic && <Chip>Public</Chip>}
             </span>
             <span style={{ fontSize: 12, color: MUTED }}>
