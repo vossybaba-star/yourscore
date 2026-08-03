@@ -23,6 +23,7 @@ import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
 import { PRESETS, solvePreset } from "@/lib/fantasy/presets";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { trackFantasySquad } from "@/lib/analytics/trackGame";
 
 const BUDGET = 1000;
 const DRAFT_KEY = "ys-fantasy-draft";
@@ -183,6 +184,7 @@ export default function BuildPage() {
     setBusy(true); setErr(null);
     try {
       await api("squad", { pickIds: picked });
+      trackFantasySquad({ size: picked.length });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* private mode */ }
       router.push("/fantasy/squad");
     } catch (e) {
