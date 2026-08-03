@@ -18,7 +18,7 @@ import {
   loadPublishedScoutPicks, type ResolvedScoutPick, type ScoutCategory, type Db,
 } from "@/lib/fantasy/scoutPicks";
 import {
-  Card, SectionLabel, Crest, INK, MUTED, PANEL, TEAL, LIME, GOLD, POS_COLOR, type Pos,
+  Card, SectionLabel, Crest, INK, MUTED, PANEL, TEAL, LIME, GOLD,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
@@ -31,6 +31,10 @@ const PURPLE = "#a78bfa";
  *  client reference that isn't callable from this server component. The colour
  *  string constants serialize fine; a function does not. */
 const tint = (hex: string, a = "1e") => `${hex}${a}`;
+// Local copy of the position palette — this is a SERVER component, so it must not
+// import POS_COLOR from the "use client" shared.tsx (that made the whole strip crash
+// with a React-client-manifest error). Same hues as shared.tsx POS_COLOR.
+const POS_HUE: Record<string, string> = { GK: "#f4a63a", DEF: "#00d8c0", MID: "#8ad14f", FWD: "#ff7a85" };
 
 const CATEGORY: Record<ScoutCategory, { label: string; color: string }> = {
   safe: { label: "SAFE PICK", color: TEAL },
@@ -86,7 +90,7 @@ function PickCard({ pick }: { pick: ResolvedScoutPick }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 4 }}>
           <Crest club={pick.player.club} size={13} />
           <span className="font-body" style={{ color: MUTED, fontSize: 11.5 }}>
-            <span style={{ color: POS_COLOR[pick.player.pos as Pos] ?? MUTED, fontWeight: 700 }}>{pick.player.pos}</span> · £{price}m
+            <span style={{ color: POS_HUE[pick.player.pos] ?? MUTED, fontWeight: 700 }}>{pick.player.pos}</span> · £{price}m
           </span>
         </div>
         <div style={{ marginTop: 5 }}><OwnedBadge playerId={pick.player.id} /></div>
