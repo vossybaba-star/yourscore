@@ -2,12 +2,18 @@
  * send-fantasy-launch.mjs
  *
  * Campaign: Fantasy Premier League launch (template 29)
- * Target:   ALL signed-up users (Resend Broadcast, marketing bucket)
+ * Target:   top-5,000 most-engaged users (Resend Broadcast, marketing bucket).
+ *           The Marketing plan caps contacts at 5,000, so the audience is pruned
+ *           to exactly the segment before the broadcast fires. Ranking:
+ *             1. fantasy participants (has a squad or a shortlist row)
+ *             2. everyone else by most recent activity =
+ *                max(auth last_sign_in_at, email last_clicked_at, last_opened_at)
+ *           Suppressions (bounces/unsubs/manual) are excluded as always.
  *
  * Usage:
- *   node --env-file=.env.local scripts/send-fantasy-launch.mjs                     # dry run
+ *   node --env-file=.env.local scripts/send-fantasy-launch.mjs                     # dry run (prints segment breakdown)
  *   node --env-file=.env.local scripts/send-fantasy-launch.mjs --test you@x.com    # single test email (transactional)
- *   node --env-file=.env.local scripts/send-fantasy-launch.mjs --send              # fire the broadcast
+ *   node --env-file=.env.local scripts/send-fantasy-launch.mjs --send              # prune audience + fire the broadcast
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -83,12 +89,79 @@ function isSendable(email) {
   return !BLOCKED_DOMAINS.has(e.split("@")[1]);
 }
 
+const CAP = 5000;
+
+/** Rank all sendable users, return the top-CAP engaged segment. */
+async function engagedSegment(users) {
+  const fantasyIds = new Set();
+  for (const table of ["fantasy_squads", "fantasy_shortlist"]) {
+    const { data, error } = await supabase.from(table).select("user_id");
+    if (error) throw new Error(`${table} read failed: ${error.message}`);
+    for (const r of data ?? []) fantasyIds.add(r.user_id);
+  }
+
+  const engagement = new Map();
+  {
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("email_engagement")
+        .select("email,last_opened_at,last_clicked_at")
+        .range(from, from + 999);
+      if (error) throw new Error(`email_engagement read failed: ${error.message}`);
+      for (const r of data ?? []) engagement.set(r.email.trim().toLowerCase(), r);
+      if ((data ?? []).length < 1000) break;
+      from += 1000;
+    }
+  }
+
+  const ts = (v) => (v ? Date.parse(v) || 0 : 0);
+  const scored = users.map((u) => {
+    const eng = engagement.get(u.email.trim().toLowerCase());
+    return {
+      email: u.email,
+      fantasy: fantasyIds.has(u.id),
+      activity: Math.max(ts(u.last_sign_in_at), ts(eng?.last_clicked_at), ts(eng?.last_opened_at)),
+    };
+  });
+  scored.sort((a, b) => (b.fantasy - a.fantasy) || (b.activity - a.activity));
+  const seg = scored.slice(0, CAP);
+
+  const fantasyCount = seg.filter((s) => s.fantasy).length;
+  const cutoff = seg[seg.length - 1];
+  console.log(`   Segment: ${seg.length} of ${scored.length} sendable`);
+  console.log(`   · fantasy participants: ${fantasyCount}`);
+  console.log(`   · least-recent activity included: ${cutoff.activity ? new Date(cutoff.activity).toISOString().slice(0, 10) : "none on record"}`);
+  return seg;
+}
+
+/** Delete audience contacts that are NOT in the target set (frees cap headroom). */
+async function pruneAudience(targetEmails) {
+  const { Resend } = await import("resend");
+  const resend = new Resend(CAMPAIGNS_KEY);
+  const { data, error } = await resend.contacts.list({ audienceId: AUDIENCE_ID });
+  if (error) throw new Error(`contacts.list failed: ${error.message}`);
+  const contacts = data?.data ?? [];
+  const keep = new Set(targetEmails.map((e) => e.trim().toLowerCase()));
+  const toDelete = contacts.filter((c) => !keep.has((c.email ?? "").trim().toLowerCase()));
+  console.log(`   Audience: ${contacts.length} contacts · pruning ${toDelete.length} not in segment`);
+  let done = 0;
+  for (const c of toDelete) {
+    const { error: delErr } = await resend.contacts.remove({ audienceId: AUDIENCE_ID, id: c.id });
+    if (delErr) throw new Error(`contact delete failed (${c.id}): ${delErr.message}`);
+    done++;
+    if (done % 250 === 0) console.log(`   · pruned ${done}/${toDelete.length}`);
+    await new Promise((r) => setTimeout(r, 120));
+  }
+  if (toDelete.length) console.log(`   · pruned ${toDelete.length} ✓`);
+}
+
 const LOCK_FILE = "/tmp/yourscore-send-fantasy-launch.lock";
 
 async function main() {
   console.log(`\n⚽ YourScore — Fantasy Premier League launch`);
   console.log(`   Mode:   ${DRY_RUN ? "DRY RUN (no emails sent)" : "⚡ LIVE — broadcast WILL fire"}`);
-  console.log(`   Target: ALL users\n`);
+  console.log(`   Target: top ${CAP} most-engaged users\n`);
 
   if (!DRY_RUN) {
     try {
@@ -111,19 +184,22 @@ async function main() {
     page++;
   }
 
-  const targets = allAuthUsers.filter((u) => u.email && isSendable(u.email));
-  const skipped = allAuthUsers.filter((u) => u.email).length - targets.length;
+  const sendable = allAuthUsers.filter((u) => u.email && isSendable(u.email));
+  const skipped = allAuthUsers.filter((u) => u.email).length - sendable.length;
   if (skipped > 0) console.log(`   ⚠️  Skipped ${skipped} (suppressed / test account)`);
+
+  const targets = await engagedSegment(sendable);
   console.log(`   Sending to ${targets.length} users\n`);
   if (targets.length === 0) { console.log("✅ No targets. Done.\n"); return; }
-  if (DRY_RUN) console.log(`   First 5: ${targets.slice(0, 5).map((u) => u.email).join(", ")}`);
+
+  if (!DRY_RUN) await pruneAudience(targets.map((t) => t.email));
 
   const html = await renderTemplate();
 
   await syncAndBroadcast(CAMPAIGNS_KEY, {
     audienceId: AUDIENCE_ID,
     emails: targets.map((u) => ({ email: u.email })),
-    name: "Fantasy PL Launch (29-fantasy-launch)",
+    name: "Fantasy PL Launch — engaged 5k (29-fantasy-launch)",
     from: FROM,
     replyTo: REPLY_TO,
     subject: SUBJECT,
