@@ -22,6 +22,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
+import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -119,6 +120,7 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
 
 function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [open, setOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const shareSquad = useCallback(async () => {
     let url = `${window.location.origin}/profile/${ev.actorId}`;
@@ -190,12 +192,20 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
             <span style={{ fontSize: 14 }}>↗</span>Share
           </button>
         )}
+        {/* Invite this manager to one of your leagues. */}
+        <button onClick={() => setInviteOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
+          <span style={{ fontSize: 14 }}>＋</span>Invite
+        </button>
       </div>
 
       {open && (
         <div style={{ marginTop: 10, borderTop: `1px solid ${LINE}`, paddingTop: 8 }}>
           <DiscussionThread subjectType="fantasy_feed" subjectId={ev.id} title="Comments" accent={TEAL} embedded signInNext={signInNext} />
         </div>
+      )}
+
+      {inviteOpen && (
+        <InviteToLeagueSheet inviteeId={ev.actorId} inviteeName={ev.actorName} onClose={() => setInviteOpen(false)} />
       )}
     </div>
   );

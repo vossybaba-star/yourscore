@@ -16,6 +16,8 @@ import { genJoinCode } from "@/lib/draft/server";
 import { HttpError } from "@/lib/fantasy/server";
 import { commentRejection } from "@/lib/moderation";
 import { notifyFantasy } from "@/lib/fantasy/notify";
+import { notifyUsers } from "@/lib/notify";
+import { createNotification } from "@/lib/notifications";
 import { groupGwsByMonth, monthKeyOf, monthLabel } from "./months";
 import { momentsForGw, summariseLeagueMessage, type ChatMoment } from "./chat";
 import type { GwRow } from "./gameweeks";
@@ -197,6 +199,62 @@ export async function joinLeague(
   }
 
   return { id: league.id, name: league.name, code: league.join_code };
+}
+
+/**
+ * Invite a specific YourScore user to a league the inviter belongs to (from the
+ * feed, a profile, etc.). Delivers a notification linking to the league, where a
+ * non-member already sees "JOIN THIS LEAGUE".
+ *
+ * A league invite is user-initiated and transactional, so it goes STRAIGHT to
+ * the invitee's inbox (createNotification) and push (notifyUsers) — deliberately
+ * NOT through notifyFantasy, whose kill-switch only holds the automated feed/
+ * event notifications. Both dedupe on the same key, so re-inviting the same
+ * person to the same league never spams.
+ */
+export async function inviteToLeague(
+  inviterId: string,
+  code: string,
+  inviteeId: unknown,
+): Promise<{ ok: true; league: string }> {
+  const invitee = typeof inviteeId === "string" ? inviteeId.trim() : "";
+  if (!invitee) throw new HttpError(400, "No one to invite");
+  if (invitee === inviterId) throw new HttpError(400, "You can't invite yourself");
+
+  const svc = db();
+  const league = await findLeagueByCode(svc, typeof code === "string" ? code.trim().toUpperCase() : "");
+
+  const { data: mine } = await svc.from("fantasy_league_members")
+    .select("user_id").eq("league_id", league.id).eq("user_id", inviterId).maybeSingle();
+  if (!mine) throw new HttpError(403, "You're not in this league");
+
+  const { data: already } = await svc.from("fantasy_league_members")
+    .select("user_id").eq("league_id", league.id).eq("user_id", invitee).maybeSingle();
+  if (already) throw new HttpError(409, "They're already in this league");
+
+  const { data: prof } = await svc.from("profiles").select("display_name, username").eq("id", inviterId).maybeSingle();
+  const who = prof?.display_name ?? (prof?.username ? `@${prof.username}` : "A manager");
+  const key = `league-invite:${league.id}:${invitee}`;
+  const url = `/fantasy/leagues/${league.join_code}`;
+
+  await createNotification({
+    userId: invitee,
+    type: "league_invite",
+    actorId: inviterId,
+    title: `${who} invited you to ${league.name}`,
+    body: "Tap to join and put your gameweek points on the table.",
+    url,
+    dedupeKey: key,
+  });
+  void notifyUsers({
+    userIds: [invitee],
+    title: `${who} invited you to ${league.name}`,
+    body: "Tap to join their YourScore Fantasy league.",
+    url,
+    dedupeKey: key,
+  });
+
+  return { ok: true, league: league.name };
 }
 
 // ── lists ─────────────────────────────────────────────────────────────────────
