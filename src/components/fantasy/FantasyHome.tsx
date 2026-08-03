@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
+import { FeedStream } from "@/components/fantasy/FeedStream";
 import { recordVisit } from "@/lib/nav";
 import Link from "next/link";
 import {
@@ -415,10 +416,10 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
           <Skel h={40} r={12} /><Skel h={130} r={16} /><Skel h={120} r={12} /><Skel h={64} r={12} />
         </div>
       ) : (
-        <PullToRefresh onRefresh={refresh}>
+        <>
           <SubTabs tab={tab} onTab={selectTab} />
           {tab === "home" ? (
-            <>
+            <PullToRefresh onRefresh={refresh}>
               <YouStrip you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
               {/* A door into the rules, right under the squad — new managers land here. */}
               <button onClick={() => router.push("/fantasy/rules")} style={{
@@ -449,27 +450,12 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
                   </button>
                 </div>
               )}
-            </>
+            </PullToRefresh>
           ) : (
-            <>
-              {data.moves.length > 0 ? (
-                <>
-                  <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, margin: "0 2px 8px" }}>AROUND THE GAME</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {data.moves.map((ev) => <MoveCard key={ev.id} ev={ev} />)}
-                  </div>
-                  <Link href="/fantasy/feed" style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 13, fontWeight: 700, color: TEAL, textDecoration: "none" }}>See the full feed →</Link>
-                </>
-              ) : (
-                <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: 16 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 4 }}>Your feed is quiet</div>
-                  <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>Follow a few managers and their transfers, captains and big weeks show up here.</p>
-                  <Btn gold onClick={() => router.push("/fantasy/feed/discover")}>Find managers to follow</Btn>
-                </div>
-              )}
-            </>
+            /* The real feed — reactions + comments — the same one at /fantasy/feed. */
+            <FeedStream embedded signInNext="/fantasy?tab=feed" />
           )}
-        </PullToRefresh>
+        </>
       )}
     </main>
   );

@@ -34,6 +34,11 @@ export interface FeedBoard {
   vice?: number;
 }
 
+/** The reaction set for the feed — the same six the league chat uses, so the
+ *  reaction language is consistent across the app. ❤️ is the old "like". */
+export const FEED_REACTIONS = ["😂", "👀", "🔥", "👏", "❤️", "😭"] as const;
+export interface FeedReaction { emoji: string; count: number }
+
 export interface FeedEvent {
   id: string;
   actorId: string;
@@ -46,8 +51,10 @@ export interface FeedEvent {
   gw: number | null;
   sentence: string;
   createdAt: string;
-  likeCount: number;
-  likedByMe: boolean;
+  /** Emoji reaction tallies (only emojis with at least one reaction), and the
+   *  viewer's own reaction if any. One reaction per user per event. */
+  reactions: FeedReaction[];
+  myEmoji: string | null;
   commentCount: number;
   /** The squad, as a pitch board, for a squad_complete tile. */
   board?: FeedBoard | null;
@@ -238,9 +245,9 @@ async function hydrateEvents(
     return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: p?.pos ?? "MID", club: p?.club, avatarUrl: p?.avatarUrl ?? null };
   };
 
-  const [{ data: profs }, { data: likeRows }, { data: commentRows }, { data: squadRows }] = await Promise.all([
+  const [{ data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }] = await Promise.all([
     db.from("profiles").select("id, display_name, avatar_url").in("id", actorIds),
-    db.from("fantasy_feed_likes").select("event_id, user_id").in("event_id", eventIds),
+    db.from("fantasy_feed_likes").select("event_id, user_id, emoji").in("event_id", eventIds),
     db.from("comments").select("subject_id").eq("subject_type", "fantasy_feed").in("subject_id", eventIds).is("deleted_at", null),
     db.from("fantasy_squads").select("user_id, captain").in("user_id", actorIds),
   ]);
@@ -254,13 +261,29 @@ async function hydrateEvents(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (squadRows ?? []).forEach((s: any) => clubByActor.set(s.user_id, s.captain != null ? (poolById.get(s.captain)?.club ?? null) : null));
 
-  const likeCount = new Map<string, number>();
-  const likedByMe = new Set<string>();
+  // Per-event emoji tallies (map emoji -> count), plus the viewer's own reaction.
+  const reactionTally = new Map<string, Map<string, number>>();
+  const myEmojiByEvent = new Map<string, string>();
+  const allowedEmoji = new Set<string>(FEED_REACTIONS);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (likeRows ?? []).forEach((l: any) => {
-    likeCount.set(l.event_id, (likeCount.get(l.event_id) ?? 0) + 1);
-    if (viewerId && l.user_id === viewerId) likedByMe.add(l.event_id);
+  (reactionRows ?? []).forEach((r: any) => {
+    const emoji = typeof r.emoji === "string" && allowedEmoji.has(r.emoji) ? r.emoji : "❤️";
+    const byEmoji = reactionTally.get(r.event_id) ?? new Map<string, number>();
+    byEmoji.set(emoji, (byEmoji.get(emoji) ?? 0) + 1);
+    reactionTally.set(r.event_id, byEmoji);
+    if (viewerId && r.user_id === viewerId) myEmojiByEvent.set(r.event_id, emoji);
   });
+  // Ordered by the canonical set so the bar is stable, then only non-zero shown.
+  const reactionsFor = (eventId: string): FeedReaction[] => {
+    const byEmoji = reactionTally.get(eventId);
+    if (!byEmoji) return [];
+    return FEED_REACTIONS.filter((e) => byEmoji.has(e)).map((emoji) => ({ emoji, count: byEmoji.get(emoji)! }));
+  };
+  const totalReactions = (eventId: string): number => {
+    const byEmoji = reactionTally.get(eventId);
+    if (!byEmoji) return 0;
+    let n = 0; byEmoji.forEach((c) => (n += c)); return n;
+  };
 
   const commentCount = new Map<string, number>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -297,8 +320,8 @@ async function hydrateEvents(
       gw: e.gw ?? null,
       sentence: sentenceFor(type, payload, e.gw ?? null, nameOf),
       createdAt: e.created_at,
-      likeCount: likeCount.get(e.id) ?? 0,
-      likedByMe: likedByMe.has(e.id),
+      reactions: reactionsFor(e.id),
+      myEmoji: myEmojiByEvent.get(e.id) ?? null,
       commentCount: commentCount.get(e.id) ?? 0,
       board,
       player,
@@ -306,11 +329,10 @@ async function hydrateEvents(
     };
   });
 
-  // "Top" = most engaged first (likes + comments), recency as the tiebreak.
+  // "Top" = most engaged first (reactions + comments), recency as the tiebreak.
   if (sort === "top") {
-    mapped.sort((a, b) =>
-      (b.likeCount + b.commentCount) - (a.likeCount + a.commentCount)
-      || Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    const engagement = (e: FeedEvent) => totalReactions(e.id) + e.commentCount;
+    mapped.sort((a, b) => engagement(b) - engagement(a) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
   }
   return mapped.slice(0, limit);
 }
