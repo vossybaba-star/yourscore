@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, PosTag, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
-import { CHAT_EMOJI, type ChatData, type ChatMessage } from "./types";
+import { CHAT_EMOJI, type ChatData, type ChatMessage, type GifCard } from "./types";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
   const res = await fetch(`/api/fantasy/leagues/${code}/${path}`, {
@@ -132,6 +132,25 @@ function SharedNews({ msg, onOpen }: { msg: ChatMessage; onOpen: () => void }) {
   );
 }
 
+/** A GIF someone dropped in the chat. Renders the animated preview at a chat-
+ *  friendly width; the aspect ratio is reserved from the stored dims so the
+ *  thread doesn't jump as it loads. */
+function SharedGif({ msg }: { msg: ChatMessage }) {
+  const g = msg.gif!;
+  return (
+    <div style={{ maxWidth: 200 }}>
+      {!msg.isMe && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 3 }}>{msg.name}</div>}
+      <div style={{
+        borderRadius: 13, overflow: "hidden", border: `1px solid ${msg.isMe ? tint(TEAL, "44") : LINE}`, background: PANEL,
+        aspectRatio: g.width && g.height ? `${g.width} / ${g.height}` : undefined,
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={g.preview} alt="GIF" loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
+      </div>
+    </div>
+  );
+}
+
 function CompareSide({ p, onView }: { p: NonNullable<ChatMessage["compare"]>["a"]; onView: () => void }) {
   return (
     <button onClick={(e) => { e.stopPropagation(); onView(); }} style={{ flex: 1, minWidth: 0, textAlign: "center", cursor: "pointer", background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`, borderRadius: 10, padding: "9px 6px" }}>
@@ -226,6 +245,7 @@ function MessageBody({ m, onView, onOpenNews, onVote, readOnly }: {
   if (m.kind === "squad" && m.squad) return <SharedSquad msg={m} />;
   if (m.kind === "news" && m.news) return <SharedNews msg={m} onOpen={() => onOpenNews(m)} />;
   if (m.kind === "compare" && m.compare) return <SharedCompare msg={m} onView={onView} />;
+  if (m.kind === "gif" && m.gif) return <SharedGif msg={m} />;
   if (m.kind === "poll" && m.poll) return <Poll msg={m} onVote={onVote} readOnly={readOnly} />;
   return (
     <div style={{
@@ -234,6 +254,61 @@ function MessageBody({ m, onView, onOpenNews, onVote, readOnly }: {
     }}>
       {!m.isMe && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 1 }}>{m.name}</div>}
       <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.4, overflowWrap: "anywhere" }}>{m.body}</div>
+    </div>
+  );
+}
+
+type GifResult = { id: string; url: string; preview: string; width: number; height: number };
+
+/** The GIF picker sheet — sits above the composer like the poll composer.
+ *  Trending on open, search-as-you-type after that. Degrades to a friendly
+ *  message when the provider key isn't set (the route answers 503). */
+function GifPicker({ onPick, onCancel, busy }: { onPick: (g: GifCard) => void; onCancel: () => void; busy: boolean }) {
+  const [q, setQ] = useState("");
+  const [items, setItems] = useState<GifResult[] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const gifInput = { width: "100%", boxSizing: "border-box" as const, fontSize: 13, padding: "8px 11px", borderRadius: 8, background: PANEL_2, border: `1px solid ${LINE}`, color: INK, outline: "none" };
+
+  useEffect(() => {
+    let live = true;
+    const run = async () => {
+      setItems(null); setUnavailable(false);
+      try {
+        const res = await fetch(`/api/fantasy/gif${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ""}`);
+        if (res.status === 503) { if (live) { setUnavailable(true); setItems([]); } return; }
+        const d = await res.json().catch(() => ({ results: [] }));
+        if (live) setItems(d.results ?? []);
+      } catch { if (live) setItems([]); }
+    };
+    // Debounce searches; load trending immediately on open.
+    const t = setTimeout(run, q.trim() ? 350 : 0);
+    return () => { live = false; clearTimeout(t); };
+  }, [q]);
+
+  return (
+    <div style={{ marginBottom: 8, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 8 }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 8 }}>
+        <input autoFocus value={q} maxLength={80} placeholder="Search GIFs…" onChange={(e) => setQ(e.target.value)} style={gifInput} />
+        <button onClick={onCancel} style={{ background: "none", border: "none", color: MUTED, fontSize: 12.5, fontWeight: 700, cursor: "pointer", padding: "0 4px" }}>Close</button>
+      </div>
+      {unavailable ? (
+        <p style={{ fontSize: 12.5, color: MUTED, textAlign: "center", padding: "14px 8px", lineHeight: 1.5 }}>GIFs aren&apos;t switched on yet. Back soon.</p>
+      ) : items === null ? (
+        <p style={{ fontSize: 12.5, color: MUTED, textAlign: "center", padding: "14px 8px" }}>Loading GIFs…</p>
+      ) : items.length === 0 ? (
+        <p style={{ fontSize: 12.5, color: MUTED, textAlign: "center", padding: "14px 8px" }}>No GIFs found. Try another search.</p>
+      ) : (
+        <div style={{ columnCount: 2, columnGap: 6, maxHeight: 260, overflowY: "auto" }}>
+          {items.map((g) => (
+            <button key={g.id} disabled={busy} onClick={() => onPick({ url: g.url, preview: g.preview, width: g.width, height: g.height })}
+              style={{ display: "block", width: "100%", marginBottom: 6, padding: 0, border: `1px solid ${LINE}`, borderRadius: 9, overflow: "hidden", background: PITCH, cursor: busy ? "default" : "pointer", breakInside: "avoid" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={g.preview} alt="" loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
+            </button>
+          ))}
+        </div>
+      )}
+      <div style={{ fontSize: 9.5, color: MUTED, textAlign: "right", marginTop: 4, letterSpacing: "0.04em" }}>via Tenor</div>
     </div>
   );
 }
@@ -247,6 +322,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const [err, setErr] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   const [poll, setPoll] = useState(false);
+  const [gifOpen, setGifOpen] = useState(false);
   const [reactFor, setReactFor] = useState<string | null>(null);
 
   const load = useCallback(async (gw: number | null) => {
@@ -273,6 +349,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const react = (id: string, emoji: string, on: boolean) => { setReactFor(null); guard(() => api(code, "react", { commentId: id, emoji, on })); };
   const vote = (id: string, i: number) => guard(() => api(code, "poll", { commentId: id, optionIndex: i }, "PATCH"));
   const postPoll = (q: string, opts: string[]) => guard(async () => { await api(code, "poll", { question: q, options: opts }); setPoll(false); });
+  const sendGif = (g: GifCard) => guard(async () => { await api(code, "chat", { kind: "gif", gif: g }); setGifOpen(false); });
   const shareSquad = () => guard(async () => { await api(code, "share", { kind: "squad" }); setMenu(false); });
   const shareCaptain = () => guard(async () => { await api(code, "share", { kind: "captain" }); setMenu(false); });
   const openNews = (m: ChatMessage) => { const n = m.news!; if (n.internal) router.push(n.url); else window.open(n.url, "_blank", "noopener,noreferrer"); };
@@ -375,8 +452,10 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
         }}>
           <div style={{ maxWidth: 512, margin: "0 auto", padding: "7px 14px" }}>
             {poll && <PollComposer onPost={postPoll} onCancel={() => setPoll(false)} busy={busy} />}
-            {menu && !poll && (
+            {gifOpen && <GifPicker onPick={sendGif} onCancel={() => setGifOpen(false)} busy={busy} />}
+            {menu && !poll && !gifOpen && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                <MenuChip onClick={() => { setGifOpen(true); setMenu(false); }} accent={CORAL}>GIF</MenuChip>
                 <MenuChip onClick={() => { setPoll(true); setMenu(false); }} accent={LIME}>📊 Poll</MenuChip>
                 <MenuChip onClick={shareSquad} accent={TEAL} disabled={busy}>👕 Share my squad</MenuChip>
                 <MenuChip onClick={shareCaptain} accent={GOLD} disabled={busy}>Ⓒ Share my captain</MenuChip>

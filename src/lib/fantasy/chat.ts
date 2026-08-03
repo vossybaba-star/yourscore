@@ -55,7 +55,10 @@ export interface SquadCard {
 export interface NewsCard { title: string; source: string; url: string; image: string | null; internal: boolean }
 /** A shared player comparison — two pool players side by side. */
 export interface CompareCard { a: PlayerCard; b: PlayerCard }
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare";
+/** A GIF (from the Tenor picker) — the media URL, a lighter preview, and the
+ *  natural dimensions so the bubble reserves the right space (no layout shift). */
+export interface GifCard { url: string; preview: string; width: number; height: number }
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif";
 
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
@@ -68,6 +71,7 @@ export interface ChatMessage {
   squad?: SquadCard | null;
   news?: NewsCard | null;
   compare?: CompareCard | null;
+  gif?: GifCard | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
 
@@ -85,6 +89,7 @@ export function summariseLeagueMessage(kind: string | null, body: string, payloa
     case "squad": return "shared their squad";
     case "news": return typeof p.title === "string" ? p.title : "shared some news";
     case "compare": return "shared a comparison";
+    case "gif": return "sent a GIF";
     case "poll": return typeof p.question === "string" ? p.question : "started a poll";
     default: return body;
   }
@@ -284,7 +289,14 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
     return p ? { id: p.id, name: p.name, club: p.club, pos: p.pos, price: p.price, avatarUrl: p.avatarUrl ?? null, note } : null;
   };
 
-  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null } => {
+  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null } => {
+    if (m.kind === "gif" && m.payload && typeof m.payload === "object") {
+      const pl = m.payload as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
+      const url = typeof pl.url === "string" ? pl.url : "";
+      if (!isAllowedGifUrl(url)) return { kind: "text" };
+      const preview = typeof pl.preview === "string" && isAllowedGifUrl(pl.preview) ? pl.preview : url;
+      return { kind: "gif", gif: { url, preview, width: Number(pl.width) || 0, height: Number(pl.height) || 0 } };
+    }
     // player + captain both resolve one pool player (captain is labelled by the UI).
     if ((m.kind === "player" || m.kind === "captain") && m.payload && typeof m.payload === "object") {
       const pid = Number((m.payload as { playerId?: unknown }).playerId);
@@ -346,7 +358,7 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
         body: m.body, createdAt: m.created_at, isMe: m.user_id === userId,
         reactions: reactionsFor(m.id),
         kind: card.kind, player: card.player ?? null, poll: card.poll ?? null, squad: card.squad ?? null,
-        news: card.news ?? null, compare: card.compare ?? null,
+        news: card.news ?? null, compare: card.compare ?? null, gif: card.gif ?? null,
       };
     }),
     moments: momentGw != null ? await momentsForGw(db, memberIds, momentGw) : [],
@@ -459,6 +471,36 @@ export async function setStakes(db: Db, userId: string, code: string, stakes: un
 }
 
 // ── Phase 1b: structured messages ────────────────────────────────────────────
+
+/** GIFs may only point at Tenor (the picker's source), over https. This is the
+ *  trust boundary: the payload is validated here on the way IN, and again in
+ *  cardFor on the way OUT, so a hand-crafted REST insert can't smuggle an
+ *  arbitrary image/tracker URL into a league's thread. */
+export function isAllowedGifUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && (u.hostname === "tenor.com" || u.hostname.endsWith(".tenor.com"));
+  } catch { return false; }
+}
+
+/** Post a GIF into the league chat. Body is empty; the media lives in the payload. */
+export async function postGif(db: Db, userId: string, code: string, gif: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const g = (gif ?? {}) as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
+  const url = typeof g.url === "string" ? g.url : "";
+  if (!isAllowedGifUrl(url)) throw new HttpError(400, "That GIF isn't from a source we allow");
+  const preview = typeof g.preview === "string" && isAllowedGifUrl(g.preview) ? g.preview : url;
+  const width = Math.min(2000, Math.max(0, Math.round(Number(g.width) || 0)));
+  const height = Math.min(2000, Math.max(0, Math.round(Number(g.height) || 0)));
+  // Non-empty body: the comments table's body check rejects "" (and it's the
+  // graceful fallback anywhere a GIF can't render). The UI shows the media, not this.
+  const { error } = await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+    body: "GIF", kind: "gif", payload: { url, preview, width, height },
+  });
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
+}
 
 /** Post a poll into the league chat: a question and 2–4 options. */
 export async function postPoll(db: Db, userId: string, code: string, question: unknown, options: unknown) {
