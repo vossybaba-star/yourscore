@@ -169,13 +169,15 @@ export async function GET(req: Request) {
         background: "linear-gradient(180deg, #0c1a13 0%, #0a1710 55%, #091510 100%)",
         fontFamily: "sans-serif", position: "relative",
       }}>
-        {/* Header — brand + whose squad this is. */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 52px 0" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {/* Header — brand + whose squad this is. The logo is the YOURSCORE
+            wordmark (360x97, ~3.7:1), so keep its aspect (never a square) and let
+            it stand in for the name — the adjacent text is just the product. */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 56px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO_DATA_URI} width={38} height={38} alt="" />
+            <img src={LOGO_DATA_URI} width={130} height={35} alt="" style={{ objectFit: "contain" }} />
             <span style={{ fontSize: 23, color: TEAL, letterSpacing: 3, fontWeight: 700 }}>
-              YOURSCORE FANTASY FOOTBALL
+              FANTASY FOOTBALL
             </span>
           </div>
           <span style={{ fontSize: 23, color: INK, fontWeight: 700 }}>
@@ -185,7 +187,7 @@ export async function GET(req: Request) {
 
         {/* Body — the pitch (XI) on the left, the dugout (subs) down the right,
             exactly the in-app board just scaled up. */}
-        <div style={{ display: "flex", flex: 1, minHeight: 0, padding: "8px 40px 6px", gap: 16 }}>
+        <div style={{ display: "flex", flex: 1, minHeight: 0, padding: "8px 56px 6px", gap: 14 }}>
           {/* The field: four bands, forwards at the top, keeper at the back. */}
           <div style={{
             flex: 1, minWidth: 0, position: "relative", display: "flex",
@@ -199,11 +201,11 @@ export async function GET(req: Request) {
               justifyContent: "space-between", padding: "14px 36px",
             }}>
               {rows.map((row) => (
-                <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 20 }}>
+                <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 16 }}>
                   {row.list.map((p, i) => {
                     const isCap = !!capShort && short(p.name) === capShort;
                     return (
-                      <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 148 }}>
+                      <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 138 }}>
                         {Marker(p, AV, isCap)}
                         {Plate(short(p.name), POS_COLOR[p.pos] ?? MUTED, true)}
                       </div>
@@ -218,8 +220,8 @@ export async function GET(req: Request) {
               labelled column. Matches BenchStrip: dashed teal edge, dark wash. */}
           {bench.length > 0 && (
             <div style={{
-              width: 232, flexShrink: 0, display: "flex", flexDirection: "column",
-              alignItems: "stretch", padding: "16px 16px", gap: 12,
+              width: 206, flexShrink: 0, display: "flex", flexDirection: "column",
+              alignItems: "stretch", padding: "16px 14px", gap: 12,
               borderRadius: 16, background: "rgba(0,0,0,0.30)",
               border: `1px solid ${TEAL}22`, borderLeft: `2px dashed ${TEAL}44`,
             }}>
@@ -254,7 +256,7 @@ export async function GET(req: Request) {
         {/* Footer — the challenge and the spend. */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "2px 52px 20px",
+          padding: "2px 56px 20px",
         }}>
           <span style={{ fontSize: 30, color: TEAL, fontWeight: 800 }}>
             Think you can pick better?
