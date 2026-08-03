@@ -21,6 +21,7 @@ import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
 import { CreateLeagueFlow, JoinLeagueFlow, LeagueEmptyState } from "@/components/fantasy/league/LeagueFlows";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { VerifiedTick } from "@/components/ui/Seal";
 
 interface LeagueHighlight {
   tone: "chat" | "join" | "quiet" | "empty";
@@ -34,8 +35,9 @@ interface MyLeague {
   highlight: LeagueHighlight;
   unread: number;
   kind: string;
+  official?: boolean;
 }
-interface PublicLeague { id: string; name: string; code: string; memberCount: number; imageUrl?: string | null }
+interface PublicLeague { id: string; name: string; code: string; memberCount: number; imageUrl?: string | null; official?: boolean }
 type Tab = "competition" | "leagues";
 
 /** "3m" / "5h" / "2d" — a highlight without a timestamp doesn't read as live. */
@@ -184,6 +186,7 @@ export default function LeaguesHome() {
           <span style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 15, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
+              {l.official && <VerifiedTick size={14} />}
               {l.unread > 0 && (
                 <span aria-label={`${l.unread} unread`} style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#04231f", background: TEAL, borderRadius: 999, padding: "1px 7px", minWidth: 18, textAlign: "center" }}>{l.unread > 99 ? "99+" : l.unread}</span>
               )}
@@ -212,7 +215,7 @@ export default function LeaguesHome() {
   };
 
   // A compact discovery tile for public leagues (no chat highlight — not a member).
-  const leagueTile = (l: { id: string; name: string; code: string; memberCount: number; isPublic?: boolean; imageUrl?: string | null }, hint: string) => (
+  const leagueTile = (l: { id: string; name: string; code: string; memberCount: number; isPublic?: boolean; imageUrl?: string | null; official?: boolean }, hint: string) => (
     <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={{
       width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
       background: `linear-gradient(150deg, ${tint(TEAL, "10")}, ${PANEL})`, border: `1px solid ${LINE}`, borderRadius: 14, padding: 12,
@@ -221,6 +224,7 @@ export default function LeaguesHome() {
       <span style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
+          {l.official && <VerifiedTick size={14} />}
           {l.isPublic && <Chip>Public</Chip>}
         </span>
         <span style={{ fontSize: 12, color: MUTED }}>{l.memberCount} member{l.memberCount === 1 ? "" : "s"} · <span style={{ color: TEAL, fontWeight: 700 }}>{hint}</span></span>

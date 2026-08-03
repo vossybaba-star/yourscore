@@ -9,6 +9,7 @@ import {
   Btn, Card, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { VerifiedTick } from "@/components/ui/Seal";
 import { trackFantasyInvite } from "@/lib/analytics/trackGame";
 
 /** One channel in the invite sheet — an icon in its brand colour, a label, a hint. */
@@ -97,12 +98,15 @@ export default function LeaguePage() {
     try { setChat(await apiRaw<ChatData>(`leagues/${code}/chat`)); }
     catch { /* non-member / signed out — no chat */ }
   }, [code]);
+  // Club and Founder leagues are open to read, so browse their chat even as a
+  // non-member (read-only). Every other league needs membership.
+  const canReadChat = !!detail && (detail.league.isMember || detail.league.kind === "club" || detail.league.kind === "founder");
   useEffect(() => {
-    if (!detail?.league.isMember) return;
+    if (!canReadChat) return;
     loadChat();
     const t = setInterval(loadChat, 15_000);
     return () => clearInterval(t);
-  }, [detail?.league.isMember, loadChat]);
+  }, [canReadChat, loadChat]);
 
   // The invite is a LINK, not a code: ?join=1 drops the recipient straight into
   // the league on tap (a new user signs in and lands right back here). No code
@@ -184,9 +188,12 @@ export default function LeaguePage() {
             </span>
           )}
           <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontSize: 22, margin: 0, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis" }}>{league.name}</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              <h1 style={{ fontSize: 22, margin: 0, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis" }}>{league.name}</h1>
+              {league.official && <VerifiedTick size={17} />}
+            </div>
             <div style={{ fontSize: 12.5, color: MUTED, marginTop: 3 }}>
-              {league.isPublic ? "Public" : "Private"} league · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
+              {league.kind === "club" ? `${league.club ?? "Club"} fans` : league.kind === "founder" ? "Founder League" : league.isPublic ? "Public league" : "Private league"} · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
             </div>
           </div>
         </div>
@@ -208,7 +215,16 @@ export default function LeaguePage() {
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "8px 0 10px" }}>{err}</p>}
 
-      {!league.isMember && (
+      {!league.isMember && (league.kind === "club" || league.kind === "founder") ? (
+        <Card style={{ margin: "10px 0 14px", border: `1px solid ${LINE}` }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>You&apos;re just looking in</div>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>
+            {league.kind === "club"
+              ? `This is the ${league.club ?? "club"} fans' league. Have a read of the table and the chat. Only ${league.club ?? "its"} fans can post here.`
+              : "This is the Founder League for the first 1,000 managers to build a squad. Build your squad and you're in."}
+          </p>
+        </Card>
+      ) : !league.isMember && (
         <Card style={{ margin: "10px 0 14px", border: `1px solid #ffc233` }}>
           <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>Fancy your chances?</div>
           <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 10px", lineHeight: 1.45 }}>
@@ -222,8 +238,10 @@ export default function LeaguePage() {
       <div style={{ display: "flex", gap: 3, margin: "10px 0 12px", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: 3 }}>
         {TABS.map(([k, label]) => {
           const active = tab === k;
-          // History/Chat need membership; a guest sees Hub + Table.
-          const locked = !league.isMember && (k === "chat" || k === "history");
+          // Chat opens to anyone for a club/Founder league (browse what they talk
+          // about); History still needs membership. Everywhere else both need it.
+          const chatOpen = league.isMember || league.kind === "club" || league.kind === "founder";
+          const locked = (k === "chat" && !chatOpen) || (k === "history" && !league.isMember);
           if (locked) return null;
           return (
             <button key={k} onClick={() => goTab(k)} style={{
@@ -236,7 +254,7 @@ export default function LeaguePage() {
       </div>
 
       {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} />}
-      {tab === "chat" && league.isMember && <LeagueChatView code={code} initialGw={chatGw} />}
+      {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder") && <LeagueChatView code={code} initialGw={chatGw} />}
       {tab === "table" && <LeagueTableView detail={detail} code={code} />}
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
 

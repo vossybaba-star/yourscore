@@ -53,9 +53,11 @@ export interface LeagueSummary {
   unread: number;
   /** 'private' | 'public' | 'club' | 'founder' — club/founder are auto-join. */
   kind: string;
+  /** A league YourScore itself runs (club / Founder / mixed) — carries a tick. */
+  official: boolean;
 }
 export interface PublicLeagueSummary {
-  id: string; name: string; code: string; memberCount: number; imageUrl: string | null;
+  id: string; name: string; code: string; memberCount: number; imageUrl: string | null; official: boolean;
 }
 export interface LeagueRow {
   rank: number; userId: string; username: string | null; displayName: string | null;
@@ -72,6 +74,7 @@ export interface LeagueRow {
 interface LeagueRecord {
   id: string; owner_id: string; name: string; join_code: string; is_public: boolean;
   stakes: string | null; image_url: string | null;
+  kind?: string; club?: string | null; official?: boolean;
 }
 interface MemberRecord { user_id: string; joined_at: string }
 interface ProfileRecord { id: string; username: string | null; display_name: string | null; avatar_url: string | null }
@@ -88,7 +91,7 @@ async function findLeagueByCode(svc: Db, code: string): Promise<LeagueRecord> {
   const normCode = code.trim().toUpperCase();
   const { data } = await svc
     .from("fantasy_leagues")
-    .select("id, owner_id, name, join_code, is_public, stakes, image_url")
+    .select("id, owner_id, name, join_code, is_public, stakes, image_url, kind, club, official")
     .eq("join_code", normCode)
     .maybeSingle();
   if (!data) throw new HttpError(404, "League not found");
@@ -163,10 +166,16 @@ export async function joinLeague(
 
   const league = await findLeagueByCode(svc, code);
 
-  // Club and Founder leagues are automatic — you can't join them by code.
-  const { data: meta } = await svc.from("fantasy_leagues").select("kind").eq("id", league.id).maybeSingle();
-  if (meta && (meta.kind === "club" || meta.kind === "founder")) {
-    throw new HttpError(400, "That league is automatic. You're added when you support the club or build a squad.");
+  // Club and Founder leagues are automatic — you can't join them by code. A club
+  // league is open to look around, but only its own fans can post: name the club
+  // so the manager knows why. The Founder League is the first-1,000 badge holders.
+  const { data: meta } = await svc.from("fantasy_leagues").select("kind, club").eq("id", league.id).maybeSingle();
+  if (meta?.kind === "club") {
+    const club = (meta.club as string | null) ?? "this club";
+    throw new HttpError(400, `This is the ${club} fans' league. Have a look around, but only ${club} fans can post here.`);
+  }
+  if (meta?.kind === "founder") {
+    throw new HttpError(400, "The Founder League is for the first 1,000 managers to build a squad. Build your squad and you're in.");
   }
 
   const { data: existing } = await svc
@@ -288,7 +297,7 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
   // (latest line + count). .range past PostgREST's 1000-row default — a chatty set
   // of leagues would silently truncate otherwise, dropping the newest line.
   const [{ data: leagues }, { data: memberRows }, { data: msgRows }, { data: readRows }] = await Promise.all([
-    svc.from("fantasy_leagues").select("id, owner_id, name, join_code, is_public, image_url, kind").in("id", ids),
+    svc.from("fantasy_leagues").select("id, owner_id, name, join_code, is_public, image_url, kind, official").in("id", ids),
     svc.from("fantasy_league_members").select("league_id, user_id, joined_at").in("league_id", ids).range(0, 9999),
     svc.from("comments").select("subject_id, user_id, body, kind, payload, created_at")
       .eq("subject_type", "fantasy_league").in("subject_id", ids).is("deleted_at", null)
@@ -359,6 +368,7 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
       highlight: highlightFor(l.id, memberCount),
       unread: unread.get(l.id) ?? 0,
       kind: (l as { kind?: string }).kind ?? "private",
+      official: (l as { official?: boolean }).official ?? false,
     };
   });
 
@@ -383,16 +393,16 @@ export async function publicLeagues(userId: string): Promise<PublicLeagueSummary
   // excluding those still leaves a full page where enough public leagues exist.
   const { data: pub } = await svc
     .from("fantasy_leagues")
-    .select("id, name, join_code, created_at, image_url")
+    .select("id, name, join_code, created_at, image_url, official")
     .eq("is_public", true)
     .order("created_at", { ascending: false })
     .limit(30 + mine.size);
-  const filtered = ((pub ?? []) as { id: string; name: string; join_code: string; image_url: string | null }[])
+  const filtered = ((pub ?? []) as { id: string; name: string; join_code: string; image_url: string | null; official: boolean }[])
     .filter((l) => !mine.has(l.id))
     .slice(0, 30);
 
   const counts = await memberCounts(svc, filtered.map((l) => l.id));
-  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null }));
+  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null, official: l.official ?? false }));
 }
 
 /** Search PUBLIC leagues by name (Social → Discover → Leagues). Private leagues
@@ -408,17 +418,89 @@ export async function searchPublicLeagues(userId: string, qRaw: unknown): Promis
 
   const { data: pub } = await svc
     .from("fantasy_leagues")
-    .select("id, name, join_code, image_url")
+    .select("id, name, join_code, image_url, official")
     .eq("is_public", true)
     .ilike("name", `%${q}%`)
     .order("created_at", { ascending: false })
     .limit(20 + mine.size);
-  const filtered = ((pub ?? []) as { id: string; name: string; join_code: string; image_url: string | null }[])
+  const filtered = ((pub ?? []) as { id: string; name: string; join_code: string; image_url: string | null; official: boolean }[])
     .filter((l) => !mine.has(l.id))
     .slice(0, 20);
 
   const counts = await memberCounts(svc, filtered.map((l) => l.id));
-  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null }));
+  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null, official: l.official ?? false }));
+}
+
+/** One Discover row — a league anyone can look at, plus whether THIS viewer can
+ *  post in it (club leagues are browsable but fans-only to contribute). */
+export interface DiscoverLeague {
+  id: string; name: string; code: string; memberCount: number; imageUrl: string | null;
+  official: boolean; kind: string; club: string | null; isMember: boolean; canContribute: boolean;
+}
+export interface DiscoverLeaguesResult {
+  /** Mixed cross-fan leagues + the Founder League — YourScore's own, up top. */
+  featured: DiscoverLeague[];
+  /** Every club's fan league, browsable by anyone. */
+  clubs: DiscoverLeague[];
+  /** Public leagues managers have made. */
+  open: DiscoverLeague[];
+}
+
+/** Everything worth discovering in Social → Leagues (founder, 3 Aug): the mixed
+ *  cross-fan leagues and the Founder League first, then every club's fan league
+ *  (you can look into a rival club's league, you just can't post there), then the
+ *  public leagues managers have created. Works signed-out (viewerId null). */
+export async function discoverLeagues(viewerId: string | null): Promise<DiscoverLeaguesResult> {
+  const svc = db();
+
+  // The YourScore-run leagues (club / founder / mixed-official) + user-made public
+  // leagues, in one read each.
+  const [{ data: ours }, { data: publicRows }] = await Promise.all([
+    svc.from("fantasy_leagues")
+      .select("id, name, join_code, image_url, kind, club, official, created_at")
+      .or("kind.in.(club,founder),official.eq.true")
+      .order("created_at", { ascending: true }),
+    svc.from("fantasy_leagues")
+      .select("id, name, join_code, image_url, kind, club, official, created_at")
+      .eq("is_public", true).eq("official", false)
+      .not("kind", "in", "(club,founder)")
+      .order("created_at", { ascending: false }).limit(30),
+  ]);
+
+  // Who the viewer is: their memberships (isMember) + supported clubs (can post in
+  // that club's league).
+  const memberOf = new Set<string>();
+  const supportedClubs = new Set<string>();
+  if (viewerId) {
+    const [{ data: mem }, { data: sup }] = await Promise.all([
+      svc.from("fantasy_league_members").select("league_id").eq("user_id", viewerId),
+      svc.from("club_supporters").select("club").eq("user_id", viewerId),
+    ]);
+    for (const m of (mem ?? []) as { league_id: string }[]) memberOf.add(m.league_id);
+    for (const s of (sup ?? []) as { club: string | null }[]) if (s.club) supportedClubs.add(s.club);
+  }
+
+  type Row = { id: string; name: string; join_code: string; image_url: string | null; kind: string | null; club: string | null; official: boolean };
+  const allRows = [...((ours ?? []) as Row[]), ...((publicRows ?? []) as Row[])];
+  const counts = await memberCounts(svc, allRows.map((l) => l.id));
+
+  const toDiscover = (l: Row): DiscoverLeague => {
+    const kind = l.kind ?? "private";
+    const isMember = memberOf.has(l.id);
+    const isClubGated = kind === "club" || kind === "founder";
+    const canContribute = isMember || (!isClubGated) || (kind === "club" && !!l.club && supportedClubs.has(l.club));
+    return {
+      id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1,
+      imageUrl: l.image_url ?? null, official: l.official ?? false, kind, club: l.club ?? null,
+      isMember, canContribute,
+    };
+  };
+
+  const oursMapped = ((ours ?? []) as Row[]).map(toDiscover);
+  const featured = oursMapped.filter((l) => l.kind !== "club").sort((a, b) => a.name.localeCompare(b.name));
+  const clubs = oursMapped.filter((l) => l.kind === "club").sort((a, b) => (a.club ?? "").localeCompare(b.club ?? ""));
+  const open = ((publicRows ?? []) as Row[]).map(toDiscover).filter((l) => !l.isMember);
+  return { featured, clubs, open };
 }
 
 // ── table math (read-time only — see file header) ───────────────────────────
@@ -523,6 +605,15 @@ export interface LeagueDetail {
     id: string; name: string; code: string; memberCount: number;
     isPublic: boolean; isMember: boolean; isOwner: boolean;
     stakes: string | null; imageUrl: string | null;
+    /** 'private' | 'public' | 'club' | 'founder'. */
+    kind: string;
+    /** The supported club, for a kind='club' league (else null). */
+    club: string | null;
+    /** YourScore-run league — shows the verified tick. */
+    official: boolean;
+    /** Whether THIS viewer may post here. A club league is browsable by anyone
+     *  but only its club's fans (its members) can contribute. */
+    canContribute: boolean;
   };
   /** The current gameweek and its phase, for the Hub's summary card. */
   gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
@@ -620,11 +711,19 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
   const phase: "pre" | "live" | "final" =
     currentGw.status === "final" ? "final" : currentScored ? "live" : "pre";
 
+  // Contribution rule: members can always post. A club league is open to browse
+  // but only its own fans (its members) contribute — so for a non-member the only
+  // thing that unlocks posting is being that club's supporter, which is exactly
+  // what auto-membership already encodes. Mirror it so the UI can gate cleanly.
+  const kind = league.kind ?? "private";
+  const canContribute = isMember;
+
   return {
     league: {
       id: league.id, name: league.name, code: league.join_code,
       memberCount: ids.length, isPublic: league.is_public, isMember, isOwner,
       stakes: league.stakes, imageUrl: league.image_url ?? null,
+      kind, club: league.club ?? null, official: league.official ?? false, canContribute,
     },
     gw: { number: currentGw.gw, phase, deadline: currentGw.deadline },
     season, month, lastMonth,

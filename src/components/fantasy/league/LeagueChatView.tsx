@@ -387,8 +387,8 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
 
       {readOnly && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: "6px 11px" }}>
-          <span className="font-display tracking-widest" style={{ fontSize: 9.5, color: MUTED }}>ARCHIVE</span>
-          <span style={{ fontSize: 12.5, color: MUTED }}>Gameweek {chat.gw} chat · read-only</span>
+          <span className="font-display tracking-widest" style={{ fontSize: 9.5, color: MUTED }}>{chat.notice ? "VIEWING" : "ARCHIVE"}</span>
+          <span style={{ fontSize: 12.5, color: MUTED }}>{chat.notice ?? `Gameweek ${chat.gw} chat · read-only`}</span>
         </div>
       )}
 

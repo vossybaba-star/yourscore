@@ -12,6 +12,7 @@ import { InviteToLeagueButton } from "@/components/fantasy/InviteToLeagueButton"
 import { FollowButton } from "@/components/social/FollowButton";
 import { ProfileGameTabs } from "@/components/profile/ProfileGameTabs";
 import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
+import { LegendSeal } from "@/components/ui/Seal";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -224,12 +225,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
                   {rank.tier}
                 </span>
               )}
-              {legend && (
-                <span className="font-body text-xs px-2 py-0.5 rounded-full" title="One of the first 1,000 managers to build a squad"
-                  style={{ background: `${GOLD}2a`, color: GOLD, border: `1px solid ${GOLD}55`, fontWeight: 700 }}>
-                  ⭐ Legend
-                </span>
-              )}
+              {legend && <LegendSeal />}
             </div>
           </div>
         </div>

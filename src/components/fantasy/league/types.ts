@@ -16,6 +16,7 @@ export interface LeagueDetail {
   league: {
     id: string; name: string; code: string; memberCount: number;
     isPublic: boolean; isMember: boolean; isOwner: boolean; stakes: string | null; imageUrl: string | null;
+    kind: string; club: string | null; official: boolean; canContribute: boolean;
   };
   gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
   season: LeagueRow[];
@@ -60,6 +61,9 @@ export interface ChatData {
   gw: number;
   currentGw: number;
   readOnly: boolean;
+  /** Why the thread is read-only for this viewer (browsing a club/founder league
+   *  you're not a member of). Null when it's your own live thread or a gw archive. */
+  notice?: string | null;
   gameweeks: number[];
   messages: ChatMessage[];
   moments: ChatMoment[];

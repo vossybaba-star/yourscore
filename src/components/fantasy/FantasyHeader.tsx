@@ -24,19 +24,20 @@ const MUTED = "#8a948f";
 // Scout and Social teal (the feed/radar/knowledge brand), Squad lime, Leagues
 // gold. Social is now a first-class destination — the feed no longer hides
 // behind a Home sub-toggle (founder, 3 Aug).
+// Order (founder, 3 Aug): Home · Squad · Social · Leagues · Scout.
 const TABS = [
   { href: "/fantasy", label: "Home", accent: TEAL, match: (p: string) => p === "/fantasy" },
   { href: "/fantasy/squad", label: "Squad", accent: LIME, match: (p: string) => p === "/fantasy/squad" },
+  // Social owns both /fantasy/social and the legacy /fantasy/feed (which now
+  // redirects here), so the old feed deep-links light the Social tab.
+  { href: "/fantasy/social", label: "Social", accent: TEAL, match: (p: string) => p.startsWith("/fantasy/social") || p.startsWith("/fantasy/feed") },
+  { href: "/fantasy/leagues", label: "Leagues", accent: GOLD, match: (p: string) => p.startsWith("/fantasy/leagues") },
   {
     href: "/fantasy/news",
     label: "Scout",
     accent: TEAL,
     match: (p: string) => p.startsWith("/fantasy/news") || p.startsWith("/fantasy/scout"),
   },
-  // Social owns both /fantasy/social and the legacy /fantasy/feed (which now
-  // redirects here), so the old feed deep-links light the Social tab.
-  { href: "/fantasy/social", label: "Social", accent: TEAL, match: (p: string) => p.startsWith("/fantasy/social") || p.startsWith("/fantasy/feed") },
-  { href: "/fantasy/leagues", label: "Leagues", accent: GOLD, match: (p: string) => p.startsWith("/fantasy/leagues") },
 ] as const;
 
 export function FantasyHeader({ subtitle }: { subtitle?: string }) {

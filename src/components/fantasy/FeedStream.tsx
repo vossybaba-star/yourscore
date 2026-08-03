@@ -23,7 +23,7 @@ import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
-import { ShareToLeague } from "@/components/fantasy/league/ShareToLeague";
+import { SharePost } from "@/components/fantasy/SharePost";
 import { FollowButton } from "@/components/social/FollowButton";
 import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 
@@ -195,6 +195,18 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
   const canShare = hasBoard || (!!ev.player && ev.playerId != null);
+  // Where a shared post points: a squad → the manager's XI, a player → that
+  // player, anything else → the live feed. Plus a one-line lead for the share.
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://yourscore.app";
+  const shareUrl = hasBoard ? `${origin}/profile/${ev.actorId}#fantasy-xi`
+    : (ev.player && ev.playerId != null) ? `${origin}/fantasy/players/${ev.playerId}`
+    : `${origin}/fantasy/social`;
+  const shareText = ev.type === "post" && ev.text ? ev.text.slice(0, 140)
+    : hasBoard ? `${ev.actorName}'s Fantasy XI on YourScore`
+    : `${ev.actorName} on YourScore Fantasy`;
+  const leagueBody = canShare
+    ? () => (hasBoard ? { kind: "squad", ofUserId: ev.actorId } : { kind: "player", playerId: ev.playerId })
+    : undefined;
 
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12, marginBottom: 10 }}>
@@ -262,16 +274,13 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         <button onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: open ? TEAL : MUTED, fontSize: 13, fontWeight: 600 }}>
           <span style={{ fontSize: 14 }}>💬</span>{ev.commentCount > 0 ? ev.commentCount : "Comment"}
         </button>
-        {canShare && (
-          <ShareToLeague
-            buildBody={() => hasBoard ? { kind: "squad", ofUserId: ev.actorId } : { kind: "player", playerId: ev.playerId }}
-            trigger={(openShare) => (
-              <button onClick={openShare} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
-                <span style={{ fontSize: 14 }}>↗</span>Share to league
-              </button>
-            )}
-          />
-        )}
+        <SharePost url={shareUrl} text={shareText} leagueBody={leagueBody}
+          trigger={(openShare) => (
+            <button onClick={openShare} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
+              <span style={{ fontSize: 14 }}>↗</span>Share
+            </button>
+          )}
+        />
         <button onClick={() => setInviteOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
           <span style={{ fontSize: 14 }}>＋</span>Invite
         </button>

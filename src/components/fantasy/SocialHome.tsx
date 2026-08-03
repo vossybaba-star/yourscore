@@ -14,7 +14,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { INK, LIME, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
+import { LIME, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { FeedStream } from "@/components/fantasy/FeedStream";
 import { DiscoverTabs } from "@/components/fantasy/DiscoverTabs";
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
@@ -80,13 +80,6 @@ export function SocialHome() {
 
   return (
     <div>
-      <div style={{ margin: "0 2px 12px" }}>
-        <h2 className="font-display" style={{ fontSize: 20, color: INK, margin: 0, lineHeight: 1.1 }}>Social</h2>
-        <p style={{ fontSize: 13, color: MUTED, margin: "4px 0 0", lineHeight: 1.45 }}>
-          Fantasy moves, debates and matchday reactions.
-        </p>
-      </div>
-
       <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: `1px solid rgba(255,255,255,0.06)`, marginBottom: 14 }}>
         {TABS.map((t) => {
           const on = t.id === tab;

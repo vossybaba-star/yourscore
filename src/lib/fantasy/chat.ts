@@ -200,15 +200,38 @@ export async function momentsForGw(db: Db, memberIds: string[], gw: number): Pro
 }
 
 export async function leagueChat(db: Db, userId: string, code: string, gwParam?: number | null) {
-  const league = await requireMemberLeague(db, code, userId);
+  // Club and Founder leagues are OPEN to read (founder, 3 Aug — "go into other
+  // clubs' leagues to see what they talk about"). A non-member gets the chat in
+  // read-only mode with a notice; every other league stays members-only.
+  const { data: leagueRow } = await db.from("fantasy_leagues")
+    .select("id, name, owner_id, stakes, kind, club").eq("join_code", code.toUpperCase()).maybeSingle();
+  if (!leagueRow) throw new HttpError(404, "league not found");
+  const league = leagueRow as { id: string; name: string; owner_id: string; stakes: string | null; kind: string | null; club: string | null };
+
+  const { data: member } = await db.from("fantasy_league_members")
+    .select("user_id").eq("league_id", league.id).eq("user_id", userId).maybeSingle();
+  const isMember = !!member;
+  const openToRead = league.kind === "club" || league.kind === "founder";
+  if (!isMember && !openToRead) throw new HttpError(403, "not in this league");
+
+  // A non-member is browsing — tell them why they can't post. Members get the
+  // normal live thread.
+  const notice = isMember ? null
+    : league.kind === "club"
+      ? `Viewing the ${league.club ?? "club"} fans' league. Only ${league.club ?? "its"} fans can post here.`
+      : "Viewing the Founder League. The first 1,000 managers to build a squad post here.";
+
   // Opening the chat marks it read — advance this member's last_read_at so the
   // league's unread badge clears. AWAITED (not fire-and-forget): a serverless
   // handler can be frozen the moment it returns, dropping an un-awaited write, so
-  // the read would never persist. A failed write just leaves the badge up.
-  await db.from("fantasy_league_reads").upsert(
-    { league_id: league.id, user_id: userId, last_read_at: new Date().toISOString() },
-    { onConflict: "league_id,user_id" },
-  );
+  // the read would never persist. A failed write just leaves the badge up. Only
+  // members have a read cursor — skip it for a browsing non-member.
+  if (isMember) {
+    await db.from("fantasy_league_reads").upsert(
+      { league_id: league.id, user_id: userId, last_read_at: new Date().toISOString() },
+      { onConflict: "league_id,user_id" },
+    );
+  }
   const { data: members } = await db.from("fantasy_league_members")
     .select("user_id").eq("league_id", league.id).range(0, 9999);
   const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id);
@@ -224,7 +247,8 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   const gws = live.length ? live : allGws;
   const currentGw = (gws.find((g) => g.status !== "final") ?? gws[gws.length - 1])?.gw ?? 1;
   const viewGw = gwParam != null && gws.some((g) => g.gw === gwParam) ? gwParam : currentGw;
-  const readOnly = viewGw !== currentGw;
+  // Read-only when browsing an archived gameweek OR browsing as a non-member.
+  const readOnly = viewGw !== currentGw || !isMember;
   // The gameweeks worth offering in the selector: up to and including the current.
   const gameweeks = gws.filter((g) => g.gw <= currentGw).map((g) => g.gw);
 
@@ -354,7 +378,7 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
 
   return {
     league: { name: league.name, stakes: league.stakes, isOwner: league.owner_id === userId },
-    gw: viewGw, currentGw, readOnly, gameweeks,
+    gw: viewGw, currentGw, readOnly, notice, gameweeks,
     // oldest-first for a chat read
     messages: msgs.reverse().map((m): ChatMessage => {
       const p = profOf.get(m.user_id);
