@@ -70,11 +70,23 @@ const CHIP_LABEL: Record<string, string> = {
   insight: "Insight",
 };
 
+// The health-check QA accounts (hc, hc2) — synthetic drills, never feed-worthy.
+// Hardcoded for the same reason versus/shadow.ts hardcodes them: HEALTH_BOT_USER_ID
+// isn't guaranteed to be set in every deploy environment, and a missing env var
+// silently put the bot's squad reveal in the real global feed (2 Aug).
+const QA_ACCOUNT_IDS = [
+  "cf78de0e-da93-4fb8-b3cd-8865ae0a0814", // hc
+  "aa6542bc-ea1d-480c-9070-4a6b79c87381", // hc2
+];
+const syntheticActors = () =>
+  new Set([...QA_ACCOUNT_IDS, process.env.HEALTH_BOT_USER_ID ?? ""].filter(Boolean));
+
 /** Emit one feed event. No-throw by default at the call site — a feed write must
  *  never fail the user's actual move (see the route wrappers). */
 export async function emitFeedEvent(
   db: Db, actorId: string, type: FeedType, gw: number | null, payload: Record<string, unknown>,
 ): Promise<void> {
+  if (syntheticActors().has(actorId)) return; // bot drills stay out of the feed
   await db.from("fantasy_feed_events").insert({ actor_id: actorId, type, gw, payload });
   // Only the two moves worth a ping to your followers — a squad reveal and a big
   // haul — never every transfer (the spam trap). Fire-and-forget.
@@ -149,7 +161,8 @@ export async function emitScoringFeedEvents(db: Db, gw: number): Promise<{ hauls
       .map((j) => ({ actor_id: j.user_id, type: "rank_jump", gw, payload: { places: Number(j.jump), rank: Number(j.after_rank) } }));
   }
 
-  const all = [...haulRows, ...jumpRows];
+  const bots = syntheticActors();
+  const all = [...haulRows, ...jumpRows].filter((r) => !bots.has(r.actor_id));
   if (all.length) await db.from("fantasy_feed_events").insert(all);
   return { hauls: haulRows.length, jumps: jumpRows.length };
 }
@@ -230,6 +243,10 @@ async function hydrateEvents(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: Db, viewerId: string | null, events: any[], sort: FeedSort, limit: number,
 ): Promise<FeedEvent[]> {
+  // Read-time belt to the emit-time braces: rows a bot wrote under an older
+  // deploy (or one missing HEALTH_BOT_USER_ID) still never render.
+  const bots = syntheticActors();
+  events = events.filter((e) => !bots.has(e.actor_id as string));
   if (!events.length) return [];
 
   const eventIds = events.map((e) => e.id as string);

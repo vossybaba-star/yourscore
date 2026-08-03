@@ -49,6 +49,9 @@ export interface FantasyState {
   season: { gw: number; total: number; finalised: number };
   poolVersion: string;
   openForEdits: boolean;
+  /** The weekly quiz's own gate: openForEdits AND (live only) gameday reached. */
+  roundOpen: boolean;
+  roundOpensAt: string | null;
   canRebuild: boolean;
   squad: {
     picks: { id: number; pos: Pos; clubId: number; buyTenths: number }[];

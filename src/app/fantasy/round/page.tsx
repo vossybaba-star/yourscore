@@ -27,6 +27,8 @@ export default function RoundPage() {
   const [secs, setSecs] = useState(TIMER_SECONDS);
   const [timedOut, setTimedOut] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Pre-gameday: the quiz exists, it just isn't open yet — a calm card, not an error.
+  const [lockedMsg, setLockedMsg] = useState<string | null>(null);
   const answering = useRef(false);
   // Round chips. The chip is PLAYED on the hub (spends the token); here it fires.
   const [chip, setChip] = useState<string | null>(null);
@@ -49,6 +51,7 @@ export default function RoundPage() {
     }).catch((e) => {
       if ((e as { status?: number }).status === 401) router.replace("/auth/sign-in?next=/fantasy");
       else if ((e as { code?: string }).code === "no-squad") router.replace("/fantasy/build");
+      else if ((e as { code?: string }).code === "round-locked") setLockedMsg((e as Error).message);
       else setErr((e as Error).message);
     });
   }, [router]);
@@ -85,6 +88,16 @@ export default function RoundPage() {
 
   // A round is banked server-side as you go, so a reload is safe and resumes
   // where you left off — the honest "try again" for a load that failed.
+  if (lockedMsg) return (
+    <main data-fantasy style={page}>
+      <Header exit={{ label: "My team", onClick: () => router.push("/fantasy/squad") }} />
+      <Card>
+        <div className="font-display" style={{ fontSize: 22, color: INK, marginBottom: 8 }}>Not open yet</div>
+        <p className="font-body" style={{ fontSize: 14, color: MUTED, lineHeight: 1.5, marginBottom: 16 }}>{lockedMsg}</p>
+        <Btn onClick={() => router.push("/fantasy")}>Back to the hub</Btn>
+      </Card>
+    </main>
+  );
   if (err) return (
     <main data-fantasy style={page}>
       <Header exit={{ label: "My team", onClick: () => router.push("/fantasy/squad") }} />

@@ -496,8 +496,10 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
    *  with the gameweek. So the hub shows no "play the round" CTAs pre-season and
    *  leads on squad selection instead (founder, 30 Jul). `roundOpen` still gates
    *  the chips card, which IS shown pre-season ("chips unlock when GW1 kicks off"),
-   *  so the two are kept distinct. Replay and the live in-season keep the round. */
-  const roundPlayable = roundOpen && !preseason;
+   *  so the two are kept distinct. Replay keeps the self-paced behaviour; LIVE now
+   *  takes the server's own gate (state.roundOpen: gameday onwards, pre-deadline)
+   *  — the API enforces it, so the hub advertising anything else was a lie. */
+  const roundPlayable = isDemo ? (roundOpen && !preseason) : state.roundOpen;
 
   /** THE PRE-DEADLINE CHECK.
    *

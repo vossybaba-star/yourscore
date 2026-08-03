@@ -23,7 +23,7 @@ import { enginePool, fantasyPool, pricedPool } from "./pool";
 import { tryEmitFeedEvent } from "./feed";
 import { notifyFantasy } from "./notify";
 import { loadFixtureSet, fixtureStatusFor } from "./captainAssist";
-import { isOpenForEdits, type GwRow } from "./gameweeks";
+import { isOpenForEdits, isRoundOpen, roundOpensAt, type EntryLockView, type GwRow } from "./gameweeks";
 import { FORM_WINDOW_GWS, type NewsClubRun, type NewsTickerCell, type NewsDoc } from "./news";
 import {
   flagSquad, resolveAvailability, unwrapRead, buildPlayerProfile,
@@ -178,6 +178,10 @@ export async function getState(db: Db, userId: string) {
     season: await seasonProgress(db, userId, gw),
     poolVersion: fantasyPool().version,
     openForEdits: isOpenForEdits(gw, entry),
+    // The quiz's own gate (gameday onwards in a live season) — the hub used a
+    // client-side proxy for this and drifted from what the API enforced.
+    roundOpen: isRoundOpen(gw, entry),
+    roundOpensAt: roundOpensAt(gw)?.toISOString() ?? null,
     squad: squad && {
       picks: squad.picks, bankTenths: squad.bank_tenths, credits: squad.credits,
       xi: squad.xi, bench: squad.bench, captain: squad.captain, vice: squad.vice,
@@ -382,11 +386,26 @@ async function roundFor(db: Db, gw: number, userId: string): Promise<Round> {
   return buildRound(GATES.questions, { gameweek: `fantasy:${gw}`, userId, formation: "4-3-3", exclude });
 }
 
+/** The round gate, with the honest reason: "not yet" (pre-gameday, tell them
+ *  when) is a different answer from "no longer" (deadline passed). */
+function assertRoundOpen(gw: GwRow, entry: EntryLockView) {
+  if (isRoundOpen(gw, entry)) return;
+  const opens = roundOpensAt(gw);
+  if (opens && Date.now() < opens.getTime() && isOpenForEdits(gw, entry)) {
+    const day = opens.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/London" });
+    throw new HttpError(409, `The quiz opens on gameday, ${day}. Right answers earn transfers for the week after.`, "round-locked");
+  }
+  throw new HttpError(409, "gameweek is locked", "locked");
+}
+
 export async function startRound(db: Db, userId: string) {
   const gw = await currentGw(db, userId);
   if (!(await getSquad(db, userId))) throw new HttpError(409, "build a squad first", "no-squad");
   let entry = await ensureEntry(db, userId, gw.gw);
   if (!entry.round_version) {
+    // Gate only the CREATE: a round already on the books must stay reviewable
+    // after the deadline (stepRound guards every answer on its own).
+    assertRoundOpen(gw, entry);
     await db.from("fantasy_entries").update({ round_version: GATES.version })
       .eq("user_id", userId).eq("gw", gw.gw);
     entry = (await getEntry(db, userId, gw.gw))!;
@@ -438,7 +457,7 @@ export async function stepRound(db: Db, userId: string, k: number, optionId: num
   if (entry.round_version !== GATES.version) throw new HttpError(409, "stale pool", "stale-pool");
   if (k !== entry.round_answers.length || k >= ROUND_LEN)
     throw new HttpError(409, `expected question ${entry.round_answers.length}`, "order");
-  if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
+  assertRoundOpen(gw, entry);
 
   const round = await roundFor(db, gw.gw, userId);
   const q = round.questions[k];
@@ -774,7 +793,7 @@ export async function roundHint(db: Db, userId: string, k: number) {
   if (!entry?.round_version) throw new HttpError(409, "round not started", "no-round");
   if (entry.round_done_at) throw new HttpError(409, "round already complete", "done");
   if (entry.chip !== "insight") throw new HttpError(409, "play the Insight chip first", "no-chip");
-  if (!isOpenForEdits(gw, entry)) throw new HttpError(409, "gameweek is locked", "locked");
+  assertRoundOpen(gw, entry);
   if (k !== entry.round_answers.length) throw new HttpError(409, "hint is for the question in front of you", "order");
   const hintK = (entry as unknown as { round_hint_k: number | null }).round_hint_k;
   if (hintK !== null && hintK !== k) throw new HttpError(409, "your Insight is already spent this round", "used");
