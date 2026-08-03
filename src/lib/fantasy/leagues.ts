@@ -386,6 +386,32 @@ export async function publicLeagues(userId: string): Promise<PublicLeagueSummary
   return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null }));
 }
 
+/** Search PUBLIC leagues by name (Social → Discover → Leagues). Private leagues
+ *  stay code-only. Excludes leagues the viewer is already in. */
+export async function searchPublicLeagues(userId: string, qRaw: unknown): Promise<PublicLeagueSummary[]> {
+  // Strip ilike wildcards so a stray % / _ can't widen the match to everything.
+  const q = (typeof qRaw === "string" ? qRaw : "").replace(/[%_]/g, "").trim().slice(0, 40);
+  if (q.length < 2) return [];
+  const svc = db();
+  const { data: memberships } = await svc
+    .from("fantasy_league_members").select("league_id").eq("user_id", userId);
+  const mine = new Set(((memberships ?? []) as { league_id: string }[]).map((m) => m.league_id));
+
+  const { data: pub } = await svc
+    .from("fantasy_leagues")
+    .select("id, name, join_code, image_url")
+    .eq("is_public", true)
+    .ilike("name", `%${q}%`)
+    .order("created_at", { ascending: false })
+    .limit(20 + mine.size);
+  const filtered = ((pub ?? []) as { id: string; name: string; join_code: string; image_url: string | null }[])
+    .filter((l) => !mine.has(l.id))
+    .slice(0, 20);
+
+  const counts = await memberCounts(svc, filtered.map((l) => l.id));
+  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null }));
+}
+
 // ── table math (read-time only — see file header) ───────────────────────────
 
 /** Rank a set of scored entries + the full member list. Members with no scored

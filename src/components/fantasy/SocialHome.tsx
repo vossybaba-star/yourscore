@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { INK, LIME, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { FeedStream } from "@/components/fantasy/FeedStream";
-import { DiscoverManagers } from "@/components/fantasy/DiscoverManagers";
+import { DiscoverTabs } from "@/components/fantasy/DiscoverTabs";
 import { recordVisit } from "@/lib/nav";
 
 type SocialTab = "feed" | "following" | "discover";
@@ -48,6 +48,8 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
 export function SocialHome() {
   const [tab, setTab] = useState<SocialTab>("feed");
   const [feedSort, setFeedSort] = useState<FeedSort>("top");
+  // Which Discover sub-tab to open on — "Find managers" jumps straight to Players.
+  const [discoverSub, setDiscoverSub] = useState<"leagues" | "players" | undefined>(undefined);
 
   // Restore the segment from the URL on mount (so links and a refresh land right).
   useEffect(() => {
@@ -108,9 +110,9 @@ export function SocialHome() {
       )}
       {tab === "following" && (
         <FeedStream controlledScope="following" controlledSort="recent" chrome={false} signInNext="/fantasy/social?tab=following"
-          emptyFollowing={<FollowingEmpty onFind={() => select("discover")} />} />
+          emptyFollowing={<FollowingEmpty onFind={() => { setDiscoverSub("players"); select("discover"); }} />} />
       )}
-      {tab === "discover" && <DiscoverManagers />}
+      {tab === "discover" && <DiscoverTabs initialSub={discoverSub} />}
     </div>
   );
 }
