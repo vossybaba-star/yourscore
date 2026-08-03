@@ -12,6 +12,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { recordVisit } from "@/lib/nav";
 import { Btn, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 
 export type ScoutTabKey = "briefing" | "picks" | "players" | "fixtures" | "shortlist" | "squad";
@@ -34,8 +35,12 @@ export function ScoutTabsShell({ initial = "briefing", signedIn, slots }: {
   const [active, setActive] = useState<ScoutTabKey>(initial);
   const go = (k: ScoutTabKey) => {
     setActive(k);
-    // Keep the URL honest without a navigation, so a refresh/back lands right.
-    try { window.history.replaceState(null, "", `/fantasy/news?tab=${k}`); } catch { /* no-op */ }
+    // Keep the URL honest without a navigation, so a refresh/back lands right —
+    // and record it on the nav trail directly, so back from a player/profile
+    // retraces to the Scout tab you left (NavTracker doesn't see a bare
+    // replaceState; the home Feed sub-tab had the same bug — founder, 3 Aug).
+    const url = `/fantasy/news?tab=${k}`;
+    try { window.history.replaceState(null, "", url); recordVisit(url); } catch { /* no-op */ }
   };
 
   return (
