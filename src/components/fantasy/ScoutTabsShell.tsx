@@ -31,10 +31,8 @@ export function ScoutTabsShell({ initial = "briefing", signedIn, slots }: {
 }) {
   const router = useRouter();
   const [active, setActive] = useState<ScoutTabKey>(initial);
-  const [visited, setVisited] = useState<Set<ScoutTabKey>>(new Set([initial]));
   const go = (k: ScoutTabKey) => {
     setActive(k);
-    setVisited((v) => (v.has(k) ? v : new Set(v).add(k)));
     // Keep the URL honest without a navigation, so a refresh/back lands right.
     try { window.history.replaceState(null, "", `/fantasy/news?tab=${k}`); } catch { /* no-op */ }
   };
@@ -56,9 +54,13 @@ export function ScoutTabsShell({ initial = "briefing", signedIn, slots }: {
       </div>
 
       {signedIn ? (
+        // Render EVERY slot up front, toggle visibility with display. The slots
+        // include server components (Picks = FourPicks), which have no client
+        // payload if they were gated to null on the server render — lazy-mounting
+        // them then throws notFound(). Eager render keeps them in the RSC payload.
         TABS.map((t) => (
           <div key={t.key} style={{ display: t.key === active ? "block" : "none" }}>
-            {(t.key === active || visited.has(t.key)) ? (slots?.[t.key] ?? null) : null}
+            {slots?.[t.key] ?? null}
           </div>
         ))
       ) : (
