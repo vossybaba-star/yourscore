@@ -80,8 +80,12 @@ export async function POST(req: Request) {
       // The bench (the 4 not in the XI) — a squad is fifteen, so the share card
       // shows all fifteen, not just the eleven (founder, 3 Aug). GK first, like a dugout.
       const xiIds = new Set((squad.xi ?? []) as number[]);
-      const bench = ((squad.picks ?? []) as number[])
-        .filter((id) => !xiIds.has(id))
+      // picks rows are {id, pos, clubId, buyTenths} objects (not bare ids) — unwrap
+      // to ids first or the xi filter and pool lookup both miss and the bench is
+      // silently empty (the unfurl shipped without its dugout because of this).
+      const bench = ((squad.picks ?? []) as Array<number | { id: number }>)
+        .map((row) => (typeof row === "number" ? row : row?.id))
+        .filter((id): id is number => Number.isFinite(id) && !xiIds.has(id))
         .map((id) => pool.get(id))
         .filter((p): p is NonNullable<typeof p> => !!p)
         .sort((a, b) => (posRank[a.pos] ?? 9) - (posRank[b.pos] ?? 9));
