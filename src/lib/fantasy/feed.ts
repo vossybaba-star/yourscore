@@ -249,33 +249,10 @@ async function hydrateEvents(
   events = events.filter((e) => !bots.has(e.actor_id as string));
   if (!events.length) return [];
 
-  // ── Pre-deadline privacy gate (founder, 3 Aug) ──────────────────────────────
-  // A manager's in-season MOVE (transfer, chip, captain) reveals their hand for
-  // the upcoming gameweek, so a rival must not see it until the deadline passes.
-  // We hide it from everyone EXCEPT the actor, and only for a LIVE gameweek whose
-  // deadline is still ahead — replay/practice weeks and squad reveals stay public
-  // (a built squad is a deliberate share and the pre-season growth loop). Once the
-  // deadline passes the move is public, like every FPL scoreboard.
-  const GATED_TYPES = new Set(["transfer", "chip", "captain"]);
-  const gatedGws = Array.from(new Set(
-    events.filter((e) => GATED_TYPES.has(e.type as string) && e.gw != null).map((e) => e.gw as number),
-  ));
-  if (gatedGws.length) {
-    const gwInfo = new Map<number, { deadline: number | null; mode: string }>();
-    const { data: gwRows } = await db.from("fantasy_gameweeks").select("gw, deadline, mode").in("gw", gatedGws);
-    ((gwRows ?? []) as { gw: number; deadline: string | null; mode: string }[]).forEach((g) => {
-      gwInfo.set(g.gw, { deadline: g.deadline ? Date.parse(g.deadline) : null, mode: g.mode });
-    });
-    const now = Date.now();
-    events = events.filter((e) => {
-      if (!GATED_TYPES.has(e.type as string)) return true;
-      if (viewerId && e.actor_id === viewerId) return true; // your own move is always visible to you
-      const g = e.gw != null ? gwInfo.get(e.gw as number) : undefined;
-      const locked = !!g && g.mode === "live" && g.deadline != null && now < g.deadline;
-      return !locked;
-    });
-    if (!events.length) return [];
-  }
+  // Everything a manager does is public feed content right up until the gameweek
+  // starts (founder, 3 Aug — the feed needs content, and a squad/transfer/captain
+  // is worth talking about before kick-off). No pre-deadline hiding: once the
+  // gameweek is under way the moves are locked and simply historical anyway.
 
   const eventIds = events.map((e) => e.id as string);
   const actorIds = Array.from(new Set(events.map((e) => e.actor_id as string)));
