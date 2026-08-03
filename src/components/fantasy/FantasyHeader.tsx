@@ -20,11 +20,12 @@ const GOLD = "#ffc233";
 const INK = "#eef2f0";
 const MUTED = "#8a948f";
 
-// Each area carries its own accent so the tab you're on is colour-coded, not all
-// teal: Home + Scout teal (the feed/radar brand), Squad lime, Leagues gold.
+// Each area carries its own accent so the tab you're on is colour-coded: Home,
+// Scout and Social teal (the feed/radar/knowledge brand), Squad lime, Leagues
+// gold. Social is now a first-class destination — the feed no longer hides
+// behind a Home sub-toggle (founder, 3 Aug).
 const TABS = [
-  // Home is the feed-first landing; the old standalone Feed folds into it.
-  { href: "/fantasy", label: "Home", accent: TEAL, match: (p: string) => p === "/fantasy" || p.startsWith("/fantasy/feed") },
+  { href: "/fantasy", label: "Home", accent: TEAL, match: (p: string) => p === "/fantasy" },
   { href: "/fantasy/squad", label: "Squad", accent: LIME, match: (p: string) => p === "/fantasy/squad" },
   {
     href: "/fantasy/news",
@@ -32,6 +33,9 @@ const TABS = [
     accent: TEAL,
     match: (p: string) => p.startsWith("/fantasy/news") || p.startsWith("/fantasy/scout"),
   },
+  // Social owns both /fantasy/social and the legacy /fantasy/feed (which now
+  // redirects here), so the old feed deep-links light the Social tab.
+  { href: "/fantasy/social", label: "Social", accent: TEAL, match: (p: string) => p.startsWith("/fantasy/social") || p.startsWith("/fantasy/feed") },
   { href: "/fantasy/leagues", label: "Leagues", accent: GOLD, match: (p: string) => p.startsWith("/fantasy/leagues") },
 ] as const;
 
@@ -39,8 +43,9 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
   const pathname = usePathname() || "/fantasy";
   const { user } = useUser();
   // Signed out, Home (the public browse) and Scout (cover + a walled preview) are
-  // open to browse; Squad and Leagues assume an account, so route those through
-  // sign-in rather than into a page that assumes a player.
+  // open to browse; Squad, Social and Leagues assume an account (the feed is
+  // member-gated), so route those through sign-in rather than a broken page. A
+  // public feed for guests is a Phase 2 follow-up.
   const publicHref = (href: string) => href === "/fantasy" || href === "/fantasy/news";
   const hrefFor = (href: string) => (!user && !publicHref(href)) ? `/auth/sign-in?next=${encodeURIComponent(href)}` : href;
   return (
@@ -52,7 +57,7 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
         <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "6px 0 0" }}>{subtitle}</p>
       )}
       <div style={{
-        display: "flex", gap: 6, padding: 4, borderRadius: 16,
+        display: "flex", gap: 4, padding: 4, borderRadius: 16,
         background: "rgba(255,255,255,0.04)", marginTop: 12,
       }}>
         {TABS.map((t) => {
@@ -61,8 +66,10 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
             <Link key={t.href} href={hrefFor(t.href)} aria-current={on ? "page" : undefined}
               className="font-display"
               style={{
-                flex: 1, textAlign: "center", padding: "9px 6px", borderRadius: 12,
-                fontSize: 16, fontWeight: 700, letterSpacing: "0.01em", textDecoration: "none",
+                // Five tabs now, so a touch tighter than the old four to keep
+                // "Leagues" on one line at 375px.
+                flex: 1, textAlign: "center", padding: "9px 3px", borderRadius: 12,
+                fontSize: 14.5, fontWeight: 700, letterSpacing: 0, textDecoration: "none",
                 background: on ? t.accent : "transparent", color: on ? "#062018" : MUTED,
                 whiteSpace: "nowrap",
               }}>

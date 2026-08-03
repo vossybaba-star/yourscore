@@ -1,22 +1,10 @@
-"use client";
 /**
- * The fantasy activity feed at /fantasy/feed. The feed itself (scopes, reactions,
- * comments, pull-to-refresh) lives in <FeedStream/>, shared with the home "Feed"
- * tab; this route just wraps it in the standalone fantasy chrome.
+ * Legacy /fantasy/feed — the feed is now the Social tab. Redirect so old
+ * deep-links (the launch push, shared links) land on /fantasy/social, which the
+ * nav also lights up.
  */
-import { page } from "@/components/fantasy/shared";
-import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
-import { FeedStream } from "@/components/fantasy/FeedStream";
-import { BottomNav } from "@/components/ui/BottomNav";
+import { redirect } from "next/navigation";
 
-export default function FantasyFeedPage() {
-  return (
-    <>
-      <main data-fantasy style={page}>
-        <FantasyHeader />
-        <FeedStream signInNext="/fantasy/feed" />
-      </main>
-      <BottomNav />
-    </>
-  );
+export default function FantasyFeedRedirect() {
+  redirect("/fantasy/social");
 }

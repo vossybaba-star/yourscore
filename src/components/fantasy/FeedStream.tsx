@@ -13,7 +13,7 @@
  * Reactions mirror the league-chat set (😂 👀 🔥 👏 ❤️ 😭). One per user per
  * event: tap an emoji to react, tap your own to remove it, tap another to switch.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
@@ -211,21 +211,34 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   );
 }
 
-export function FeedStream({ embedded = false, signInNext = "/fantasy/feed" }: { embedded?: boolean; signInNext?: string }) {
+export function FeedStream({
+  embedded = false, signInNext = "/fantasy/feed",
+  controlledScope, controlledSort, chrome = true, emptyFollowing,
+}: {
+  embedded?: boolean; signInNext?: string;
+  /** When the parent owns the scope/sort (the Social tabs), FeedStream renders
+   *  no scope/sort chrome of its own and does not auto-flip an empty Following
+   *  feed to Global — the caller's empty state takes over instead. */
+  controlledScope?: FeedScope; controlledSort?: FeedSort;
+  chrome?: boolean; emptyFollowing?: ReactNode;
+}) {
   const router = useRouter();
-  const [scope, setScope] = useState<FeedScope>("following");
-  const [sort, setSort] = useState<FeedSort>("recent");
+  const controlled = controlledScope != null;
+  const [scopeState, setScope] = useState<FeedScope>(controlledScope ?? "following");
+  const [sortState, setSort] = useState<FeedSort>(controlledSort ?? "recent");
+  const scope = controlledScope ?? scopeState;
+  const sort = controlledSort ?? sortState;
   const [events, setEvents] = useState<FeedEvent[] | null>(null);
   const [followingCount, setFollowingCount] = useState<number | null>(null);
 
-  // Restore scope+sort from the URL once on mount (only when standalone — the
-  // embedded copy shares its route with the home tab and must not touch its URL).
+  // Restore scope+sort from the URL once on mount (only when standalone and
+  // uncontrolled — the embedded/controlled copies must not touch the URL).
   useEffect(() => {
-    if (embedded) return;
+    if (embedded || controlled) return;
     const p = new URLSearchParams(window.location.search);
     if (p.get("scope") === "global") setScope("global");
     if (p.get("sort") === "top") setSort("top");
-  }, [embedded]);
+  }, [embedded, controlled]);
 
   const loadFeed = useCallback(async (silent = false): Promise<{ updated?: boolean }> => {
     if (!silent) setEvents(null);
@@ -233,7 +246,7 @@ export function FeedStream({ embedded = false, signInNext = "/fantasy/feed" }: {
       const res = await fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}`);
       const d = res.ok ? await res.json() : { events: [], followingCount: 0 };
       setFollowingCount(d.followingCount ?? 0);
-      if ((d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return {}; }
+      if (!controlled && (d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return {}; }
       const next: FeedEvent[] = d.events ?? [];
       const updated = next[0]?.id !== events?.[0]?.id || next.length !== (events?.length ?? -1);
       setEvents(next);
@@ -242,10 +255,10 @@ export function FeedStream({ embedded = false, signInNext = "/fantasy/feed" }: {
       if (!silent) setEvents([]);
       return {};
     }
-  }, [scope, sort, events]);
+  }, [scope, sort, events, controlled]);
 
   useEffect(() => {
-    if (!embedded && typeof window !== "undefined") {
+    if (!embedded && !controlled && typeof window !== "undefined") {
       const u = new URL(window.location.href);
       u.searchParams.set("scope", scope); u.searchParams.set("sort", sort);
       window.history.replaceState(null, "", u);
@@ -257,60 +270,67 @@ export function FeedStream({ embedded = false, signInNext = "/fantasy/feed" }: {
       .then((d) => {
         if (!live) return;
         setFollowingCount(d.followingCount ?? 0);
-        if ((d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return; }
+        if (!controlled && (d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return; }
         setEvents(d.events ?? []);
       })
       .catch(() => { if (live) setEvents([]); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, sort, embedded]);
+  }, [scope, sort, embedded, controlled]);
 
   const showScopeTabs = (followingCount ?? 0) > 0;
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, margin: "2px 0 12px" }}>
-        <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.5, margin: 0, flex: 1 }}>
-          The moves your rivals are making. Follow managers to fill your feed.
-        </p>
-        <Link href="/fantasy/feed/discover" style={{
-          flexShrink: 0, padding: "7px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
-          textDecoration: "none", background: tint(TEAL, "22"), color: TEAL, border: `1px solid ${tint(TEAL, "66")}`, whiteSpace: "nowrap",
-        }}>Find managers</Link>
-      </div>
+      {chrome && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, margin: "2px 0 12px" }}>
+            <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.5, margin: 0, flex: 1 }}>
+              The moves your rivals are making. Follow managers to fill your feed.
+            </p>
+            <Link href="/fantasy/social?tab=discover" style={{
+              flexShrink: 0, padding: "7px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
+              textDecoration: "none", background: tint(TEAL, "22"), color: TEAL, border: `1px solid ${tint(TEAL, "66")}`, whiteSpace: "nowrap",
+            }}>Find managers</Link>
+          </div>
 
-      {showScopeTabs && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-          {(["following", "global"] as FeedScope[]).map((s) => {
-            const active = scope === s;
-            return (
-              <button key={s} onClick={() => setScope(s)} style={{
-                flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
-                border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
-              }}>{s === "following" ? "Following" : "Global"}</button>
-            );
-          })}
-        </div>
+          {showScopeTabs && (
+            <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+              {(["following", "global"] as FeedScope[]).map((s) => {
+                const active = scope === s;
+                return (
+                  <button key={s} onClick={() => setScope(s)} style={{
+                    flex: 1, padding: "9px 4px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
+                    border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
+                  }}>{s === "following" ? "Following" : "Global"}</button>
+                );
+              })}
+            </div>
+          )}
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginBottom: 12 }}>
+            {(["recent", "top"] as FeedSort[]).map((s) => {
+              const active = sort === s;
+              return (
+                <button key={s} onClick={() => setSort(s)} style={{
+                  padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                  background: active ? tint(TEAL, "18") : "transparent", color: active ? TEAL : MUTED,
+                  border: `1px solid ${active ? tint(TEAL, "55") : LINE}`,
+                }}>{s === "recent" ? "Recent" : "Top"}</button>
+              );
+            })}
+          </div>
+        </>
       )}
-
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginBottom: 12 }}>
-        {(["recent", "top"] as FeedSort[]).map((s) => {
-          const active = sort === s;
-          return (
-            <button key={s} onClick={() => setSort(s)} style={{
-              padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
-              background: active ? tint(TEAL, "18") : "transparent", color: active ? TEAL : MUTED,
-              border: `1px solid ${active ? tint(TEAL, "55") : LINE}`,
-            }}>{s === "recent" ? "Recent" : "Top"}</button>
-          );
-        })}
-      </div>
 
       <PullToRefresh onRefresh={() => loadFeed(true)}>
         {events === null && <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>}
 
         {events !== null && events.length === 0 && (
+          (controlled && scope === "following" && emptyFollowing != null) ? (
+            <>{emptyFollowing}</>
+          ) : (
           <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 20, textAlign: "center" }}>
             <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, margin: 0 }}>
               {scope === "following"
@@ -318,12 +338,13 @@ export function FeedStream({ embedded = false, signInNext = "/fantasy/feed" }: {
                 : "No moves yet. Once managers start making transfers and playing chips, they land here."}
             </p>
             {scope === "following" && (
-              <button onClick={() => router.push("/fantasy/feed/discover")} style={{
+              <button onClick={() => router.push("/fantasy/social?tab=discover")} style={{
                 marginTop: 14, padding: "10px 18px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
                 background: TEAL, color: "#04231f", border: "none",
               }}>Find managers to follow</button>
             )}
           </div>
+          )
         )}
 
         {events?.map((ev) => <FeedCard key={ev.id} ev={ev} signInNext={signInNext} />)}

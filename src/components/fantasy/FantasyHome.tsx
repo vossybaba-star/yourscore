@@ -10,11 +10,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
-import { FeedStream } from "@/components/fantasy/FeedStream";
-import { recordVisit } from "@/lib/nav";
 import Link from "next/link";
 import {
-  AMBER, Btn, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PosTag, TEAL, page, tint, Skel,
+  AMBER, Btn, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PosTag, TEAL, page, tint, Skel,
 } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -304,48 +302,21 @@ function MoveCard({ ev }: { ev: FeedEvent }) {
   );
 }
 
-// ── The seamless HOME | FEED sub-tab (no route change) ───────────────────────
-function SubTabs({ tab, onTab }: { tab: "home" | "feed"; onTab: (t: "home" | "feed") => void }) {
-  return (
-    <div style={{ display: "flex", gap: 4, padding: 3, borderRadius: 12, background: PANEL_2, border: `1px solid ${LINE}`, marginBottom: 14 }}>
-      {(["home", "feed"] as const).map((t) => (
-        <button key={t} onClick={() => onTab(t)} style={{
-          flex: 1, padding: "7px 4px", borderRadius: 9, fontSize: 13.5, fontWeight: 700, cursor: "pointer", textTransform: "capitalize",
-          background: tab === t ? tint(TEAL, "22") : "transparent", color: tab === t ? TEAL : MUTED, border: `1px solid ${tab === t ? tint(TEAL, "55") : "transparent"}`,
-        }}>{t}</button>
-      ))}
-    </div>
-  );
-}
-
 export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" }) {
   const router = useRouter();
   const [data, setData] = useState<HomeData | null>(null);
   const [pub, setPub] = useState<{ moves: FeedEvent[]; scout: ScoutPick[] } | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [tab, setTab] = useState<"home" | "feed">("home");
   const [adopting, setAdopting] = useState(false);
 
-  // The HOME | FEED sub-tab lives in the URL (?tab=feed), not just client state.
-  // Without this, opening a manager's profile from the feed and pressing back
-  // returned to /fantasy with the tab reset to Home — the trail only recorded the
-  // bare route (founder, 3 Aug). On selecting the tab we (1) put it in the URL so
-  // a refresh is honest, and (2) record it on the nav trail directly, so smartBack
-  // retraces to the feed you left. We write the trail explicitly rather than rely
-  // on NavTracker picking up a replaceState — it doesn't. Restore it on mount.
+  // The old Home/Feed toggle is gone — the feed is now the first-class Social tab.
+  // Honour any stale ?tab=feed deep-link (older shares, the launch push landing on
+  // Home) by forwarding it to /fantasy/social.
   useEffect(() => {
     try {
-      if (new URLSearchParams(window.location.search).get("tab") === "feed") setTab("feed");
+      if (new URLSearchParams(window.location.search).get("tab") === "feed") router.replace("/fantasy/social");
     } catch { /* no search params — stay on Home */ }
-  }, []);
-  const selectTab = useCallback((t: "home" | "feed") => {
-    setTab(t);
-    const url = t === "feed" ? "/fantasy?tab=feed" : "/fantasy";
-    try {
-      window.history.replaceState(null, "", url);
-      recordVisit(url);
-    } catch { /* storage/history unavailable — tab still switches */ }
-  }, []);
+  }, [router]);
 
   const load = useCallback(async (): Promise<HomeData | null> => {
     try {
@@ -416,10 +387,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
           <Skel h={40} r={12} /><Skel h={130} r={16} /><Skel h={120} r={12} /><Skel h={64} r={12} />
         </div>
       ) : (
-        <>
-          <SubTabs tab={tab} onTab={selectTab} />
-          {tab === "home" ? (
-            <PullToRefresh onRefresh={refresh}>
+        <PullToRefresh onRefresh={refresh}>
               <YouStrip you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
               {/* A door into the rules, right under the squad — new managers land here. */}
               <button onClick={() => router.push("/fantasy/rules")} style={{
@@ -450,12 +418,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
                   </button>
                 </div>
               )}
-            </PullToRefresh>
-          ) : (
-            /* The real feed — reactions + comments — the same one at /fantasy/feed. */
-            <FeedStream embedded signInNext="/fantasy?tab=feed" />
-          )}
-        </>
+        </PullToRefresh>
       )}
     </main>
   );
