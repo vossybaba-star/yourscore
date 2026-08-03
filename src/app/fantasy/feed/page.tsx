@@ -6,11 +6,12 @@
  * "fantasy_feed"). Read-only until the season is moving; emitted on transfers,
  * chips, big hauls and big rank jumps.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react"; // useCallback: loadFeed + card actions
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, TEAL, tint, page } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
+import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
@@ -172,6 +173,27 @@ export default function FantasyFeedPage() {
     if (p.get("sort") === "top") setSort("top");
   }, []);
 
+  // Fetch the current scope+sort. `silent` keeps whatever's on screen while it
+  // reloads (used by pull-to-refresh, so the list doesn't blank out under the
+  // spinner); the normal path clears to the Loading… state first.
+  const loadFeed = useCallback(async (silent = false): Promise<{ updated?: boolean }> => {
+    if (!silent) setEvents(null);
+    try {
+      const res = await fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}`);
+      const d = res.ok ? await res.json() : { events: [], followingCount: 0 };
+      setFollowingCount(d.followingCount ?? 0);
+      if ((d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return {}; }
+      const next: FeedEvent[] = d.events ?? [];
+      // "Anything new?" — compare the newest id against what's already on top.
+      const updated = next[0]?.id !== events?.[0]?.id || next.length !== (events?.length ?? -1);
+      setEvents(next);
+      return { updated };
+    } catch {
+      if (!silent) setEvents([]);
+      return {};
+    }
+  }, [scope, sort, events]);
+
   // Keep scope+sort in the URL, so pressing back from a player/manager profile
   // returns to the SAME view (and Next restores the scroll position) instead of
   // resetting to the default tab.
@@ -194,6 +216,7 @@ export default function FantasyFeedPage() {
       })
       .catch(() => { if (live) setEvents([]); });
     return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, sort]);
 
   const showScopeTabs = (followingCount ?? 0) > 0;
@@ -242,25 +265,27 @@ export default function FantasyFeedPage() {
           })}
         </div>
 
-        {events === null && <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>}
+        <PullToRefresh onRefresh={() => loadFeed(true)}>
+          {events === null && <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>}
 
-        {events !== null && events.length === 0 && (
-          <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 20, textAlign: "center" }}>
-            <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, margin: 0 }}>
-              {scope === "following"
-                ? "Nothing here yet. Follow some managers and their moves show up here."
-                : "No moves yet. Once managers start making transfers and playing chips, they land here."}
-            </p>
-            {scope === "following" && (
-              <button onClick={() => router.push("/fantasy/feed/discover")} style={{
-                marginTop: 14, padding: "10px 18px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-                background: TEAL, color: "#04231f", border: "none",
-              }}>Find managers to follow</button>
-            )}
-          </div>
-        )}
+          {events !== null && events.length === 0 && (
+            <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 20, textAlign: "center" }}>
+              <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, margin: 0 }}>
+                {scope === "following"
+                  ? "Nothing here yet. Follow some managers and their moves show up here."
+                  : "No moves yet. Once managers start making transfers and playing chips, they land here."}
+              </p>
+              {scope === "following" && (
+                <button onClick={() => router.push("/fantasy/feed/discover")} style={{
+                  marginTop: 14, padding: "10px 18px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
+                  background: TEAL, color: "#04231f", border: "none",
+                }}>Find managers to follow</button>
+              )}
+            </div>
+          )}
 
-        {events?.map((ev) => <FeedCard key={ev.id} ev={ev} />)}
+          {events?.map((ev) => <FeedCard key={ev.id} ev={ev} />)}
+        </PullToRefresh>
       </main>
       <BottomNav />
     </>
