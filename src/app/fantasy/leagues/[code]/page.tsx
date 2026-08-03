@@ -104,23 +104,42 @@ export default function LeaguePage() {
     return () => clearInterval(t);
   }, [detail?.league.isMember, loadChat]);
 
-  const inviteUrl = () => `${window.location.origin}/fantasy/leagues/${code}`;
-  const inviteText = () => `Join my YourScore Fantasy league "${detail?.league.name ?? ""}" · code ${code}`;
+  // The invite is a LINK, not a code: ?join=1 drops the recipient straight into
+  // the league on tap (a new user signs in and lands right back here). No code
+  // to type, no extra step — the whole point of "invite a friend".
+  const inviteUrl = () => `${window.location.origin}/fantasy/leagues/${code}?join=1`;
+  const inviteText = () => `Join my YourScore Fantasy league "${detail?.league.name ?? ""}"`;
   const inviteMsg = () => `${inviteText()} ${inviteUrl()}`;
   const shareNative = () => { trackFantasyInvite("native"); if (navigator.share) navigator.share({ title: "YourScore Fantasy league", text: inviteText(), url: inviteUrl() }).catch(() => {}); setInviteOpen(false); };
   const shareWhatsApp = () => { trackFantasyInvite("whatsapp"); window.open(`https://wa.me/?text=${encodeURIComponent(inviteMsg())}`, "_blank", "noopener,noreferrer"); setInviteOpen(false); };
   const shareSms = () => { trackFantasyInvite("sms"); window.location.href = `sms:?&body=${encodeURIComponent(inviteMsg())}`; };
-  const copyLink = async () => { trackFantasyInvite("copy"); try { await navigator.clipboard.writeText(inviteMsg()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ } };
+  const copyLink = async () => { trackFantasyInvite("copy"); try { await navigator.clipboard.writeText(inviteUrl()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ } };
   const join = async () => {
     if (busy) return;
     setBusy(true); setErr(null);
     try { await apiRaw("leagues/join", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }); await load(); }
     catch (e) {
-      if ((e as { status?: number }).status === 401) router.push(`/auth/sign-in?next=/fantasy/leagues/${code}`);
+      // Preserve the full URL (incl. ?join=1) so an invited guest lands back here
+      // and the auto-join completes after they sign in.
+      if ((e as { status?: number }).status === 401) router.push(`/auth/sign-in?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       else setErr((e as Error).message);
     }
     setBusy(false);
   };
+
+  // Auto-join from an invite link: once the league loads and you're not in it yet,
+  // ?join=1 joins you straight away, then cleans the flag off the URL.
+  const [autoJoined, setAutoJoined] = useState(false);
+  useEffect(() => {
+    if (autoJoined || busy || !detail || detail.league.isMember) return;
+    if (new URLSearchParams(window.location.search).get("join") !== "1") return;
+    setAutoJoined(true);
+    void join().then(() => {
+      const u = new URL(window.location.href); u.searchParams.delete("join");
+      window.history.replaceState(null, "", u);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail, autoJoined, busy]);
 
   if (notFound) return (
     <>
@@ -224,7 +243,7 @@ export default function LeaguePage() {
       {inviteOpen && (
         <Sheet onClose={() => setInviteOpen(false)} labelledBy="invite-title">
           <div id="invite-title" className="font-display" style={{ fontSize: 20, color: INK, lineHeight: 1.1 }}>Invite friends</div>
-          <p style={{ fontSize: 12.5, color: MUTED, margin: "4px 0 14px", lineHeight: 1.45 }}>Anyone with the link joins straight away · code <b style={{ color: INK }}>{code}</b></p>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "4px 0 14px", lineHeight: 1.45 }}>Send the link. One tap and they land straight in the league. No code to type.</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {typeof navigator !== "undefined" && !!navigator.share && (
               <InviteRow onClick={shareNative} accent={TEAL} label="Share…" sub="Your phone's share sheet"
@@ -237,6 +256,7 @@ export default function LeaguePage() {
             <InviteRow onClick={copyLink} accent={GOLD} label={copied ? "Link copied" : "Copy link"} sub={inviteUrl()}
               icon={<><path d="M10 13a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1" /><path d="M14 11a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1" /></>} />
           </div>
+          <p style={{ fontSize: 11, color: MUTED, textAlign: "center", marginTop: 12 }}>Prefer to type it? Code <b style={{ color: "#c7d0cb", letterSpacing: "0.06em" }}>{code}</b></p>
         </Sheet>
       )}
     </main>

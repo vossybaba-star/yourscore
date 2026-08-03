@@ -235,7 +235,9 @@ export async function inviteToLeague(
   const { data: prof } = await svc.from("profiles").select("display_name, username").eq("id", inviterId).maybeSingle();
   const who = prof?.display_name ?? (prof?.username ? `@${prof.username}` : "A manager");
   const key = `league-invite:${league.id}:${invitee}`;
-  const url = `/fantasy/leagues/${league.join_code}`;
+  // ?join=1 makes the invite a one-tap join: opening it drops them straight into
+  // the league (same as the shared invite link).
+  const url = `/fantasy/leagues/${league.join_code}?join=1`;
 
   await createNotification({
     userId: invitee,
