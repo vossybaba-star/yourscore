@@ -1110,7 +1110,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>
             {hasLeagues
               ? "See how you stack up this gameweek and this month."
-              : "Create a league, share the code, see who really knows football."}
+              : "Create a league, share your invite link, see who really knows football."}
           </p>
         </Card>
       </div>
