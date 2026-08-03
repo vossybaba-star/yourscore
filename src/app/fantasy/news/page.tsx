@@ -17,7 +17,8 @@ import { ScoutPlayersBrowser } from "@/components/fantasy/ScoutPlayersBrowser";
 import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { ShortlistView } from "@/components/fantasy/ShortlistView";
 import { ScoutYourSquad } from "@/components/fantasy/ScoutYourSquad";
-import { FantasyMasthead, GOLD, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
+import { FixturesGrid } from "@/components/fantasy/FixturesGrid";
+import { FantasyMasthead, GOLD, INK, MUTED, card, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
 
 export const dynamic = "force-dynamic"; // reads the auth cookie to wall the content
@@ -31,7 +32,7 @@ const MAX_ITEM_AGE_MS = 10 * 24 * 60 * 60 * 1000;
 function fresh<T extends { createdAt: string }>(items?: T[]): T[] {
   return (items ?? []).filter((i) => Date.now() - new Date(i.createdAt).getTime() < MAX_ITEM_AGE_MS);
 }
-const VALID: ScoutTabKey[] = ["briefing", "picks", "players", "shortlist", "squad"];
+const VALID: ScoutTabKey[] = ["briefing", "picks", "players", "fixtures", "shortlist", "squad"];
 
 export default async function ScoutBriefing({ searchParams }: { searchParams?: { tab?: string } }) {
   const [{ data: { user } }, doc] = await Promise.all([
@@ -53,6 +54,19 @@ export default async function ScoutBriefing({ searchParams }: { searchParams?: {
     ),
     picks: <FourPicks />,
     players: <><CompareEntry /><ScoutPlayersBrowser /></>,
+    fixtures: (() => {
+      const gws = doc?.fixtures?.gws ?? [];
+      const runs = doc?.fixtures?.runs ?? [];
+      const dl = doc?.deadline && new Date(doc.deadline).getTime() > Date.now() ? `GW${doc.gw} deadline · ${ukTime(doc.deadline)}` : null;
+      return runs.length === 0 ? (
+        <section style={card}>
+          <div style={{ color: INK, fontSize: 14, fontWeight: 600 }}>Fixtures land when the season opens</div>
+          <div style={{ color: MUTED, fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
+            Once the gameweek calendar is set, this shows every club&apos;s next five, colour-coded by how hard each game is.
+          </div>
+        </section>
+      ) : <FixturesGrid gws={gws} runs={runs} deadlineLine={dl} />;
+    })(),
     shortlist: <ShortlistView />,
     squad: <ScoutYourSquad />,
   } : undefined;

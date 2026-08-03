@@ -14,11 +14,12 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Btn, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 
-export type ScoutTabKey = "briefing" | "picks" | "players" | "shortlist" | "squad";
+export type ScoutTabKey = "briefing" | "picks" | "players" | "fixtures" | "shortlist" | "squad";
 const TABS: { key: ScoutTabKey; label: string }[] = [
   { key: "briefing", label: "Briefing" },
   { key: "picks", label: "Picks" },
   { key: "players", label: "Players" },
+  { key: "fixtures", label: "Fixtures" },
   { key: "shortlist", label: "Shortlist" },
   { key: "squad", label: "Your Squad" },
 ];
@@ -70,6 +71,7 @@ export function ScoutTabsShell({ initial = "briefing", signedIn, slots }: {
             {active === "briefing" ? "This week's team news and tips"
               : active === "picks" ? "The Scout's four picks"
               : active === "players" ? "Every player, ranked and compared"
+              : active === "fixtures" ? "Every club's next five, by difficulty"
               : active === "shortlist" ? "Your saved players"
               : "Injuries and doubts in your squad"}
           </div>

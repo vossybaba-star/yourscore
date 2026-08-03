@@ -279,7 +279,7 @@ export function PlanAhead({ embedded = false }: { embedded?: boolean }) {
         <Card style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
             <span style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.08em", color: TEAL }}>YOUR SQUAD&apos;S FIXTURES</span>
-            <button onClick={() => router.push("/fantasy/fixtures")} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+            <button onClick={() => router.push("/fantasy/news?tab=fixtures")} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
               All fixtures →
             </button>
           </div>
