@@ -72,6 +72,7 @@ export default function LeaguesHome() {
   const [name, setName] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [code, setCode] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Restore the subtab from the URL on mount, and keep it there so back from a
   // profile or a league returns to the same subtab.
@@ -119,6 +120,22 @@ export default function LeaguesHome() {
     } catch (e) { setErr((e as Error).message); setBusy(false); }
   };
 
+  // Invite share for a hub tile — native share sheet first, clipboard fallback
+  // with a brief "Link copied" state per league (matches the [code] detail page).
+  const shareInvite = async (l: MyLeague) => {
+    const url = `${window.location.origin}/fantasy/leagues/${l.code}`;
+    const text = `Join my YourScore Fantasy league "${l.name}"`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "YourScore Fantasy league", text, url }); } catch { /* cancelled */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(l.id);
+      setTimeout(() => setCopiedId(null), 1800);
+    } catch { /* no clipboard */ }
+  };
+
   // The crest badge (a league image once set, else a shield) shared by both tiles.
   const crest = (imageUrl?: string | null) => (
     imageUrl ? (
@@ -147,6 +164,38 @@ export default function LeaguesHome() {
     );
   };
 
+  // Invite control on a hub tile — a small pill with a share glyph. Sits inside
+  // the tile's <button> root, so it's a span (nested <button> is invalid HTML
+  // and breaks hydration) and stops the click from bubbling into navigation.
+  const inviteControl = (l: MyLeague) => {
+    const copied = copiedId === l.id;
+    return (
+      <span
+        role="button"
+        tabIndex={0}
+        aria-label={`Share invite link for ${l.name}`}
+        onClick={(e) => { e.stopPropagation(); void shareInvite(l); }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault(); e.stopPropagation(); void shareInvite(l);
+        }}
+        style={{
+          display: "flex", alignItems: "center", gap: 5, flexShrink: 0, cursor: "pointer",
+          padding: "5px 9px", borderRadius: 999, fontSize: 11.5, fontWeight: 700,
+          background: copied ? tint(LIME, "1e") : tint(TEAL, "1c"),
+          color: copied ? LIME : TEAL,
+          border: `1px solid ${copied ? tint(LIME, "44") : tint(TEAL, "44")}`,
+        }}
+      >
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+          <line x1="8.6" y1="10.5" x2="15.4" y2="6.5" /><line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+        </svg>
+        {copied ? "Link copied" : "Invite"}
+      </span>
+    );
+  };
+
   // YOUR LEAGUES tile — crest + name, then a live "what's happening" strip: the
   // latest chat line, a recent joiner, or a nudge. Brings the list to life.
   const myLeagueTile = (l: MyLeague) => {
@@ -168,6 +217,7 @@ export default function LeaguesHome() {
               {l.memberCount} member{l.memberCount === 1 ? "" : "s"}{h.msgCount > 0 ? ` · ${h.msgCount} message${h.msgCount === 1 ? "" : "s"}` : ""}
             </span>
           </span>
+          {inviteControl(l)}
           <span style={{ color: TEAL, fontSize: 18, flexShrink: 0 }}>›</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, padding: "8px 10px", background: PANEL_2, borderRadius: 10, border: `1px solid ${LINE}` }}>
