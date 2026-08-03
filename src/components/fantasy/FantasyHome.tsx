@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
+import { recordVisit } from "@/lib/nav";
 import Link from "next/link";
 import {
   AMBER, Btn, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PosTag, TEAL, page, tint, Skel,
@@ -324,6 +325,27 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
   const [tab, setTab] = useState<"home" | "feed">("home");
   const [adopting, setAdopting] = useState(false);
 
+  // The HOME | FEED sub-tab lives in the URL (?tab=feed), not just client state.
+  // Without this, opening a manager's profile from the feed and pressing back
+  // returned to /fantasy with the tab reset to Home — the trail only recorded the
+  // bare route (founder, 3 Aug). On selecting the tab we (1) put it in the URL so
+  // a refresh is honest, and (2) record it on the nav trail directly, so smartBack
+  // retraces to the feed you left. We write the trail explicitly rather than rely
+  // on NavTracker picking up a replaceState — it doesn't. Restore it on mount.
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("tab") === "feed") setTab("feed");
+    } catch { /* no search params — stay on Home */ }
+  }, []);
+  const selectTab = useCallback((t: "home" | "feed") => {
+    setTab(t);
+    const url = t === "feed" ? "/fantasy?tab=feed" : "/fantasy";
+    try {
+      window.history.replaceState(null, "", url);
+      recordVisit(url);
+    } catch { /* storage/history unavailable — tab still switches */ }
+  }, []);
+
   const load = useCallback(async (): Promise<HomeData | null> => {
     try {
       if (mode === "public") {
@@ -394,7 +416,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
         </div>
       ) : (
         <PullToRefresh onRefresh={refresh}>
-          <SubTabs tab={tab} onTab={setTab} />
+          <SubTabs tab={tab} onTab={selectTab} />
           {tab === "home" ? (
             <>
               <YouStrip you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
