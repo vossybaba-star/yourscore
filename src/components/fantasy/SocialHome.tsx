@@ -3,11 +3,11 @@
  * The Social tab — a first-class Fantasy destination (founder, 3 Aug). The feed
  * is OPEN: it shows activity from everyone, not just who you follow, so there's
  * always something happening. Three segments:
- *   Latest    — everyone's activity, newest first (the default open feed).
+ *   Top       — everyone's activity, most-talked-about first (the default open feed).
  *   Following — narrowed to the managers you follow.
  *   Discover  — reason-ranked suggestions + username search (<DiscoverManagers/>).
  *
- * Latest/Following reuse <FeedStream/> in controlled mode (this shell owns the
+ * Top/Following reuse <FeedStream/> in controlled mode (this shell owns the
  * scope, so FeedStream draws no chrome of its own). The active segment rides the
  * URL (?tab=) and the nav trail, so opening a manager's profile and pressing back
  * returns to the segment you left.
@@ -18,9 +18,9 @@ import { FeedStream } from "@/components/fantasy/FeedStream";
 import { DiscoverManagers } from "@/components/fantasy/DiscoverManagers";
 import { recordVisit } from "@/lib/nav";
 
-type SocialTab = "latest" | "following" | "discover";
+type SocialTab = "top" | "following" | "discover";
 const TABS: { id: SocialTab; label: string }[] = [
-  { id: "latest", label: "Latest" },
+  { id: "top", label: "Top" },
   { id: "following", label: "Following" },
   { id: "discover", label: "Discover" },
 ];
@@ -33,7 +33,7 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
         FOLLOW MANAGERS TO NARROW YOUR FEED
       </div>
       <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, margin: "0 0 16px" }}>
-        Follow people to see just their squads, moves and gameweek results here. Everything else is over on Latest.
+        Follow people to see just their squads, moves and gameweek results here. Everything else is over on Top.
       </p>
       <button onClick={onFind} style={{
         padding: "11px 20px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
@@ -44,7 +44,7 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
 }
 
 export function SocialHome() {
-  const [tab, setTab] = useState<SocialTab>("latest");
+  const [tab, setTab] = useState<SocialTab>("top");
 
   // Restore the segment from the URL on mount (so links and a refresh land right).
   useEffect(() => {
@@ -56,7 +56,7 @@ export function SocialHome() {
 
   const select = useCallback((t: SocialTab) => {
     setTab(t);
-    const url = t === "latest" ? "/fantasy/social" : `/fantasy/social?tab=${t}`;
+    const url = t === "top" ? "/fantasy/social" : `/fantasy/social?tab=${t}`;
     try {
       window.history.replaceState(null, "", url);
       recordVisit(url);
@@ -85,8 +85,8 @@ export function SocialHome() {
         })}
       </div>
 
-      {tab === "latest" && (
-        <FeedStream controlledScope="global" controlledSort="recent" chrome={false} signInNext="/fantasy/social" />
+      {tab === "top" && (
+        <FeedStream controlledScope="global" controlledSort="top" chrome={false} signInNext="/fantasy/social" />
       )}
       {tab === "following" && (
         <FeedStream controlledScope="following" controlledSort="recent" chrome={false} signInNext="/fantasy/social?tab=following"

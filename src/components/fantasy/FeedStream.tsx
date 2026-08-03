@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
 import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { CompactSquadPreview } from "@/components/fantasy/CompactSquadPreview";
+import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
@@ -141,11 +141,18 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
       </div>
 
-      {/* Squad tiles show a COMPACT preview (faces + hooks), not the full board, so
-          a whole post plus a peek of the next fits a phone screen. Tap opens the
+      {/* Squad tiles render the real tactical PITCH (founder, 3 Aug — a row of faces
+          isn't useful; we need to see the team in formation). Tap opens the
           manager's full squad (back retraces feed → profile → player). */}
       {hasBoard && (
-        <CompactSquadPreview board={ev.board!} actorId={ev.actorId} />
+        <Link href={`/profile/${ev.actorId}#fantasy-xi`} style={{ display: "block", marginTop: 12, textDecoration: "none" }}>
+          <div style={{ paddingBottom: 12 }}>
+            <SquadBoard mode="complete" players={ev.board!.players} xi={ev.board!.xi} bench={ev.board!.bench} captain={ev.board!.captain} vice={ev.board!.vice} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: TEAL }}>
+            See {ev.actorName}&apos;s squad <span aria-hidden>›</span>
+          </div>
+        </Link>
       )}
 
       {/* Shortlist / squad-update tiles show the one player. */}
