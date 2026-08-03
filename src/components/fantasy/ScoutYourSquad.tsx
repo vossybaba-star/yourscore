@@ -17,6 +17,7 @@ import {
   type ClientPoolPlayer, type FantasyContext, type FantasyState,
 } from "./shared";
 import { SquadBoard } from "./SquadBoard";
+import { SquadRating } from "./SquadRating";
 import { SquadUpdate } from "./SquadUpdate";
 import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
@@ -83,6 +84,7 @@ export function ScoutYourSquad() {
       {err && !state && <ErrorState message={err} onRetry={() => void load()} />}
       {!signedOut && !err && !state && <Loading label="Loading your squad" />}
 
+      <SquadRating />
       <SquadUpdate />
     </section>
   );
