@@ -55,7 +55,8 @@ const PITCH_ART =
     `</svg>`,
   );
 
-const AV = 70; // portrait diameter — 4 rows fit the landscape card at this size.
+const AV = 60; // XI portrait diameter — 4 rows + a bench strip fit the card at this size.
+const AV_B = 46; // bench portrait diameter — a touch smaller than the XI.
 
 export async function GET(req: Request) {
   const origin = new URL(req.url).origin;
@@ -68,13 +69,15 @@ export async function GET(req: Request) {
     : valTenths >= 1000 ? "Every penny of £100.0m spent"
     : `£${(valTenths / 10).toFixed(1)}m of £100.0m spent`;
 
-  const players = (q.get("xi") ?? "")
+  const parseChunks = (raw: string) => raw
     .split("|")
     .map((chunk) => {
       const [pos, player, club, face, priceTenths] = chunk.split("~");
       return { pos: pos ?? "", name: player ?? "", club: club ?? "", face: face || "", priceTenths: Number(priceTenths || 0) };
     })
     .filter((p) => p.name);
+  const players = parseChunks(q.get("xi") ?? "");
+  const bench = parseChunks(q.get("bench") ?? "");
 
   // Surname only: eleven full names on a pitch wrap and the shape breaks.
   const short = (full: string) => {
@@ -113,14 +116,14 @@ export async function GET(req: Request) {
             </span>
           </div>
           <span style={{ fontSize: 23, color: INK, fontWeight: 700 }}>
-            {name ? `${name}'s XI` : "My XI"}{gw ? ` · GW${gw}` : ""}
+            {name ? `${name}'s squad` : "My squad"}{gw ? ` · GW${gw}` : ""}
           </span>
         </div>
 
         {/* The pitch — four bands, forwards at the top, keeper at the back. */}
         <div style={{
           display: "flex", flexDirection: "column", flex: 1,
-          justifyContent: "space-between", padding: "16px 48px",
+          justifyContent: "space-between", padding: "10px 48px",
         }}>
           {rows.map((row) => (
             <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 26 }}>
@@ -180,10 +183,54 @@ export async function GET(req: Request) {
           ))}
         </div>
 
+        {/* The bench — the four subs, so the card shows the full fifteen, not just
+            the eleven. A compact strip under the pitch, "BENCH" on the left. */}
+        {bench.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 24, padding: "0 56px 4px" }}>
+            <span style={{ fontSize: 18, color: MUTED, fontWeight: 800, letterSpacing: 3 }}>BENCH</span>
+            <div style={{ display: "flex", gap: 30, flex: 1, justifyContent: "flex-start" }}>
+              {bench.map((p, i) => {
+                const crest = crestUrl(p.club);
+                const pal = avatarPalette(p.name);
+                return (
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 116 }}>
+                    <div style={{ display: "flex", position: "relative" }}>
+                      <div style={{
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        width: AV_B, height: AV_B, borderRadius: AV_B, overflow: "hidden",
+                        border: "3px solid rgba(255,255,255,0.16)",
+                        background: `linear-gradient(140deg, ${pal.from}, ${pal.to})`, color: pal.fg,
+                      }}>
+                        <span style={{ fontSize: AV_B * 0.44, fontWeight: 800, lineHeight: 1 }}>{avatarInitial(p.name)}</span>
+                        {p.face ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.face} width={AV_B} height={AV_B} alt=""
+                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                        ) : null}
+                      </div>
+                      {crest ? (
+                        <div style={{
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          position: "absolute", bottom: -3, left: -3, width: 24, height: 24, borderRadius: 24,
+                          background: "#0a1710", border: "2px solid #0a1710",
+                        }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={crest} width={18} height={18} alt="" style={{ objectFit: "contain" }} />
+                        </div>
+                      ) : null}
+                    </div>
+                    <span style={{ marginTop: 5, fontSize: 17, fontWeight: 700, color: INK, textShadow: "0 1px 2px rgba(0,0,0,0.7)", whiteSpace: "nowrap" }}>{short(p.name)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Footer — the challenge and the spend. */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "12px 56px 34px",
+          padding: "8px 56px 26px",
         }}>
           <span style={{ fontSize: 30, color: TEAL, fontWeight: 800 }}>
             Think you can pick better?
