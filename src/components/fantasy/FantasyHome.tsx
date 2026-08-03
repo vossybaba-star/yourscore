@@ -302,6 +302,52 @@ function MoveCard({ ev }: { ev: FeedEvent }) {
   );
 }
 
+// ── Home's Social preview — two recent moves + a door into the Social tab ─────
+function HomeSocialPreview({ moves, scope }: { moves: FeedEvent[]; scope: "following" | "global" }) {
+  const router = useRouter();
+  if (!moves.length) return null;
+  const top = moves.slice(0, 2);
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 2px 8px" }}>
+        <span className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>
+          {scope === "following" ? "FROM YOUR FEED" : "WHAT MANAGERS ARE DOING"}
+        </span>
+        <span onClick={() => router.push("/fantasy/social")} style={{ fontSize: 12, fontWeight: 700, color: TEAL, cursor: "pointer" }}>Open Social →</span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {top.map((ev) => (
+          <button key={ev.id} onClick={() => router.push("/fantasy/social")} style={{ width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 11 }}>
+            <ManagerFace name={ev.actorName} avatarUrl={ev.actorAvatar} club={ev.actorClub} size={30} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 13, color: INK, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <b style={{ fontWeight: 700 }}>{ev.actorName}</b> <span style={{ color: "#c7d0cb" }}>{ev.sentence}</span>
+              </div>
+              <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{timeAgo(ev.createdAt)}</div>
+            </div>
+            <MoveGlyph type={ev.type} />
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ── The rules, demoted to a quiet link near the bottom (no longer a hero card) ─
+function RulesRow() {
+  const router = useRouter();
+  return (
+    <button onClick={() => router.push("/fantasy/rules")} style={{
+      width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+      background: "transparent", border: `1px solid ${LINE}`, borderRadius: 12, padding: "11px 13px", marginTop: 18,
+    }}>
+      <span className="font-display" style={{ flexShrink: 0, width: 28, height: 28, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, background: tint(TEAL, "12"), color: TEAL, border: `1px solid ${tint(TEAL, "2a")}` }}>?</span>
+      <span style={{ minWidth: 0, flex: 1, fontSize: 13, color: MUTED }}>How YourScore Fantasy works. The full rules.</span>
+      <span aria-hidden style={{ color: MUTED, fontSize: 16, flexShrink: 0 }}>→</span>
+    </button>
+  );
+}
+
 export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" }) {
   const router = useRouter();
   const [data, setData] = useState<HomeData | null>(null);
@@ -388,36 +434,27 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
         </div>
       ) : (
         <PullToRefresh onRefresh={refresh}>
-              <YouStrip you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
-              {/* A door into the rules, right under the squad — new managers land here. */}
-              <button onClick={() => router.push("/fantasy/rules")} style={{
-                width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
-                background: `linear-gradient(150deg, ${tint(TEAL, "12")}, ${tint(TEAL, "03")})`,
-                border: `1px solid ${tint(TEAL, "2a")}`, borderRadius: 14, padding: "13px 15px", marginTop: 12,
-              }}>
-                <span className="font-display" style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 999, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, background: tint(TEAL, "16"), color: TEAL, border: `1px solid ${tint(TEAL, "34")}` }}>?</span>
-                <span style={{ minWidth: 0, flex: 1 }}>
-                  <span className="font-display" style={{ display: "block", fontSize: 15, color: INK, lineHeight: 1.15 }}>How YourScore Fantasy works</span>
-                  <span style={{ display: "block", fontSize: 12, color: MUTED, marginTop: 2 }}>Squad, transfers, scoring and chips. The full rules.</span>
+          <YouStrip you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
+          {/* Active league(s) + chat — one tap into the conversation. */}
+          <LeagueChats leagues={data.leagues} />
+          <ScoutRail picks={data.scout} />
+          {/* A preview of the feed, not the full feed — the Social tab is the feed. */}
+          <HomeSocialPreview moves={data.moves} scope={data.movesScope} />
+          {data.todo.follow && (
+            <div style={{ marginTop: 12 }}>
+              <button onClick={() => router.push("/fantasy/social?tab=discover")} style={{ width: "100%", textAlign: "left", cursor: "pointer", display: "flex", gap: 12, alignItems: "center", background: PANEL, border: `1px solid ${tint(LIME, "3a")}`, borderRadius: 12, padding: 12 }}>
+                <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: tint(LIME, "16"), border: `1px solid ${tint(LIME,"44")}`, color: LIME, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0111 0M17 7.5a3 3 0 010 5M19.5 19a5 5 0 00-3-4.6" /></svg>
                 </span>
-                <span aria-hidden style={{ color: TEAL, fontSize: 18, flexShrink: 0 }}>→</span>
-              </button>
-              <ScoutRail picks={data.scout} />
-              <LeagueChats leagues={data.leagues} />
-              {data.todo.follow && (
-                <div style={{ marginTop: 12 }}>
-                  <button onClick={() => router.push("/fantasy/feed/discover")} style={{ width: "100%", textAlign: "left", cursor: "pointer", display: "flex", gap: 12, alignItems: "center", background: PANEL, border: `1px solid ${tint(LIME, "3a")}`, borderRadius: 12, padding: 12 }}>
-                    <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: tint(LIME, "16"), border: `1px solid ${tint(LIME,"44")}`, color: LIME, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0111 0M17 7.5a3 3 0 010 5M19.5 19a5 5 0 00-3-4.6" /></svg>
-                    </span>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>Follow other managers</div>
-                      <div style={{ fontSize: 12, color: MUTED, marginTop: 1, lineHeight: 1.35 }}>Their moves land in your feed. We&apos;ll suggest people who picked like you.</div>
-                    </div>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: LIME, whiteSpace: "nowrap" }}>Find people →</span>
-                  </button>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>Follow other managers</div>
+                  <div style={{ fontSize: 12, color: MUTED, marginTop: 1, lineHeight: 1.35 }}>Their moves land in your feed. We&apos;ll suggest people who picked like you.</div>
                 </div>
-              )}
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: LIME, whiteSpace: "nowrap" }}>Find people →</span>
+              </button>
+            </div>
+          )}
+          <RulesRow />
         </PullToRefresh>
       )}
     </main>

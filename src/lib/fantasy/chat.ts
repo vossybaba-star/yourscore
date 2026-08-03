@@ -556,21 +556,37 @@ export async function sharePlayerToLeague(db: Db, userId: string, code: string, 
   return { ok: true };
 }
 
-/** Share the sharer's OWN squad into the league chat (from the composer). Snapshot
- *  at share time — the card shows the eleven they had when they posted it. */
-export async function shareSquad(db: Db, userId: string, code: string) {
+/** Share a squad into the league chat. Defaults to the sharer's OWN squad (from
+ *  the composer); pass `ofUserId` to share ANOTHER manager's squad (from a Social
+ *  feed post). Snapshot at share time — the card shows the eleven they had when it
+ *  was posted. The comment is authored by the sharer; the payload carries the
+ *  original manager so the card can name and link back to them. */
+export async function shareSquad(db: Db, userId: string, code: string, ofUserId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
+  const targetId = (typeof ofUserId === "string" && ofUserId) ? ofUserId : userId;
+  const own = targetId === userId;
   const { data: squad } = await db.from("fantasy_squads")
-    .select("xi, bench, captain, vice").eq("user_id", userId).maybeSingle();
+    .select("xi, bench, captain, vice").eq("user_id", targetId).maybeSingle();
   const xi = squad && Array.isArray(squad.xi) ? (squad.xi as number[]) : [];
-  if (!xi.length) throw new HttpError(409, "build a squad first");
+  if (!xi.length) throw new HttpError(409, own ? "build a squad first" : "that manager hasn't built a squad yet");
+
+  // Resolve the original manager's name server-side (never trust a client name).
+  let ofName: string | null = null;
+  if (!own) {
+    const { data: prof } = await db.from("profiles").select("display_name, username").eq("id", targetId).maybeSingle();
+    ofName = (prof?.display_name ?? prof?.username ?? "a manager");
+  }
+  const action = own ? "shared their squad" : `shared ${ofName}'s squad`;
   const { error } = await db.from("comments").insert({
     subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
-    body: "shared their squad", kind: "squad",
-    payload: { xi, bench: (squad!.bench as number[]) ?? [], captain: squad!.captain ?? null, vice: squad!.vice ?? null },
+    body: action, kind: "squad",
+    payload: {
+      xi, bench: (squad!.bench as number[]) ?? [], captain: squad!.captain ?? null, vice: squad!.vice ?? null,
+      ...(own ? {} : { ofUserId: targetId, ofName }),
+    },
   });
   if (error) throw new HttpError(500, error.message);
-  void notifyLeagueShare(db, league.id, code, league.name, userId, "shared their squad");
+  void notifyLeagueShare(db, league.id, code, league.name, userId, action);
   return { ok: true };
 }
 

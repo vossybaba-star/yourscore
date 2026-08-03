@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest, { params }: { params: { code: string } }) {
   const body = await req.json().catch(() => ({}));
   return withFantasyUser("league-share", (db, userId) => {
-    if (body.kind === "squad") return shareSquad(db, userId, params.code);
+    if (body.kind === "squad") return shareSquad(db, userId, params.code, body.ofUserId);
     if (body.kind === "captain") return shareCaptain(db, userId, params.code);
     if (body.kind === "news") return shareNews(db, userId, params.code, body);
     if (body.kind === "compare") return shareComparison(db, userId, params.code, body.a, body.b);

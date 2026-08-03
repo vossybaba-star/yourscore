@@ -1,17 +1,20 @@
 "use client";
 /** "Share to a league" — the share-from-source flow (no separate share screen).
  *  Generic: pass a `buildBody` that returns the POST payload for the chosen
- *  league. Used from a player's profile, the news reader and the compare screen. */
-import { useState } from "react";
+ *  league. Used from a player's profile, the news reader, the compare screen and
+ *  the Social feed (a post's "Share to league"). */
+import { useState, type ReactNode } from "react";
 import { Btn, Card, INK, LINE, MUTED, PANEL, Sheet, TEAL } from "@/components/fantasy/shared";
 
 interface MyLeague { id: string; name: string; code: string; memberCount: number }
 
-export function ShareToLeague({ label = "Share to a league", withNote = false, buildBody }: {
+export function ShareToLeague({ label = "Share to a league", withNote = false, buildBody, trigger }: {
   label?: string;
   /** Show an optional note input, passed to buildBody. */
   withNote?: boolean;
   buildBody: (note: string) => Record<string, unknown>;
+  /** Custom trigger (e.g. a plain feed action) instead of the default button. */
+  trigger?: (open: () => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [leagues, setLeagues] = useState<MyLeague[] | null>(null);
@@ -46,7 +49,7 @@ export function ShareToLeague({ label = "Share to a league", withNote = false, b
 
   return (
     <>
-      <Btn onClick={openSheet}>{label}</Btn>
+      {trigger ? trigger(openSheet) : <Btn onClick={openSheet}>{label}</Btn>}
       {open && (
         <Sheet onClose={() => setOpen(false)} labelledBy="share-league-title">
           <div id="share-league-title" style={{ fontSize: 15, fontWeight: 700, color: INK, marginBottom: 4 }}>Share to a league</div>

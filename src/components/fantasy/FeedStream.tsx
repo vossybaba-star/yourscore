@@ -19,10 +19,12 @@ import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
 import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { SquadBoard } from "@/components/fantasy/SquadBoard";
+import { CompactSquadPreview } from "@/components/fantasy/CompactSquadPreview";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
+import { ShareToLeague } from "@/components/fantasy/league/ShareToLeague";
+import { FollowButton } from "@/components/social/FollowButton";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -121,23 +123,8 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
 function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-
-  const shareSquad = useCallback(async () => {
-    let url = `${window.location.origin}/profile/${ev.actorId}`;
-    try {
-      const res = await fetch("/api/fantasy/share", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: "squad", userId: ev.actorId }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (res.ok && d?.url) url = `${window.location.origin}${d.url}`;
-    } catch { /* fall back to the profile link */ }
-    const data = { title: `${ev.actorName}'s squad`, text: `${ev.actorName}'s YourScore Fantasy squad`, url };
-    try {
-      if (navigator.share) await navigator.share(data);
-      else await navigator.clipboard.writeText(url);
-    } catch { /* user cancelled the share sheet */ }
-  }, [ev.actorId, ev.actorName]);
+  const hasBoard = !!(ev.board && ev.board.xi.length > 0);
+  const canShare = hasBoard || (!!ev.player && ev.playerId != null);
 
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12, marginBottom: 10 }}>
@@ -150,19 +137,15 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
           </div>
           <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{timeAgo(ev.createdAt)}</div>
         </div>
+        {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts. */}
+        <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
       </div>
 
-      {/* Squad-complete tiles render the real pitch board, a link INTO the manager's
-          profile squad (back retraces feed → profile → player). */}
-      {ev.board && ev.board.xi.length > 0 && (
-        <Link href={`/profile/${ev.actorId}#fantasy-xi`} style={{ display: "block", marginTop: 12, textDecoration: "none" }}>
-          <div style={{ paddingBottom: 12 }}>
-            <SquadBoard mode="complete" players={ev.board.players} xi={ev.board.xi} bench={ev.board.bench} captain={ev.board.captain} vice={ev.board.vice} />
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: TEAL }}>
-            See {ev.actorName}&apos;s squad <span aria-hidden>›</span>
-          </div>
-        </Link>
+      {/* Squad tiles show a COMPACT preview (faces + hooks), not the full board, so
+          a whole post plus a peek of the next fits a phone screen. Tap opens the
+          manager's full squad (back retraces feed → profile → player). */}
+      {hasBoard && (
+        <CompactSquadPreview board={ev.board!} actorId={ev.actorId} />
       )}
 
       {/* Shortlist / squad-update tiles show the one player. */}
@@ -182,17 +165,23 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         )
       )}
 
+      {/* Primary sequence (spec): React · Comment · Share to league. Invite the
+          manager to a league trails as a lighter action. */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 12, paddingLeft: 2, flexWrap: "wrap" }}>
         <ReactionBar ev={ev} />
         <button onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: open ? TEAL : MUTED, fontSize: 13, fontWeight: 600 }}>
           <span style={{ fontSize: 14 }}>💬</span>{ev.commentCount > 0 ? ev.commentCount : "Comment"}
         </button>
-        {ev.board && (
-          <button onClick={shareSquad} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
-            <span style={{ fontSize: 14 }}>↗</span>Share
-          </button>
+        {canShare && (
+          <ShareToLeague
+            buildBody={() => hasBoard ? { kind: "squad", ofUserId: ev.actorId } : { kind: "player", playerId: ev.playerId }}
+            trigger={(openShare) => (
+              <button onClick={openShare} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
+                <span style={{ fontSize: 14 }}>↗</span>Share to league
+              </button>
+            )}
+          />
         )}
-        {/* Invite this manager to one of your leagues. */}
         <button onClick={() => setInviteOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
           <span style={{ fontSize: 14 }}>＋</span>Invite
         </button>
