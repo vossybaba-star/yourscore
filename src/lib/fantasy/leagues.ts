@@ -51,6 +51,8 @@ export interface LeagueSummary {
   highlight: LeagueHighlight;
   /** Messages from OTHER members since this viewer last opened the chat. */
   unread: number;
+  /** 'private' | 'public' | 'club' | 'founder' — club/founder are auto-join. */
+  kind: string;
 }
 export interface PublicLeagueSummary {
   id: string; name: string; code: string; memberCount: number; imageUrl: string | null;
@@ -160,6 +162,12 @@ export async function joinLeague(
   if (!code) throw new HttpError(400, "Code required");
 
   const league = await findLeagueByCode(svc, code);
+
+  // Club and Founder leagues are automatic — you can't join them by code.
+  const { data: meta } = await svc.from("fantasy_leagues").select("kind").eq("id", league.id).maybeSingle();
+  if (meta && (meta.kind === "club" || meta.kind === "founder")) {
+    throw new HttpError(400, "That league is automatic. You're added when you support the club or build a squad.");
+  }
 
   const { data: existing } = await svc
     .from("fantasy_league_members")
@@ -280,7 +288,7 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
   // (latest line + count). .range past PostgREST's 1000-row default — a chatty set
   // of leagues would silently truncate otherwise, dropping the newest line.
   const [{ data: leagues }, { data: memberRows }, { data: msgRows }, { data: readRows }] = await Promise.all([
-    svc.from("fantasy_leagues").select("id, owner_id, name, join_code, is_public, image_url").in("id", ids),
+    svc.from("fantasy_leagues").select("id, owner_id, name, join_code, is_public, image_url, kind").in("id", ids),
     svc.from("fantasy_league_members").select("league_id, user_id, joined_at").in("league_id", ids).range(0, 9999),
     svc.from("comments").select("subject_id, user_id, body, kind, payload, created_at")
       .eq("subject_type", "fantasy_league").in("subject_id", ids).is("deleted_at", null)
@@ -343,13 +351,14 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
     return { tone: "empty", author: null, text: "Invite your friends to get going.", at: null, msgCount: 0 };
   };
 
-  const out = ((leagues ?? []) as LeagueRecord[]).map((l) => {
+  const out = ((leagues ?? []) as unknown as LeagueRecord[]).map((l) => {
     const memberCount = counts.get(l.id) ?? 1;
     return {
       id: l.id, name: l.name, code: l.join_code, memberCount,
       isPublic: l.is_public, isOwner: l.owner_id === userId, imageUrl: l.image_url ?? null,
       highlight: highlightFor(l.id, memberCount),
       unread: unread.get(l.id) ?? 0,
+      kind: (l as { kind?: string }).kind ?? "private",
     };
   });
 

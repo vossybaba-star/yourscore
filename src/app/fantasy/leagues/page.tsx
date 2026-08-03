@@ -33,6 +33,7 @@ interface MyLeague {
   id: string; name: string; code: string; memberCount: number; isPublic: boolean; isOwner: boolean; imageUrl?: string | null;
   highlight: LeagueHighlight;
   unread: number;
+  kind: string;
 }
 interface PublicLeague { id: string; name: string; code: string; memberCount: number; imageUrl?: string | null }
 type Tab = "competition" | "leagues";
@@ -186,6 +187,8 @@ export default function LeaguesHome() {
               {l.unread > 0 && (
                 <span aria-label={`${l.unread} unread`} style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#04231f", background: TEAL, borderRadius: 999, padding: "1px 7px", minWidth: 18, textAlign: "center" }}>{l.unread > 99 ? "99+" : l.unread}</span>
               )}
+              {l.kind === "club" && <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: "0.04em", color: TEAL, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, borderRadius: 999, padding: "1px 7px" }}>YOUR CLUB</span>}
+              {l.kind === "founder" && <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: "0.04em", color: GOLD, background: tint(GOLD, "1c"), border: `1px solid ${tint(GOLD, "44")}`, borderRadius: 999, padding: "1px 7px" }}>FOUNDER</span>}
               {l.isPublic && <Chip>Public</Chip>}
             </span>
             <span style={{ fontSize: 12, color: MUTED }}>

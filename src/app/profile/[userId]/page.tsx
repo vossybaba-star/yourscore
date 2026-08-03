@@ -11,6 +11,7 @@ import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
 import { InviteToLeagueButton } from "@/components/fantasy/InviteToLeagueButton";
 import { FollowButton } from "@/components/social/FollowButton";
 import { ProfileGameTabs } from "@/components/profile/ProfileGameTabs";
+import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -178,6 +179,11 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
   const fantasyOn = fantasyAllowed(user?.id);
   const defaultTab: "fantasy" | "quiz" = fantasyOn && fantasy.teams.length > 0 ? "fantasy" : "quiz";
 
+  // The Legend badge — one of the first 1,000 managers to build a squad.
+  // fantasy_legends post-dates the generated DB types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: legend } = await (db as any).from("fantasy_legends").select("rank").eq("user_id", userId).maybeSingle();
+
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.02} />
@@ -197,7 +203,9 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
 
         {/* Avatar + name + rank */}
         <div className="flex items-center gap-4">
-          <AvatarCircle name={name} size={72} avatarUrl={profile.avatar_url} />
+          <AvatarLightbox name={name} avatarUrl={profile.avatar_url}>
+            <AvatarCircle name={name} size={72} avatarUrl={profile.avatar_url} />
+          </AvatarLightbox>
           <div className="flex-1 min-w-0">
             <p className="font-display text-3xl text-white tracking-wide truncate">{name.toUpperCase()}</p>
             {profile.username && (
@@ -214,6 +222,12 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
                 <span className="font-body text-xs px-2 py-0.5 rounded-full"
                   style={{ background: `${GOLD}1f`, color: GOLD, border: `1px solid ${GOLD}33` }}>
                   {rank.tier}
+                </span>
+              )}
+              {legend && (
+                <span className="font-body text-xs px-2 py-0.5 rounded-full" title="One of the first 1,000 managers to build a squad"
+                  style={{ background: `${GOLD}2a`, color: GOLD, border: `1px solid ${GOLD}55`, fontWeight: 700 }}>
+                  ⭐ Legend
                 </span>
               )}
             </div>

@@ -25,6 +25,7 @@ import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
 import { ShareToLeague } from "@/components/fantasy/league/ShareToLeague";
 import { FollowButton } from "@/components/social/FollowButton";
+import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -198,7 +199,9 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12, marginBottom: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={34} />
+        <AvatarLightbox name={ev.actorName} avatarUrl={ev.actorAvatar}>
+          <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={34} />
+        </AvatarLightbox>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.35 }}>
             <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 700, textDecoration: "none" }}>{ev.actorName}</Link>

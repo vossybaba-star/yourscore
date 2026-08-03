@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { HttpError } from "@/lib/fantasy/server";
 import { createLeague, myLeagues, publicLeagues } from "@/lib/fantasy/leagues";
+import { ensureAutoLeagues } from "@/lib/fantasy/autoLeagues";
 import { withFantasyUser } from "../_lib";
 
 // POST: create a league (private by default, owner can opt public).
@@ -33,7 +34,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return withFantasyUser("leagues-list", async (_db, userId) => {
+  return withFantasyUser("leagues-list", async (db, userId) => {
+    await ensureAutoLeagues(db, userId); // club league + Founder League/Legend, idempotent
     const [leagues, publicList] = await Promise.all([myLeagues(userId), publicLeagues(userId)]);
     return { leagues, public: publicList };
   });
