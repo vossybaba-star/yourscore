@@ -44,12 +44,13 @@ export interface SquadCard {
 }
 export interface NewsCard { title: string; source: string; url: string; image: string | null; internal: boolean }
 export interface CompareCard { a: PlayerCard; b: PlayerCard }
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare";
+export interface GifCard { url: string; preview: string; width: number; height: number }
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
   kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null;
-  news?: NewsCard | null; compare?: CompareCard | null;
+  news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
 export interface ChatData {
