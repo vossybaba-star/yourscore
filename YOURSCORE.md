@@ -6,7 +6,22 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-02 (**Versus promo tile at the top of the Play tab.** Versus lost its
+> **Confirmed:** 2026-08-02 (**Avatar photo upload FIXED + unified with the picker.** Branch
+> `fix/avatar-upload`, migration **241 APPLIED to prod**.
+> **The bug:** the `avatars` storage bucket had NO policies on storage.objects — RLS is on, so
+> every authenticated upload was denied. The Settings "change photo" flow has been broken since
+> launch: **0 of ~10k profiles had ever uploaded a photo** (working avatars are all preset SVGs
+> or external Google URLs). Proven with a real user token — same upload returned **403 "new row
+> violates row-level security policy" before, 200 after** the fix; a cross-user path stays 403
+> (writes scoped to `<uid>.<ext>`), public read 200.
+> **The unification:** tapping your avatar only offered preset players; Settings only offered
+> (broken) upload. Now there's ONE `AvatarPicker` — "Upload a photo" button + the player catalog
+> + "use my initial" — and **Settings renders the same component**, so both flows are identical
+> and both work. Shared `uploadAvatar()` helper (`src/lib/avatarUpload.ts`, 5 MB cap, image-only).
+> ⚠️ Note: changing the avatar via the card-overlay updates the DB but the card's SVG face only
+> refreshes on reload (pre-existing; the card avatar is server-rendered) — Settings updates live.)
+>
+> **Previously confirmed:** 2026-08-02 (**Versus promo tile at the top of the Play tab.** Versus lost its
 > bottom-nav slot when Fantasy took the fifth tab, and a full app audit the same day measured the
 > cost: 7 friend challenges and 34 new friendships in 30 days — the social layer had no door.
 > Founder call: not a nav change; an ad tile instead. First content element of the Solo view on

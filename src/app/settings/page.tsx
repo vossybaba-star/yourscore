@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
+import { AvatarPicker } from "@/components/profile/AvatarPicker";
 
 export default function SettingsPage() {
   const { user, loading } = useUser();
@@ -18,8 +19,6 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
   // Notifications opt-in (persisted to profiles.notifications_opt_in)
   const [notifyMe, setNotifyMe] = useState(false);
   const [notifySaving, setNotifySaving] = useState(false);
@@ -59,30 +58,6 @@ export default function SettingsPage() {
         });
     });
   }, [user, loading]);
-
-  async function handleAvatarUpload(file: File) {
-    if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-    setUploading(true);
-    setUploadError("");
-    try {
-      const { createClient } = await import("@/lib/supabase/client");
-      const sb = createClient();
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${user.id}.${ext}`;
-      const { error: uploadErr } = await sb.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (uploadErr) { setUploadError("Upload failed. Try again."); return; }
-      const { data: urlData } = sb.storage.from("avatars").getPublicUrl(path);
-      const publicUrl = urlData?.publicUrl ?? null;
-      if (publicUrl) {
-        await sb.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id);
-        setAvatarUrl(publicUrl + "?t=" + Date.now()); // cache bust
-      }
-    } finally {
-      setUploading(false);
-    }
-  }
 
   async function handleToggleNotify(next: boolean) {
     if (!user || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
@@ -218,7 +193,6 @@ export default function SettingsPage() {
     );
   }
 
-  const initials = (username || displayName || user.email || "?")[0].toUpperCase();
 
   return (
     <main className="min-h-dvh bg-bg pb-28">
@@ -260,71 +234,21 @@ export default function SettingsPage() {
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-6 space-y-6">
 
-        {/* Avatar */}
+        {/* Avatar — the SAME picker as tapping your avatar on the profile:
+            upload a photo, or choose a player. One component, one behaviour. */}
         <div className="flex items-center gap-4">
-          <label className="relative cursor-pointer flex-shrink-0 group">
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              disabled={uploading}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleAvatarUpload(file);
-                e.target.value = "";
-              }}
-            />
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={avatarUrl}
-                alt="Avatar"
-                className="w-16 h-16 rounded-full object-cover"
-                style={{ border: "2px solid rgba(255,255,255,0.1)" }}
-              />
-            ) : (
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center font-body font-bold text-2xl"
-                style={{ background: "#1a2f4a", color: "#60a5fa", border: "2px solid rgba(255,255,255,0.1)" }}
-              >
-                {initials}
-              </div>
-            )}
-            {/* Overlay */}
-            <div
-              className="absolute inset-0 rounded-full flex items-center justify-center transition-opacity"
-              style={{ background: "rgba(0,0,0,0.55)", opacity: uploading ? 1 : 0 }}
-            >
-              {uploading ? (
-                <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
-                  <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                </svg>
-              ) : null}
-            </div>
-            <div
-              className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ background: "rgba(0,0,0,0.45)" }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="white" strokeWidth="1.8"/>
-                <path d="M3 9h1.5l2-3h9l2 3H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1z" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </label>
+          <AvatarPicker
+            userId={user.id}
+            name={displayName || username || user.email?.split("@")[0] || "Player"}
+            initialAvatarUrl={avatarUrl}
+            size={64}
+          />
           <div>
             <p className="font-body text-base font-semibold text-white">
               {username ? `@${username}` : displayName || user.email?.split("@")[0]}
             </p>
             <p className="font-body text-xs text-text-muted mt-0.5">{user.email}</p>
-            {uploadError && <p className="font-body text-xs mt-1 text-danger">{uploadError}</p>}
-            <button
-              type="button"
-              className="font-body text-xs mt-1 transition-colors text-green"
-              onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
-            >
-              {uploading ? "Uploading…" : "Change photo"}
-            </button>
+            <p className="font-body text-xs text-text-muted mt-1">Tap to upload a photo or pick a player</p>
           </div>
         </div>
 
