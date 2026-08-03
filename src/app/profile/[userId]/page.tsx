@@ -10,6 +10,7 @@ import { loadProfileTeams } from "@/lib/fantasy/profileTeams";
 import { ProfileFantasyTeams } from "@/components/fantasy/ProfileFantasyTeams";
 import { InviteToLeagueButton } from "@/components/fantasy/InviteToLeagueButton";
 import { FollowButton } from "@/components/social/FollowButton";
+import { ProfileGameTabs } from "@/components/profile/ProfileGameTabs";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -20,7 +21,6 @@ import { FollowButton } from "@/components/social/FollowButton";
 // would see nothing (the old version of this page had a permanently-empty
 // "recent challenges" list for exactly that reason).
 
-const TEAL = "#00d8c0";
 const LIME = "#aeea00";
 const GOLD = "#ffc233";
 const RED = "#ff6b78";
@@ -173,6 +173,11 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
     ? Math.round(attempts.reduce((s, a) => s + (a.max_score > 0 ? a.score / a.max_score : 0), 0) / attempts.length * 100)
     : null;
 
+  // Open on the game they clearly play: Fantasy if they've built a squad (and a
+  // squad-share deep link forces it via #fantasy-xi), otherwise Quiz.
+  const fantasyOn = fantasyAllowed(user?.id);
+  const defaultTab: "fantasy" | "quiz" = fantasyOn && fantasy.teams.length > 0 ? "fantasy" : "quiz";
+
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.02} />
@@ -228,117 +233,123 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
           <FollowButton userId={userId} refreshOnChange />
         </div>
 
-        {/* Connect: challenge + play their runs */}
-        <div className="flex gap-2">
-          <Link href={`/versus/quiz?to=${userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: TEAL, color: "#04231f" }}>
-            CHALLENGE THEM
-          </Link>
-          <Link href={`/versus/shadow/${userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(0,216,192,0.12)", color: TEAL, border: `1px solid ${TEAL}33` }}>
-            PLAY THEIR RUNS
-          </Link>
-        </div>
-
-        {/* Invite them to one of your fantasy leagues (shows once Fantasy is live
-            for the viewer, i.e. everyone). */}
-        {fantasyAllowed(user?.id) && (
-          <InviteToLeagueButton userId={userId} userName={name} variant="full" />
-        )}
-
-        {/* Games record — head-to-heads across both games (rank RPC W-D-L) */}
-        {rank && (rank.wins + rank.draws + rank.losses > 0) && (
-          <div className="rounded-2xl p-5 flex items-center gap-2" style={{ background: "linear-gradient(150deg, #15211a, #0c1613)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            {([
-              [String(rank.wins), "Wins", GOLD],
-              [String(rank.draws), "Draws", "#8a948f"],
-              [String(rank.losses), "Losses", RED],
-              [(rank.overall_score ?? 0).toLocaleString(), "Score", LIME],
-            ] as const).map(([v, label, color], i) => (
-              <div key={label} className="flex-1 text-center" style={i ? { borderLeft: "1px solid rgba(255,255,255,0.08)" } : undefined}>
-                <p className="font-display text-2xl leading-none" style={{ color }}>{v}</p>
-                <p className="font-body text-[10px] uppercase tracking-widest text-text-muted mt-1.5">{label}</p>
+        {/* Two games, two tabs — so it's clear what they play and how they score
+            at each, and which buttons belong to which game (founder, 3 Aug). */}
+        <ProfileGameTabs
+          defaultTab={defaultTab}
+          fantasy={
+            <div className="space-y-5">
+              {fantasyOn && (
+                <InviteToLeagueButton userId={userId} userName={name} variant="full" />
+              )}
+              {fantasy.teams.length > 0 ? (
+                <div id="fantasy-xi" style={{ scrollMarginTop: 16 }}>
+                  <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
+                </div>
+              ) : (
+                <div className="rounded-2xl p-6 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <p className="font-body text-sm text-text-muted">{name} hasn&apos;t built a Fantasy squad yet.</p>
+                </div>
+              )}
+            </div>
+          }
+          quiz={
+            <div className="space-y-5">
+              {/* Challenge / play their runs — both are quiz games (lime, like the tab). */}
+              <div className="flex gap-2">
+                <Link href={`/versus/quiz?to=${userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: LIME, color: "#0b1400" }}>
+                  CHALLENGE THEM
+                </Link>
+                <Link href={`/versus/shadow/${userId}`} className="flex-1 text-center rounded-xl py-3 font-display text-sm tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(174,234,0,0.12)", color: LIME, border: `1px solid ${LIME}33` }}>
+                  PLAY THEIR RUNS
+                </Link>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-2.5">
-          {[
-            { label: "Leagues", value: String(leagues ?? 0), color: LIME },
-            { label: "Avg accuracy", value: avgAcc !== null ? `${avgAcc}%` : "—", color: "#ffb800" },
-          ].map(s => (
-            <div key={s.label} className="rounded-2xl px-5 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="font-display text-3xl leading-none" style={{ color: s.color }}>{s.value}</p>
-              <p className="font-body text-xs text-text-muted mt-1.5">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Their fantasy teams, week by week. `id` is the scroll target for the
-            feed's "See their squad" tap, so a squad share lands on the squad. */}
-        {fantasy.teams.length > 0 && (
-          <div id="fantasy-xi" style={{ scrollMarginTop: 16 }}>
-            <ProfileFantasyTeams teams={fantasy.teams} players={fantasy.players} />
-          </div>
-        )}
-
-        {/* Recent head-to-heads */}
-        {battles.length > 0 && (
-          <div>
-            <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Recent battles</p>
-            <div className="space-y-2">
-              {battles.map((b) => {
-                const draw = b.myScore === b.theirScore, won = b.myScore > b.theirScore;
-                const col = draw ? "#8a948f" : won ? GOLD : RED;
-                return (
-                  <div key={b.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span className="font-display text-lg w-5 text-center flex-shrink-0" style={{ color: col }}>{draw ? "D" : won ? "W" : "L"}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-white truncate">vs {b.otherName}</p>
-                      <p className="font-body text-xs truncate" style={{ color: "#586058" }}>{b.packName}</p>
+              {/* Battle record (quiz head-to-heads) */}
+              {rank && (rank.wins + rank.draws + rank.losses > 0) && (
+                <div className="rounded-2xl p-5 flex items-center gap-2" style={{ background: "linear-gradient(150deg, #15211a, #0c1613)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  {([
+                    [String(rank.wins), "Wins", GOLD],
+                    [String(rank.draws), "Draws", "#8a948f"],
+                    [String(rank.losses), "Losses", RED],
+                    [(rank.overall_score ?? 0).toLocaleString(), "Score", LIME],
+                  ] as const).map(([v, label, color], i) => (
+                    <div key={label} className="flex-1 text-center" style={i ? { borderLeft: "1px solid rgba(255,255,255,0.08)" } : undefined}>
+                      <p className="font-display text-2xl leading-none" style={{ color }}>{v}</p>
+                      <p className="font-body text-[10px] uppercase tracking-widest text-text-muted mt-1.5">{label}</p>
                     </div>
-                    <p className="font-display text-sm text-white flex-shrink-0">{b.myScore.toLocaleString()}–{b.theirScore.toLocaleString()}</p>
+                  ))}
+                </div>
+              )}
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { label: "Leagues", value: String(leagues ?? 0), color: LIME },
+                  { label: "Avg accuracy", value: avgAcc !== null ? `${avgAcc}%` : "—", color: "#ffb800" },
+                ].map(s => (
+                  <div key={s.label} className="rounded-2xl px-5 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <p className="font-display text-3xl leading-none" style={{ color: s.color }}>{s.value}</p>
+                    <p className="font-body text-xs text-text-muted mt-1.5">{s.label}</p>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                ))}
+              </div>
 
-        {/* The quizzes they've done */}
-        <div>
-          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Quizzes played</p>
-          {attempts.length === 0 ? (
-            <div className="rounded-2xl p-6 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="font-body text-sm text-text-muted">No quizzes played yet.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {attempts.map(a => {
-                const pct = a.max_score > 0 ? Math.round(a.score / a.max_score * 100) : 0;
-                const pctColor = pct >= 80 ? LIME : pct >= 50 ? "#ffb800" : "#f87171";
-                const date = new Date(a.completed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-                return (
-                  <div key={a.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface"
-                    style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-white truncate">
-                        {a.pack_name ?? "Challenge"}
-                      </p>
-                      <p className="font-body text-xs" style={{ color: "#586058" }}>{date}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="font-display text-lg leading-none" style={{ color: pctColor }}>{pct}%</p>
-                      <p className="font-body text-xs" style={{ color: "#586058" }}>
-                        {a.score}/{a.max_score} pts
-                      </p>
-                    </div>
+              {/* Recent battles */}
+              {battles.length > 0 && (
+                <div>
+                  <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Recent battles</p>
+                  <div className="space-y-2">
+                    {battles.map((b) => {
+                      const draw = b.myScore === b.theirScore, won = b.myScore > b.theirScore;
+                      const col = draw ? "#8a948f" : won ? GOLD : RED;
+                      return (
+                        <div key={b.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <span className="font-display text-lg w-5 text-center flex-shrink-0" style={{ color: col }}>{draw ? "D" : won ? "W" : "L"}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body text-sm font-medium text-white truncate">vs {b.otherName}</p>
+                            <p className="font-body text-xs truncate" style={{ color: "#586058" }}>{b.packName}</p>
+                          </div>
+                          <p className="font-display text-sm text-white flex-shrink-0">{b.myScore.toLocaleString()}–{b.theirScore.toLocaleString()}</p>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              )}
+
+              {/* The quizzes they've done */}
+              <div>
+                <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Quizzes played</p>
+                {attempts.length === 0 ? (
+                  <div className="rounded-2xl p-6 text-center bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <p className="font-body text-sm text-text-muted">No quizzes played yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {attempts.map(a => {
+                      const pct = a.max_score > 0 ? Math.round(a.score / a.max_score * 100) : 0;
+                      const pctColor = pct >= 80 ? LIME : pct >= 50 ? "#ffb800" : "#f87171";
+                      const date = new Date(a.completed_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                      return (
+                        <div key={a.id} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-surface" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body text-sm font-medium text-white truncate">{a.pack_name ?? "Challenge"}</p>
+                            <p className="font-body text-xs" style={{ color: "#586058" }}>{date}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-display text-lg leading-none" style={{ color: pctColor }}>{pct}%</p>
+                            <p className="font-body text-xs" style={{ color: "#586058" }}>{a.score}/{a.max_score} pts</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          }
+        />
       </div>
 
       <BottomNav />
