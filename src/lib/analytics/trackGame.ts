@@ -452,6 +452,55 @@ export function trackTeamDrafted(props: Props = {}): void {
   track("team_drafted", payload);                       // Vercel Analytics
 }
 
+// ── Fantasy funnel: Squad / League / Invite ──────────────────────────────────
+// The three build-side Fantasy conversions, kept distinct from the 38-0
+// TeamDrafted above: FantasySquadSelected (the season squad is confirmed),
+// FantasyLeagueCreated (a private Fantasy league is built), and FantasyInviteSent
+// (a friend is invited to a Fantasy league — the SEND side of the loop, the twin
+// of InviteAccepted's receive side). Each fans out like the other Fantasy events;
+// the X arm fires only once its Events-Manager id env var is set, so the code can
+// ship before the X events exist without breaking.
+const X_FANTASY_SQUAD_EVENT_ID = process.env.NEXT_PUBLIC_X_FANTASY_SQUAD_EVENT_ID;
+
+export function trackFantasySquad(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  if (X_FANTASY_SQUAD_EVENT_ID) window.twq?.("event", X_FANTASY_SQUAD_EVENT_ID, payload); // X
+  window.fbq?.("trackCustom", "FantasySquadSelected", payload); // Meta
+  window.ttq?.track?.("FantasySquadSelected", payload);          // TikTok
+  window.gtag?.("event", "fantasy_squad_selected", payload);     // Google Analytics 4
+  track("fantasy_squad_selected", payload);                      // Vercel Analytics
+  void afLogEvent("fantasy_squad_selected", {});                 // AppsFlyer (native only)
+}
+
+const X_FANTASY_LEAGUE_EVENT_ID = process.env.NEXT_PUBLIC_X_FANTASY_LEAGUE_EVENT_ID;
+
+export function trackFantasyLeagueCreated(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  if (X_FANTASY_LEAGUE_EVENT_ID) window.twq?.("event", X_FANTASY_LEAGUE_EVENT_ID, payload); // X
+  window.fbq?.("trackCustom", "FantasyLeagueCreated", payload); // Meta
+  window.ttq?.track?.("FantasyLeagueCreated", payload);          // TikTok
+  window.gtag?.("event", "fantasy_league_created", payload);     // Google Analytics 4
+  track("fantasy_league_created", payload);                      // Vercel Analytics
+  void afLogEvent("fantasy_league_created", {});                 // AppsFlyer (native only)
+}
+
+// Fires on every channel tap in the invite sheet (intent, not just success):
+// native / whatsapp / sms / copy all count. `channel` rides the payload.
+const X_FANTASY_INVITE_EVENT_ID = process.env.NEXT_PUBLIC_X_FANTASY_INVITE_EVENT_ID;
+
+export function trackFantasyInvite(channel: string, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { channel, client: clientTag(), ...props };
+  if (X_FANTASY_INVITE_EVENT_ID) window.twq?.("event", X_FANTASY_INVITE_EVENT_ID, payload); // X
+  window.fbq?.("trackCustom", "FantasyInviteSent", payload); // Meta
+  window.ttq?.track?.("FantasyInviteSent", payload);          // TikTok
+  window.gtag?.("event", "fantasy_invite_sent", payload);     // Google Analytics 4
+  track("fantasy_invite_sent", payload);                      // Vercel Analytics
+  afInviteSent({ surface: "league", channel });               // AppsFlyer (native only)
+}
+
 // ── Diagnostics (GA4/Vercel ONLY — never ad platforms) ───────────────────────
 // Funnel diagnostics that would only add noise to ad-platform event menus:
 // signup_prompt_shown, near_miss, redraft_used, … Sparse events starve delivery

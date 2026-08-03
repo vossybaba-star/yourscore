@@ -9,6 +9,7 @@ import {
   Btn, Card, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, PANEL_2, Sheet, Skel, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { trackFantasyInvite } from "@/lib/analytics/trackGame";
 
 /** One channel in the invite sheet — an icon in its brand colour, a label, a hint. */
 function InviteRow({ onClick, accent, label, sub, icon }: { onClick: () => void; accent: string; label: string; sub: string; icon: React.ReactNode }) {
@@ -106,10 +107,10 @@ export default function LeaguePage() {
   const inviteUrl = () => `${window.location.origin}/fantasy/leagues/${code}`;
   const inviteText = () => `Join my YourScore Fantasy league "${detail?.league.name ?? ""}" · code ${code}`;
   const inviteMsg = () => `${inviteText()} ${inviteUrl()}`;
-  const shareNative = () => { if (navigator.share) navigator.share({ title: "YourScore Fantasy league", text: inviteText(), url: inviteUrl() }).catch(() => {}); setInviteOpen(false); };
-  const shareWhatsApp = () => { window.open(`https://wa.me/?text=${encodeURIComponent(inviteMsg())}`, "_blank", "noopener,noreferrer"); setInviteOpen(false); };
-  const shareSms = () => { window.location.href = `sms:?&body=${encodeURIComponent(inviteMsg())}`; };
-  const copyLink = async () => { try { await navigator.clipboard.writeText(inviteMsg()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ } };
+  const shareNative = () => { trackFantasyInvite("native"); if (navigator.share) navigator.share({ title: "YourScore Fantasy league", text: inviteText(), url: inviteUrl() }).catch(() => {}); setInviteOpen(false); };
+  const shareWhatsApp = () => { trackFantasyInvite("whatsapp"); window.open(`https://wa.me/?text=${encodeURIComponent(inviteMsg())}`, "_blank", "noopener,noreferrer"); setInviteOpen(false); };
+  const shareSms = () => { trackFantasyInvite("sms"); window.location.href = `sms:?&body=${encodeURIComponent(inviteMsg())}`; };
+  const copyLink = async () => { trackFantasyInvite("copy"); try { await navigator.clipboard.writeText(inviteMsg()); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* no clipboard */ } };
   const join = async () => {
     if (busy) return;
     setBusy(true); setErr(null);

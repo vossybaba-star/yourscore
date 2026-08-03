@@ -20,6 +20,7 @@ import {
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { trackFantasyLeagueCreated } from "@/lib/analytics/trackGame";
 
 interface LeagueHighlight {
   tone: "chat" | "join" | "quiet" | "empty";
@@ -103,6 +104,7 @@ export default function LeaguesHome() {
     try {
       const created = await api<{ id: string; name: string; code: string; isPublic: boolean }>(
         "leagues", { name: name.trim(), isPublic });
+      trackFantasyLeagueCreated({ isPublic });
       router.push(`/fantasy/leagues/${created.code}`);
     } catch (e) { setErr((e as Error).message); setBusy(false); }
   };
