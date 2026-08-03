@@ -103,12 +103,11 @@ export async function GET(req: Request) {
   type P = { pos: string; name: string; club: string; face: string; priceTenths: number };
 
   // One marker, drawn the app way: portrait (headshot over a stable monogram) +
-  // crest bottom-left + a position-coloured name plate. `size` scales the whole
-  // thing so the XI and the dugout share one look at two sizes.
-  const Marker = (p: P, size: number, isCap: boolean, withPlate: boolean) => {
+  // crest bottom-left. `size` scales the whole thing so the XI and the dugout
+  // share one look at two sizes. The name plate is drawn by the caller (below).
+  const Marker = (p: P, size: number, isCap: boolean) => {
     const pal = avatarPalette(p.name);
     const crest = crestUrl(p.club);
-    const posC = POS_COLOR[p.pos] ?? MUTED;
     const crestBox = Math.round(size * 0.42);
     const capBox = Math.round(size * 0.34);
     return (
@@ -144,9 +143,6 @@ export async function GET(req: Request) {
             border: "1px solid #ffdf9e",
           }}>C</div>
         ) : null}
-        {/* the name plate is drawn by the caller (it sits below the portrait), so
-            the marker here is just the face; `withPlate`/`posC` are threaded out. */}
-        {withPlate ? null : null}
       </div>
     );
   };
@@ -208,7 +204,7 @@ export async function GET(req: Request) {
                     const isCap = !!capShort && short(p.name) === capShort;
                     return (
                       <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 148 }}>
-                        {Marker(p, AV, isCap, true)}
+                        {Marker(p, AV, isCap)}
                         {Plate(short(p.name), POS_COLOR[p.pos] ?? MUTED, true)}
                       </div>
                     );
@@ -235,7 +231,7 @@ export async function GET(req: Request) {
                 const posC = POS_COLOR[p.pos] ?? MUTED;
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    {Marker(p, AV_B, false, false)}
+                    {Marker(p, AV_B, false)}
                     <div style={{ display: "flex", flexDirection: "column", minWidth: 0, gap: 4 }}>
                       <span style={{ fontSize: 19, fontWeight: 700, color: INK, whiteSpace: "nowrap", textShadow: "0 1px 2px rgba(0,0,0,0.7)" }}>
                         {short(p.name)}
