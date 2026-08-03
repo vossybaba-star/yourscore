@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import Link from "next/link";
 import {
   AMBER, Btn, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PosTag, TEAL, page, tint, Skel,
@@ -323,20 +324,31 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
   const [tab, setTab] = useState<"home" | "feed">("home");
   const [adopting, setAdopting] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<HomeData | null> => {
     try {
       if (mode === "public") {
         const res = await fetch("/api/fantasy/home/public");
         if (!res.ok) throw new Error("Couldn't load the fantasy feed");
         setPub(await res.json());
-      } else {
-        const res = await fetch("/api/fantasy/home");
-        if (!res.ok) throw new Error("Couldn't load your fantasy home");
-        setData(await res.json());
+        return null;
       }
-    } catch (e) { setErr((e as Error).message); }
+      const res = await fetch("/api/fantasy/home");
+      if (!res.ok) throw new Error("Couldn't load your fantasy home");
+      const d: HomeData = await res.json();
+      setData(d);
+      return d;
+    } catch (e) { setErr((e as Error).message); return null; }
   }, [mode]);
   useEffect(() => { load(); }, [load]);
+
+  // Pull-to-refresh: reload home and report whether the feed gained anything new.
+  const refresh = useCallback(async (): Promise<{ updated?: boolean }> => {
+    const prevTop = data?.moves?.[0]?.id;
+    const prevLen = data?.moves?.length ?? -1;
+    const d = await load();
+    if (!d) return {};
+    return { updated: d.moves[0]?.id !== prevTop || d.moves.length !== prevLen };
+  }, [data, load]);
 
   const adopt = async () => {
     if (!data?.proposed || adopting) return;
@@ -381,7 +393,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
           <Skel h={40} r={12} /><Skel h={130} r={16} /><Skel h={120} r={12} /><Skel h={64} r={12} />
         </div>
       ) : (
-        <>
+        <PullToRefresh onRefresh={refresh}>
           <SubTabs tab={tab} onTab={setTab} />
           {tab === "home" ? (
             <>
@@ -435,7 +447,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
               )}
             </>
           )}
-        </>
+        </PullToRefresh>
       )}
     </main>
   );
