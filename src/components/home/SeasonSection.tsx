@@ -53,7 +53,19 @@ function FantasyTile() {
       <span className="season-shine" />
       <div className="relative z-[5] p-3.5 flex flex-col gap-2">
         <div>
-          <p className="font-display text-2xl text-white leading-[0.92]">Fantasy<br />League</p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-display text-2xl text-white leading-[0.92]">Fantasy<br />League</p>
+            {/* solid lime ribbon, flush to the tile's right edge (-mr cancels the
+                p-3.5) — the gap right of the two-line heading is only ~55px on a
+                375px phone, so a free-floating pill gets clipped by the tile's
+                overflow-hidden. animate-pulse on the dot, not the ribbon, so the
+                label stays legible */}
+            <span className="flex items-center gap-1 rounded-l-full pl-2 pr-3 py-1 mt-1 shrink-0 -mr-3.5"
+              style={{ background: LIME, boxShadow: `0 0 14px ${LIME}99` }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#0c1908" }} />
+              <span className="font-body text-[9px] font-extrabold uppercase tracking-wide leading-none" style={{ color: "#0c1908" }}>Live Now</span>
+            </span>
+          </div>
           <p className="font-body text-[11px] mt-1.5 font-semibold" style={{ color: "#cfe6a8" }}>Pick your XI.</p>
         </div>
       </div>
