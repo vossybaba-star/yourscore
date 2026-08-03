@@ -12,13 +12,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
 import { notifyFantasy } from "./notify";
+import { commentRejection } from "@/lib/moderation";
+import { HttpError } from "./server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
 
 export type FeedType =
   | "transfer" | "captain" | "chip" | "haul" | "rank_jump"
-  | "squad_complete" | "squad_update" | "shortlist_add";
+  | "squad_complete" | "squad_update" | "shortlist_add"
+  | "post"; // a user-authored text/poll post (Social → Live)
 export type FeedScope = "following" | "global";
 export type FeedSort = "recent" | "top";
 export interface FeedResult { events: FeedEvent[]; followingCount: number }
@@ -38,6 +41,17 @@ export interface FeedBoard {
  *  reaction language is consistent across the app. ❤️ is the old "like". */
 export const FEED_REACTIONS = ["😂", "👀", "🔥", "👏", "❤️", "😭"] as const;
 export interface FeedReaction { emoji: string; count: number }
+
+/** A poll attached to a user post: options with running tallies, the viewer's
+ *  own choice (if voted), and the total votes. */
+export interface FeedPoll {
+  question: string;
+  options: { text: string; votes: number }[];
+  myChoice: number | null;
+  total: number;
+}
+export const MAX_POLL_OPTIONS = 4;
+export const POST_MAX = 500;
 
 export interface FeedEvent {
   id: string;
@@ -62,6 +76,10 @@ export interface FeedEvent {
   player?: FeedFace | null;
   /** The shortlisted/added player's pool id, so the tile can open their profile. */
   playerId?: number | null;
+  /** A user post's body (type === "post"). */
+  text?: string | null;
+  /** An optional poll attached to a post. */
+  poll?: FeedPoll | null;
 }
 
 const CHIP_LABEL: Record<string, string> = {
@@ -194,9 +212,59 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
       return payload.player != null ? `brought ${nameOf(Number(payload.player))} into their squad` : "changed their squad around";
     case "shortlist_add":
       return `shortlisted ${nameOf(Number(payload.player))}`;
+    case "post":
+      return "posted";
     default:
       return "made a move";
   }
+}
+
+/** Create a user post in the public feed — a text body and/or a poll. Same
+ *  moderation as comments. Renders in Live like any other event, and gets
+ *  reactions + comments for free (they key off the event id). */
+export async function postToFeed(db: Db, userId: string, body: unknown): Promise<{ id: string }> {
+  const b = (body ?? {}) as { text?: unknown; poll?: unknown };
+  const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
+
+  let poll: { question: string; options: string[] } | null = null;
+  const rawPoll = b.poll as { question?: unknown; options?: unknown } | undefined;
+  if (rawPoll && (rawPoll.question != null || Array.isArray(rawPoll.options))) {
+    const question = typeof rawPoll.question === "string" ? rawPoll.question.trim().slice(0, 120) : "";
+    const options = Array.isArray(rawPoll.options)
+      ? rawPoll.options.map((o) => (typeof o === "string" ? o.trim().slice(0, 60) : "")).filter(Boolean).slice(0, MAX_POLL_OPTIONS)
+      : [];
+    if (!question) throw new HttpError(400, "A poll needs a question");
+    if (options.length < 2) throw new HttpError(400, "A poll needs at least two options");
+    poll = { question, options };
+  }
+
+  if (!text && !poll) throw new HttpError(400, "Write something or add a poll");
+  const why = commentRejection([text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "));
+  if (why) throw new HttpError(400, why);
+
+  const payload: Record<string, unknown> = {};
+  if (text) payload.text = text;
+  if (poll) payload.poll = poll;
+  const { data, error } = await db.from("fantasy_feed_events")
+    .insert({ actor_id: userId, type: "post", gw: null, payload })
+    .select("id").single();
+  if (error) throw new HttpError(500, error.message);
+  return { id: (data as { id: string }).id };
+}
+
+/** Vote on a post's poll — one choice per user, switchable. */
+export async function voteFeedPoll(db: Db, userId: string, eventId: unknown, optionIndex: unknown): Promise<{ ok: true }> {
+  const id = typeof eventId === "string" ? eventId : "";
+  const idx = Number(optionIndex);
+  if (!id || !Number.isInteger(idx) || idx < 0 || idx >= MAX_POLL_OPTIONS) throw new HttpError(400, "bad vote");
+  const { data: ev } = await db.from("fantasy_feed_events").select("type, payload").eq("id", id).maybeSingle();
+  const post = ev as { type: string; payload: { poll?: { options?: unknown[] } } } | null;
+  if (!post || post.type !== "post" || !Array.isArray(post.payload?.poll?.options)) throw new HttpError(404, "poll not found");
+  if (idx >= post.payload.poll.options.length) throw new HttpError(400, "no such option");
+  const { error } = await db.from("fantasy_feed_poll_votes")
+    .upsert({ event_id: id, user_id: userId, option_index: idx }, { onConflict: "event_id,user_id" });
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
 }
 
 export async function loadFeed(
@@ -267,11 +335,15 @@ async function hydrateEvents(
     return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: p?.pos ?? "MID", club: p?.club, avatarUrl: p?.avatarUrl ?? null };
   };
 
-  const [{ data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }] = await Promise.all([
+  const postEventIds = events.filter((e) => e.type === "post").map((e) => e.id as string);
+  const [{ data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }, { data: pollVoteRows }] = await Promise.all([
     db.from("profiles").select("id, display_name, avatar_url").in("id", actorIds),
     db.from("fantasy_feed_likes").select("event_id, user_id, emoji").in("event_id", eventIds),
     db.from("comments").select("subject_id").eq("subject_type", "fantasy_feed").in("subject_id", eventIds).is("deleted_at", null),
     db.from("fantasy_squads").select("user_id, captain").in("user_id", actorIds),
+    postEventIds.length
+      ? db.from("fantasy_feed_poll_votes").select("event_id, user_id, option_index").in("event_id", postEventIds)
+      : Promise.resolve({ data: [] as { event_id: string; user_id: string; option_index: number }[] }),
   ]);
 
   const profById = new Map<string, { display_name: string | null; avatar_url: string | null }>();
@@ -311,6 +383,17 @@ async function hydrateEvents(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (commentRows ?? []).forEach((c: any) => commentCount.set(c.subject_id, (commentCount.get(c.subject_id) ?? 0) + 1));
 
+  // Poll vote tallies per post event: count by option index + the viewer's choice.
+  const pollCounts = new Map<string, Map<number, number>>();
+  const myPollChoice = new Map<string, number>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (pollVoteRows ?? []).forEach((v: any) => {
+    const byOpt = pollCounts.get(v.event_id) ?? new Map<number, number>();
+    byOpt.set(v.option_index, (byOpt.get(v.option_index) ?? 0) + 1);
+    pollCounts.set(v.event_id, byOpt);
+    if (viewerId && v.user_id === viewerId) myPollChoice.set(v.event_id, v.option_index);
+  });
+
   const mapped: FeedEvent[] = events.map((e) => {
     const type = e.type as FeedType;
     const payload = (e.payload ?? {}) as Record<string, unknown>;
@@ -332,6 +415,20 @@ async function hydrateEvents(
       playerId = Number(payload.player);
       player = faceOf(playerId);
     }
+    // A user post carries its text and (optionally) a poll with live tallies.
+    let text: string | null | undefined;
+    let poll: FeedPoll | null | undefined;
+    if (type === "post") {
+      text = typeof payload.text === "string" ? payload.text : null;
+      const p = payload.poll as { question?: unknown; options?: unknown } | undefined;
+      if (p && Array.isArray(p.options)) {
+        const opts = (p.options as unknown[]).map((o) => (typeof o === "string" ? o : "")).filter(Boolean).slice(0, MAX_POLL_OPTIONS);
+        const byOpt = pollCounts.get(e.id);
+        let total = 0;
+        const options = opts.map((t, i) => { const c = byOpt?.get(i) ?? 0; total += c; return { text: t, votes: c }; });
+        poll = { question: typeof p.question === "string" ? p.question : "", options, myChoice: myPollChoice.has(e.id) ? myPollChoice.get(e.id)! : null, total };
+      }
+    }
     return {
       id: e.id,
       actorId: e.actor_id,
@@ -348,6 +445,8 @@ async function hydrateEvents(
       board,
       player,
       playerId,
+      text,
+      poll,
     };
   });
 

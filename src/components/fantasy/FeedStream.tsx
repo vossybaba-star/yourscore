@@ -35,11 +35,13 @@ type FeedSort = "recent" | "top";
 interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
 interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number; vice?: number }
 interface FeedReaction { emoji: string; count: number }
+interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number }
 interface FeedEvent {
   id: string; actorId: string; actorName: string; actorAvatar: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
+  text?: string | null; poll?: FeedPoll | null;
 }
 
 function timeAgo(iso: string): string {
@@ -120,6 +122,54 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
   );
 }
 
+/** A post's poll — tap an option to vote; bars fill once you've voted. */
+function PollBlock({ ev }: { ev: FeedEvent }) {
+  const [poll, setPoll] = useState<FeedPoll>(ev.poll!);
+  const voted = poll.myChoice != null;
+
+  const vote = useCallback(async (idx: number) => {
+    if (poll.myChoice === idx) return;
+    const prev = poll;
+    const options = poll.options.map((o, i) => {
+      let v = o.votes;
+      if (poll.myChoice === i) v -= 1;
+      if (i === idx) v += 1;
+      return { ...o, votes: v };
+    });
+    const total = poll.total + (poll.myChoice == null ? 1 : 0);
+    setPoll({ ...poll, options, myChoice: idx, total });
+    try {
+      const r = await fetch("/api/fantasy/feed/poll/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id, optionIndex: idx }) });
+      if (!r.ok) setPoll(prev);
+    } catch { setPoll(prev); }
+  }, [poll, ev.id]);
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      {poll.question && <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 8 }}>{poll.question}</div>}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {poll.options.map((o, i) => {
+          const pct = poll.total > 0 ? Math.round((o.votes / poll.total) * 100) : 0;
+          const mine = poll.myChoice === i;
+          return (
+            <button key={i} onClick={() => vote(i)} style={{
+              position: "relative", overflow: "hidden", textAlign: "left", cursor: voted ? "default" : "pointer", width: "100%",
+              padding: "9px 12px", borderRadius: 10, background: PANEL_2, border: `1px solid ${mine ? tint(TEAL, "66") : LINE}`,
+            }}>
+              {voted && <div aria-hidden style={{ position: "absolute", inset: 0, width: `${pct}%`, background: mine ? tint(TEAL, "2a") : "rgba(255,255,255,0.05)" }} />}
+              <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 600, color: mine ? TEAL : INK }}>{o.text}</span>
+                {voted && <span style={{ fontSize: 13, fontWeight: 700, color: mine ? TEAL : MUTED }}>{pct}%</span>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 11.5, color: MUTED, marginTop: 6 }}>{poll.total} vote{poll.total === 1 ? "" : "s"}{voted ? "" : " · tap to vote"}</div>
+    </div>
+  );
+}
+
 function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -133,13 +183,19 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.35 }}>
             <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 700, textDecoration: "none" }}>{ev.actorName}</Link>
-            <span style={{ color: "#c7d0cb" }}> {ev.sentence}</span>
+            {ev.type !== "post" && <span style={{ color: "#c7d0cb" }}> {ev.sentence}</span>}
           </div>
           <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{timeAgo(ev.createdAt)}</div>
         </div>
         {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts. */}
         <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
       </div>
+
+      {/* A user post: the text, then its poll if any. */}
+      {ev.type === "post" && ev.text && (
+        <div style={{ fontSize: 14.5, color: INK, lineHeight: 1.45, marginTop: 10, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{ev.text}</div>
+      )}
+      {ev.poll && <PollBlock ev={ev} />}
 
       {/* Squad tiles render the real tactical PITCH (founder, 3 Aug — a row of faces
           isn't useful; we need to see the team in formation). Tap opens the

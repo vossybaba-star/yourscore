@@ -16,11 +16,12 @@ import { useCallback, useEffect, useState } from "react";
 import { INK, LIME, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { FeedStream } from "@/components/fantasy/FeedStream";
 import { DiscoverTabs } from "@/components/fantasy/DiscoverTabs";
+import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
 import { recordVisit } from "@/lib/nav";
 
-type SocialTab = "feed" | "following" | "discover";
+type SocialTab = "live" | "following" | "discover";
 const TABS: { id: SocialTab; label: string }[] = [
-  { id: "feed", label: "Feed" },
+  { id: "live", label: "Live" },
   { id: "following", label: "Following" },
   { id: "discover", label: "Discover" },
 ];
@@ -35,7 +36,7 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
         FOLLOW MANAGERS TO NARROW YOUR FEED
       </div>
       <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, margin: "0 0 16px" }}>
-        Follow people to see just their squads, moves and gameweek results here. Everything else is over on Feed.
+        Follow people to see just their squads, moves and gameweek results here. Everything else is over on Live.
       </p>
       <button onClick={onFind} style={{
         padding: "11px 20px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
@@ -46,10 +47,13 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
 }
 
 export function SocialHome() {
-  const [tab, setTab] = useState<SocialTab>("feed");
+  const [tab, setTab] = useState<SocialTab>("live");
   const [feedSort, setFeedSort] = useState<FeedSort>("top");
   // Which Discover sub-tab to open on — "Find managers" jumps straight to Players.
   const [discoverSub, setDiscoverSub] = useState<"leagues" | "players" | undefined>(undefined);
+  // The composer + a key that reloads the Live feed after a new post lands.
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [liveKey, setLiveKey] = useState(0);
 
   // Restore the segment from the URL on mount (so links and a refresh land right).
   useEffect(() => {
@@ -61,7 +65,7 @@ export function SocialHome() {
 
   const select = useCallback((t: SocialTab) => {
     setTab(t);
-    const url = t === "feed" ? "/fantasy/social" : `/fantasy/social?tab=${t}`;
+    const url = t === "live" ? "/fantasy/social" : `/fantasy/social?tab=${t}`;
     try {
       window.history.replaceState(null, "", url);
       recordVisit(url);
@@ -73,7 +77,7 @@ export function SocialHome() {
       <div style={{ margin: "0 2px 12px" }}>
         <h2 className="font-display" style={{ fontSize: 20, color: INK, margin: 0, lineHeight: 1.1 }}>Social</h2>
         <p style={{ fontSize: 13, color: MUTED, margin: "4px 0 0", lineHeight: 1.45 }}>
-          See what every manager is doing and join the conversation.
+          Fantasy moves, debates and matchday reactions.
         </p>
       </div>
 
@@ -90,8 +94,17 @@ export function SocialHome() {
         })}
       </div>
 
-      {tab === "feed" && (
+      {tab === "live" && (
         <>
+          {/* Composer entry point — write a post or a poll to the public feed. */}
+          <button onClick={() => setComposeOpen(true)} style={{
+            width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+            padding: "11px 14px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, marginBottom: 12,
+          }}>
+            <span style={{ width: 22, height: 22, flexShrink: 0, borderRadius: 999, background: tint(TEAL, "1e"), border: `1px solid ${tint(TEAL, "55")}`, color: TEAL, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>+</span>
+            <span style={{ fontSize: 13.5, color: MUTED }}>What are you thinking?</span>
+          </button>
+
           {/* Sort the open feed by engagement (Top) or newest (Recent). */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginBottom: 12 }}>
             {([["top", "Top"], ["recent", "Recent"]] as [FeedSort, string][]).map(([s, label]) => {
@@ -105,7 +118,7 @@ export function SocialHome() {
               );
             })}
           </div>
-          <FeedStream controlledScope="global" controlledSort={feedSort} chrome={false} signInNext="/fantasy/social" />
+          <FeedStream key={liveKey} controlledScope="global" controlledSort={feedSort} chrome={false} signInNext="/fantasy/social" />
         </>
       )}
       {tab === "following" && (
@@ -113,6 +126,8 @@ export function SocialHome() {
           emptyFollowing={<FollowingEmpty onFind={() => { setDiscoverSub("players"); select("discover"); }} />} />
       )}
       {tab === "discover" && <DiscoverTabs initialSub={discoverSub} />}
+
+      <CreatePostSheet open={composeOpen} onClose={() => setComposeOpen(false)} onPosted={() => setLiveKey((k) => k + 1)} />
     </div>
   );
 }
