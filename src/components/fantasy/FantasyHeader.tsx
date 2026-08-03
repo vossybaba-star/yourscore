@@ -42,11 +42,10 @@ const TABS = [
 export function FantasyHeader({ subtitle }: { subtitle?: string }) {
   const pathname = usePathname() || "/fantasy";
   const { user } = useUser();
-  // Signed out, Home (the public browse) and Scout (cover + a walled preview) are
-  // open to browse; Squad, Social and Leagues assume an account (the feed is
-  // member-gated), so route those through sign-in rather than a broken page. A
-  // public feed for guests is a Phase 2 follow-up.
-  const publicHref = (href: string) => href === "/fantasy" || href === "/fantasy/news";
+  // Fantasy PL isn't gated to view (founder, 3 Aug): Home, Scout and Social are all
+  // browsable signed-out — you just can't contribute without an account. Squad and
+  // Leagues are personal tools, so those still route a guest through sign-in.
+  const publicHref = (href: string) => href === "/fantasy" || href === "/fantasy/news" || href === "/fantasy/social";
   const hrefFor = (href: string) => (!user && !publicHref(href)) ? `/auth/sign-in?next=${encodeURIComponent(href)}` : href;
   return (
     <div style={{ marginBottom: 14 }}>

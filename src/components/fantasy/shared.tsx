@@ -14,7 +14,8 @@
  * rationed to things you WON: a gameweek total, top of a table, a month title.
  * Spending gold on every button is what made it mean nothing.
  */
-import { useCallback, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { faceFor } from "@/lib/fantasy/faces";
@@ -211,6 +212,12 @@ export function Sheet({ onClose, labelledBy, children }: {
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const returnTo = useRef<HTMLElement | null>(null);
+  // Portal to <body>: every fantasy route sets `main[data-fantasy] > * { z-index:1 }`,
+  // which traps a fixed overlay in that stacking context BELOW the z-50 BottomNav,
+  // clipping the sheet's bottom controls (the composer's Post button). Rendering
+  // at the document root frees the z-60 overlay to sit above the nav everywhere.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const focusables = useCallback((): HTMLElement[] => {
     if (!ref.current) return [];
@@ -243,11 +250,11 @@ export function Sheet({ onClose, labelledBy, children }: {
     };
   }, [focusables, onClose]);
 
-  return (
+  const overlay = (
     <div onClick={onClose}
       style={{
-        // Above the BottomNav (z-50) — at z-40 the fixed nav rendered OVER the
-        // sheet and clipped its bottom controls. Bottom padding clears the
+        // z-60 above the BottomNav (z-50); portaled to <body> so main's stacking
+        // context can't sink it below the nav. Bottom padding clears the
         // home-indicator safe area so the last row isn't under the gesture bar.
         position: "fixed", inset: 0, zIndex: 60, background: "rgba(4,8,6,0.72)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
@@ -269,6 +276,8 @@ export function Sheet({ onClose, labelledBy, children }: {
       </div>
     </div>
   );
+
+  return mounted ? createPortal(overlay, document.body) : null;
 }
 
 /** The player card — who they are and everything a pick turns on, in one place.

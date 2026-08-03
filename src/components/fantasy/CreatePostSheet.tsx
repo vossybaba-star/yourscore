@@ -4,33 +4,48 @@
  * poll (founder, 3 Aug — the feed needs somewhere to argue, not just activity).
  * MVP posts to public Social; sharing into a league already lives on each post.
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Btn, INK, LINE, MUTED, PANEL, Sheet, TEAL, tint } from "@/components/fantasy/shared";
+import { uploadPostImage, PostImageError } from "@/lib/postMedia";
 
 export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; onClose: () => void; onPosted: () => void }) {
   const [text, setText] = useState("");
   const [pollOn, setPollOn] = useState(false);
   const [question, setQuestion] = useState("");
   const [options, setOptions] = useState<string[]>(["", ""]);
+  const [image, setImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   if (!open) return null;
 
-  const reset = () => { setText(""); setPollOn(false); setQuestion(""); setOptions(["", ""]); setErr(null); };
+  const reset = () => { setText(""); setPollOn(false); setQuestion(""); setOptions(["", ""]); setImage(null); setUploading(false); setErr(null); };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true); setErr(null);
+    try { setImage(await uploadPostImage(file)); }
+    catch (er) { setErr(er instanceof PostImageError ? er.message : "Upload failed. Try again."); }
+    setUploading(false);
+  };
   const close = () => { reset(); onClose(); };
   const setOpt = (i: number, v: string) => setOptions((o) => o.map((x, j) => (j === i ? v : x)));
   const addOpt = () => setOptions((o) => (o.length < 4 ? [...o, ""] : o));
   const removeOpt = (i: number) => setOptions((o) => (o.length > 2 ? o.filter((_, j) => j !== i) : o));
 
   const pollValid = !!question.trim() && options.filter((o) => o.trim()).length >= 2;
-  const canPost = text.trim().length > 0 || (pollOn && pollValid);
+  const canPost = !uploading && (text.trim().length > 0 || !!image || (pollOn && pollValid));
 
   const submit = async () => {
     if (!canPost || busy) return;
     setBusy(true); setErr(null);
     const body = {
       text: text.trim(),
+      image: image || undefined,
       poll: pollOn ? { question: question.trim(), options: options.map((o) => o.trim()).filter(Boolean) } : undefined,
     };
     try {
@@ -54,7 +69,34 @@ export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; on
       <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 500))} placeholder="What are you thinking?" rows={4}
         style={{ ...input, resize: "none", lineHeight: 1.45 }} />
 
-      {pollOn ? (
+      <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
+
+      {image && (
+        <div style={{ position: "relative", marginTop: 10 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image} alt="" style={{ display: "block", width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 12, border: `1px solid ${LINE}` }} />
+          <button onClick={() => setImage(null)} aria-label="Remove image" style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: 999, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
+      {(!image || !pollOn) && (
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          {!image && (
+            <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{
+              flex: 1, cursor: uploading ? "default" : "pointer", padding: "9px 12px", borderRadius: 10, background: "transparent",
+              border: `1px dashed ${tint(TEAL, "55")}`, color: TEAL, fontSize: 13.5, fontWeight: 700,
+            }}>{uploading ? "Uploading…" : "Add image"}</button>
+          )}
+          {!pollOn && (
+            <button onClick={() => setPollOn(true)} style={{
+              flex: 1, cursor: "pointer", padding: "9px 12px", borderRadius: 10, background: "transparent",
+              border: `1px dashed ${tint(TEAL, "55")}`, color: TEAL, fontSize: 13.5, fontWeight: 700,
+            }}>Add a poll</button>
+          )}
+        </div>
+      )}
+
+      {pollOn && (
         <div style={{ marginTop: 10, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL }}>Poll</span>
@@ -75,11 +117,6 @@ export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; on
             <button onClick={addOpt} style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", color: TEAL, fontSize: 13, fontWeight: 700 }}>+ Add option</button>
           )}
         </div>
-      ) : (
-        <button onClick={() => setPollOn(true)} style={{
-          marginTop: 10, display: "flex", alignItems: "center", gap: 8, cursor: "pointer",
-          padding: "9px 12px", borderRadius: 10, background: "transparent", border: `1px dashed ${tint(TEAL, "55")}`, color: TEAL, fontSize: 13.5, fontWeight: 700, width: "100%", justifyContent: "center",
-        }}>Add a poll</button>
       )}
 
       {err && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "10px 0 0" }}>{err}</p>}

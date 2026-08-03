@@ -41,7 +41,24 @@ interface FeedEvent {
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
-  text?: string | null; poll?: FeedPoll | null;
+  text?: string | null; poll?: FeedPoll | null; image?: string | null;
+}
+
+/** Render post text with any http(s) URLs turned into safe, tappable links. */
+function LinkedText({ text }: { text: string }) {
+  const parts = text.split(/(https?:\/\/[^\s]+)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        /^https?:\/\//.test(part) ? (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer nofollow" onClick={(e) => e.stopPropagation()}
+            style={{ color: TEAL, textDecoration: "none", wordBreak: "break-all" }}>{part}</a>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
 }
 
 function timeAgo(iso: string): string {
@@ -80,6 +97,7 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
       const res = remove
         ? await fetch("/api/fantasy/feed/react", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id }) })
         : await fetch("/api/fantasy/feed/react", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id, emoji }) });
+      if (res.status === 401) { window.location.href = "/auth/sign-in?next=/fantasy/social"; return; }
       if (!res.ok) { setReactions(prevReactions); setMine(prevMine); }
     } catch { setReactions(prevReactions); setMine(prevMine); }
   }, [mine, reactions, ev.id]);
@@ -140,6 +158,7 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
     setPoll({ ...poll, options, myChoice: idx, total });
     try {
       const r = await fetch("/api/fantasy/feed/poll/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id, optionIndex: idx }) });
+      if (r.status === 401) { window.location.href = "/auth/sign-in?next=/fantasy/social"; return; }
       if (!r.ok) setPoll(prev);
     } catch { setPoll(prev); }
   }, [poll, ev.id]);
@@ -191,9 +210,14 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
       </div>
 
-      {/* A user post: the text, then its poll if any. */}
+      {/* A user post: the text (links tappable), an image, then a poll if any. */}
       {ev.type === "post" && ev.text && (
-        <div style={{ fontSize: 14.5, color: INK, lineHeight: 1.45, marginTop: 10, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{ev.text}</div>
+        <div style={{ fontSize: 14.5, color: INK, lineHeight: 1.45, marginTop: 10, whiteSpace: "pre-wrap", wordBreak: "break-word" }}><LinkedText text={ev.text} /></div>
+      )}
+      {ev.type === "post" && ev.image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={ev.image} alt="" loading="lazy"
+          style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 10, border: `1px solid ${LINE}` }} />
       )}
       {ev.poll && <PollBlock ev={ev} />}
 

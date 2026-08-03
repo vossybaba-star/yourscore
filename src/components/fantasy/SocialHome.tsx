@@ -13,11 +13,15 @@
  * pressing back returns to the segment you left.
  */
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { INK, LIME, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { FeedStream } from "@/components/fantasy/FeedStream";
 import { DiscoverTabs } from "@/components/fantasy/DiscoverTabs";
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
+import { useUser } from "@/hooks/useUser";
 import { recordVisit } from "@/lib/nav";
+
+const SIGN_IN = "/auth/sign-in?next=/fantasy/social";
 
 type SocialTab = "live" | "following" | "discover";
 const TABS: { id: SocialTab; label: string }[] = [
@@ -47,6 +51,8 @@ function FollowingEmpty({ onFind }: { onFind: () => void }) {
 }
 
 export function SocialHome() {
+  const router = useRouter();
+  const { user } = useUser();
   const [tab, setTab] = useState<SocialTab>("live");
   const [feedSort, setFeedSort] = useState<FeedSort>("top");
   // Which Discover sub-tab to open on — "Find managers" jumps straight to Players.
@@ -96,8 +102,9 @@ export function SocialHome() {
 
       {tab === "live" && (
         <>
-          {/* Composer entry point — write a post or a poll to the public feed. */}
-          <button onClick={() => setComposeOpen(true)} style={{
+          {/* Composer entry point — write a post or a poll to the public feed.
+              Guests can read but must sign in to contribute. */}
+          <button onClick={() => (user ? setComposeOpen(true) : router.push(SIGN_IN))} style={{
             width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
             padding: "11px 14px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, marginBottom: 12,
           }}>
@@ -122,8 +129,18 @@ export function SocialHome() {
         </>
       )}
       {tab === "following" && (
-        <FeedStream controlledScope="following" controlledSort="recent" chrome={false} signInNext="/fantasy/social?tab=following"
-          emptyFollowing={<FollowingEmpty onFind={() => { setDiscoverSub("players"); select("discover"); }} />} />
+        user ? (
+          <FeedStream controlledScope="following" controlledSort="recent" chrome={false} signInNext="/fantasy/social?tab=following"
+            emptyFollowing={<FollowingEmpty onFind={() => { setDiscoverSub("players"); select("discover"); }} />} />
+        ) : (
+          <div style={{ borderRadius: 16, background: PANEL, border: `1px solid ${tint(LIME, "3a")}`, padding: 22, textAlign: "center" }}>
+            <div className="font-display tracking-widest" style={{ fontSize: 12.5, letterSpacing: "0.12em", color: LIME, marginBottom: 8 }}>YOUR FOLLOWING FEED</div>
+            <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, margin: "0 0 16px" }}>
+              Sign in to follow managers and see just their squads, moves and results here.
+            </p>
+            <button onClick={() => router.push(SIGN_IN)} style={{ padding: "11px 20px", borderRadius: 999, fontSize: 13.5, fontWeight: 700, cursor: "pointer", background: LIME, color: "#0b1400", border: "none" }}>Sign in</button>
+          </div>
+        )
       )}
       {tab === "discover" && <DiscoverTabs initialSub={discoverSub} />}
 

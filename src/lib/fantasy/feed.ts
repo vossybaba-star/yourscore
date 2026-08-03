@@ -80,6 +80,8 @@ export interface FeedEvent {
   text?: string | null;
   /** An optional poll attached to a post. */
   poll?: FeedPoll | null;
+  /** An optional image attached to a post (public post-media URL). */
+  image?: string | null;
 }
 
 const CHIP_LABEL: Record<string, string> = {
@@ -223,7 +225,7 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
  *  moderation as comments. Renders in Live like any other event, and gets
  *  reactions + comments for free (they key off the event id). */
 export async function postToFeed(db: Db, userId: string, body: unknown): Promise<{ id: string }> {
-  const b = (body ?? {}) as { text?: unknown; poll?: unknown };
+  const b = (body ?? {}) as { text?: unknown; poll?: unknown; image?: unknown };
   const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
 
   let poll: { question: string; options: string[] } | null = null;
@@ -238,13 +240,24 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     poll = { question, options };
   }
 
-  if (!text && !poll) throw new HttpError(400, "Write something or add a poll");
+  // An image must live in OUR post-media bucket — never an arbitrary external URL.
+  let image = typeof b.image === "string" ? b.image.trim() : "";
+  if (image) {
+    const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+    if (!base || !image.startsWith(`${base}/storage/v1/object/public/post-media/`)) {
+      throw new HttpError(400, "bad image");
+    }
+    image = image.slice(0, 500);
+  }
+
+  if (!text && !poll && !image) throw new HttpError(400, "Write something, add a poll or an image");
   const why = commentRejection([text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "));
   if (why) throw new HttpError(400, why);
 
   const payload: Record<string, unknown> = {};
   if (text) payload.text = text;
   if (poll) payload.poll = poll;
+  if (image) payload.image = image;
   const { data, error } = await db.from("fantasy_feed_events")
     .insert({ actor_id: userId, type: "post", gw: null, payload })
     .select("id").single();
@@ -415,11 +428,13 @@ async function hydrateEvents(
       playerId = Number(payload.player);
       player = faceOf(playerId);
     }
-    // A user post carries its text and (optionally) a poll with live tallies.
+    // A user post carries its text, an optional image, and (optionally) a poll.
     let text: string | null | undefined;
     let poll: FeedPoll | null | undefined;
+    let image: string | null | undefined;
     if (type === "post") {
       text = typeof payload.text === "string" ? payload.text : null;
+      image = typeof payload.image === "string" ? payload.image : null;
       const p = payload.poll as { question?: unknown; options?: unknown } | undefined;
       if (p && Array.isArray(p.options)) {
         const opts = (p.options as unknown[]).map((o) => (typeof o === "string" ? o : "")).filter(Boolean).slice(0, MAX_POLL_OPTIONS);
@@ -447,6 +462,7 @@ async function hydrateEvents(
       playerId,
       text,
       poll,
+      image,
     };
   });
 
