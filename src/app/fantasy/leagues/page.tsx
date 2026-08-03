@@ -12,15 +12,15 @@
  * separate area to play with your friends. The api() helper (shared.tsx) only does
  * GET-or-POST on a fixed path, so the my-leagues+public GET goes through a small
  * local raw fetch. */
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Chip, GOLD, INK, LINE, LIME, MUTED, page, PANEL, PANEL_2, TEAL, tint,
+  Btn, Card, Chip, GOLD, INK, LINE, LIME, MUTED, page, PANEL, PANEL_2, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
+import { CreateLeagueFlow, JoinLeagueFlow, LeagueEmptyState } from "@/components/fantasy/league/LeagueFlows";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { trackFantasyLeagueCreated } from "@/lib/analytics/trackGame";
 
 interface LeagueHighlight {
   tone: "chat" | "join" | "quiet" | "empty";
@@ -54,11 +54,6 @@ async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   return json as T;
 }
 
-const inputStyle: CSSProperties = {
-  width: "100%", boxSizing: "border-box", padding: "11px 12px", borderRadius: 10,
-  fontSize: 14, background: PANEL, color: INK, border: `1px solid ${LINE}`, outline: "none",
-};
-
 export default function LeaguesHome() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("leagues");
@@ -67,12 +62,9 @@ export default function LeaguesHome() {
   const [loaded, setLoaded] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const [name, setName] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
-  const [code, setCode] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
 
   // Restore the subtab from the URL on mount, and keep it there so back from a
   // profile or a league returns to the same subtab.
@@ -98,27 +90,6 @@ export default function LeaguesHome() {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
-
-  const create = async () => {
-    if (!name.trim() || busy) return;
-    setBusy(true); setErr(null);
-    try {
-      const created = await api<{ id: string; name: string; code: string; isPublic: boolean }>(
-        "leagues", { name: name.trim(), isPublic });
-      trackFantasyLeagueCreated({ isPublic });
-      router.push(`/fantasy/leagues/${created.code}`);
-    } catch (e) { setErr((e as Error).message); setBusy(false); }
-  };
-
-  const join = async () => {
-    if (!code.trim() || busy) return;
-    setBusy(true); setErr(null);
-    try {
-      const joined = await api<{ id: string; name: string; code: string }>(
-        "leagues/join", { code: code.trim() });
-      router.push(`/fantasy/leagues/${joined.code}`);
-    } catch (e) { setErr((e as Error).message); setBusy(false); }
-  };
 
   // Invite share for a hub tile — native share sheet first, clipboard fallback
   // with a brief "Link copied" state per league (matches the [code] detail page).
@@ -263,59 +234,37 @@ export default function LeaguesHome() {
         </Card>
       ) : (
         <>
-          {leagues.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>YOUR LEAGUES</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {leagues.map(myLeagueTile)}
+          {!loaded ? (
+            <p style={{ fontSize: 13, color: MUTED }}>Loading your leagues…</p>
+          ) : leagues.length === 0 ? (
+            <LeagueEmptyState onCreate={() => setCreateOpen(true)} onJoin={() => setJoinOpen(true)} />
+          ) : (
+            <>
+              {/* Your leagues lead; creating and joining are demoted to buttons. */}
+              <div style={{ marginBottom: 12 }}>
+                <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>YOUR LEAGUES</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {leagues.map(myLeagueTile)}
+                </div>
               </div>
-            </div>
+
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <div style={{ flex: 1 }}><Btn gold onClick={() => setCreateOpen(true)}>Create league</Btn></div>
+                <div style={{ flex: 1 }}><Btn onClick={() => setJoinOpen(true)}>Join with code</Btn></div>
+              </div>
+
+              {/* Public leagues stay secondary — never dominate the friend leagues. */}
+              {publicList.length > 0 && (
+                <div>
+                  <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>PUBLIC LEAGUES</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {publicList.map((l) => leagueTile(l, "Public league"))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
-
-          {/* CREATE — the marketing hero of this tab. */}
-          <div style={{ borderRadius: 16, padding: 16, marginBottom: 12, background: `linear-gradient(150deg, ${tint(GOLD, "16")}, ${PANEL})`, border: `1px solid ${tint(GOLD, "3a")}` }}>
-            <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: GOLD, marginBottom: 3 }}>CREATE A LEAGUE</div>
-            <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.1, marginBottom: 3 }}>Start a league with your friends</div>
-            <p style={{ fontSize: 12, color: MUTED, margin: "0 0 12px", lineHeight: 1.4 }}>Invite your group, chat every gameweek, settle who really knows their football.</p>
-            <input value={name} onChange={(e) => setName(e.target.value.slice(0, 40))} placeholder="League name" style={{ ...inputStyle, marginBottom: 8 }} />
-            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-              {(["Private", "Public"] as const).map((label, i) => {
-                const wantsPublic = i === 1;
-                const active = wantsPublic === isPublic;
-                return (
-                  <button key={label} onClick={() => setIsPublic(wantsPublic)} style={{
-                    flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 12.5, fontWeight: 700,
-                    cursor: "pointer", background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
-                    border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
-                  }}>{label}</button>
-                );
-              })}
-            </div>
-            <p style={{ fontSize: 11, color: MUTED, margin: "0 0 10px", lineHeight: 1.4 }}>
-              {isPublic ? "Public: anyone can find and join this league." : "Private: only people with your code can join."}
-            </p>
-            <Btn gold disabled={!name.trim() || busy} onClick={create}>{busy ? "…" : "Create league"}</Btn>
-          </div>
-
-          <Card style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: "0.1em", color: GOLD, marginBottom: 8 }}>JOIN WITH CODE</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))} placeholder="CODE" style={{ ...inputStyle, flex: 1, letterSpacing: "0.1em" }} />
-              <Btn small gold disabled={!code.trim() || busy} onClick={join}>Join</Btn>
-            </div>
-          </Card>
-
-          {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 12px" }}>{err}</p>}
-
-          <div>
-            <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>PUBLIC LEAGUES</div>
-            {loaded && publicList.length === 0 && (
-              <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No public leagues yet. Be the first.</p>
-            )}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {publicList.map((l) => leagueTile(l, "Public league"))}
-            </div>
-          </div>
+          {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "12px 0 0" }}>{err}</p>}
         </>
       )}
     </>
@@ -342,6 +291,8 @@ export default function LeaguesHome() {
 
       {tab === "competition" ? <LeagueCompetition /> : myLeagues}
     </main>
+      <CreateLeagueFlow open={createOpen} onClose={() => setCreateOpen(false)} />
+      <JoinLeagueFlow open={joinOpen} onClose={() => setJoinOpen(false)} />
       <BottomNav />
     </>
   );

@@ -45,10 +45,11 @@ export function CompactSquadPreview({ board, actorId }: { board: Board; actorId:
 
   // A stacked club is a real, derivable talking point ("Triple Liverpool").
   const clubTally = new Map<string, number>();
-  for (const p of xi) if (p.club) clubTally.set(p.club, (clubTally.get(p.club) ?? 0) + 1);
-  let topClub: { club: string; n: number } | null = null;
-  for (const [club, n] of clubTally) if (!topClub || n > topClub.n) topClub = { club, n };
-  const stackWord = topClub && topClub.n >= 3 ? (topClub.n === 3 ? "Triple" : topClub.n === 4 ? "Quad" : `${topClub.n}x`) : null;
+  xi.forEach((p) => { if (p.club) clubTally.set(p.club, (clubTally.get(p.club) ?? 0) + 1); });
+  let bestClub: string | null = null;
+  let bestN = 0;
+  clubTally.forEach((n, club) => { if (n > bestN) { bestN = n; bestClub = club; } });
+  const stackWord = bestN >= 3 ? (bestN === 3 ? "Triple" : bestN === 4 ? "Quad" : `${bestN}x`) : null;
 
   return (
     <Link href={`/profile/${actorId}#fantasy-xi`} style={{ display: "block", textDecoration: "none", marginTop: 11 }}>
@@ -73,7 +74,7 @@ export function CompactSquadPreview({ board, actorId }: { board: Board; actorId:
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <Hook accent={TEAL}>{formation}</Hook>
           {captain && <Hook accent={GOLD}>{surname(captain.name)} (C)</Hook>}
-          {stackWord && topClub && <Hook>{stackWord} {topClub.club}</Hook>}
+          {stackWord && bestClub && <Hook>{stackWord} {bestClub}</Hook>}
           <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: TEAL, whiteSpace: "nowrap" }}>
             See squad <span aria-hidden>›</span>
           </span>
