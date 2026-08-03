@@ -6,7 +6,19 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-02 (**Versus promo tile at the top of the Play tab.** Versus lost its
+> **Confirmed:** 2026-08-03 (**Fantasy signup ticker → Telegram.** New cron
+> `/api/cron/fantasy-signup-ticker` (every 5 min, `vercel.json`) pings the founder's Telegram
+> for every new fantasy manager — a "fantasy user" = a `fantasy_squads` row; seed accounts
+> (`profiles.is_seed`) are excluded from both the pings and the count. Each message names the
+> new manager(s) with their ordinal and ends with the running total, so the latest message in
+> the chat is always the live manager count. Watermark lives in `fantasy_ops_state` under
+> `guard='signup-ticker'` (no migration needed) and only advances after a successful send, so
+> a Telegram outage retries rather than dropping a signup; first run arms at "now" and sends a
+> baseline total instead of replaying history. Sender extracted to `src/lib/telegram.ts`
+> (same retry/backoff as fantasy-ops' private copy; chat overridable via
+> `TELEGRAM_TICKER_CHAT_ID`, else the LAUNCH/default chat vars).)
+>
+> **Previously confirmed:** 2026-08-02 (**Versus promo tile at the top of the Play tab.** Versus lost its
 > bottom-nav slot when Fantasy took the fifth tab, and a full app audit the same day measured the
 > cost: 7 friend challenges and 34 new friendships in 30 days — the social layer had no door.
 > Founder call: not a nav change; an ad tile instead. First content element of the Solo view on
@@ -726,6 +738,12 @@
 
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
+
+- **2026-08-03** — **Fantasy signup ticker → Telegram** (see Confirmed preamble). Cron
+  `/api/cron/fantasy-signup-ticker` every 5 min: one Telegram message per new fantasy manager
+  (new `fantasy_squads` row, seeds excluded) with the running total in every message.
+  Watermark in `fantasy_ops_state` (`guard='signup-ticker'`), shared sender in
+  `src/lib/telegram.ts`.
 
 - **2026-08-02** — **Rules page: four missing definitions added** (`/fantasy/rules` + rules bot
   grounding). Gap analysis vs the Premier League's own FPL explainer ecosystem found four rules

@@ -9,6 +9,7 @@
     { "path": "/api/cron/fantasy-news", "schedule": "30 * * * *" },
     { "path": "/api/cron/fantasy-tick", "schedule": "*/10 * * * *" },
     { "path": "/api/cron/fantasy-ops", "schedule": "15 * * * *" },
+    { "path": "/api/cron/fantasy-signup-ticker", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/halftime-watchdog", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/club-gameweek", "schedule": "20 * * * *" },
     { "path": "/api/cron/pl-news", "schedule": "7,37 * * * *" },
