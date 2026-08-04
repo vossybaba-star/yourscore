@@ -26,6 +26,7 @@ import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
 import { SharePost } from "@/components/fantasy/SharePost";
 import { FollowButton } from "@/components/social/FollowButton";
 import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -38,7 +39,7 @@ interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; cap
 interface FeedReaction { emoji: string; count: number }
 interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number }
 interface FeedEvent {
-  id: string; actorId: string; actorName: string; actorAvatar: string | null;
+  id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
@@ -195,6 +196,7 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
   const canShare = hasBoard || (!!ev.player && ev.playerId != null);
+  const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
   // Where a shared post points: a squad → the manager's XI, a player → that
   // player, anything else → the live feed. Plus a one-line lead for the share.
   const origin = typeof window !== "undefined" ? window.location.origin : "https://yourscore.app";
@@ -211,15 +213,27 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12, marginBottom: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <AvatarLightbox name={ev.actorName} avatarUrl={ev.actorAvatar}>
-          <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={34} />
-        </AvatarLightbox>
+        {/* Manager portrait with the crest of the club they support tucked in the
+            corner — the same identity the quiz shows. */}
+        <div style={{ position: "relative", flexShrink: 0, width: 38, height: 38 }}>
+          <AvatarLightbox name={ev.actorName} avatarUrl={ev.actorAvatar}>
+            <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={38} />
+          </AvatarLightbox>
+          {crestUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={crestUrl} alt="" width={17} height={17}
+              style={{ position: "absolute", right: -3, bottom: -2, width: 17, height: 17, objectFit: "contain", borderRadius: "50%", background: PANEL, padding: 1, boxShadow: "0 0 0 1.5px " + PANEL }} />
+          )}
+        </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.35 }}>
+          {/* Display name is the headline; the @handle sits under it. */}
+          <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.3 }}>
             <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 700, textDecoration: "none" }}>{ev.actorName}</Link>
             {ev.type !== "post" && <span style={{ color: "#c7d0cb" }}> {ev.sentence}</span>}
           </div>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{timeAgo(ev.createdAt)}</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
+            {ev.actorUsername ? <><span>@{ev.actorUsername}</span><span aria-hidden> · </span></> : null}{timeAgo(ev.createdAt)}
+          </div>
         </div>
         {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts. */}
         <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />

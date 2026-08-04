@@ -11,12 +11,13 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
 interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number; vice?: number }
 interface FeedFace { name: string; avatarUrl: string | null }
 interface FeedReaction { emoji: string; count: number }
 interface FeedEvent {
-  id: string; actorId: string; actorName: string; actorAvatar: string | null;
+  id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
@@ -32,16 +33,26 @@ function timeAgo(iso: string): string {
 }
 
 function FeedCard({ ev }: { ev: FeedEvent }) {
+  const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={32} />
+        <div style={{ position: "relative", flexShrink: 0, width: 34, height: 34 }}>
+          <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={34} />
+          {crestUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={crestUrl} alt="" width={16} height={16}
+              style={{ position: "absolute", right: -3, bottom: -2, width: 16, height: 16, objectFit: "contain", borderRadius: "50%", background: PANEL, padding: 1, boxShadow: "0 0 0 1.5px " + PANEL }} />
+          )}
+        </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.35 }}>
+          <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.3 }}>
             <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 700, textDecoration: "none" }}>{ev.actorName}</Link>
             <span style={{ color: "#c7d0cb" }}> {ev.sentence}</span>
           </div>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{timeAgo(ev.createdAt)}</div>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
+            {ev.actorUsername ? <><span>@{ev.actorUsername}</span><span aria-hidden> · </span></> : null}{timeAgo(ev.createdAt)}
+          </div>
         </div>
       </div>
 

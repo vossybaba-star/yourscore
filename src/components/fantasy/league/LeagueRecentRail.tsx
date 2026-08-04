@@ -9,9 +9,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
 interface FeedEvent {
-  id: string; actorId: string; actorName: string; actorAvatar: string | null;
+  id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; sentence: string; createdAt: string;
 }
 
@@ -72,10 +73,16 @@ export function LeagueRecentRail({ code }: { code: string }) {
               display: "flex", flexDirection: "column", gap: 7,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={26} />
+                <span style={{ position: "relative", flexShrink: 0, width: 26, height: 26 }}>
+                  <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={26} />
+                  {(() => { const c = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null; return c ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c} alt="" width={13} height={13} style={{ position: "absolute", right: -3, bottom: -2, width: 13, height: 13, objectFit: "contain", borderRadius: "50%", background: PANEL, padding: 0.5, boxShadow: "0 0 0 1.5px " + PANEL }} />
+                  ) : null; })()}
+                </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.actorName}</div>
-                  <div style={{ fontSize: 10.5, color: MUTED }}>{timeAgo(ev.createdAt)}</div>
+                  <div style={{ fontSize: 10.5, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.actorUsername ? `@${ev.actorUsername} · ` : ""}{timeAgo(ev.createdAt)}</div>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
