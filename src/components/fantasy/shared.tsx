@@ -219,6 +219,15 @@ export function Sheet({ onClose, labelledBy, children }: {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // Latest onClose without making it an effect dependency. Callers often pass an
+  // inline arrow (e.g. the composer's `() => { reset(); onClose() }`) that is a new
+  // reference every render; if the focus effect below depended on it, it would
+  // re-run on EVERY keystroke and steal focus back to the first control, so you
+  // could never type past one character in a field that isn't the first one (the
+  // poll inputs). Read it through a ref instead.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
+
   const focusables = useCallback((): HTMLElement[] => {
     if (!ref.current) return [];
     return Array.from(ref.current.querySelectorAll<HTMLElement>(
@@ -227,13 +236,16 @@ export function Sheet({ onClose, labelledBy, children }: {
   }, []);
 
   useEffect(() => {
+    // Wait for the portal to mount so ref.current (and its fields) exist. Runs
+    // once — never on a keystroke — so focus is set on open and then left alone.
+    if (!mounted) return;
     returnTo.current = document.activeElement as HTMLElement | null;
     // Focus the first real control, or the sheet itself if it has none.
     const first = focusables()[0] ?? ref.current;
     first?.focus();
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
+      if (e.key === "Escape") { e.preventDefault(); onCloseRef.current(); return; }
       if (e.key !== "Tab") return;
       const items = focusables();
       if (!items.length) return;
@@ -248,7 +260,7 @@ export function Sheet({ onClose, labelledBy, children }: {
       // Put focus back where the user left it, not at the top of the document.
       returnTo.current?.focus?.();
     };
-  }, [focusables, onClose]);
+  }, [mounted, focusables]);
 
   const overlay = (
     <div onClick={onClose}
