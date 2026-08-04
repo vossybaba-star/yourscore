@@ -29,7 +29,7 @@ import { ScoutScanState } from "@/components/fantasy/ScoutScanState";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 import {
-  BandGroups, scoreColor, type RatingBandsShape,
+  BandGroups, scoreColor, HORIZON_LABEL, type RatingBandsShape,
 } from "@/components/fantasy/RatingBands";
 import type { Slot } from "@/lib/fantasy/screenshotMatch";
 import {
@@ -488,11 +488,11 @@ export default function RateFromScreenshotPage() {
                 <span className="font-body" style={{
                   fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 999,
                   border: `1px solid ${tint(TEAL, "55")}`, background: tint(TEAL, "14"), color: TEAL,
-                }}>This month</span>
+                }}>{HORIZON_LABEL.month}</span>
                 <span className="font-body" style={{
                   fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 999,
                   border: `1px solid ${LINE}`, color: MUTED,
-                }}>Season</span>
+                }}>{HORIZON_LABEL.next5}</span>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
                 <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(SAMPLE_SCORE) }}>

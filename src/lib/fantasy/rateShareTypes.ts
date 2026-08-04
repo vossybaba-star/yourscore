@@ -18,7 +18,7 @@ export interface HorizonView {
 
 export interface RatingView {
   month: HorizonView;
-  season: HorizonView;
+  next5: HorizonView;
 }
 
 /** One of the 15 as stored on the snapshot — enough to draw the pitch and

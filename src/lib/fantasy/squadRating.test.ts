@@ -16,7 +16,7 @@ import {
   composeTemplatedVerdict, lintRatingCopy, groundRatingCopy, squadHash, buildRatingInputs,
   ratingFacts, benchmarkRaw, PROJ_FLOOR_FRACTION,
   bandPlayers, groupBands, BAND_STRONG_RATIO, BAND_DECENT_RATIO,
-  computeSFixRun, scoreSquadForHorizon, MONTH_WEIGHTS, SEASON_WEIGHTS,
+  computeSFixRun, scoreSquadForHorizon, MONTH_WEIGHTS, NEXT5_WEIGHTS,
   bandPlayersMonth,
   type RatingPlayer, type RatingInputs, type Difficulty, type RatingFacts, type BandedPlayer,
 } from "./squadRating";
@@ -545,19 +545,22 @@ test("computeSFixRun: a club missing from a non-empty map counts as one missing 
   assert.ok(Math.abs(value - (5 - 5 / XI_SIZE_FOR_TEST)) < 1e-9, "a club absent from a non-empty map is one missing cell, pulling below the neutral base of 5");
 });
 
-// ── scoreSquadForHorizon: MONTH vs SEASON weights (acceptance) ─────────────
+// ── scoreSquadForHorizon: MONTH vs NEXT5 weights (acceptance) ──────────────
 
-test("scoreSquadForHorizon: MONTH and SEASON weights diverge for a fixture-swayed squad", () => {
+test("scoreSquadForHorizon: MONTH and NEXT5 weights diverge on the same fixture run", () => {
   const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { clubId: i + 1, epNext: 4 }));
   const clubIds = xi.map((p) => p.clubId);
-  // A tough opener (bad for SEASON's next-GW sFix) behind a kind rest-of-run
-  // (good for MONTH's sFixRun) — the two horizons must actually disagree.
-  const fixtures = runFixturesFor(clubIds, ["tough", "kind", "kind", "kind", "kind"]);
+  // Both horizons read the SAME fixture run (computeSFixRun) — there is no
+  // separate next-GW-only reading any more, so divergence must come purely
+  // from the weights (NEXT5 leans harder on fixtures, less on projection and
+  // balance — see NEXT5_WEIGHTS).
+  const fixtures = runFixturesFor(clubIds, ["kind", "kind", "kind", "kind", "kind"]);
   const inputs = baseInputs({ xi, fixtures });
-  const monthScore = scoreSquadForHorizon(inputs, MONTH_WEIGHTS, computeSFixRun(inputs)).score;
-  const seasonScore = scoreSquadForHorizon(inputs, SEASON_WEIGHTS, computeSFix(inputs)).score;
-  assert.notEqual(monthScore, seasonScore, "MONTH (run-weighted) and SEASON (next-GW-weighted) must diverge");
-  assert.ok(monthScore > seasonScore, "a kind run behind one tough opener scores higher for MONTH than SEASON here");
+  const fixScore = computeSFixRun(inputs);
+  const monthScore = scoreSquadForHorizon(inputs, MONTH_WEIGHTS, fixScore).score;
+  const next5Score = scoreSquadForHorizon(inputs, NEXT5_WEIGHTS, fixScore).score;
+  assert.notEqual(monthScore, next5Score, "MONTH and NEXT5 must diverge since they weight the same fixture run differently");
+  assert.ok(next5Score > monthScore, "NEXT5 weights fixtures more heavily (0.45 vs 0.35), so a fully kind run scores higher for NEXT5");
 });
 
 // ── bandPlayersMonth: the fixture-run band nudge (acceptance) ──────────────

@@ -29,9 +29,12 @@ import type { Difficulty, NewsClubRun, NewsDoc, NewsDoubt } from "./news";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
 
-/** How many gameweeks ahead a pick surface shows. Three is enough to spot a
- *  double or a rough run without turning a player row into a table. */
-export const FIXTURE_LOOKAHEAD = 3;
+/** How many gameweeks ahead a pick surface shows. Five matches the upstream
+ *  ticker build (news.ts fetches exactly 5 GW windows) and is what the
+ *  squad rating's NEXT5 horizon needs to genuinely cover five games —
+ *  squadRating.ts's playerFixtureRunValue() already reads up to 5 cells per
+ *  club, so this was the one place still truncating that window to 3. */
+export const FIXTURE_LOOKAHEAD = 5;
 
 export interface ContextFixture {
   gw: number;

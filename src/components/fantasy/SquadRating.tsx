@@ -38,7 +38,7 @@ interface HorizonResult {
 
 interface SquadRatingResponse {
   month: HorizonResult;
-  season: HorizonResult;
+  next5: HorizonResult;
   generatedAt: string;
 }
 
@@ -62,9 +62,9 @@ export function SquadRating() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [freshError, setFreshError] = useState<string | null>(null);
-  // Defaults to "month" — the immediate August competition is the objective
-  // right now. Both horizons already ride along on every rating, so this is
-  // a pure client-side switch, never a refetch.
+  // Defaults to "month" — the current month's competition is the immediate
+  // objective right now. Both horizons already ride along on every rating,
+  // so this is a pure client-side switch, never a refetch.
   const [horizon, setHorizon] = useState<Horizon>("month");
 
   const peek = useCallback(async () => {
@@ -136,7 +136,7 @@ export function SquadRating() {
         </Card>
       )}
 
-      {!busy && rating && rating.month && rating.season && (() => {
+      {!busy && rating && rating.month && rating.next5 && (() => {
         const h = rating[horizon];
         return (
         <div className="rate-result-in">

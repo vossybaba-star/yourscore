@@ -66,6 +66,6 @@ export async function rateGuestSquad(db: Db, squad: GuestSquadShape): Promise<Ra
   if (!loaded) return null;
   const { inputs, cutoff } = loaded;
 
-  const { month, season, generatedAt } = await computeHorizonResults(inputs);
-  return { month, season, generatedAt, snapshotCutoff: cutoff };
+  const { month, next5, generatedAt } = await computeHorizonResults(inputs);
+  return { month, next5, generatedAt, snapshotCutoff: cutoff };
 }

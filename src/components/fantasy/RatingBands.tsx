@@ -76,14 +76,23 @@ export function BandGroups({ bands }: { bands: RatingBandsShape }) {
 //    result screen, both of which already have BOTH horizons in hand (no
 //    refetch on tap) ───────────────────────────────────────────────────────
 
-export type Horizon = "month" | "season";
+export type Horizon = "month" | "next5";
 
-export const HORIZON_LABEL: Record<Horizon, string> = { month: "This month", season: "Season" };
+/** The current calendar month's full name (e.g. "August") — a fantasy squad
+ *  changes every gameweek via a transfer, so "the MONTH tab" is always THIS
+ *  month, never permanently August. Duplicated from squadRating.ts's own
+ *  currentMonthName() rather than imported: squadRating.ts does `import
+ *  "server-only"`, which throws if pulled into this client component. */
+function currentMonthName(): string {
+  return new Date().toLocaleString("en-GB", { month: "long" });
+}
+
+export const HORIZON_LABEL: Record<Horizon, string> = { month: currentMonthName(), next5: "Next 5" };
 /** One-line objective shown under the tabs, so it's clear what each score is
  *  actually FOR before the reader looks at the number. */
 export const HORIZON_HELPER: Record<Horizon, string> = {
-  month: "Set up for the August competition.",
-  season: "Built to last the whole season.",
+  month: `Set up for the ${currentMonthName()} competition.`,
+  next5: "How your XI reads for the next five games.",
 };
 
 /** Small on-brand pill tabs. One tap switches; both horizons already live in
@@ -91,7 +100,7 @@ export const HORIZON_HELPER: Record<Horizon, string> = {
 export function HorizonTabs({ active, onChange }: { active: Horizon; onChange: (h: Horizon) => void }) {
   return (
     <div role="tablist" aria-label="Rating horizon" style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-      {(["month", "season"] as Horizon[]).map((h) => {
+      {(["month", "next5"] as Horizon[]).map((h) => {
         const on = h === active;
         return (
           <button key={h} type="button" role="tab" aria-selected={on} onClick={() => onChange(h)}

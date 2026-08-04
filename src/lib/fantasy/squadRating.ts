@@ -31,11 +31,15 @@
  *
  * ── Two horizons ──────────────────────────────────────────────────────────
  * Every rating now ships TWO scored takes on the same fifteen, computed from
- * the same RatingInputs: MONTH (the August competition — weighted toward the
- * whole fixture run and availability right now) and SEASON (weighted toward
- * projection and differentials over the long haul). One model call produces
- * BOTH verdicts (see callModelForHorizons/RATING_SYSTEM below) — never two —
- * grounded against a combined facts payload carrying both horizons at once.
+ * the same RatingInputs: MONTH (the current month's competition — weighted
+ * toward the whole fixture run and availability right now) and NEXT5
+ * (weighted even harder toward that same fixture run). A season-long
+ * horizon made no sense — a manager gets a transfer every week, so the
+ * squad being rated will not exist in its current form for long; NEXT5
+ * exists to answer "should I use my transfer now", not "is this squad built
+ * to last". One model call produces BOTH verdicts (see
+ * callModelForHorizons/RATING_SYSTEM below) — never two — grounded against a
+ * combined facts payload carrying both horizons at once.
  */
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -276,8 +280,11 @@ export function computeSFix(inputs: Pick<RatingInputs, "xi" | "fixtures">): numb
  *  cells actually present (min 1). A club with no cells at all in a non-empty
  *  map counts as a single missing cell (-1) — the same "don't trust a blank"
  *  signal computeSFix() uses for a missing next-GW cell, extended to the run.
- *  Exported: shared by computeSFixRun() below, bandPlayersMonth() and
- *  deriveMonthMove(), so all three read the identical per-player number. */
+ *  Exported: shared by computeSFixRun() below and by bandPlayersMonth() /
+ *  deriveMonthMove() — the run-aware banding/move functions BOTH horizons
+ *  call (there is no separate Next5-suffixed pair; MONTH and NEXT5 reuse the
+ *  same run-aware functions and diverge only through their weights) — so all
+ *  three read the identical per-player number. */
 export function playerFixtureRunValue(clubId: number, fixtures: RatingInputs["fixtures"]): number {
   const cells = fixtures[clubId];
   if (!cells || !cells.length) return -1;
@@ -290,13 +297,17 @@ export function playerFixtureRunValue(clubId: number, fixtures: RatingInputs["fi
   return sum / run.length;
 }
 
-/** Exported for the unit tests. The MONTH horizon's fixture sub score — the
- *  computeSFix() shape (FIX_BASE +/- 5 on the XI mean) but averaged over each
- *  player's whole fixture RUN (playerFixtureRunValue) instead of just the next
- *  GW, so a squad's August is judged on the whole month, not one game. Same
- *  all-or-nothing empty-map rule as computeSFix(): an empty fixtures map means
- *  "don't trust this batch", not "every club has a blank run" — return neutral
- *  (5), not a punished 0. */
+/** Exported for the unit tests. The fixture-RUN sub score shared by MONTH and
+ *  NEXT5 — the computeSFix() shape (FIX_BASE +/- 5 on the XI mean) but
+ *  averaged over each player's whole fixture RUN (playerFixtureRunValue)
+ *  instead of just the next GW. Both horizons read the SAME run; what differs
+ *  between them is how heavily each weights it (see MONTH_WEIGHTS/
+ *  NEXT5_WEIGHTS) alongside the other sub scores — MONTH additionally cares
+ *  about winning this month's table (balance, differentials), NEXT5 is
+ *  almost purely "is this XI well-fixtured right now". Same all-or-nothing
+ *  empty-map rule as computeSFix(): an empty fixtures map means "don't trust
+ *  this batch", not "every club has a blank run" — return neutral (5), not a
+ *  punished 0. */
 export function computeSFixRun(inputs: Pick<RatingInputs, "xi" | "fixtures">): number {
   if (Object.keys(inputs.fixtures).length === 0) return FIX_BASE;
   const xiSum = inputs.xi.reduce((s, p) => s + playerFixtureRunValue(p.clubId, inputs.fixtures), 0);
@@ -347,22 +358,27 @@ export function scoreSquad(inputs: RatingInputs): ScoreResult {
 
 export interface HorizonWeights { proj: number; avail: number; fix: number; bal: number; diff: number }
 
-/** MONTH weights the August competition: the fixture run (fixRun, not the
- *  single next-GW sFix) carries the most weight, availability matters right
- *  now, differentials matter least — a differential three gameweeks out is
- *  not what wins August. */
+/** MONTH weights the current calendar-month competition: the fixture run
+ *  (fixRun, not the single next-GW sFix) carries the most weight, availability
+ *  matters right now, differentials matter least — a differential three
+ *  gameweeks out is not what wins this month's table. */
 export const MONTH_WEIGHTS: HorizonWeights = { proj: 0.25, avail: 0.20, fix: 0.35, bal: 0.10, diff: 0.10 };
 
-/** SEASON weights lasting value: projection and differentials carry the most
- *  weight, the fixture term drops to the single next-GW sFix at low weight —
- *  one gameweek's fixture barely matters over a whole season. */
-export const SEASON_WEIGHTS: HorizonWeights = { proj: 0.40, avail: 0.15, fix: 0.05, bal: 0.15, diff: 0.25 };
+/** NEXT5 weights the run of fixtures directly ahead: with a transfer earned
+ *  every gameweek there is no such thing as evaluating a squad for "the
+ *  season" — the squad itself will not exist in its current form by then.
+ *  What is actually decision-relevant, gameweek to gameweek, is whether THIS
+ *  XI is well-fixtured for the games right in front of it. Fixture run carries
+ *  even more weight than MONTH's; balance and differentials (season-standings
+ *  concerns) drop to near nothing — they are not what this lens is for. */
+export const NEXT5_WEIGHTS: HorizonWeights = { proj: 0.20, avail: 0.20, fix: 0.45, bal: 0.05, diff: 0.10 };
 
 /** The same five sub scores scoreSquad() computes (sProj/sAvail/sBal/sDiff are
- *  shared verbatim between both horizons), weighted by `weights` and scored
- *  against `fixScore` — the ONE thing that differs per horizon: computeSFix()
- *  (next GW) for SEASON, computeSFixRun() (the whole run) for MONTH. Pure and
- *  deterministic, same discipline as scoreSquad(). */
+ *  shared verbatim between both horizons), weighted by `weights`. `fixScore`
+ *  is passed in rather than computed here — both MONTH and NEXT5 pass the
+ *  SAME computeSFixRun() reading (see computeHorizonResults), so the two
+ *  horizons diverge purely through `weights`, not through a second fixture
+ *  computation. Pure and deterministic, same discipline as scoreSquad(). */
 export function scoreSquadForHorizon(inputs: RatingInputs, weights: HorizonWeights, fixScore: number): ScoreResult {
   const proj = computeSProj(inputs);
   const sAvail = computeSAvail(inputs);
@@ -428,14 +444,17 @@ export function deriveMove(inputs: RatingInputs): SuggestedMove | null {
   };
 }
 
-/** The MONTH horizon's suggested move — same filters (same position, fit,
- *  affordable, club-legal, not already owned) as deriveMove(), but ranked by
- *  fixture-RUN value instead of ep_next: the worst starter is ranked out by
- *  (availability, then run value, then ep_next), and the replacement is the
- *  legal candidate with the best run value (ep_next the tiebreak) — the pick
- *  that most improves the squad's August outlook, not its raw projection.
- *  Returns null when nothing legal actually improves on the outgoing
- *  player's run value, same "no obvious move" guarantee as deriveMove(). */
+/** The fixture-run-based suggested move, shared by MONTH and NEXT5 (both
+ *  weight the run heavily — see MONTH_WEIGHTS/NEXT5_WEIGHTS) — same filters
+ *  (same position, fit, affordable, club-legal, not already owned) as
+ *  deriveMove(), but ranked by fixture-RUN value instead of ep_next: the
+ *  worst starter is ranked out by (availability, then run value, then
+ *  ep_next), and the replacement is the legal candidate with the best run
+ *  value (ep_next the tiebreak) — the pick that most improves the squad's
+ *  near-term outlook, not its raw projection. Returns null when nothing legal
+ *  actually improves on the outgoing player's run value, same "no obvious
+ *  move" guarantee as deriveMove(). Named "Month" for history/back-compat;
+ *  no longer month-specific. */
 export function deriveMonthMove(inputs: RatingInputs): SuggestedMove | null {
   if (!inputs.xi.length) return null;
   const runOf = (p: RatingPlayer) => playerFixtureRunValue(p.clubId, inputs.fixtures);
@@ -464,7 +483,7 @@ export function deriveMonthMove(inputs: RatingInputs): SuggestedMove | null {
   const best = candidates[0];
   if (!best) return null;
   // An unavailable starter should ALWAYS be swappable (he scores nothing if he
-  // sits, however kind his run). Otherwise require a genuinely better August run,
+  // sits, however kind his run). Otherwise require a genuinely better run ahead,
   // or an equal run with a higher projection — run values are coarse (0.2 steps),
   // so ties are common and would otherwise suppress an obvious upgrade.
   const outUnavailable = OUT_STATUSES.has(out.status);
@@ -521,10 +540,11 @@ function posCeilingMap(pool: RatingPlayer[]): Map<FantasyPos, number> {
 }
 
 /** Steps 1-4 of the banding rule, shared by bandPlayers() (kept exactly as it
- *  was) and both horizon variants: position-ceiling ratio -> base band and
- *  note, then the availability override (unavailable always wins to weak; a
- *  doubt drops one step). Fixture nudges are each caller's own step 5, since
- *  SEASON skips it and MONTH nudges on the run rather than the next GW. */
+ *  was) and bandPlayersMonth() (shared by both MONTH and NEXT5): position-
+ *  ceiling ratio -> base band and note, then the availability override
+ *  (unavailable always wins to weak; a doubt drops one step). The fixture
+ *  nudge is each caller's own step 5 — bandPlayers() skips it, bandPlayersMonth()
+ *  nudges on the fixture run. */
 function baseBandedPlayer(
   p: RatingPlayer, posCeiling: Map<FantasyPos, number>,
 ): { band: Band; note: string; unavailable: boolean; doubt: boolean } {
@@ -567,8 +587,8 @@ function baseBandedPlayer(
  *     computeSFix() uses, so it nudges nothing.
  *
  *  Kept exactly as it was before the two-horizon rework — unchanged behaviour,
- *  still exercised by its own unit tests. bandPlayersSeason()/bandPlayersMonth()
- *  below share steps 1-4 (baseBandedPlayer) but replace step 5. */
+ *  still exercised by its own unit tests. bandPlayersMonth() below shares
+ *  steps 1-4 (baseBandedPlayer) but replaces step 5. */
 export function bandPlayers(inputs: RatingInputs): BandedPlayer[] {
   const posCeiling = posCeilingMap(inputs.pool);
 
@@ -591,29 +611,23 @@ export function bandPlayers(inputs: RatingInputs): BandedPlayer[] {
   });
 }
 
-/** SEASON horizon bands: steps 1-4 only (position-ceiling ratio, availability
- *  override) — deliberately NO fixture nudge. A single gameweek's fixture is
- *  not a season-long signal, so the season band reflects fitness and raw
- *  projection alone. Same thresholds, same availability rule as bandPlayers(). */
-export function bandPlayersSeason(inputs: RatingInputs): BandedPlayer[] {
-  const posCeiling = posCeilingMap(inputs.pool);
-  return inputs.xi.map((p) => {
-    const { band, note } = baseBandedPlayer(p, posCeiling);
-    return { id: p.id, name: p.name, pos: p.pos, band, note };
-  });
-}
-
 /** How decisively a fixture run has to lean before it moves a band — a run
  *  value at or past this magnitude is "clearly" kind or tough, not a wash. */
 export const RUN_NUDGE_THRESHOLD = 0.5;
 
-/** MONTH horizon bands: steps 1-4 (baseBandedPlayer), then a fixture-RUN nudge
- *  instead of bandPlayers()'s next-GW nudge — a clearly kind run
- *  (playerFixtureRunValue >= RUN_NUDGE_THRESHOLD) bumps the band UP one step; a
- *  clearly tough run (<= -RUN_NUDGE_THRESHOLD) bumps it DOWN one step. The
- *  availability override still wins outright (an unavailable or doubtful
- *  player is never nudged by fixtures). Same empty-map "don't trust this
- *  batch" guard as computeSFixRun(). */
+/** Fixture-run-aware bands, shared by BOTH horizons that weight the run
+ *  (MONTH and NEXT5 — see MONTH_WEIGHTS/NEXT5_WEIGHTS): steps 1-4
+ *  (baseBandedPlayer), then a fixture-RUN nudge instead of bandPlayers()'s
+ *  next-GW nudge — a clearly kind run (playerFixtureRunValue >=
+ *  RUN_NUDGE_THRESHOLD) bumps the band UP one step; a clearly tough run
+ *  (<= -RUN_NUDGE_THRESHOLD) bumps it DOWN one step. The availability
+ *  override still wins outright (an unavailable or doubtful player is never
+ *  nudged by fixtures). Same empty-map "don't trust this batch" guard as
+ *  computeSFixRun(). Named "Month" for history/back-compat with its existing
+ *  tests; it is no longer month-specific — the old season-long horizon's
+ *  bandPlayersSeason() (no fixture nudge at all) is retired entirely, since
+ *  a "no such thing as season" squad has no horizon that should ignore its
+ *  own fixture run. */
 export function bandPlayersMonth(inputs: RatingInputs): BandedPlayer[] {
   const posCeiling = posCeilingMap(inputs.pool);
   const trustFixtures = Object.keys(inputs.fixtures).length > 0;
@@ -627,10 +641,10 @@ export function bandPlayersMonth(inputs: RatingInputs): BandedPlayer[] {
       const runValue = playerFixtureRunValue(p.clubId, inputs.fixtures);
       if (runValue >= RUN_NUDGE_THRESHOLD) {
         band = raiseOneBand(band);
-        note += ", kind run through August";
+        note += ", kind run ahead";
       } else if (runValue <= -RUN_NUDGE_THRESHOLD) {
         band = dropOneBand(band);
-        note += ", tough run";
+        note += ", tough run ahead";
       }
     }
 
@@ -700,13 +714,22 @@ type SuggestedMoveFacts = { out: string; in: string; position: string; priceM: n
 // ── the two-horizon closed payload (RatingFacts above is kept as-is for its
 //    own tests; this is the shape the two-horizon flow actually uses) ───────
 
-export type Horizon = "month" | "season";
+export type Horizon = "month" | "next5";
+
+/** The current calendar month's full name (e.g. "August") — the MONTH
+ *  horizon is always "this month", never permanently "August", so its label
+ *  and copy read this instead of a hardcoded string. Takes `Date` only so a
+ *  test can pin it; every real caller uses the default (the actual clock). */
+export function currentMonthName(d: Date = new Date()): string {
+  return d.toLocaleString("en-GB", { month: "long" });
+}
 
 /** Same shape as RatingFacts, plus the horizon identity itself (`horizon`,
  *  `horizonLabel`, `objective`) — those three fields exist so the literal
- *  words "month"/"season"/"August"/"whole season" are IN the payload the
- *  grounding gate walks (collectPayloadTokens), letting a verdict use them
- *  without tripping the CLAIM_TERMS "season" gate in tips.ts. */
+ *  words "month"/"next5"/the current month's name/"next five games" are IN
+ *  the payload the grounding gate walks (collectPayloadTokens), letting a
+ *  verdict use them without tripping the CLAIM_TERMS "season" gate in
+ *  tips.ts. */
 export interface HorizonFacts {
   horizon: Horizon;
   horizonLabel: string;
@@ -724,16 +747,16 @@ export interface HorizonFacts {
 
 /** Facts payload both verdicts are grounded against together (see
  *  groundHorizonCopy()) — carries both horizons so a MONTH verdict can be
- *  validated against vocabulary the SEASON facts introduced and vice versa,
+ *  validated against vocabulary the NEXT5 facts introduced and vice versa,
  *  same "one shared token pool" approach tips.ts uses for a single field. */
 export interface CombinedRatingFacts {
   month: HorizonFacts;
-  season: HorizonFacts;
+  next5: HorizonFacts;
 }
 
 const FIX_MEANING: Record<Horizon, string> = {
-  month: "how kind your XI's run of fixtures through August is",
-  season: "how kind your XI's next fixture is",
+  month: "how kind your XI's run of fixtures through the month ahead is",
+  next5: "how kind your XI's next five fixtures are",
 };
 
 /** Builds one horizon's closed payload — the model may only rephrase what is
@@ -743,10 +766,11 @@ export function horizonFacts(
   horizon: Horizon, inputs: RatingInputs, result: ScoreResult, move: SuggestedMove | null, banded: BandedPlayer[],
 ): HorizonFacts {
   const captain = inputs.xi.find((p) => p.id === inputs.captainId);
+  const month = currentMonthName();
   return {
     horizon,
-    horizonLabel: horizon === "month" ? "This month" : "Season",
-    objective: horizon === "month" ? "the August competition" : "the whole season",
+    horizonLabel: horizon === "month" ? month : "Next 5 games",
+    objective: horizon === "month" ? `the ${month} competition` : "the next five games",
     score: result.score,
     subScores: [
       { name: "projection", value: result.subScores.sProj, meaning: "how many points your XI is projected, captain counted twice" },
@@ -787,17 +811,18 @@ export function composeTemplatedVerdict(score: number): string {
  *  tests and as the single-horizon fallback shape). */
 export function composeTemplatedHorizonVerdict(score: number, horizon: Horizon): string {
   if (horizon === "month") {
-    if (score >= 8) return "Your August fixtures line up well, with few weak spots to worry about.";
+    const month = currentMonthName();
+    if (score >= 8) return `Your ${month} fixtures line up well, with few weak spots to worry about.`;
     if (score >= 6.5) return "A kind month ahead, with a couple of things worth watching.";
     if (score >= 5) return "A mixed month ahead, some strong picks alongside a few question marks.";
-    if (score >= 3) return "A tough run through August, worth a look before the deadline.";
+    if (score >= 3) return `A tough run through ${month}, worth a look before the deadline.`;
     return "A tough month ahead, with several issues worth weighing up.";
   }
-  if (score >= 8) return "A squad to hold with confidence, and few weak spots to worry about.";
-  if (score >= 6.5) return "A squad to hold, with a couple of things worth watching over the season.";
-  if (score >= 5) return "A squad with lasting value, some strong picks alongside a few question marks.";
-  if (score >= 3) return "A squad worth rebuilding as the season goes on.";
-  return "A squad with real issues to address over the season.";
+  if (score >= 8) return "A kind run of fixtures ahead, with few weak spots to worry about.";
+  if (score >= 6.5) return "A decent run of fixtures ahead, with a couple of things worth watching.";
+  if (score >= 5) return "A mixed run ahead, some strong picks alongside a few question marks.";
+  if (score >= 3) return "A tough run of fixtures ahead, worth a transfer before the deadline.";
+  return "A tough run of fixtures ahead, with several issues worth weighing up.";
 }
 
 function composeMoveLine(move: SuggestedMoveFacts): string {
@@ -876,14 +901,14 @@ export function composeRatingCopy(
 
 // ── two-horizon grounding + composition (one model call, two verdicts) ──────
 
-export interface ModelHorizonOutput { monthVerdict: string; seasonVerdict: string }
-export interface GroundedHorizonCopy { monthVerdict: string | null; seasonVerdict: string | null }
+export interface ModelHorizonOutput { monthVerdict: string; next5Verdict: string }
+export interface GroundedHorizonCopy { monthVerdict: string | null; next5Verdict: string | null }
 
 /** Grounds BOTH verdicts against ONE combined token pool built from both
  *  horizons' facts — the reason `facts` here is the whole CombinedRatingFacts,
- *  not one HorizonFacts at a time: a MONTH verdict may reuse a word the SEASON
+ *  not one HorizonFacts at a time: a MONTH verdict may reuse a word the NEXT5
  *  facts introduced (or vice versa), and critically the literal payload text
- *  ("This month"/"Season"/"the August competition"/"the whole season") is what
+ *  (the current month's name/"Next 5 games"/"the next five games") is what
  *  licenses the model to use those exact words without tripping tips.ts's
  *  CLAIM_TERMS "season" gate. Otherwise identical discipline to
  *  groundRatingCopy(): isProseGrounded + hasUngroundedClaim + the no-dash lint
@@ -903,7 +928,7 @@ export function groundHorizonCopy(out: ModelHorizonOutput, facts: CombinedRating
     return clean && terminators > 0 && terminators <= 2 && safe(clean) ? clean : null;
   };
 
-  return { monthVerdict: groundOne(out.monthVerdict), seasonVerdict: groundOne(out.seasonVerdict) };
+  return { monthVerdict: groundOne(out.monthVerdict), next5Verdict: groundOne(out.next5Verdict) };
 }
 
 /** Compose both horizons' final copy in one pass: the model's verdict per
@@ -911,32 +936,32 @@ export function groundHorizonCopy(out: ModelHorizonOutput, facts: CombinedRating
  *  otherwise — same "never blocked on the LLM" guarantee composeRatingCopy()
  *  gives a single verdict, doubled. */
 export function composeHorizonCopy(
-  monthFacts: HorizonFacts, seasonFacts: HorizonFacts, modelOut: ModelHorizonOutput | null,
+  monthFacts: HorizonFacts, next5Facts: HorizonFacts, modelOut: ModelHorizonOutput | null,
 ): {
   month: { verdict: string; moveLine: string; copySource: CopySource };
-  season: { verdict: string; moveLine: string; copySource: CopySource };
+  next5: { verdict: string; moveLine: string; copySource: CopySource };
 } {
   const monthTemplate = composeTemplatedHorizonVerdict(monthFacts.score, "month");
-  const seasonTemplate = composeTemplatedHorizonVerdict(seasonFacts.score, "season");
+  const next5Template = composeTemplatedHorizonVerdict(next5Facts.score, "next5");
   const monthMoveLine = composeMoveLine(monthFacts.suggestedMove);
-  const seasonMoveLine = composeMoveLine(seasonFacts.suggestedMove);
+  const next5MoveLine = composeMoveLine(next5Facts.suggestedMove);
 
   if (!modelOut) {
     return {
       month: { verdict: monthTemplate, moveLine: monthMoveLine, copySource: "mechanical" },
-      season: { verdict: seasonTemplate, moveLine: seasonMoveLine, copySource: "mechanical" },
+      next5: { verdict: next5Template, moveLine: next5MoveLine, copySource: "mechanical" },
     };
   }
 
-  const grounded = groundHorizonCopy(modelOut, { month: monthFacts, season: seasonFacts });
+  const grounded = groundHorizonCopy(modelOut, { month: monthFacts, next5: next5Facts });
   return {
     month: {
       verdict: grounded.monthVerdict ?? monthTemplate, moveLine: monthMoveLine,
       copySource: grounded.monthVerdict ? "model" : "mechanical",
     },
-    season: {
-      verdict: grounded.seasonVerdict ?? seasonTemplate, moveLine: seasonMoveLine,
-      copySource: grounded.seasonVerdict ? "model" : "mechanical",
+    next5: {
+      verdict: grounded.next5Verdict ?? next5Template, moveLine: next5MoveLine,
+      copySource: grounded.next5Verdict ? "model" : "mechanical",
     },
   };
 }
@@ -946,7 +971,7 @@ export function composeHorizonCopy(
 //    for one rating), grounded independently against the combined facts.
 
 const RATING_SYSTEM = `You write two short verdicts for a YourScore fantasy
-football squad rating: one for the MONTH ahead, one for the SEASON as a whole.
+football squad rating: one for the MONTH ahead, one for the NEXT 5 GAMES.
 
 THE ABSOLUTE RULE
 You know NOTHING about football beyond the JSON you are given. Every name, club
@@ -954,18 +979,22 @@ and number you mention MUST appear in that JSON. If it is not there, it does
 not exist and you may not refer to it. Do not add context you "know".
 
 THE SCORES ARE ALREADY DECIDED
-The JSON has a "month" object and a "season" object. Each one's numeric score,
+The JSON has a "month" object and a "next5" object. Each one's numeric score,
 every sub score, and the strong/decent/weak band on every XI player were
 computed by code before you saw them. Your job is to explain what they show in
 plain words. Never argue with a score, soften it, or recompute it yourself.
 
-WHAT MONTH AND SEASON EACH MEAN
+WHAT MONTH AND NEXT5 EACH MEAN
+- A fantasy manager gets a transfer every week, so there is no such thing as
+  rating this exact fifteen "for the season" — by the time it matters half
+  the squad may have changed. Both verdicts are short-horizon reads of the
+  same fixture run, just weighted differently.
 - monthVerdict is about the month.fixtures sub score and month.bands: how the
-  fixture run through August sets this squad up to win the August competition.
-  Talk about the run ahead, not one single gameweek.
-- seasonVerdict is about season.fixtures, season.bands and season.subScores'
-  projection and differentials entries: lasting value over the whole season,
-  the spine worth keeping, and any differential worth carrying long term.
+  fixture run through the month ahead sets this squad up right now. Talk
+  about the run ahead, not one single gameweek.
+- next5Verdict is about next5.fixtures, next5.bands and next5.subScores'
+  projection and differentials entries: whether the next five fixtures alone
+  justify holding this XI, or whether a transfer now would pay off faster.
 - The two verdicts must read as genuinely different takes, not the same
   sentence twice. It is fine for them to agree on the same weak spot if the
   data says so twice, but say it in different words for a different reason.
@@ -993,7 +1022,7 @@ actually LIKE, in words: a strong spine, a thin attack, a captain who is not
 your best option.
 
 WHAT TO PRODUCE
-- monthVerdict, seasonVerdict: one or two short plain sentences each, on where
+- monthVerdict, next5Verdict: one or two short plain sentences each, on where
   that horizon's take is strong and where it is weak. The reader can already
   see every player and their band listed below each verdict, so do NOT read
   that list back to them. Name only the ONE or TWO players who actually matter
@@ -1017,14 +1046,14 @@ export async function callModelForHorizons(facts: CombinedRatingFacts): Promise<
 
   const tool = {
     name: "squad_rating_horizons",
-    description: "The month and season verdicts for a fantasy squad rating.",
+    description: "The month and next-5-games verdicts for a fantasy squad rating.",
     input_schema: {
       type: "object",
       properties: {
         monthVerdict: { type: "string" },
-        seasonVerdict: { type: "string" },
+        next5Verdict: { type: "string" },
       },
-      required: ["monthVerdict", "seasonVerdict"],
+      required: ["monthVerdict", "next5Verdict"],
     },
   };
 
@@ -1046,7 +1075,7 @@ export async function callModelForHorizons(facts: CombinedRatingFacts): Promise<
           role: "user",
           content:
             `These are the ONLY facts that exist for this squad:\n\n${JSON.stringify(facts, null, 2)}\n\n`
-            + `Write monthVerdict and seasonVerdict. Every name and number must come from that JSON.`,
+            + `Write monthVerdict and next5Verdict. Every name and number must come from that JSON.`,
         }],
       }),
       cache: "no-store",
@@ -1091,7 +1120,7 @@ export interface HorizonResult {
 
 export interface RatingResponse {
   month: HorizonResult;
-  season: HorizonResult;
+  next5: HorizonResult;
   generatedAt: string;
   snapshotCutoff: string;
 }
@@ -1124,29 +1153,29 @@ type SnapRow = {
 /** `score`/`sub_scores` are still written (mirroring the MONTH horizon) purely
  *  so the DB columns stay populated for any indexing/reporting outside this
  *  file — nothing in this file reads them back; the payload is the only
- *  source of truth for shapeStoredRow(). `month`/`season` are OPTIONAL on the
- *  stored payload shape: a row written before this two-horizon rework has
- *  neither key, and shapeStoredRow() below treats that as a cache MISS
- *  (returns null) rather than trying to render a broken single-horizon shape
- *  through the new two-tab UI. */
+ *  source of truth for shapeStoredRow(). `month`/`next5` are OPTIONAL on the
+ *  stored payload shape: a row written before this two-horizon rework (or
+ *  the earlier `season` rework) has neither key, and shapeStoredRow() below
+ *  treats that as a cache MISS (returns null) rather than trying to render a
+ *  broken shape through the current two-tab UI. */
 type StoredRatingRow = {
   score: number | string;
   sub_scores: unknown;
   snapshot_cutoff: string;
   payload: {
     month?: HorizonResult;
-    season?: HorizonResult;
+    next5?: HorizonResult;
     generatedAt: string;
   };
 };
 
-/** Returns null — a cache MISS — for a pre-rework row (no `month`/`season` on
+/** Returns null — a cache MISS — for a pre-rework row (no `month`/`next5` on
  *  the stored payload) so every caller falls back to recomputing instead of
  *  rendering a broken shape through the two-tab UI. */
 function shapeStoredRow(row: StoredRatingRow): RatingResponse | null {
-  const { month, season } = row.payload;
-  if (!month || !season) return null;
-  return { month, season, generatedAt: row.payload.generatedAt, snapshotCutoff: row.snapshot_cutoff };
+  const { month, next5 } = row.payload;
+  if (!month || !next5) return null;
+  return { month, next5, generatedAt: row.payload.generatedAt, snapshotCutoff: row.snapshot_cutoff };
 }
 
 const num = (v: number | string | null | undefined): number | null =>
@@ -1241,23 +1270,29 @@ async function loadRatingInputs(db: Db, squad: SquadRow): Promise<{ inputs: Rati
  *  share one implementation rather than two that could drift. */
 export async function computeHorizonResults(
   inputs: RatingInputs,
-): Promise<{ month: HorizonResult; season: HorizonResult; generatedAt: string }> {
-  const monthResult = scoreSquadForHorizon(inputs, MONTH_WEIGHTS, computeSFixRun(inputs));
-  const seasonResult = scoreSquadForHorizon(inputs, SEASON_WEIGHTS, computeSFix(inputs));
+): Promise<{ month: HorizonResult; next5: HorizonResult; generatedAt: string }> {
+  // Both horizons read the SAME fixture-run signal (computeSFixRun) — there is
+  // no calendar-month-boundary logic in this codebase to give "the month
+  // ahead" a genuinely different game count from "the next five games", so
+  // the two horizons diverge through their weights (see NEXT5_WEIGHTS),
+  // not through a second fixture computation.
+  const fixRun = computeSFixRun(inputs);
+  const monthResult = scoreSquadForHorizon(inputs, MONTH_WEIGHTS, fixRun);
+  const next5Result = scoreSquadForHorizon(inputs, NEXT5_WEIGHTS, fixRun);
 
   const monthMove = deriveMonthMove(inputs);
-  const seasonMove = deriveMove(inputs);
+  const next5Move = deriveMonthMove(inputs);
 
   const monthBanded = bandPlayersMonth(inputs);
-  const seasonBanded = bandPlayersSeason(inputs);
+  const next5Banded = bandPlayersMonth(inputs);
   const monthGrouped = groupBands(monthBanded);
-  const seasonGrouped = groupBands(seasonBanded);
+  const next5Grouped = groupBands(next5Banded);
 
   const monthFacts = horizonFacts("month", inputs, monthResult, monthMove, monthBanded);
-  const seasonFacts = horizonFacts("season", inputs, seasonResult, seasonMove, seasonBanded);
+  const next5Facts = horizonFacts("next5", inputs, next5Result, next5Move, next5Banded);
 
-  const modelOut = await callModelForHorizons({ month: monthFacts, season: seasonFacts });
-  const copy = composeHorizonCopy(monthFacts, seasonFacts, modelOut);
+  const modelOut = await callModelForHorizons({ month: monthFacts, next5: next5Facts });
+  const copy = composeHorizonCopy(monthFacts, next5Facts, modelOut);
 
   const toCard = (b: BandedPlayer): BandCard =>
     ({ id: b.id, name: b.name, pos: b.pos, note: b.note, avatarUrl: faceUrlById(b.id) ?? null });
@@ -1270,9 +1305,9 @@ export async function computeHorizonResults(
       score: monthResult.score, verdict: copy.month.verdict, bands: bandsOf(monthGrouped),
       moveLine: copy.month.moveLine, copySource: copy.month.copySource, subScores: toSubScoreList(monthResult.subScores),
     },
-    season: {
-      score: seasonResult.score, verdict: copy.season.verdict, bands: bandsOf(seasonGrouped),
-      moveLine: copy.season.moveLine, copySource: copy.season.copySource, subScores: toSubScoreList(seasonResult.subScores),
+    next5: {
+      score: next5Result.score, verdict: copy.next5.verdict, bands: bandsOf(next5Grouped),
+      moveLine: copy.next5.moveLine, copySource: copy.next5.copySource, subScores: toSubScoreList(next5Result.subScores),
     },
     generatedAt,
   };
@@ -1282,14 +1317,14 @@ export async function computeHorizonResults(
  *  squad_hash). One model call per call to this function — the cache logic in
  *  rateSquad() decides WHEN to call it. */
 async function computeAndStore(db: Db, userId: string, hash: string, inputs: RatingInputs, cutoff: string): Promise<RatingResponse> {
-  const { month, season, generatedAt } = await computeHorizonResults(inputs);
+  const { month, next5, generatedAt } = await computeHorizonResults(inputs);
 
   const row = {
     user_id: userId,
     squad_hash: hash,
     score: month.score,
     sub_scores: month.subScores,
-    payload: { month, season, generatedAt },
+    payload: { month, next5, generatedAt },
     snapshot_cutoff: cutoff,
   };
   const { data: saved, error } = await db.from("fantasy_squad_rating")
@@ -1301,7 +1336,7 @@ async function computeAndStore(db: Db, userId: string, hash: string, inputs: Rat
   // only be null if the DB echoed something unexpected back — fall back to
   // the in-memory row rather than surface that as a broken response.
   return shapeStoredRow((saved as StoredRatingRow) ?? (row as unknown as StoredRatingRow))
-    ?? { month, season, generatedAt, snapshotCutoff: cutoff };
+    ?? { month, next5, generatedAt, snapshotCutoff: cutoff };
 }
 
 /** GET (peek): return the stored rating for the CURRENT squad hash, or null.
@@ -1315,7 +1350,7 @@ export async function peekSquadRating(db: Db, userId: string): Promise<{ noSquad
     .select("score, sub_scores, snapshot_cutoff, payload")
     .eq("user_id", userId).eq("squad_hash", hash).maybeSingle();
   if (!existing) return { noSquad: false, rating: null };
-  // A pre-rework row (no month/season on the payload) shapes to null — the
+  // A pre-rework row (no month/next5 on the payload) shapes to null — the
   // peek behaves exactly like "not rated yet" rather than crashing the UI on
   // a stale shape. peekSquadRating() NEVER computes, so this is the one path
   // that can legitimately hand back { rating: null } for an existing row.
