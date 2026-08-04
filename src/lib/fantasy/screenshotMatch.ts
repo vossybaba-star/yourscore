@@ -96,10 +96,15 @@ export interface Slot {
 /** Every folded key a pool player's surname could plausibly be read as: the
  *  last token alone (covers single-word surnames and hyphenated ones, which
  *  are already one token — "Gibbs-White"), the last two tokens joined (a
- *  short compound or a two-word mononym like "João Pedro"), and everything
- *  after the first token joined (a longer compound surname in full, e.g.
- *  "van de Ven"). Deduped per player so a short name doesn't add the same key
- *  twice. */
+ *  short compound or a two-word mononym like "João Pedro"), everything after
+ *  the first token joined (a longer compound surname in full, e.g. "van de
+ *  Ven"), and the FIRST token alone — FPL prints the first name as the shirt
+ *  name for a whole class of players (Gabriel Magalhães shows "Gabriel", Son
+ *  Heung-min shows "Son", Rodri-style Brazilians and Koreans especially), so
+ *  without this key those read as an unmatched surname the last-token index
+ *  never sees. Collisions it introduces (three Arsenal "Gabriel"s) are what
+ *  the club + position narrowing in resolveAmbiguous is there to split.
+ *  Deduped per player so a short name doesn't add the same key twice. */
 function surnameKeys(name: string): string[] {
   const tokens = name.trim().split(/\s+/);
   const keys = new Set<string>();
@@ -107,6 +112,7 @@ function surnameKeys(name: string): string[] {
   if (tokens.length > 1) {
     keys.add(foldName(tokens.slice(-2).join(" ")));
     keys.add(foldName(tokens.slice(1).join(" ")));
+    keys.add(foldName(tokens[0]));
   }
   return Array.from(keys);
 }
