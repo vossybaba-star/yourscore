@@ -590,23 +590,25 @@ rather than naming any live or current matchweek.
 VOICE
 - One sentence, two at the absolute most.
 - No em dashes, en dashes or double hyphens anywhere in the field.
-- Plain fan prose, like one mate telling another where their team stands. No
-  hype. Never output JSON, quotes or braces inside the field.
+- Sound like someone who knows their football summing a friend's team up in one
+  breath: plain, specific, a little dry. Understated beats hyped.
+- Do NOT use the word "band". Do NOT lean on tired phrases ("bright spot",
+  "dragging down", "engine room", "firepower", "on paper", "worth watching").
+  No hype, no cliches. Never output JSON, quotes or braces inside the field.
 
 DO NOT RECITE NUMBERS
 The score, the sub scores, the projected points and the benchmark are ALREADY
 shown to the reader right next to your words. Repeating them back reads like a
-robot and tells them nothing new. So do NOT quote the score or any of those
-numbers in the verdict. Say what the squad is actually LIKE, in words: a strong
-spine, a thin attack, a captain who is not the best pick in the team.
+robot. So do NOT quote the score or any of those numbers. Say what the squad is
+actually LIKE, in words: a strong spine, a thin attack, a captain who is not
+your best option.
 
 WHAT TO PRODUCE
 - verdict: one or two short plain sentences on where this squad is strong and
-  where it is weak. Name AT MOST two players from the bands to make it real
-  (players only, never clubs) and never list the whole team. If the captain
-  sits in a weaker band than a teammate who projects higher, that is exactly the
-  kind of thing worth saying. Keep it tight, the way you would sum a team up in
-  one breath.`;
+  where it is weak. Name AT MOST two real players (players only, never clubs) to
+  make it land, and never list the whole team. If the captain is not the best
+  pick for the armband, that is exactly the kind of thing worth saying. Say the
+  single most useful thing about this team, then stop.`;
 
 interface AnthropicResponse { content?: { type: string; input?: ModelRatingOutput }[] }
 
