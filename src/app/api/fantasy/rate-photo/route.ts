@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { matchExtractedSquad, type ExtractedPlayer, type MatchPoolPlayer } from "@/lib/fantasy/screenshotMatch";
+import { matchExtractedSquad, sanitizeExtracted, padSlots, type ExtractedPlayer, type MatchPoolPlayer } from "@/lib/fantasy/screenshotMatch";
 import { enginePool } from "@/lib/fantasy/pool";
 
 /**
@@ -121,7 +121,9 @@ async function extractSquad(image: string, mediaType: string): Promise<Extracted
       console.error("[rate-photo] vision call failed: no-tool-use-block");
       return null;
     }
-    return players as ExtractedPlayer[];
+    // The model output is untrusted — drop malformed entries, cap the length,
+    // before any of it reaches the matcher (a non-string surname would throw).
+    return sanitizeExtracted(players);
   } catch (e) {
     console.error("[rate-photo] vision call failed: exception", e);
     return null;
@@ -134,15 +136,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That screenshot is too big, friend. Try a smaller one." }, { status: 413 });
   }
 
+  // Per-IP FIRST, and only touch the global counter once the per-IP checks
+  // pass. check_rate_limit increments unconditionally, so running all three at
+  // once let a single blocked IP still drain the global day cap (a feature-wide
+  // denial of service from one abuser). Gate per-IP, then spend a global token.
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
-  const [hourly, daily, global] = await Promise.all([
+  const [hourly, daily] = await Promise.all([
     rateLimitDistributed(`fantasy:rate-photo:hour:${ip}`, PER_IP_HOURLY_CAP, HOUR_MS),
     rateLimitDistributed(`fantasy:rate-photo:day:${ip}`, PER_IP_DAILY_CAP, DAY_MS),
-    rateLimitDistributed("fantasy:rate-photo:global-day", GLOBAL_DAILY_CAP, DAY_MS),
   ]);
   if (!hourly.ok || !daily.ok) {
     return NextResponse.json({ error: "You've read a few screenshots already, friend. Try again in a bit." }, { status: 429 });
   }
+  const global = await rateLimitDistributed("fantasy:rate-photo:global-day", GLOBAL_DAILY_CAP, DAY_MS);
   if (!global.ok) {
     return NextResponse.json({ error: "We're at capacity reading screenshots right now. Try again soon." }, { status: 429 });
   }
@@ -173,7 +179,10 @@ export async function POST(req: NextRequest) {
   // needed for matching, so the seed-price enginePool() is enough and skips
   // a DB round trip entirely.
   const matchPool: MatchPoolPlayer[] = enginePool().map((p) => ({ id: p.id, name: p.name, club: p.club, clubId: p.clubId, pos: p.pos }));
-  const slots = matchExtractedSquad(extracted, matchPool);
+  // Pad to a full 11 + 4 so a cropped screenshot the model only partly read
+  // still lands on a confirm screen the user can complete, rather than a dead
+  // end that needs exactly fifteen matched slots.
+  const slots = padSlots(matchExtractedSquad(extracted, matchPool));
 
   return NextResponse.json({ slots });
 }

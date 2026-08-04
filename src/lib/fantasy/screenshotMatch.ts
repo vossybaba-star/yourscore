@@ -204,3 +204,56 @@ export function matchExtractedSquad(extracted: ExtractedPlayer[], pool: MatchPoo
   const index = buildSurnameIndex(pool);
   return extracted.map((e) => resolveOne(e, index));
 }
+
+// ── input hardening (the vision model is untrusted output) ──────────────────
+
+const POSITIONS: ExtractedPosition[] = ["GK", "DEF", "MID", "FWD"];
+const MAX_EXTRACTED = 20; // a Pick Team screen is 15; cap well above, drop the rest.
+
+/** Coerce the model's raw tool output into clean ExtractedPlayer[]. The vision
+ *  model is untrusted: a non-string surname would throw in foldName(), a bad
+ *  position would mis-slot a player. Drop anything malformed, cap the length.
+ *  Pure. */
+export function sanitizeExtracted(raw: unknown): ExtractedPlayer[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ExtractedPlayer[] = [];
+  for (const r of raw) {
+    if (out.length >= MAX_EXTRACTED) break;
+    if (!r || typeof r !== "object") continue;
+    const o = r as Record<string, unknown>;
+    if (typeof o.surname !== "string" || !o.surname.trim()) continue;
+    const pos = POSITIONS.includes(o.position as ExtractedPosition) ? (o.position as ExtractedPosition) : "MID";
+    out.push({
+      surname: o.surname.trim(),
+      club: typeof o.club === "string" ? o.club.trim() : "",
+      position: pos,
+      isCaptain: o.isCaptain === true,
+      isVice: o.isVice === true,
+      isBench: o.isBench === true,
+    });
+  }
+  return out;
+}
+
+const XI_SLOTS = 11;
+const BENCH_SLOTS = 4;
+
+/** Guarantee a full 15 (11 starters + 4 bench) so the confirm screen is never a
+ *  dead end. A cropped screenshot the model could only partly read comes back
+ *  short; we pad the gaps with unresolved slots the user fills in, and trim any
+ *  over-read down to size. Pure. */
+export function padSlots(slots: Slot[]): Slot[] {
+  const empty = (isBench: boolean, position: ExtractedPosition): Slot => ({
+    extracted: { surname: "", club: "", position, isCaptain: false, isVice: false, isBench },
+    id: null, confidence: "low", flags: ["unresolved"], isCaptain: false, isVice: false, isBench,
+  });
+  const xi = slots.filter((s) => !s.isBench).slice(0, XI_SLOTS);
+  const bench = slots.filter((s) => s.isBench).slice(0, BENCH_SLOTS);
+  // Any starters read beyond 11 spill onto the bench if there is room.
+  for (const s of slots.filter((s) => !s.isBench).slice(XI_SLOTS)) {
+    if (bench.length < BENCH_SLOTS) bench.push({ ...s, isBench: true });
+  }
+  while (xi.length < XI_SLOTS) xi.push(empty(false, xi.length === 0 ? "GK" : "MID"));
+  while (bench.length < BENCH_SLOTS) bench.push(empty(true, "MID"));
+  return [...xi, ...bench];
+}

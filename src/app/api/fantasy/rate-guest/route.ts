@@ -16,17 +16,28 @@ export const dynamic = "force-dynamic";
 
 const BENCH_SIZE = SQUAD_SIZE - XI_SIZE;
 const HOUR_MS = 3_600_000;
+const DAY_MS = 86_400_000;
 const PER_IP_HOURLY_CAP = 10;
+// Each rating burns a claude-sonnet-5 verdict call, and this route is callable
+// directly without ever hitting rate-photo, so an IP-rotating caller could run
+// up unbounded spend on the per-IP cap alone. A global day cap bounds it.
+const GLOBAL_DAILY_CAP = 1500;
 
 function isIdArray(v: unknown, len: number): v is number[] {
   return Array.isArray(v) && v.length === len && v.every((n) => Number.isInteger(n));
 }
 
 export async function POST(req: NextRequest) {
+  // Per-IP first; only spend a global token once the per-IP check passes (the
+  // limiter increments unconditionally, so a blocked IP must not drain global).
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
-  const { ok } = await rateLimitDistributed(`fantasy:rate-guest:${ip}`, PER_IP_HOURLY_CAP, HOUR_MS);
-  if (!ok) {
+  const perIp = await rateLimitDistributed(`fantasy:rate-guest:${ip}`, PER_IP_HOURLY_CAP, HOUR_MS);
+  if (!perIp.ok) {
     return NextResponse.json({ error: "You've asked for a lot of ratings, friend. Try again in a bit." }, { status: 429 });
+  }
+  const global = await rateLimitDistributed("fantasy:rate-guest:global-day", GLOBAL_DAILY_CAP, DAY_MS);
+  if (!global.ok) {
+    return NextResponse.json({ error: "We're at capacity grading squads right now. Try again soon." }, { status: 429 });
   }
 
   const body = await req.json().catch(() => null) as { ids?: unknown; xi?: unknown; bench?: unknown; captain?: unknown } | null;

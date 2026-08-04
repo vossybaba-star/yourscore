@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  foldName, matchExtractedSquad,
+  foldName, matchExtractedSquad, sanitizeExtracted, padSlots,
   type ExtractedPlayer, type MatchPoolPlayer, type Slot,
 } from "./screenshotMatch";
 
@@ -188,4 +188,54 @@ test("captain, vice and bench flags pass through onto the slot regardless of res
   );
   assert.equal(slots[0].isCaptain, true);
   assert.equal(slots[0].isBench, false);
+});
+
+// ── sanitizeExtracted: the vision output is untrusted ───────────────────────
+
+test("sanitizeExtracted: drops malformed entries and coerces a bad position", () => {
+  const raw = [
+    { surname: "Haaland", club: "Man City", position: "FWD", isCaptain: true, isVice: false, isBench: false },
+    { surname: 123, club: "X", position: "FWD" },              // non-string surname -> dropped
+    { surname: "  ", club: "Y", position: "MID" },             // blank surname -> dropped
+    { surname: "Palmer", club: "Chelsea", position: "WING" },  // bad position -> coerced to MID
+    "not an object",                                           // -> dropped
+  ];
+  const out = sanitizeExtracted(raw);
+  assert.equal(out.length, 2);
+  assert.equal(out[0].surname, "Haaland");
+  assert.equal(out[0].isCaptain, true);
+  assert.equal(out[1].surname, "Palmer");
+  assert.equal(out[1].position, "MID");
+  assert.deepEqual(sanitizeExtracted("nope"), []);
+  assert.deepEqual(sanitizeExtracted(null), []);
+});
+
+test("sanitizeExtracted: caps a flood of entries at 20", () => {
+  const raw = Array.from({ length: 50 }, (_, i) => ({ surname: `P${i}`, club: "C", position: "MID", isCaptain: false, isVice: false, isBench: false }));
+  assert.equal(sanitizeExtracted(raw).length, 20);
+});
+
+// ── padSlots: never a dead-end confirm screen ───────────────────────────────
+
+function slot(isBench: boolean, id: number | null = 1): Slot {
+  return { extracted: { surname: "x", club: "c", position: "MID", isCaptain: false, isVice: false, isBench }, id, confidence: "high", flags: [], isCaptain: false, isVice: false, isBench };
+}
+
+test("padSlots: a short read is padded to 11 starters and 4 bench", () => {
+  const partial = [slot(false), slot(false), slot(true)]; // 2 XI, 1 bench
+  const out = padSlots(partial);
+  assert.equal(out.filter((s) => !s.isBench).length, 11);
+  assert.equal(out.filter((s) => s.isBench).length, 4);
+  assert.equal(out.length, 15);
+  // the padded slots are unresolved so the confirm screen flags them
+  assert.ok(out.filter((s) => s.id === null).every((s) => s.flags.includes("unresolved")));
+});
+
+test("padSlots: starters read beyond eleven spill onto the bench", () => {
+  const over = Array.from({ length: 13 }, () => slot(false)); // 13 XI, 0 bench
+  const out = padSlots(over);
+  assert.equal(out.filter((s) => !s.isBench).length, 11);
+  assert.equal(out.filter((s) => s.isBench).length, 4);
+  // the two spilled starters kept their real ids on the bench
+  assert.equal(out.filter((s) => s.isBench && s.id !== null).length, 2);
 });
