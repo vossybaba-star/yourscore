@@ -29,12 +29,11 @@ import { ScoutScanState } from "@/components/fantasy/ScoutScanState";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 import {
-  BandGroups, scoreColor, HorizonTabs, HORIZON_HELPER,
-  type RatingBandsShape, type Horizon,
+  BandGroups, scoreColor, type RatingBandsShape,
 } from "@/components/fantasy/RatingBands";
 import type { Slot } from "@/lib/fantasy/screenshotMatch";
 import {
-  trackRatePhotoStarted, trackSquadExtracted, trackSquadRated, trackRateOutcome,
+  trackRatePhotoStarted, trackSquadExtracted, trackSquadRated,
 } from "@/lib/analytics/trackGame";
 
 // ── the upload-step landing's sample payoff card ────────────────────────────
@@ -59,19 +58,9 @@ const SAMPLE_BANDS: RatingBandsShape = {
   ],
 };
 
-const DRAFT_KEY = "ys-fantasy-draft";
 const MAX_EDGE = 1600;
 
-interface HorizonRatingResult {
-  score: number; verdict: string; bands: RatingBandsShape; moveLine: string;
-}
-
-interface RatingResult {
-  month: HorizonRatingResult;
-  season: HorizonRatingResult;
-}
-
-type Step = "upload" | "reading" | "confirm" | "rating" | "result";
+type Step = "upload" | "reading" | "confirm" | "rating";
 
 /** Where the viewer stands when they land on the result step:
  *  - "out": no account. Both end-of-flow buttons lead to signup.
@@ -275,15 +264,13 @@ export default function RateFromScreenshotPage() {
   const [viceId, setViceId] = useState<number | null>(null);
   const [pickingIndex, setPickingIndex] = useState<number | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [result, setResult] = useState<RatingResult | null>(null);
+  // The persisted share id — once the grade lands it's created server-side and
+  // the flow redirects to /r/[id], the single end page for a Scout analysis.
+  const [shareId, setShareId] = useState<string | null>(null);
   const [introDone, setIntroDone] = useState(false);
-  // Defaults to "month" — the immediate August competition. Both horizons
-  // ride along on one response, so switching tabs never refetches.
-  const [horizon, setHorizon] = useState<Horizon>("month");
-  // Defaults to "out" so the result step never has to block on this — a
-  // signed-out viewer is the common case and the safe default while the
-  // check is still in flight (a signed-in viewer just gets a beat of the
-  // wrong buttons before this resolves, never the reverse).
+  // Defaults to "out". Only used now to tag the funnel-tracking calls with auth
+  // context (the save CTA moved to /r/[id]), so the default just needs to be safe
+  // while the check is in flight — "out" is the common case for this surface.
   const [authState, setAuthState] = useState<AuthState>("out");
   // Cancels a "reading" fetch that's still in flight when the viewer backs
   // out — the request isn't aborted, but its result is ignored so it can't
@@ -369,71 +356,48 @@ export default function RateFromScreenshotPage() {
     if (!canContinue || captainId === null) return;
     setStep("rating");
     setIntroDone(false);
-    setResult(null);
+    setShareId(null);
     setErr(null);
     try {
-      const res = await fetch("/api/fantasy/rate-guest", {
+      // Grade AND persist server-side, so the result is a real, shareable
+      // snapshot at /r/[id] — the same page the bot posts. Returns just the id.
+      const res = await fetch("/api/fantasy/rate-share", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          ids: allIds, xi: xiSlots.map((s) => s.id), bench: benchSlots.map((s) => s.id), captain: captainId,
+          ids: allIds, xi: xiSlots.map((s) => s.id), bench: benchSlots.map((s) => s.id),
+          captain: captainId, vice: viceId,
         }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? "Couldn't rate that squad. Try again.");
-      const rated = json as RatingResult;
-      setResult(rated);
+      if (!res.ok || typeof json.id !== "string") {
+        throw new Error(json.error ?? "Couldn't rate that squad. Try again.");
+      }
+      setShareId(json.id);
       // The payoff: a grade exists. Fires once per successful rating (re-fires
-      // for a re-rate), carrying the month score so we can segment on outcome.
-      trackSquadRated({ auth: authState, score: rated.month.score });
+      // for a re-rate); the /r/[id] view fires its own share-tagged twin.
+      trackSquadRated({ auth: authState, source: "upload" });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't rate that squad. Try again.");
       setStep("confirm");
     }
   };
 
-  // The result only reveals once BOTH the three-card beat is finished and
-  // the rating has actually landed — whichever comes last. If the POST beat
-  // the user to the end of the cards, this fires the instant they finish
-  // and nothing else renders in between; if the cards beat the POST, the
-  // ScoutScanState grading beat below holds the screen for the gap.
+  // Land on /r/[id] once BOTH the three-card beat is finished and the grade has
+  // been persisted — whichever comes last. If the POST beat the user to the end
+  // of the cards, this redirects the instant they finish; if the cards beat the
+  // POST, the ScoutScanState grading beat below holds the screen for the gap.
   useEffect(() => {
-    if (step === "rating" && introDone && result) setStep("result");
-  }, [step, introDone, result]);
+    if (step === "rating" && introDone && shareId) router.push(`/r/${shareId}`);
+  }, [step, introDone, shareId, router]);
 
   /** Step-aware back control, shown top-left on every step. Never a dead
    *  end: "upload" is the front door, so backing out of it leaves the
    *  flow entirely instead of looping in place. */
   const goBack = () => {
-    if (step === "result" || step === "rating") { setStep("confirm"); return; }
+    if (step === "rating") { setStep("confirm"); return; }
     if (step === "confirm") { setErr(null); setStep("upload"); return; }
     if (step === "reading") { cancelledReadRef.current = true; setErr(null); setStep("upload"); return; }
     router.push("/fantasy");
-  };
-
-  const writeDraft = () => {
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(allIds)); } catch { /* private mode */ }
-  };
-
-  // "Make this my team" always carries the uploaded XI into the builder —
-  // for a signed-out viewer that means signing up first; for anyone signed
-  // in (with or without an existing squad) the builder is one tap away.
-  const makeThisMyTeam = () => {
-    writeDraft();
-    trackRateOutcome("make-this-my-team", authState === "out", { auth: authState });
-    router.push(authState === "out" ? "/auth/sign-in?next=/fantasy/build" : "/fantasy/build");
-  };
-
-  // "Build my own" is a fresh start — never carries the uploaded XI.
-  const buildMyOwn = () => {
-    trackRateOutcome("build-my-own", authState === "out", { auth: authState });
-    router.push(authState === "out" ? "/auth/sign-in?next=/fantasy/build" : "/fantasy/build");
-  };
-
-  // Only reachable when authState is "in-with-squad": leaves their live
-  // squad untouched, this upload was only ever a look. Never an acquisition.
-  const keepMyTeam = () => {
-    trackRateOutcome("keep-my-team", false, { auth: authState });
-    router.push("/fantasy/scout/squad");
   };
 
   const xiRows = buildXiRows(slots, poolById);
@@ -646,83 +610,13 @@ export default function RateFromScreenshotPage() {
         {step === "rating" && (
           !introDone
             ? <RateIntroCards onDone={() => setIntroDone(true)} />
-            : !result
+            : !shareId
             ? <ScoutScanState
                 heading="The Scout is grading your team"
                 subline="Weighing projections, fixtures and who is actually fit." />
             : null
         )}
 
-        {step === "result" && result && result.month && result.season && (() => {
-          const h = result[horizon];
-          return (
-          <>
-            <div className="rate-result-in">
-              <Card>
-                <HorizonTabs active={horizon} onChange={setHorizon} />
-                <p style={{ fontSize: 12, color: MUTED, margin: "0 0 10px", lineHeight: 1.4 }}>
-                  {HORIZON_HELPER[horizon]}
-                </p>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-                  <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(h.score) }}>
-                    {h.score.toFixed(1)}
-                  </span>
-                  <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
-                </div>
-                <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{h.verdict}</p>
-                <BandGroups bands={h.bands} />
-                <div style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6, marginTop: 4 }}>
-                  WORTH A LOOK
-                </div>
-                <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{h.moveLine}</p>
-              </Card>
-            </div>
-
-            <div style={{ marginTop: 14, borderRadius: 16, padding: 18, background: `linear-gradient(150deg, ${tint(TEAL, "22")}, ${PANEL})`, border: `1px solid ${tint(TEAL, "55")}` }}>
-              {authState === "in-with-squad" ? (
-                <>
-                  <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
-                    This team vs your squad
-                  </div>
-                  <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-                    This was just a look at the team in your screenshot, friend, your real squad has not moved. Like it better than what you are running now? Make it official and it replaces your current squad.
-                  </p>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <div style={{ flex: 1 }}><Btn onClick={keepMyTeam}>Keep my team</Btn></div>
-                    <div style={{ flex: 1 }}><Btn gold onClick={makeThisMyTeam}>Make this my team</Btn></div>
-                  </div>
-                </>
-              ) : authState === "in-no-squad" ? (
-                <>
-                  <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
-                    Set this as your squad
-                  </div>
-                  <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-                    Take this exact team into the builder to finalise it, friend, or start clean and build your own from scratch.
-                  </p>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <div style={{ flex: 1 }}><Btn onClick={buildMyOwn}>Build my own</Btn></div>
-                    <div style={{ flex: 1 }}><Btn gold onClick={makeThisMyTeam}>Make this my team</Btn></div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
-                    Save this team
-                  </div>
-                  <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-                    Create your free YourScore account, friend, and this exact team will be waiting for you when the season opens. One transfer a gameweek, and what you know earns you more.
-                  </p>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <div style={{ flex: 1 }}><Btn onClick={buildMyOwn}>Build my own</Btn></div>
-                    <div style={{ flex: 1 }}><Btn gold onClick={makeThisMyTeam}>Make this my team</Btn></div>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-          );
-        })()}
       </main>
       <BottomNav />
     </>

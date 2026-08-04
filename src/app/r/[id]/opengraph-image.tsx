@@ -1,15 +1,16 @@
 /**
- * /r/[id] unfurl card (1200x630) — the per-team Scout verdict as it appears in
- * the feed. LEFT is the analysis chunk that earns the click and shows we did
- * the job: the real score, the verdict, and the strong/risk/one-move read,
- * under the YourScore mark. RIGHT is the same team as a live "Fantasy PL is
- * live" ad — their actual XI on the pitch with the grade badge and a league
- * chat pop. Reads off the stored snapshot; every node sets display:flex
+ * /r/[id] unfurl card (1200x630) — the per-team "Scout's Report" as it appears
+ * in the feed, built to POP. LEFT is the headline + the analysis chunk that
+ * earns the click and shows we did the job: a big SCOUT'S REPORT, the real
+ * score, the verdict, and the strong/risk/one-move read, under the YourScore
+ * mark. RIGHT is the analysed squad itself — their XI (and bench) on a pitch
+ * with the grade. Reads off the stored snapshot; every node sets display:flex
  * (Satori requirement) or the PNG comes back empty.
  */
 import { ImageResponse } from "next/og";
 import { LOGO_DATA_URI } from "@/lib/og/logoDataUri";
 import { fetchRateShare } from "@/lib/fantasy/rateShare";
+import { faceUrlById } from "@/lib/fantasy/faces";
 import type { RateSharePlayer } from "@/lib/fantasy/rateShareTypes";
 
 export const runtime = "edge";
@@ -32,22 +33,53 @@ const dmSans500 = fetch(new URL("./dmsans-500.ttf", import.meta.url)).then((r) =
 const dmSans700 = fetch(new URL("./dmsans-700.ttf", import.meta.url)).then((r) => r.arrayBuffer());
 
 const surname = (name: string) => name.trim().split(/\s+/).slice(-1)[0] ?? name;
-const clamp = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
+const clamp = (s: string, n: number) => {
+  if (s.length <= n) return s;
+  const cut = s.slice(0, n - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > n * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+};
 const scoreHue = (s: number) => (s >= 7 ? LIME : s >= 5 ? GOLD : CORAL);
 
-function Pin({ name, pos, captain }: { name: string; pos: string; captain?: boolean }) {
+function Pin({ id, name, pos, captain }: { id: number; name: string; pos: string; captain?: boolean }) {
   const c = POS[pos] ?? TEAL;
+  const face = faceUrlById(id);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, width: 60 }}>
-      <div style={{ display: "flex", position: "relative", width: 32, height: 32, borderRadius: "50%", background: `${c}26`, border: `2px solid ${captain ? GOLD : c}`, alignItems: "center", justifyContent: "center" }}>
-        <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 14, color: c }}>{name.slice(0, 1)}</span>
+      <div style={{ display: "flex", position: "relative", width: 42, height: 42 }}>
+        <div style={{ display: "flex", width: 42, height: 42, borderRadius: "50%", overflow: "hidden", background: `${c}2b`, border: `2px solid ${captain ? GOLD : c}`, alignItems: "center", justifyContent: "center" }}>
+          {face ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={face} width={42} height={42} alt="" style={{ display: "flex", width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
+          ) : (
+            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 17, color: c }}>{name.slice(0, 1)}</span>
+          )}
+        </div>
         {captain ? (
-          <div style={{ display: "flex", position: "absolute", top: -5, right: -5, width: 15, height: 15, borderRadius: "50%", background: GOLD, color: "#141007", fontSize: 9, fontWeight: 800, alignItems: "center", justifyContent: "center" }}>C</div>
+          <div style={{ display: "flex", position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: GOLD, color: "#141007", fontSize: 9.5, fontWeight: 800, alignItems: "center", justifyContent: "center" }}>C</div>
         ) : null}
       </div>
-      <div style={{ display: "flex", padding: "1px 6px", borderRadius: 5, background: "rgba(4,10,8,0.72)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <span style={{ display: "flex", fontSize: 10.5, fontWeight: 700, color: INK }}>{clamp(surname(name), 10)}</span>
+      <div style={{ display: "flex", padding: "1px 6px", borderRadius: 5, background: "rgba(4,10,8,0.78)", border: "1px solid rgba(255,255,255,0.09)" }}>
+        <span style={{ display: "flex", fontSize: 10.5, fontWeight: 700, color: INK }}>{clamp(surname(name), 9)}</span>
       </div>
+    </div>
+  );
+}
+
+function BenchChip({ p }: { p: RateSharePlayer }) {
+  const c = POS[p.pos] ?? TEAL;
+  const face = faceUrlById(p.id);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px 3px 3px", borderRadius: 999, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+      <div style={{ display: "flex", width: 22, height: 22, borderRadius: "50%", overflow: "hidden", background: `${c}22`, border: `1px solid ${c}`, alignItems: "center", justifyContent: "center" }}>
+        {face ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={face} width={22} height={22} alt="" style={{ display: "flex", width: 22, height: 22, borderRadius: "50%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ display: "flex", fontSize: 10, fontWeight: 800, color: c }}>{p.name.slice(0, 1)}</span>
+        )}
+      </div>
+      <span style={{ display: "flex", fontSize: 11.5, fontWeight: 700, color: INK }}>{clamp(surname(p.name), 10)}</span>
     </div>
   );
 }
@@ -55,19 +87,11 @@ function Pin({ name, pos, captain }: { name: string; pos: string; captain?: bool
 /** One line of the read on the left — a colored tag then the fact. */
 function ReadRow({ tag, tagColor, text }: { tag: string; tagColor: string; text: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 11, background: "rgba(255,255,255,0.04)", border: `1px solid ${tagColor}44` }}>
-      <div style={{ display: "flex", padding: "3px 8px", borderRadius: 6, background: `${tagColor}1e`, border: `1px solid ${tagColor}66` }}>
-        <span style={{ display: "flex", fontSize: 11, fontWeight: 800, letterSpacing: 1, color: tagColor }}>{tag}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderRadius: 12, background: "rgba(255,255,255,0.045)", border: `1px solid ${tagColor}4d` }}>
+      <div style={{ display: "flex", padding: "4px 9px", borderRadius: 6, background: `${tagColor}24`, border: `1px solid ${tagColor}77` }}>
+        <span style={{ display: "flex", fontSize: 11.5, fontWeight: 800, letterSpacing: 1, color: tagColor }}>{tag}</span>
       </div>
-      <span style={{ display: "flex", flex: 1, fontSize: 16, fontWeight: 500, color: INK, lineHeight: 1.25 }}>{text}</span>
-    </div>
-  );
-}
-
-function Bubble({ text, mine }: { text: string; mine?: boolean }) {
-  return (
-    <div style={{ display: "flex", alignSelf: mine ? "flex-end" : "flex-start", maxWidth: 210, padding: "5px 10px", borderRadius: 11, fontSize: 12, fontWeight: 500, lineHeight: 1.3, background: mine ? `${TEAL}26` : "rgba(255,255,255,0.06)", border: `1px solid ${mine ? `${TEAL}55` : "rgba(255,255,255,0.09)"}`, color: mine ? "#d7fff8" : INK }}>
-      {text}
+      <span style={{ display: "flex", flex: 1, fontSize: 16.5, fontWeight: 600, color: INK, lineHeight: 1.25 }}>{text}</span>
     </div>
   );
 }
@@ -105,81 +129,91 @@ export default async function Image({ params }: { params: { id: string } }) {
   const strong = m.bands.strong[0]?.name;
   const risk = (m.bands.weak[0] ?? m.bands.decent[m.bands.decent.length - 1])?.name;
   const rows = xiRows(row.players);
+  const bench = row.players.filter((p) => p.isBench);
+  const hue = scoreHue(m.score);
 
   return new ImageResponse(
     (
-      <div style={{ width: "1200px", height: "630px", display: "flex", position: "relative", background: "linear-gradient(150deg, #0a0a0f 0%, #08130f 55%, #06110d 100%)", fontFamily: "DM Sans", overflow: "hidden" }}>
-        <div style={{ display: "flex", position: "absolute", right: -120, top: -180, width: 760, height: 760, borderRadius: "50%", background: "radial-gradient(circle, rgba(45,212,191,0.12) 0%, rgba(45,212,191,0.03) 45%, rgba(0,0,0,0) 70%)" }} />
+      <div style={{ width: "1200px", height: "630px", display: "flex", position: "relative", background: "linear-gradient(145deg, #0b0b11 0%, #08140f 52%, #050f0c 100%)", fontFamily: "DM Sans", overflow: "hidden" }}>
+        {/* glows for pop */}
+        <div style={{ display: "flex", position: "absolute", left: -160, top: -200, width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(45,212,191,0.16) 0%, rgba(45,212,191,0.04) 45%, rgba(0,0,0,0) 70%)" }} />
+        <div style={{ display: "flex", position: "absolute", right: -120, bottom: -220, width: 640, height: 640, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,196,0,0.10) 0%, rgba(255,196,0,0.03) 45%, rgba(0,0,0,0) 70%)" }} />
 
-        {/* left — the analysis chunk */}
-        <div style={{ display: "flex", flexDirection: "column", width: 560, padding: "46px 0 0 60px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+        {/* left — the report */}
+        <div style={{ display: "flex", flexDirection: "column", width: 636, padding: "42px 0 0 56px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={LOGO_DATA_URI} width={176} height={47} alt="YourScore" style={{ display: "flex" }} />
-            <div style={{ display: "flex", padding: "5px 11px", borderRadius: 999, background: `${TEAL}1c`, border: `1px solid ${TEAL}66` }}>
-              <span style={{ display: "flex", color: TEAL, fontSize: 12, fontWeight: 800, letterSpacing: 1.2 }}>SCOUT</span>
+            <img src={LOGO_DATA_URI} width={158} height={42} alt="YourScore" style={{ display: "flex" }} />
+            <div style={{ display: "flex", padding: "5px 11px", borderRadius: 999, background: `${TEAL}1f`, border: `1px solid ${TEAL}77` }}>
+              <span style={{ display: "flex", color: TEAL, fontSize: 12, fontWeight: 800, letterSpacing: 1.4 }}>SCOUT</span>
             </div>
           </div>
 
-          <span style={{ display: "flex", color: MUTED, fontSize: 15, fontWeight: 700, letterSpacing: 2, marginBottom: 4 }}>THIS TEAM, THIS MONTH</span>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 14 }}>
-            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 116, lineHeight: 0.82, color: scoreHue(m.score) }}>{m.score.toFixed(1)}</span>
-            <span style={{ display: "flex", color: MUTED, fontSize: 22, fontWeight: 600, paddingBottom: 14 }}>out of 10</span>
+          {/* the headline */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
+            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 92, lineHeight: 0.9, color: "#ffffff", letterSpacing: 1 }}>SCOUT&apos;S</span>
+            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 92, lineHeight: 0.9, color: TEAL, letterSpacing: 1 }}>REPORT</span>
           </div>
-          <span style={{ display: "flex", color: INK, fontSize: 20, fontWeight: 500, lineHeight: 1.34, maxWidth: 476, marginBottom: 18 }}>
-            {clamp(m.verdict, 190)}
+          <div style={{ display: "flex", width: 132, height: 6, borderRadius: 3, background: TEAL, marginTop: 12, marginBottom: 22 }} />
+
+          {/* the score */}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 14, marginBottom: 16 }}>
+            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 118, lineHeight: 0.78, color: hue }}>{m.score.toFixed(1)}</span>
+            <div style={{ display: "flex", flexDirection: "column", paddingBottom: 12 }}>
+              <span style={{ display: "flex", color: MUTED, fontSize: 15, fontWeight: 800, letterSpacing: 2 }}>THIS MONTH</span>
+              <span style={{ display: "flex", color: MUTED, fontSize: 19, fontWeight: 600 }}>out of 10</span>
+            </div>
+          </div>
+
+          {/* the verdict */}
+          <span style={{ display: "flex", color: INK, fontSize: 19, fontWeight: 500, lineHeight: 1.34, maxWidth: 544, marginBottom: 18 }}>
+            {clamp(m.verdict, 150)}
           </span>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, width: 476 }}>
+          {/* the read */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 9, width: 544 }}>
             {strong ? <ReadRow tag="STRONG" tagColor={LIME} text={clamp(strong, 30)} /> : null}
             {risk ? <ReadRow tag="RISK" tagColor={CORAL} text={clamp(risk, 30)} /> : null}
             <ReadRow tag="MOVE" tagColor={TEAL} text={clamp(m.moveLine, 92)} />
           </div>
         </div>
 
-        {/* right — the same team as a live Fantasy PL ad */}
-        <div style={{ display: "flex", flexDirection: "column", position: "absolute", left: 640, top: 40, width: 512, borderRadius: 22, padding: "15px 16px 16px", background: "linear-gradient(180deg, #0e1a14 0%, #0a130f 100%)", border: `1px solid ${TEAL}44`, boxShadow: "0 26px 70px rgba(0,0,0,0.6)", transform: "rotate(2deg)", overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 20, letterSpacing: 1.5, color: INK }}>FANTASY PL IS LIVE</span>
-            <div style={{ display: "flex", padding: "3px 9px", borderRadius: 6, background: `${GOLD}1f`, border: `1px solid ${GOLD}66`, color: GOLD, fontSize: 9.5, fontWeight: 800, letterSpacing: 1 }}>MONTHLY PRIZES</div>
+        {/* right — the analysed squad */}
+        <div style={{ display: "flex", flexDirection: "column", position: "absolute", left: 664, top: 40, width: 480, borderRadius: 22, padding: "16px 18px 16px", background: "linear-gradient(180deg, #0f1c15 0%, #0a130f 100%)", border: `1px solid ${TEAL}55`, boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 26, letterSpacing: 2, color: INK }}>THE ANALYSED SQUAD</span>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, padding: "4px 11px", borderRadius: 9, background: `${hue}1f`, border: `1px solid ${hue}77` }}>
+              <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 24, lineHeight: 1, color: hue }}>{m.score.toFixed(1)}</span>
+              <span style={{ display: "flex", color: MUTED, fontSize: 12, fontWeight: 700, paddingBottom: 2 }}>/10</span>
+            </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", marginTop: 8, height: 328, borderRadius: 14, padding: "16px 8px 40px", background: "linear-gradient(180deg, rgba(30,90,58,0.30) 0%, rgba(14,40,26,0.30) 100%)", border: "1px solid rgba(46,138,90,0.35)" }}>
+
+          {/* pitch */}
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: 320, borderRadius: 14, padding: "18px 8px 18px", background: "linear-gradient(180deg, rgba(34,102,64,0.34) 0%, rgba(14,42,27,0.34) 100%)", border: "1px solid rgba(46,138,90,0.4)" }}>
             {rows.map((r, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "center", gap: 8 }}>
-                {r.map((p) => <Pin key={p.id} name={p.name} pos={p.pos} captain={p.isCaptain} />)}
+                {r.map((p) => <Pin key={p.id} id={p.id} name={p.name} pos={p.pos} captain={p.isCaptain} />)}
               </div>
             ))}
           </div>
-        </div>
 
-        {/* the grade badge over the ad */}
-        <div style={{ display: "flex", flexDirection: "column", position: "absolute", left: 902, top: 404, width: 244, borderRadius: 16, padding: "12px 15px", background: "linear-gradient(180deg, #0d1917 0%, #0a1311 100%)", border: `1px solid ${TEAL}77`, boxShadow: "0 24px 60px rgba(0,0,0,0.65)", transform: "rotate(4deg)" }}>
-          <span style={{ display: "flex", color: TEAL, fontSize: 10, fontWeight: 800, letterSpacing: 1.5 }}>THE SCOUT · THIS MONTH</span>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 7 }}>
-            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 56, lineHeight: 0.9, color: scoreHue(m.score) }}>{m.score.toFixed(1)}</span>
-            <span style={{ display: "flex", color: MUTED, fontSize: 14, fontWeight: 600, paddingBottom: 8 }}>/ 10</span>
-          </div>
-          {strong ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6, padding: "5px 9px", borderRadius: 8, background: `${LIME}1e`, border: `1px solid ${LIME}55` }}>
-              <span style={{ display: "flex", fontSize: 9.5, fontWeight: 800, color: LIME }}>STRONG</span>
-              <span style={{ display: "flex", fontSize: 12.5, fontWeight: 700, color: INK }}>{clamp(surname(strong), 12)}</span>
+          {/* bench */}
+          {bench.length ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 12 }}>
+              <span style={{ display: "flex", fontSize: 10.5, fontWeight: 800, letterSpacing: 1.4, color: MUTED }}>BENCH</span>
+              <div style={{ display: "flex", gap: 7 }}>
+                {bench.map((p) => <BenchChip key={p.id} p={p} />)}
+              </div>
             </div>
           ) : null}
-        </div>
 
-        {/* league chat pop — the social hook */}
-        <div style={{ display: "flex", flexDirection: "column", position: "absolute", left: 600, top: 392, width: 272, borderRadius: 18, padding: "12px 14px", background: "linear-gradient(180deg, #101b16 0%, #0b1310 100%)", border: `1px solid ${LIME}55`, boxShadow: "0 24px 60px rgba(0,0,0,0.65)", transform: "rotate(-5deg)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <div style={{ display: "flex", width: 21, height: 21, borderRadius: 7, background: `${LIME}22`, border: `1px solid ${LIME}66`, alignItems: "center", justifyContent: "center", color: LIME, fontSize: 12, fontWeight: 800 }}>#</div>
-            <span style={{ display: "flex", fontFamily: "Bebas", fontSize: 16, letterSpacing: 1, color: INK }}>THE OFFICE LEAGUE</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <Bubble text="Scout says your back line is weak lol" />
-            <Bubble text="Rated mine 8.1, get on my level" mine />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14 }}>
+            <div style={{ display: "flex", width: 8, height: 8, borderRadius: 4, background: GOLD }} />
+            <span style={{ display: "flex", color: GOLD, fontSize: 12.5, fontWeight: 800, letterSpacing: 1 }}>FANTASY PL IS LIVE ON YOURSCORE</span>
           </div>
         </div>
 
-        <div style={{ display: "flex", position: "absolute", left: 0, bottom: 0, width: "1200px", height: 12, background: TEAL }} />
+        <div style={{ display: "flex", position: "absolute", left: 0, bottom: 0, width: "1200px", height: 14, background: `linear-gradient(90deg, ${TEAL} 0%, ${LIME} 100%)` }} />
       </div>
     ),
     { ...size, fonts },
