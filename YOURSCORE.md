@@ -28,6 +28,17 @@
 > the left, the analysed squad with player portraits + bench + grade on the right). The upload flow at
 > `/fantasy/rate` no longer shows an inline result — it redirects here after grading. Commits ..`18a8bb0`.
 >
+> **Update (same day):** the Scout rating's two horizons are now **August ｜ Next 5** (was
+> Month ｜ Season). A season-long score never made sense once fantasy shipped a transfer every
+> gameweek — the fifteen being rated won't exist in that form for long. Both horizons now read
+> the SAME fixture-run signal (`computeSFixRun`) and diverge only by weight: NEXT5 leans harder
+> on fixtures (0.45) and less on projection/balance than MONTH (0.35). The MONTH tab's label and
+> copy are computed from the real calendar month (`currentMonthName()`), never hardcoded
+> "August" again. `FIXTURE_LOOKAHEAD` bumped 3→5 so NEXT5 genuinely covers five games (the
+> upstream ticker already builds 5 GW windows; this was the one place still truncating it).
+> Applies everywhere a rating renders: `/fantasy/rate`, the member Scout card, and the `/r/[id]`
+> share page. Commit `180ce9b`.
+>
 > **Previously confirmed:** 2026-08-04 (**"Rate My Squad" AI shipped to prod, founder-gated.** A one-tap read on the
 > Fantasy Scout's "Your Squad" surface: a 0 to 10 SCORE computed 100% in code from our own data
 > (projected points, availability, next-GW fixture difficulty, balance/budget, differential mix), plus an
