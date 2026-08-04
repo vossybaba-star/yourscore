@@ -18,7 +18,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   Btn, Card, ErrorState, Header, INK, LINE, MUTED, PANEL, PosTag,
-  Sheet, TEAL, CORAL, GOLD, page, tint, type ClientPoolPlayer, type Pos,
+  Sheet, TEAL, CORAL, page, tint, type ClientPoolPlayer, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
@@ -106,9 +106,9 @@ function ScoutScanState({ heading, subline }: { heading: string; subline: string
 // The 11 land on a real PitchSurface, grouped by position, attackers nearest
 // the top of the pitch the same way every other Fantasy scene draws a squad
 // (see RulesCards.tsx's SquadScene). The 4 bench sit in the real BenchStrip.
-// Tapping a marker's face opens the existing PickerSheet to fix that slot;
-// the small C/V/Bench controls underneath keep the rest of the confirm
-// screen's logic (captain, vice, bench) reachable without a second list.
+// Tapping a marker selects it and reveals an action bar below the pitch
+// (captain, vice, bench, change) for that one player, so the pitch itself stays
+// clean instead of carrying eleven sets of controls at once.
 
 const ROW_ORDER: Pos[] = ["FWD", "MID", "DEF", "GK"];
 
@@ -139,10 +139,10 @@ function buildStaggerDelays(slots: Slot[], poolById: (id: number | null) => Clie
 }
 
 function XiMarker({
-  slot, player, isCaptain, isVice, size, delayMs, onPick, onSetCaptain, onSetVice, onToggleBench,
+  slot, player, isCaptain, isVice, size, delayMs, selected, onSelect,
 }: {
   slot: Slot; player: ClientPoolPlayer | null; isCaptain: boolean; isVice: boolean; size: number; delayMs: number;
-  onPick: () => void; onSetCaptain: () => void; onSetVice: () => void; onToggleBench: () => void;
+  selected: boolean; onSelect: () => void;
 }) {
   const needsCheck = slot.confidence === "low" || slot.id === null;
   const note = flagNote(slot.flags);
@@ -152,43 +152,26 @@ function XiMarker({
   const pos = resolvedPos(slot, player);
   const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
 
+  // Just the face and name on the pitch — clean. The captain, vice, bench and
+  // change controls live in the action bar below, shown only for the tapped
+  // player, so eleven sets of buttons never crowd the pitch at once.
   return (
-    <div className="rate-marker-in" style={{
-      flex: "1 1 0", minWidth: 0, maxWidth: 72, display: "flex", flexDirection: "column",
-      alignItems: "center", gap: 4, "--stagger-delay": `${delayMs}ms`,
-    } as CSSProperties}>
-      <button type="button" onClick={onPick}
-        aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ". Tap to change"}`}
-        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%" }}>
-        <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size}
-          isCaptain={isCaptain} isVice={isVice} pos={pos} doubt={needsCheck ? (note ?? "Check this pick") : undefined} />
-      </button>
-      <div style={{ display: "flex", gap: 3 }}>
-        <button type="button" onClick={onSetCaptain} aria-pressed={isCaptain} aria-label="Set captain"
-          style={{
-            width: 17, height: 17, borderRadius: 999, fontSize: 9, fontWeight: 800, cursor: "pointer", padding: 0, lineHeight: 1,
-            border: `1px solid ${isCaptain ? GOLD : LINE}`, background: isCaptain ? tint(GOLD, "26") : "transparent",
-            color: isCaptain ? GOLD : MUTED,
-          }}>C</button>
-        <button type="button" onClick={onSetVice} aria-pressed={isVice} aria-label="Set vice captain"
-          style={{
-            width: 17, height: 17, borderRadius: 999, fontSize: 9, fontWeight: 800, cursor: "pointer", padding: 0, lineHeight: 1,
-            border: `1px solid ${isVice ? TEAL : LINE}`, background: isVice ? tint(TEAL, "26") : "transparent",
-            color: isVice ? TEAL : MUTED,
-          }}>V</button>
-        <button type="button" onClick={onToggleBench} aria-label="Move to bench"
-          style={{
-            fontSize: 8.5, fontWeight: 700, cursor: "pointer", padding: "0 5px", height: 17, lineHeight: "16px",
-            border: `1px solid ${LINE}`, borderRadius: 999, background: "transparent", color: MUTED,
-          }}>Bench</button>
-      </div>
-    </div>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className="rate-marker-in"
+      aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ""}. Tap for options`}
+      style={{
+        flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
+        padding: 2, borderRadius: 12, "--stagger-delay": `${delayMs}ms`, outlineOffset: 1,
+        border: "none", outline: `1.5px solid ${selected ? tint(TEAL, "cc") : "transparent"}`,
+      } as CSSProperties}>
+      <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size}
+        isCaptain={isCaptain} isVice={isVice} pos={pos} doubt={needsCheck ? (note ?? "Check this pick") : undefined} />
+    </button>
   );
 }
 
-function BenchMarker({ slot, player, size, delayMs, onPick, onToggleBench }: {
+function BenchMarker({ slot, player, size, delayMs, selected, onSelect }: {
   slot: Slot; player: ClientPoolPlayer | null; size: number; delayMs: number;
-  onPick: () => void; onToggleBench: () => void;
+  selected: boolean; onSelect: () => void;
 }) {
   const needsCheck = slot.confidence === "low" || slot.id === null;
   const note = flagNote(slot.flags);
@@ -199,21 +182,15 @@ function BenchMarker({ slot, player, size, delayMs, onPick, onToggleBench }: {
   const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
 
   return (
-    <div className="rate-marker-in" style={{
-      display: "flex", flexDirection: "column", alignItems: "center", gap: 3, "--stagger-delay": `${delayMs}ms`,
-    } as CSSProperties}>
-      <button type="button" onClick={onPick}
-        aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ". Tap to change"}`}
-        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%" }}>
-        <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size} pos={pos}
-          doubt={needsCheck ? (note ?? "Check this pick") : undefined} dim />
-      </button>
-      <button type="button" onClick={onToggleBench} aria-label="Move to starting XI"
-        style={{
-          fontSize: 8.5, fontWeight: 700, cursor: "pointer", padding: "0 6px", height: 16, lineHeight: "15px",
-          border: `1px solid ${tint(TEAL, "44")}`, borderRadius: 999, background: "transparent", color: TEAL,
-        }}>Start</button>
-    </div>
+    <button type="button" onClick={onSelect} aria-pressed={selected} className="rate-marker-in"
+      aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ""}. Tap for options`}
+      style={{
+        background: "none", cursor: "pointer", padding: 2, borderRadius: 12, "--stagger-delay": `${delayMs}ms`,
+        outlineOffset: 1, border: "none", outline: `1.5px solid ${selected ? tint(TEAL, "cc") : "transparent"}`,
+      } as CSSProperties}>
+      <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size} pos={pos}
+        doubt={needsCheck ? (note ?? "Check this pick") : undefined} dim />
+    </button>
   );
 }
 
@@ -275,6 +252,7 @@ export default function RateFromScreenshotPage() {
   const [captainId, setCaptainId] = useState<number | null>(null);
   const [viceId, setViceId] = useState<number | null>(null);
   const [pickingIndex, setPickingIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [result, setResult] = useState<RatingResult | null>(null);
   const [introDone, setIntroDone] = useState(false);
 
@@ -400,7 +378,7 @@ export default function RateFromScreenshotPage() {
           <>
             <div className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 4 }}>Is this your team?</div>
             <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-              Fix anything we got wrong, set your captain and vice, then carry on.
+              Tap a player to change them, set your captain or move them to the bench.
             </p>
 
             {needsCheckCount > 0 && (
@@ -419,10 +397,8 @@ export default function RateFromScreenshotPage() {
                         isVice={slot.id !== null && slot.id === viceId}
                         size={row.entries.length >= 5 ? 26 : row.entries.length >= 4 ? 30 : 36}
                         delayMs={staggerDelays[index] ?? 0}
-                        onPick={() => setPickingIndex(index)}
-                        onSetCaptain={() => slot.id !== null && setCaptainId(slot.id)}
-                        onSetVice={() => slot.id !== null && setViceId(slot.id)}
-                        onToggleBench={() => setSlotAt(index, { ...slot, isBench: true })} />
+                        selected={selectedIndex === index}
+                        onSelect={() => setSelectedIndex(selectedIndex === index ? null : index)} />
                     ))}
                   </div>
                 ))}
@@ -430,11 +406,39 @@ export default function RateFromScreenshotPage() {
               <BenchStrip>
                 {slots.map((slot, index) => slot.isBench && (
                   <BenchMarker key={index} slot={slot} player={poolById(slot.id)} size={26} delayMs={staggerDelays[index] ?? 0}
-                    onPick={() => setPickingIndex(index)}
-                    onToggleBench={() => setSlotAt(index, { ...slot, isBench: false })} />
+                    selected={selectedIndex === index}
+                    onSelect={() => setSelectedIndex(selectedIndex === index ? null : index)} />
                 ))}
               </BenchStrip>
             </div>
+
+            {/* Action bar for the tapped player — keeps the pitch clean by
+                showing captain/vice/bench/change for ONE marker at a time. */}
+            {selectedIndex !== null && slots[selectedIndex] && (() => {
+              const s = slots[selectedIndex];
+              const p = poolById(s.id);
+              const nm = p ? p.name : (s.extracted.surname || "This pick");
+              const chip = (text: string, onClick: () => void, active = false) => (
+                <button type="button" onClick={onClick} style={{
+                  fontSize: 12, fontWeight: 700, padding: "7px 12px", borderRadius: 999, cursor: "pointer",
+                  border: `1px solid ${active ? TEAL : LINE}`, background: active ? tint(TEAL, "1e") : "transparent",
+                  color: active ? TEAL : INK,
+                }}>{text}</button>
+              );
+              return (
+                <div style={{
+                  display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "10px 12px", marginBottom: 12,
+                  background: PANEL, border: `1px solid ${tint(TEAL, "55")}`, borderRadius: 12,
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: INK, marginRight: "auto" }}>{nm}</span>
+                  {!s.isBench && chip("Captain", () => { if (s.id !== null) setCaptainId(s.id); }, s.id !== null && s.id === captainId)}
+                  {!s.isBench && chip("Vice", () => { if (s.id !== null) setViceId(s.id); }, s.id !== null && s.id === viceId)}
+                  {!s.isBench && chip("Bench", () => { setSlotAt(selectedIndex, { ...s, isBench: true }); setSelectedIndex(null); })}
+                  {s.isBench && chip("Start", () => { setSlotAt(selectedIndex, { ...s, isBench: false }); setSelectedIndex(null); })}
+                  {chip("Change", () => setPickingIndex(selectedIndex))}
+                </div>
+              );
+            })()}
 
             {err && <div style={{ marginBottom: 12 }}><ErrorState message={err} /></div>}
 

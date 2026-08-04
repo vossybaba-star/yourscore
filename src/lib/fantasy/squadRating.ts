@@ -606,10 +606,13 @@ your best option.
 
 WHAT TO PRODUCE
 - verdict: one or two short plain sentences on where this squad is strong and
-  where it is weak. Name AT MOST two real players (players only, never clubs) to
-  make it land, and never list the whole team. If the captain is not the best
-  pick for the armband, that is exactly the kind of thing worth saying. Say the
-  single most useful thing about this team, then stop.`;
+  where it is weak. The reader can already see every player and their band
+  listed below your verdict, so do NOT read that list back to them. Name only
+  the ONE or TWO players who actually matter (the standout, or a captain on the
+  wrong player), and describe everyone else as a GROUP, not a list of names: "a
+  thin midfield", "not much behind him", "a weak back line". Never name three or
+  more players. If the captain is not the best pick for the armband, say so. Say
+  the single most useful thing about this team, then stop.`;
 
 interface AnthropicResponse { content?: { type: string; input?: ModelRatingOutput }[] }
 
