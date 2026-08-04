@@ -766,6 +766,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-04** — **Fantasy identity + guest access.** (1) Settings now has a real **Display
+  name** field, separate from the @username (previously username was mirrored into display_name);
+  it's the headline shown above the @handle. (2) Every activity feed (Social, league feed, Hub
+  rail) leads with display name over @handle and shows the crest of the club the manager
+  **supports** (club_supporters), matching the quiz. (3) **All Fantasy tabs are open to guests** —
+  a signed-out visitor can browse every tab and build a full XI; only SAVE needs an account
+  (build → sign-in keeps the local draft). (4) `/api/og/fantasy-squad` now sends edge cache-control
+  so a crawler burst stops re-rendering the Satori card each hit (Vercel CPU usage alert).
 - **2026-08-02** — **Rules page: four missing definitions added** (`/fantasy/rules` + rules bot
   grounding). Gap analysis vs the Premier League's own FPL explainer ecosystem found four rules
   the engine enforces but nothing user facing defined; all four are now in THE DETAIL (new LIVE

@@ -265,6 +265,16 @@ export async function GET(req: Request) {
         </div>
       </div>
     ),
-    { width: 1200, height: 630 },
+    {
+      width: 1200, height: 630,
+      // Cache the rendered card at the edge. Satori rendering is ~4s CPU a hit, so
+      // an unfurl bot crawling the same URL 30+ times in a burst (Vercel usage
+      // alert, 4 Aug) must not re-render each time. s-maxage collapses a burst to
+      // one render; stale-while-revalidate keeps it warm; the 10-min window still
+      // reflects a squad change on the next share soon enough.
+      headers: {
+        "cache-control": "public, no-transform, max-age=300, s-maxage=600, stale-while-revalidate=3600",
+      },
+    },
   );
 }
