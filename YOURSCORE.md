@@ -6,7 +6,20 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-04 (**"Rate My Squad" AI shipped to prod, founder-gated.** A one-tap read on the
+> **Confirmed:** 2026-08-04 (**"Rate your FPL team" signed-out screenshot funnel shipped to prod.** A public
+> acquisition surface at `/fantasy/rate` (hero on the signed-out Fantasy home): a visitor uploads a screenshot
+> of their FPL Pick Team screen, Claude VISION reads the 15 players (name + club off the kit + position +
+> captain/vice), a pure club-aware matcher (accent/ligature folding, Spurs/Tottenham alias) resolves them to
+> our pool, they confirm the XI on a real pitch (tap a player to change/captain/vice/bench), and the Scout
+> grades it with the same score + strong/decent/weak bands + one-line verdict a member gets, with NO account.
+> A 3-card "how it works" beat (league chats, monthly prizes, earned transfers) plays before the reveal, then
+> a "create your account and save it" CTA writes the 15 to the `ys-fantasy-draft` key the builder restores.
+> New routes `/api/fantasy/rate-photo` (vision, per-IP + global daily caps, image never stored) and
+> `/api/fantasy/rate-guest` (grades ad-hoc ids, zero DB writes). Verified end to end on a real screenshot:
+> 15/15 high-confidence match, model-written verdict. Commits `0d23495`..`f1e7939`. Same session the Rate My
+> Squad verdict was fixed to name players not recite numbers, so both surfaces now show a real AI line.)
+>
+> **Previously confirmed:** 2026-08-04 (**"Rate My Squad" AI shipped to prod, founder-gated.** A one-tap read on the
 > Fantasy Scout's "Your Squad" surface: a 0 to 10 SCORE computed 100% in code from our own data
 > (projected points, availability, next-GW fixture difficulty, balance/budget, differential mix), plus an
 > AI-written verdict + strength/risk pills + one suggested move. The AI never invents the score and never
