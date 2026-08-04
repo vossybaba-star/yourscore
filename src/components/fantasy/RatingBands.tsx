@@ -8,7 +8,7 @@
  *
  * Purely presentational — no fetching, no state beyond what's passed in.
  */
-import { CORAL, INK, LIME, MUTED, tint } from "./shared";
+import { CORAL, INK, LIME, LINE, MUTED, TEAL, tint } from "./shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor } from "@/lib/fantasy/faces";
 
@@ -68,6 +68,44 @@ export function BandGroups({ bands }: { bands: RatingBandsShape }) {
       <BandGroup tone="strong" players={bands.strong} />
       <BandGroup tone="decent" players={bands.decent} />
       <BandGroup tone="weak" players={bands.weak} />
+    </div>
+  );
+}
+
+// ── the two-horizon tab switch — shared by the member card and the guest
+//    result screen, both of which already have BOTH horizons in hand (no
+//    refetch on tap) ───────────────────────────────────────────────────────
+
+export type Horizon = "month" | "season";
+
+export const HORIZON_LABEL: Record<Horizon, string> = { month: "This month", season: "Season" };
+/** One-line objective shown under the tabs, so it's clear what each score is
+ *  actually FOR before the reader looks at the number. */
+export const HORIZON_HELPER: Record<Horizon, string> = {
+  month: "Set up for the August competition.",
+  season: "Built to last the whole season.",
+};
+
+/** Small on-brand pill tabs. One tap switches; both horizons already live in
+ *  the response, so this never triggers a refetch. */
+export function HorizonTabs({ active, onChange }: { active: Horizon; onChange: (h: Horizon) => void }) {
+  return (
+    <div role="tablist" aria-label="Rating horizon" style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+      {(["month", "season"] as Horizon[]).map((h) => {
+        const on = h === active;
+        return (
+          <button key={h} type="button" role="tab" aria-selected={on} onClick={() => onChange(h)}
+            className="font-body"
+            style={{
+              fontSize: 12.5, fontWeight: 700, padding: "6px 14px", borderRadius: 999, cursor: "pointer",
+              border: `1px solid ${on ? tint(TEAL, "55") : LINE}`,
+              background: on ? tint(TEAL, "14") : "transparent",
+              color: on ? TEAL : MUTED,
+            }}>
+            {HORIZON_LABEL[h]}
+          </button>
+        );
+      })}
     </div>
   );
 }

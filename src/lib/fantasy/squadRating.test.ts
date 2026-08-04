@@ -16,6 +16,8 @@ import {
   composeTemplatedVerdict, lintRatingCopy, groundRatingCopy, squadHash, buildRatingInputs,
   ratingFacts, benchmarkRaw, PROJ_FLOOR_FRACTION,
   bandPlayers, groupBands, BAND_STRONG_RATIO, BAND_DECENT_RATIO,
+  computeSFixRun, scoreSquadForHorizon, MONTH_WEIGHTS, SEASON_WEIGHTS,
+  bandPlayersMonth,
   type RatingPlayer, type RatingInputs, type Difficulty, type RatingFacts, type BandedPlayer,
 } from "./squadRating";
 
@@ -498,4 +500,95 @@ test("s_proj: a stronger XI beats a weaker one against the same benchmark", () =
   const strong = scoreSquad(baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 4.5 })), captainId: 1, pool })).subScores.sProj;
   const weak = scoreSquad(baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 3.5 })), captainId: 1, pool })).subScores.sProj;
   assert.ok(strong > weak, "a higher-projected XI scores higher on projection");
+});
+
+// ── computeSFixRun (the MONTH horizon's fixture sub score) ─────────────────
+
+function runFixturesFor(clubIds: number[], run: Difficulty[]): Record<number, { difficulty: Difficulty }[]> {
+  const out: Record<number, { difficulty: Difficulty }[]> = {};
+  for (const id of clubIds) out[id] = run.map((difficulty) => ({ difficulty }));
+  return out;
+}
+
+test("computeSFixRun: a full kind run outscores a full tough run, both hitting the extremes", () => {
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { clubId: i + 1 }));
+  const clubIds = xi.map((p) => p.clubId);
+  const kind = computeSFixRun({ xi, fixtures: runFixturesFor(clubIds, ["kind", "kind", "kind", "kind", "kind"]) });
+  const tough = computeSFixRun({ xi, fixtures: runFixturesFor(clubIds, ["tough", "tough", "tough", "tough", "tough"]) });
+  assert.ok(kind > tough, `a kind run (${kind}) must outscore a tough run (${tough})`);
+  assert.equal(kind, 10);
+  assert.equal(tough, 0);
+});
+
+test("computeSFixRun: an empty fixtures map is neutral (5), the same all-or-nothing rule as computeSFix", () => {
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { clubId: i + 1 }));
+  assert.equal(computeSFixRun({ xi, fixtures: {} }), 5);
+});
+
+test("computeSFixRun: a club missing from a non-empty map counts as one missing (-1) cell, not neutral", () => {
+  const xi = [mkPlayer(1, { clubId: 1 })];
+  // Map is non-empty (club 2 has a run) but club 1 (the XI's own club) has none.
+  const fixtures = runFixturesFor([2], ["kind"]);
+  const value = computeSFixRun({ xi, fixtures });
+  assert.ok(Math.abs(value - (5 - 5 / XI_SIZE_FOR_TEST)) < 1e-9, "a club absent from a non-empty map is one missing cell, pulling below the neutral base of 5");
+});
+
+// ── scoreSquadForHorizon: MONTH vs SEASON weights (acceptance) ─────────────
+
+test("scoreSquadForHorizon: MONTH and SEASON weights diverge for a fixture-swayed squad", () => {
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { clubId: i + 1, epNext: 4 }));
+  const clubIds = xi.map((p) => p.clubId);
+  // A tough opener (bad for SEASON's next-GW sFix) behind a kind rest-of-run
+  // (good for MONTH's sFixRun) — the two horizons must actually disagree.
+  const fixtures = runFixturesFor(clubIds, ["tough", "kind", "kind", "kind", "kind"]);
+  const inputs = baseInputs({ xi, fixtures });
+  const monthScore = scoreSquadForHorizon(inputs, MONTH_WEIGHTS, computeSFixRun(inputs)).score;
+  const seasonScore = scoreSquadForHorizon(inputs, SEASON_WEIGHTS, computeSFix(inputs)).score;
+  assert.notEqual(monthScore, seasonScore, "MONTH (run-weighted) and SEASON (next-GW-weighted) must diverge");
+  assert.ok(monthScore > seasonScore, "a kind run behind one tough opener scores higher for MONTH than SEASON here");
+});
+
+// ── bandPlayersMonth: the fixture-run band nudge (acceptance) ──────────────
+
+function fullRunFor(clubId: number, run: Difficulty[]): Record<number, { difficulty: Difficulty }[]> {
+  return { [clubId]: run.map((difficulty) => ({ difficulty })) };
+}
+
+test("bandPlayersMonth: a clearly kind run bumps the base band up one step", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 }); // MID ceiling 5
+  const xi = [
+    mkPlayer(1, { pos: "MID", epNext: 3.5, clubId: 9 }), // ratio 0.7 -> base band "decent"
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 })),
+  ];
+  const fixtures = fullRunFor(9, ["kind", "kind", "kind", "kind", "kind"]); // run value = 1
+  const inputs = baseInputs({ xi, pool, fixtures });
+  const player = bandPlayersMonth(inputs).find((b) => b.id === 1)!;
+  assert.equal(player.band, "strong", "a clearly kind run bumps decent up to strong");
+  assert.ok(player.note.includes("kind run"), `note "${player.note}" should mention the kind run`);
+});
+
+test("bandPlayersMonth: a clearly tough run drops the base band down one step", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  const xi = [
+    mkPlayer(1, { pos: "MID", epNext: 3.5, clubId: 9 }), // ratio 0.7 -> base band "decent"
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 })),
+  ];
+  const fixtures = fullRunFor(9, ["tough", "tough", "tough", "tough", "tough"]); // run value = -1
+  const inputs = baseInputs({ xi, pool, fixtures });
+  const player = bandPlayersMonth(inputs).find((b) => b.id === 1)!;
+  assert.equal(player.band, "weak", "a clearly tough run drops decent down to weak");
+  assert.ok(player.note.includes("tough run"), `note "${player.note}" should mention the tough run`);
+});
+
+test("bandPlayersMonth: an unavailable player is still forced weak, a kind run never overrides it", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  const xi = [
+    mkPlayer(1, { pos: "MID", epNext: 5, clubId: 9, status: "i" }),
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 })),
+  ];
+  const fixtures = fullRunFor(9, ["kind", "kind", "kind", "kind", "kind"]);
+  const inputs = baseInputs({ xi, pool, fixtures });
+  const player = bandPlayersMonth(inputs).find((b) => b.id === 1)!;
+  assert.equal(player.band, "weak");
+  assert.equal(player.note, "unavailable", "the availability override wins outright, no fixture wording appended");
 });

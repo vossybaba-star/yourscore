@@ -28,14 +28,22 @@ import { RateIntroCards } from "@/components/fantasy/RateIntroCards";
 import { ScoutScanState } from "@/components/fantasy/ScoutScanState";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { faceFor } from "@/lib/fantasy/faces";
-import { BandGroups, scoreColor, type RatingBandsShape } from "@/components/fantasy/RatingBands";
+import {
+  BandGroups, scoreColor, HorizonTabs, HORIZON_HELPER,
+  type RatingBandsShape, type Horizon,
+} from "@/components/fantasy/RatingBands";
 import type { Slot } from "@/lib/fantasy/screenshotMatch";
 
 const DRAFT_KEY = "ys-fantasy-draft";
 const MAX_EDGE = 1600;
 
-interface RatingResult {
+interface HorizonRatingResult {
   score: number; verdict: string; bands: RatingBandsShape; moveLine: string;
+}
+
+interface RatingResult {
+  month: HorizonRatingResult;
+  season: HorizonRatingResult;
 }
 
 type Step = "upload" | "reading" | "confirm" | "rating" | "result";
@@ -233,6 +241,9 @@ export default function RateFromScreenshotPage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [result, setResult] = useState<RatingResult | null>(null);
   const [introDone, setIntroDone] = useState(false);
+  // Defaults to "month" — the immediate August competition. Both horizons
+  // ride along on one response, so switching tabs never refetches.
+  const [horizon, setHorizon] = useState<Horizon>("month");
 
   const poolById = useCallback((id: number | null) => pool.find((p) => p.id === id) ?? null, [pool]);
 
@@ -454,22 +465,28 @@ export default function RateFromScreenshotPage() {
             : null
         )}
 
-        {step === "result" && result && (
+        {step === "result" && result && (() => {
+          const h = result[horizon];
+          return (
           <>
             <div className="rate-result-in">
               <Card>
+                <HorizonTabs active={horizon} onChange={setHorizon} />
+                <p style={{ fontSize: 12, color: MUTED, margin: "0 0 10px", lineHeight: 1.4 }}>
+                  {HORIZON_HELPER[horizon]}
+                </p>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-                  <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(result.score) }}>
-                    {result.score.toFixed(1)}
+                  <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(h.score) }}>
+                    {h.score.toFixed(1)}
                   </span>
                   <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
                 </div>
-                <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{result.verdict}</p>
-                <BandGroups bands={result.bands} />
+                <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{h.verdict}</p>
+                <BandGroups bands={h.bands} />
                 <div style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6, marginTop: 4 }}>
                   WORTH A LOOK
                 </div>
-                <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{result.moveLine}</p>
+                <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{h.moveLine}</p>
               </Card>
             </div>
 
@@ -483,7 +500,8 @@ export default function RateFromScreenshotPage() {
               <Btn gold onClick={saveAndSignIn}>Create your account and save it</Btn>
             </div>
           </>
-        )}
+          );
+        })()}
       </main>
       <BottomNav />
     </>
