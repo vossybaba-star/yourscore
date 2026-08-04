@@ -33,6 +33,9 @@ import {
   type RatingBandsShape, type Horizon,
 } from "@/components/fantasy/RatingBands";
 import type { Slot } from "@/lib/fantasy/screenshotMatch";
+import {
+  trackRatePhotoStarted, trackSquadExtracted, trackSquadRated, trackRateOutcome,
+} from "@/lib/analytics/trackGame";
 
 // ── the upload-step landing's sample payoff card ────────────────────────────
 // A STATIC preview of a real rating so a visitor sees the actual product
@@ -305,6 +308,7 @@ export default function RateFromScreenshotPage() {
     cancelledReadRef.current = false;
     setErr(null);
     setStep("reading");
+    trackRatePhotoStarted({ auth: authState }); // top-of-funnel: a screenshot was picked
     try {
       const [{ base64, mediaType }, poolRes] = await Promise.all([
         downscaleToJpeg(file),
@@ -326,6 +330,12 @@ export default function RateFromScreenshotPage() {
       const vice = readSlots.find((s) => s.isVice && s.id !== null);
       setCaptainId(cap?.id ?? null);
       setViceId(vice?.id ?? null);
+      // The Scout read a full XI back — the tool worked. `needs_check` is how
+      // many picks came back low-confidence, so we can see read quality by cohort.
+      trackSquadExtracted({
+        auth: authState,
+        needs_check: readSlots.filter((s) => s.confidence === "low" || s.id === null).length,
+      });
       setStep("confirm");
     } catch (e) {
       if (cancelledReadRef.current) return;
@@ -366,7 +376,11 @@ export default function RateFromScreenshotPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Couldn't rate that squad. Try again.");
-      setResult(json as RatingResult);
+      const rated = json as RatingResult;
+      setResult(rated);
+      // The payoff: a grade exists. Fires once per successful rating (re-fires
+      // for a re-rate), carrying the month score so we can segment on outcome.
+      trackSquadRated({ auth: authState, score: rated.month.score });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't rate that squad. Try again.");
       setStep("confirm");
@@ -401,17 +415,22 @@ export default function RateFromScreenshotPage() {
   // in (with or without an existing squad) the builder is one tap away.
   const makeThisMyTeam = () => {
     writeDraft();
+    trackRateOutcome("make-this-my-team", authState === "out", { auth: authState });
     router.push(authState === "out" ? "/auth/sign-in?next=/fantasy/build" : "/fantasy/build");
   };
 
   // "Build my own" is a fresh start — never carries the uploaded XI.
   const buildMyOwn = () => {
+    trackRateOutcome("build-my-own", authState === "out", { auth: authState });
     router.push(authState === "out" ? "/auth/sign-in?next=/fantasy/build" : "/fantasy/build");
   };
 
   // Only reachable when authState is "in-with-squad": leaves their live
-  // squad untouched, this upload was only ever a look.
-  const keepMyTeam = () => router.push("/fantasy/scout/squad");
+  // squad untouched, this upload was only ever a look. Never an acquisition.
+  const keepMyTeam = () => {
+    trackRateOutcome("keep-my-team", false, { auth: authState });
+    router.push("/fantasy/scout/squad");
+  };
 
   const xiRows = buildXiRows(slots, poolById);
   const staggerDelays = buildStaggerDelays(slots, poolById);

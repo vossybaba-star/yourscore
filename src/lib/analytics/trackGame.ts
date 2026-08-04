@@ -501,6 +501,78 @@ export function trackFantasyInvite(channel: string, props: Props = {}): void {
   afInviteSent({ surface: "league", channel });               // AppsFlyer (native only)
 }
 
+// ── Rate my team funnel (screenshot → Scout grade → account) ─────────────────
+// The /fantasy/rate acquisition funnel: a signed-out visitor uploads an FPL
+// screenshot, the Scout reads then grades it, and saving it is where an account
+// comes in. Four events map the funnel so every ad platform can optimise toward
+// the high-intent stages and build a retarget audience off each drop-off:
+//   RatePhotoStarted — a screenshot was picked (top-of-funnel intent; fires per
+//                      attempt, so a re-upload counts again — a true try count)
+//   SquadExtracted   — the Scout read a full XI back (the tool worked)
+//   SquadRated       — the score + verdict landed (the payoff / aha moment)
+//   RateOutcome      — an end CTA was tapped (save/build = account, or keep)
+// SquadRated is the strongest acquisition signal with real volume (everyone who
+// uploads + confirms reaches it), so it ALSO fires TikTok's standard ViewContent
+// — the only event TikTok optimises delivery toward — mirroring how game plays
+// proxy through ViewContent. RateOutcome fires the standard optimisable Lead /
+// SubmitForm ONLY for a signed-out viewer (a real acquisition heading to signup),
+// never for a signed-in product action; the custom RateOutcome always fires so
+// reporting keeps both. `score`/`auth`/`action` ride the payload for segmenting.
+const X_RATE_STARTED_EVENT_ID = process.env.NEXT_PUBLIC_X_RATE_STARTED_EVENT_ID;
+const X_SQUAD_RATED_EVENT_ID = process.env.NEXT_PUBLIC_X_SQUAD_RATED_EVENT_ID;
+const X_RATE_OUTCOME_EVENT_ID = process.env.NEXT_PUBLIC_X_RATE_OUTCOME_EVENT_ID;
+
+export function trackRatePhotoStarted(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  if (X_RATE_STARTED_EVENT_ID) window.twq?.("event", X_RATE_STARTED_EVENT_ID, payload); // X
+  window.fbq?.("trackCustom", "RatePhotoStarted", payload); // Meta
+  window.ttq?.track?.("RatePhotoStarted", payload);          // TikTok
+  window.gtag?.("event", "rate_photo_started", payload);     // Google Analytics 4
+  track("rate_photo_started", payload);                      // Vercel Analytics
+  void afLogEvent("rate_photo_started", {});                 // AppsFlyer (native only)
+}
+
+export function trackSquadExtracted(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  window.fbq?.("trackCustom", "SquadExtracted", payload); // Meta
+  window.ttq?.track?.("SquadExtracted", payload);          // TikTok
+  window.gtag?.("event", "squad_extracted", payload);      // Google Analytics 4
+  track("squad_extracted", payload);                       // Vercel Analytics
+}
+
+export function trackSquadRated(props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  if (X_SQUAD_RATED_EVENT_ID) window.twq?.("event", X_SQUAD_RATED_EVENT_ID, payload); // X
+  window.fbq?.("trackCustom", "SquadRated", payload); // Meta (custom; Meta optimises customs)
+  window.ttq?.track?.("SquadRated", payload);          // TikTok (custom, audience-eligible)
+  // TikTok optimises ONLY toward standard events, so the payoff also fires
+  // ViewContent as its optimisable proxy (same reasoning as game plays above).
+  window.ttq?.track?.("ViewContent", { ...payload, content_type: "rate" });
+  window.gtag?.("event", "squad_rated", payload);      // Google Analytics 4
+  track("squad_rated", payload);                       // Vercel Analytics
+  void afLogEvent("squad_rated", {});                  // AppsFlyer (native only)
+}
+
+export function trackRateOutcome(action: string, signedOut: boolean, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { action, client: clientTag(), ...props };
+  // Acquisition side only: a signed-out viewer heading to create an account is
+  // the optimisable lead. A signed-in outcome (keep/swap) is a product action —
+  // reporting only, never a bid event that would dilute the acquisition signal.
+  if (signedOut) {
+    if (X_RATE_OUTCOME_EVENT_ID) window.twq?.("event", X_RATE_OUTCOME_EVENT_ID, payload); // X
+    window.fbq?.("track", "Lead", payload);       // Meta (standard, optimisable)
+    window.ttq?.track?.("SubmitForm", payload);    // TikTok (standard, optimisable)
+  }
+  window.fbq?.("trackCustom", "RateOutcome", payload); // Meta (custom, both states)
+  window.ttq?.track?.("RateOutcome", payload);          // TikTok (custom, both states)
+  window.gtag?.("event", "rate_outcome", payload);      // Google Analytics 4
+  track("rate_outcome", payload);                       // Vercel Analytics
+}
+
 // ── Diagnostics (GA4/Vercel ONLY — never ad platforms) ───────────────────────
 // Funnel diagnostics that would only add noise to ad-platform event menus:
 // signup_prompt_shown, near_miss, redraft_used, … Sparse events starve delivery
