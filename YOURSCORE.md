@@ -6,7 +6,18 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-02 (**Avatar photo upload FIXED + unified with the picker.** Branch
+> **Confirmed:** 2026-08-04 (**"Rate My Squad" AI shipped to prod, founder-gated.** A one-tap read on the
+> Fantasy Scout's "Your Squad" surface: a 0 to 10 SCORE computed 100% in code from our own data
+> (projected points, availability, next-GW fixture difficulty, balance/budget, differential mix), plus an
+> AI-written verdict + strength/risk pills + one suggested move. The AI never invents the score and never
+> uses its own football knowledge — it only rephrases a facts payload we built, through the same grounding
+> gate as `tips.ts`/`scoutPicks.ts` (every name/number must trace or the field drops to a code template;
+> no key or grounding failure still renders the full deterministic score). Cached per squad-hash so a
+> re-open bills nothing; recomputes only on a squad change, a newer snapshot, or a "fresh take" (3/day),
+> all under a per-user daily compute cap. New `squadRating.ts` + `/api/fantasy/squad-rating` + `SquadRating.tsx`;
+> migration **247 APPLIED to prod**. Commit `09925dd`.)
+>
+> **Previously confirmed:** 2026-08-02 (**Avatar photo upload FIXED + unified with the picker.** Branch
 > `fix/avatar-upload`, migration **241 APPLIED to prod**.
 > **The bug:** the `avatars` storage bucket had NO policies on storage.objects — RLS is on, so
 > every authenticated upload was denied. The Settings "change photo" flow has been broken since
