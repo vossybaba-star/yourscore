@@ -11,6 +11,7 @@ import {
   calculatePerfectRoundBonus,
   maxPointsForDifficulty,
 } from "@/lib/scoring";
+import { tryEmitFeedEvent } from "@/lib/fantasy/feed";
 
 // Server-authoritative scoring for solo challenges.
 // The browser may show optimistic per-question points for UX, but the SAVED
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
   // Authoritative questions/answers live in the pack.
   const { data: pack } = await db
     .from("quiz_packs")
-    .select("questions, status")
+    .select("questions, status, title, name")
     .eq("id", packId)
     .single();
 
@@ -170,6 +171,14 @@ export async function POST(req: NextRequest) {
       });
     }
     return NextResponse.json({ error: "Could not save attempt" }, { status: 500 });
+  }
+
+  // A strong run lands in the fantasy feed as a quiz_result (70%+ on a real-length
+  // pack — a brag, not a confession). Best-effort; never blocks the save.
+  if (n >= 5 && correct / n >= 0.7) {
+    const title = (pack as { title?: string | null; name?: string | null }).title
+      ?? (pack as { name?: string | null }).name ?? null;
+    await tryEmitFeedEvent(db, user.id, "quiz_result", null, { correct, total: n, title, game: "quiz" });
   }
 
   return NextResponse.json({ saved: true, alreadyAttempted: false, score, maxScore, correctCount: correct });

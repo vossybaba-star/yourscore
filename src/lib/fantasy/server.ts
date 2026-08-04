@@ -487,6 +487,11 @@ export async function stepRound(db: Db, userId: string, k: number, optionId: num
   if (isLast && written?.length) {
     const squad = (await getSquad(db, userId))!;
     await completeRound(db, userId, squad, minted);
+    // A knowledge round worth shouting about goes in the feed (7+/11 — a brag,
+    // not a confession). Best-effort, never blocks the round.
+    if (correctCount >= 7) {
+      await tryEmitFeedEvent(db, userId, "quiz_result", gw.gw, { correct: correctCount, total: ROUND_LEN, game: "round" });
+    }
     // "You earned a transfer" — only when the round actually banked a move, once
     // per (user, gw). Gated + deduped inside notifyFantasy; never blocks the round.
     if (minted > 0) {

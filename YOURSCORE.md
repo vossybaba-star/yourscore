@@ -6,7 +6,27 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-04 (**"Rate your FPL team" signed-out screenshot funnel shipped to prod.** A public
+> **Confirmed:** 2026-08-04 (**FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
+> BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
+> dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
+> View profile, Invite to a league — invite moved out of the action row so it breathes like a tweet's).
+> `SharePost` gained a controlled mode (`open`/`onClose`) so both the inline Share and the ⋯ menu drive one
+> sheet. (2) **New feed kind `quiz_result`** (mig 248): emitted on a strong Football Quiz finish (≥70% on a
+> 5+-question pack, `/api/quiz/solo-complete`) and a strong knowledge round (≥7/11, `stepRound`); renders a
+> score card ("9/10 · pack title") with a "Beat it ›" door to `/play` or `/fantasy/round`. (3) **Posts can
+> embed a player card** (`postToFeed` accepts `playerId`, payload.player renders the same tile as shortlist).
+> (4) **16 bot personas** (`src/lib/fantasy/botContent.ts` — Template Tim, Knee Jerk Kev, FPL Nan, Banter FC…)
+> with a pre-season-safe content library (takes/polls/player spotlights/banter/quiz brags; opinions only,
+> never invented results or news). Accounts created by `scripts/fantasy/bots.sh` (profiles `source='bot'`,
+> `is_seed=true` → excluded from standings, one-query teardown); an hourly cron `/api/cron/fantasy-bots`
+> (`runBotTick` in `src/lib/fantasy/bots.ts`) posts 0–2 moves per tick with 3h persona cooldowns + payload.k
+> dedupe, reacts to recent items (real users first) and votes on open polls. `bots.sh` also has `--backfill N`
+> (36h of warmed-up content + engagement), `--seed-handles` (usernames for the 50 old seed accounts, which
+> were created handle-less) and `--teardown`. NOT yet run against prod — needs mig 248 applied + the script
+> run locally; the cron goes live on merge.)
+>
+> **Previously confirmed:** 2026-08-04 (**"Rate your FPL team" signed-out screenshot funnel shipped to prod.** A public
 > acquisition surface at `/fantasy/rate` (hero on the signed-out Fantasy home): a visitor uploads a screenshot
 > of their FPL Pick Team screen, Claude VISION reads the 15 players (name + club off the kit + position +
 > captain/vice), a pure club-aware matcher (accent/ligature folding, Spurs/Tottenham alias) resolves them to
@@ -765,6 +785,14 @@
 
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
+
+- **2026-08-04** — **FPL-Twitter feed pass: bot personas + quiz results + Twitter-grammar cards.**
+  Feed cards now show bold name / muted `@handle` / inline time + a ⋯ menu (share, copy link,
+  profile, invite). New `quiz_result` feed kind (mig 248) from strong quiz/knowledge-round
+  finishes; posts can embed a player card. 16 bot personas (`botContent.ts`, `scripts/fantasy/
+  bots.sh`, hourly `/api/cron/fantasy-bots`) drip FPL-Twitter takes/polls/banter — pre-season-safe
+  voice, `source='bot'`, one-command teardown. See Confirmed preamble. **Prod steps pending:**
+  apply mig 248, run `bots.sh` + `--seed-handles` + `--backfill`.
 
 - **2026-08-02** — **Rules page: four missing definitions added** (`/fantasy/rules` + rules bot
   grounding). Gap analysis vs the Premier League's own FPL explainer ecosystem found four rules
