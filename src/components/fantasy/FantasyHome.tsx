@@ -158,6 +158,32 @@ function YouStrip({ you, proposed, onAdopt, adopting }: { you: HomeData["you"]; 
   );
 }
 
+/** A door into /fantasy/rate for a visitor with a team already picked
+ *  elsewhere — screenshot in, a Scout grade out, no account needed to see it.
+ *  Sits above JoinHook so it's the first thing a "I already play" visitor
+ *  hits, not buried under the generic sign-up pitch. */
+function RatePhotoHero() {
+  const router = useRouter();
+  return (
+    <button onClick={() => router.push("/fantasy/rate")} style={{
+      width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
+      borderRadius: 16, padding: 16, marginBottom: 12,
+      background: `linear-gradient(150deg, ${tint(GOLD, "1c")}, ${PANEL})`, border: `1px solid ${tint(GOLD, "4a")}`,
+    }}>
+      <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 12, background: tint(GOLD, "1f"), border: `1px solid ${tint(GOLD, "55")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="14" rx="2" /><path d="M3 15l4.5-4.5a2 2 0 012.8 0L14 14M13 13l1.8-1.8a2 2 0 012.8 0L21 14" /><circle cx="8" cy="8" r="1.4" fill={GOLD} stroke="none" />
+        </svg>
+      </span>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div className="font-display" style={{ fontSize: 16, color: INK, lineHeight: 1.2 }}>Already picked a team elsewhere?</div>
+        <div style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>Upload a screenshot and the Scout will grade it. No account needed.</div>
+      </div>
+      <span aria-hidden style={{ color: GOLD, fontSize: 18, flexShrink: 0 }}>→</span>
+    </button>
+  );
+}
+
 function JoinHook() {
   const router = useRouter();
   const go = () => router.push("/auth/sign-in?next=/fantasy");
@@ -408,6 +434,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
     return (
       <main data-fantasy style={page}>
         <FantasyHeader />
+        <RatePhotoHero />
         <JoinHook />
         {err ? <p style={{ fontSize: 13, color: "#E08A6B", marginTop: 12 }}>{err}</p>
           : !pub ? <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}><Skel h={64} r={12} /><Skel h={240} r={12} /><Skel h={64} r={12} /></div>

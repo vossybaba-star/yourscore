@@ -20,11 +20,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   api, Btn, Card, ErrorState, SectionLabel,
-  INK, MUTED, LIME, CORAL, tint,
+  INK, MUTED,
 } from "./shared";
-
-interface BandCard { name: string; pos: string; note: string }
-interface RatingBands { strong: BandCard[]; decent: BandCard[]; weak: BandCard[] }
+import { BandGroups, scoreColor, type RatingBandsShape as RatingBands } from "./RatingBands";
 
 interface SquadRatingResponse {
   score: number;
@@ -47,46 +45,6 @@ function asOfLabel(iso?: string): string | null {
 }
 type PeekResult = { noSquad: boolean; rating: SquadRatingResponse | null };
 type RateResult = { noSquad: true } | { noSquad: false; rating: SquadRatingResponse };
-
-const scoreColor = (score: number): string => {
-  if (score >= 7) return LIME;
-  if (score >= 4.5) return "#e0c53c"; // between LIME and CORAL, no new named token needed elsewhere
-  return CORAL;
-};
-
-type BandTone = "strong" | "decent" | "weak";
-const BAND_LABEL: Record<BandTone, string> = { strong: "STRONG", decent: "DECENT", weak: "WEAK" };
-// LIME for strong, a neutral/muted tone for decent, CORAL for weak — the same
-// role colours the rest of the fantasy surface already uses.
-const BAND_COLOR: Record<BandTone, string> = { strong: LIME, decent: MUTED, weak: CORAL };
-
-/** One band group: a label, then a compact row per player (name, position,
- *  note). Renders nothing when the group is empty — an XI won't always fill
- *  all three bands. */
-function BandGroup({ tone, players }: { tone: BandTone; players: BandCard[] }) {
-  if (!players.length) return null;
-  const accent = BAND_COLOR[tone];
-  return (
-    <div style={{ marginBottom: 10 }}>
-      <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.08em", color: accent, fontWeight: 700, marginBottom: 6 }}>
-        {BAND_LABEL[tone]}
-      </div>
-      <div style={{ display: "grid", gap: 6 }}>
-        {players.map((p, i) => (
-          <div key={`${tone}${i}`} className="font-body rounded-xl" style={{
-            padding: "8px 12px", fontSize: 12.5, lineHeight: 1.45,
-            background: tint(accent, "12"), border: `1px solid ${tint(accent, "3a")}`,
-            display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap",
-          }}>
-            <span style={{ color: INK, fontWeight: 700 }}>{p.name}</span>
-            <span style={{ color: MUTED, fontSize: 11 }}>{p.pos}</span>
-            <span style={{ color: MUTED }}>{p.note}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function SquadRating() {
   const [state, setState] = useState<PeekResult | null>(null);
@@ -167,13 +125,7 @@ export function SquadRating() {
             {rating.verdict}
           </p>
 
-          {(rating.bands.strong.length > 0 || rating.bands.decent.length > 0 || rating.bands.weak.length > 0) && (
-            <div style={{ marginBottom: 2 }}>
-              <BandGroup tone="strong" players={rating.bands.strong} />
-              <BandGroup tone="decent" players={rating.bands.decent} />
-              <BandGroup tone="weak" players={rating.bands.weak} />
-            </div>
-          )}
+          <BandGroups bands={rating.bands} />
 
           <div className="font-body" style={{
             fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6,

@@ -23,6 +23,7 @@
  * resumed on return. Same funnel the blog uses.
  */
 import type { CSSProperties, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Header, LINE, MUTED, page, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
 import { WaitlistCard } from "@/components/blog/WaitlistCard";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
@@ -88,11 +89,38 @@ function PortraitStack() {
   );
 }
 
+/** A door into /fantasy/rate for a visitor who has already picked a team on
+ *  FPL — screenshot in, a Scout grade out, no account and no waitlist tap
+ *  needed to see it. Sits near the top, above the "coming soon" hero, so an
+ *  "I already play" visitor finds it before the launch-date pitch. */
+function RatePhotoHero() {
+  const router = useRouter();
+  return (
+    <button onClick={() => router.push("/fantasy/rate")} style={{
+      width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
+      borderRadius: 16, padding: 14, marginBottom: 12,
+      background: PANEL, border: `1px solid ${tint(TEAL, "3a")}`,
+    }}>
+      <span style={{ width: 38, height: 38, flexShrink: 0, borderRadius: 11, background: tint(TEAL, "1f"), display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={19} height={19} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="14" rx="2" /><path d="M3 15l4.5-4.5a2 2 0 012.8 0L14 14M13 13l1.8-1.8a2 2 0 012.8 0L21 14" />
+        </svg>
+      </span>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div className="font-body text-white" style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.25 }}>Already picked a team on FPL?</div>
+        <div className="font-body" style={{ fontSize: 11.5, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>Upload a screenshot and the Scout will grade it. No account needed.</div>
+      </div>
+      <span aria-hidden style={{ color: TEAL, fontSize: 17, flexShrink: 0 }}>→</span>
+    </button>
+  );
+}
+
 export function FantasyTeaser() {
   return (
     <main data-fantasy style={{ ...page, padding: "calc(env(safe-area-inset-top, 0px) + 16px) 16px calc(96px + env(safe-area-inset-bottom, 0px))" }}>
       <div className="relative">
         <Header />
+        <RatePhotoHero />
 
         {/* HERO */}
         <div className="rounded-2xl relative overflow-hidden"

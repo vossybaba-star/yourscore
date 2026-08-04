@@ -31,6 +31,8 @@ npx tsc \
   src/lib/fantasy/context.test.ts \
   src/lib/fantasy/ops-diff.ts \
   src/lib/fantasy/ops.test.ts \
+  src/lib/fantasy/screenshotMatch.ts \
+  src/lib/fantasy/screenshotMatch.test.ts \
   --rootDir src --outDir .tmp-fantasy-test \
   --module commonjs --moduleResolution node --target es2022 \
   --esModuleInterop --skipLibCheck --types node

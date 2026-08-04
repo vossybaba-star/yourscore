@@ -547,7 +547,7 @@ export function groundRatingCopy(out: ModelRatingOutput, facts: RatingFacts): Gr
  *  all — no key, an API failure, or a rejected response). `copy_source` is
  *  "model" only when the verdict itself came from the model, since the
  *  verdict is the one line every rating shows. */
-function composeRatingCopy(
+export function composeRatingCopy(
   facts: RatingFacts, modelOut: ModelRatingOutput | null,
 ): { verdict: string; moveLine: string; copySource: CopySource } {
   const mechanicalVerdict = composeTemplatedVerdict(facts.score);
@@ -740,10 +740,28 @@ async function loadSquadRow(db: Db, userId: string): Promise<SquadRow | null> {
   return (data as SquadRow) ?? null;
 }
 
-/** Build the frozen RatingInputs for this squad from one snapshot batch, the
- *  priced pool and one fantasyContext() fixture read. Impure (DB + the shared
- *  in-memory pool), everything downstream of this is pure. */
-async function loadRatingInputs(db: Db, squad: SquadRow): Promise<{ inputs: RatingInputs; cutoff: string } | null> {
+/** Everything about "the market right now" that a rating is computed against:
+ *  the latest live snapshot batch, this gameweek's priced pool, and the
+ *  fixture ticker — plus `toRatingPlayer`, the one function that turns a pool
+ *  id into a RatingPlayer against THIS market, so a squad-backed rating
+ *  (loadRatingInputs, below) and a raw-ids guest rating (guestRating.ts) build
+ *  their players identically. Returns null when there's no snapshot batch or
+ *  it came back empty — the all-or-nothing "we don't trust this read" signal
+ *  both callers already treat as "can't rate right now". */
+export interface RatingMarket {
+  gw: number;
+  cutoff: string;
+  fixtures: Record<number, { difficulty: Difficulty }[]>;
+  toRatingPlayer: (id: number) => RatingPlayer | null;
+  /** Every available (status 'a') snapshot player, priced for `gw` — the same
+   *  replacement-search candidate set deriveMove() and benchmarkRaw() read. */
+  poolCandidates: RatingPlayer[];
+}
+
+/** Read the latest snapshot batch, this gameweek's priced pool and one
+ *  fantasyContext() fixture read. Impure (DB + the shared in-memory pool);
+ *  everything downstream of the RatingMarket it returns is pure. */
+export async function loadRatingMarket(db: Db): Promise<RatingMarket | null> {
   const { data: latest } = await db.from("fantasy_fpl_snapshot").select("captured_at")
     .eq("is_rehearsal", false).order("captured_at", { ascending: false }).limit(1);
   const cutoff: string | undefined = (latest as { captured_at: string }[] | null)?.[0]?.captured_at;
@@ -775,16 +793,25 @@ async function loadRatingInputs(db: Db, squad: SquadRow): Promise<{ inputs: Rati
     };
   };
 
-  const squadPlayers = squad.picks.map((pk) => toRatingPlayer(pk.id)).filter((p): p is RatingPlayer => !!p);
   const poolCandidates = pool
     .map((p) => toRatingPlayer(p.id))
     .filter((p): p is RatingPlayer => !!p && p.status === "a");
 
+  return { gw, cutoff, fixtures, toRatingPlayer, poolCandidates };
+}
+
+/** Build the frozen RatingInputs for a squad row against the current market.
+ *  Impure (delegates to loadRatingMarket); everything downstream is pure. */
+async function loadRatingInputs(db: Db, squad: SquadRow): Promise<{ inputs: RatingInputs; cutoff: string } | null> {
+  const market = await loadRatingMarket(db);
+  if (!market) return null;
+
+  const squadPlayers = squad.picks.map((pk) => market.toRatingPlayer(pk.id)).filter((p): p is RatingPlayer => !!p);
   const inputs = buildRatingInputs({
-    gameweek: gw, squadPlayers, xiIds: squad.xi, benchIds: squad.bench,
-    captainId: squad.captain, bankTenths: squad.bank_tenths, pool: poolCandidates, fixtures,
+    gameweek: market.gw, squadPlayers, xiIds: squad.xi, benchIds: squad.bench,
+    captainId: squad.captain, bankTenths: squad.bank_tenths, pool: market.poolCandidates, fixtures: market.fixtures,
   });
-  return { inputs, cutoff };
+  return { inputs, cutoff: market.cutoff };
 }
 
 /** Compute a full rating (score, verdict, bands, move), calling the model
