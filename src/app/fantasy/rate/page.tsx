@@ -465,7 +465,7 @@ export default function RateFromScreenshotPage() {
             : null
         )}
 
-        {step === "result" && result && (() => {
+        {step === "result" && result && result.month && result.season && (() => {
           const h = result[horizon];
           return (
           <>

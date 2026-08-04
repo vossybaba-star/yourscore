@@ -206,10 +206,22 @@ test("deriveMove: an injured starter is ranked out ahead of a fit but low-projec
   const pool = [mkPlayer(99, { pos: "MID", status: "a", epNext: 0, priceTenths: 60, clubId: 5 })];
   const inputs = baseInputs({ xi, bench: [], captainId: 1, bankTenths: 0, pool });
   const move = deriveMove(inputs);
-  // Nobody in the pool beats either candidate's ep_next here, so move is null,
-  // but the important assertion is WHICH player would be picked as "out" —
-  // exercised directly via the ranking a passing move would target.
-  assert.equal(move, null, "no replacement improves on the outgoing player's ep_next");
+  // The injured player (id 2) is ranked out first, and because an injured
+  // starter scores nothing if he sits, a fit same-position replacement is picked
+  // even though it projects lower — an injured starter is always swappable.
+  assert.ok(move, "an injured starter should be replaceable");
+  assert.equal(move.outId, 2, "the injured starter is the one moved out");
+  assert.equal(move.inId, 99, "the fit replacement comes in");
+});
+
+test("deriveMove: with everyone fit, no move unless a replacement genuinely projects higher", () => {
+  const xi = [
+    mkPlayer(1, { status: "a", epNext: 3, pos: "MID" }),
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { status: "a", epNext: 5, pos: "DEF" })),
+  ];
+  const pool = [mkPlayer(99, { pos: "MID", status: "a", epNext: 3, priceTenths: 60, clubId: 5 })]; // equal ep_next
+  const inputs = baseInputs({ xi, bench: [], captainId: 1, bankTenths: 0, pool });
+  assert.equal(deriveMove(inputs), null, "no strictly-better fit replacement means no move");
 });
 
 test("deriveMove: the replacement respects position, affordability, ownership and the 3-per-club cap", () => {

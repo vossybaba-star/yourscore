@@ -136,7 +136,7 @@ export function SquadRating() {
         </Card>
       )}
 
-      {!busy && rating && (() => {
+      {!busy && rating && rating.month && rating.season && (() => {
         const h = rating[horizon];
         return (
         <div className="rate-result-in">

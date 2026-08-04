@@ -416,7 +416,10 @@ export function deriveMove(inputs: RatingInputs): SuggestedMove | null {
     || (a.ownershipPct ?? 0) - (b.ownershipPct ?? 0)
     || a.id - b.id);
   const best = candidates[0];
-  if (!best || (best.epNext ?? 0) <= (out.epNext ?? 0)) return null;
+  // An unavailable starter is always worth replacing (he scores nothing if he
+  // sits, however high his projection); otherwise require a higher projection.
+  if (!best) return null;
+  if (!(OUT_STATUSES.has(out.status) || (best.epNext ?? 0) > (out.epNext ?? 0))) return null;
 
   return {
     outId: out.id, outName: out.name, outClub: out.club,
@@ -459,7 +462,16 @@ export function deriveMonthMove(inputs: RatingInputs): SuggestedMove | null {
     || (b.epNext ?? 0) - (a.epNext ?? 0)
     || a.id - b.id);
   const best = candidates[0];
-  if (!best || runOf(best) <= runOf(out)) return null;
+  if (!best) return null;
+  // An unavailable starter should ALWAYS be swappable (he scores nothing if he
+  // sits, however kind his run). Otherwise require a genuinely better August run,
+  // or an equal run with a higher projection — run values are coarse (0.2 steps),
+  // so ties are common and would otherwise suppress an obvious upgrade.
+  const outUnavailable = OUT_STATUSES.has(out.status);
+  const improves = outUnavailable
+    || runOf(best) > runOf(out)
+    || (runOf(best) === runOf(out) && (best.epNext ?? 0) > (out.epNext ?? 0));
+  if (!improves) return null;
 
   return {
     outId: out.id, outName: out.name, outClub: out.club,
