@@ -1,11 +1,11 @@
 "use client";
 /**
  * Squad Rating — "Rate my squad": a single 0 to 10 score for the fifteen a
- * manager has actually built, a one line verdict, 2 to 3 strength/risk pills
- * and one suggested move. The score is 100% code (squadRating.ts's
- * scoreSquad()); the AI layer only rephrases an already-decided score into
- * plain words, grounded against the facts it was given — see squadRating.ts
- * for the full discipline.
+ * manager has actually built, a one line verdict, the XI grouped into
+ * strong/decent/weak bands, and one suggested move. The score AND the bands
+ * are 100% code (squadRating.ts's scoreSquad() / bandPlayers()); the AI layer
+ * only rephrases an already-decided score into plain words, grounded against
+ * the facts it was given — see squadRating.ts for the full discipline.
  *
  * On mount this only PEEKS (a GET, never computes, never bills a model call)
  * so a manager who has already rated this exact squad sees it immediately.
@@ -23,11 +23,13 @@ import {
   INK, MUTED, LIME, CORAL, tint,
 } from "./shared";
 
+interface BandCard { name: string; pos: string; note: string }
+interface RatingBands { strong: BandCard[]; decent: BandCard[]; weak: BandCard[] }
+
 interface SquadRatingResponse {
   score: number;
   verdict: string;
-  strengths: string[];
-  risks: string[];
+  bands: RatingBands;
   moveLine: string;
   copySource: "model" | "mechanical";
   generatedAt: string;
@@ -52,15 +54,36 @@ const scoreColor = (score: number): string => {
   return CORAL;
 };
 
-function Pill({ text, tone }: { text: string; tone: "strength" | "risk" }) {
-  const accent = tone === "strength" ? LIME : CORAL;
+type BandTone = "strong" | "decent" | "weak";
+const BAND_LABEL: Record<BandTone, string> = { strong: "STRONG", decent: "DECENT", weak: "WEAK" };
+// LIME for strong, a neutral/muted tone for decent, CORAL for weak — the same
+// role colours the rest of the fantasy surface already uses.
+const BAND_COLOR: Record<BandTone, string> = { strong: LIME, decent: MUTED, weak: CORAL };
+
+/** One band group: a label, then a compact row per player (name, position,
+ *  note). Renders nothing when the group is empty — an XI won't always fill
+ *  all three bands. */
+function BandGroup({ tone, players }: { tone: BandTone; players: BandCard[] }) {
+  if (!players.length) return null;
+  const accent = BAND_COLOR[tone];
   return (
-    <div className="font-body rounded-xl" style={{
-      padding: "8px 12px", fontSize: 12.5, lineHeight: 1.45,
-      background: tint(accent, "12"), border: `1px solid ${tint(accent, "3a")}`,
-      color: INK,
-    }}>
-      {text}
+    <div style={{ marginBottom: 10 }}>
+      <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.08em", color: accent, fontWeight: 700, marginBottom: 6 }}>
+        {BAND_LABEL[tone]}
+      </div>
+      <div style={{ display: "grid", gap: 6 }}>
+        {players.map((p, i) => (
+          <div key={`${tone}${i}`} className="font-body rounded-xl" style={{
+            padding: "8px 12px", fontSize: 12.5, lineHeight: 1.45,
+            background: tint(accent, "12"), border: `1px solid ${tint(accent, "3a")}`,
+            display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap",
+          }}>
+            <span style={{ color: INK, fontWeight: 700 }}>{p.name}</span>
+            <span style={{ color: MUTED, fontSize: 11 }}>{p.pos}</span>
+            <span style={{ color: MUTED }}>{p.note}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -126,7 +149,7 @@ export function SquadRating() {
             Rate my squad
           </div>
           <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-            A score out of 10 for your fifteen this gameweek, with the strengths, the risks and one move worth a look.
+            A score out of 10 for your fifteen, with your XI banded strong, decent and weak, and one move worth a look.
           </p>
           <Btn gold disabled={busy} onClick={() => void rate(false)}>{busy ? "Rating your squad" : "Rate my squad"}</Btn>
         </Card>
@@ -144,10 +167,11 @@ export function SquadRating() {
             {rating.verdict}
           </p>
 
-          {(rating.strengths.length > 0 || rating.risks.length > 0) && (
-            <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
-              {rating.strengths.map((s, i) => <Pill key={`s${i}`} text={s} tone="strength" />)}
-              {rating.risks.map((r, i) => <Pill key={`r${i}`} text={r} tone="risk" />)}
+          {(rating.bands.strong.length > 0 || rating.bands.decent.length > 0 || rating.bands.weak.length > 0) && (
+            <div style={{ marginBottom: 2 }}>
+              <BandGroup tone="strong" players={rating.bands.strong} />
+              <BandGroup tone="decent" players={rating.bands.decent} />
+              <BandGroup tone="weak" players={rating.bands.weak} />
             </div>
           )}
 

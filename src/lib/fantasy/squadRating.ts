@@ -1,22 +1,23 @@
 /**
  * Squad Rating — "Rate my squad", a single 0 to 10 score for the fifteen a
- * manager has actually built, plus a one line verdict, 2 to 3 strength/risk
- * pills and one suggested move.
+ * manager has actually built, plus a one line verdict, the XI grouped into
+ * strong/decent/weak bands, and one suggested move.
  *
  * ── The shape of the guarantee (same discipline as scoutPicks.ts) ───────────
  * The SCORE is 100% code: five sub scores, each a deterministic function of one
  * FPL snapshot batch + one fantasyContext() fixture read, weighted and rounded.
- * Nothing here ever asks a model to judge the squad. The model is handed a
- * CLOSED payload (ratingFacts()) built from the score that has ALREADY been
- * computed, and may only rephrase it into a short verdict and a few strength/
- * risk lines — grounded against the exact same discipline tips.ts proved out
- * (collectPayloadTokens, isProseGrounded, hasUngroundedClaim, cleanField,
- * reused here, not copied). A field that fails grounding — or this file's own
- * no-dash lint — never blocks the rating: it falls back to a line composed by
- * CODE from the same candidate facts, `copy_source` records which happened,
- * and the rating still ships. No key / API failure / grounding failure means
- * the deterministic score and templated prose still render — never blocked on
- * the LLM.
+ * The BANDS are 100% code too (bandPlayers()): every XI player is grouped by a
+ * deterministic ratio against the realistic ceiling for their position. Nothing
+ * here ever asks a model to judge the squad. The model is handed a CLOSED
+ * payload (ratingFacts()) built from the score and bands that have ALREADY been
+ * computed, and may only rephrase it into a short verdict — grounded against
+ * the exact same discipline tips.ts proved out (collectPayloadTokens,
+ * isProseGrounded, hasUngroundedClaim, cleanField, reused here, not copied). A
+ * verdict that fails grounding — or this file's own no-dash lint — never
+ * blocks the rating: it falls back to a line composed by CODE from the score,
+ * `copy_source` records which happened, and the rating still ships. No key /
+ * API failure / grounding failure means the deterministic score, bands and
+ * templated prose still render — never blocked on the LLM.
  *
  * ── Caching ───────────────────────────────────────────────────────────────
  * squadHash() is a pure function of the fifteen, the XI, the bench and the
@@ -209,10 +210,10 @@ export interface ScoreResult {
 /** The shape a strong XI's projection is measured in — a standard 4-4-2. */
 const BENCH_SHAPE = { GK: 1, DEF: 4, MID: 4, FWD: 2 } as const;
 
-/** A strong XI's projected raw for THIS gameweek, from the available pool: the
- *  best ep_next in a 4-4-2 shape plus the single best player doubled (as a
- *  captain would be). This is the live "10" anchor for the projection sub score,
- *  so the band tracks the current ep_next scale instead of a fixed guess. Pure. */
+/** A strong XI's projected raw score, from the available pool: the best
+ *  ep_next in a 4-4-2 shape plus the single best player doubled (as a captain
+ *  would be). This is the live "10" anchor for the projection sub score, so
+ *  the band tracks the current ep_next scale instead of a fixed guess. Pure. */
 export function benchmarkRaw(pool: RatingPlayer[]): number {
   const topByPos = (pos: FantasyPos, n: number): number =>
     pool.filter((p) => p.pos === pos).map((p) => p.epNext ?? 0).sort((a, b) => b - a)
@@ -348,116 +349,90 @@ export function deriveMove(inputs: RatingInputs): SuggestedMove | null {
   };
 }
 
-// ── candidate evidence lines (the facts the model may rephrase) ─────────────
+// ── bands (code derived, deterministic — replaces strength/risk pills) ──────
 
-interface InternalCandidate {
-  about: string; club: string; number: number; fact: string;
-  kind: "strength" | "risk"; distance: number;
+export type Band = "strong" | "decent" | "weak";
+
+export interface BandedPlayer {
+  id: number; name: string; pos: FantasyPos; band: Band; note: string;
 }
 
-/** One evidence line per sub score, ONLY when that sub score is extreme
- *  enough to be worth surfacing (>=7 strength, <=4 risk) — a middling sub
- *  score has nothing worth a pill. Every line names a real player/number
- *  pulled from `inputs`, which is what makes it groundable. */
-function buildCandidateLines(inputs: RatingInputs, subScores: SubScores, raw: { projRaw: number; benchmark: number }): InternalCandidate[] {
-  const lines: InternalCandidate[] = [];
-  // A gated line: only worth a pill when its sub score is genuinely extreme
-  // (>=7 a strength, <=4 a risk). Distance from the midpoint decides priority.
-  const add = (value: number, about: string, club: string, num: number, fact: string) => {
-    if (value >= 7) lines.push({ about, club, number: num, fact, kind: "strength", distance: Math.abs(value - 5.5) });
-    else if (value <= 4) lines.push({ about, club, number: num, fact, kind: "risk", distance: Math.abs(value - 5.5) });
+/** ratio thresholds against the position ceiling — >=0.8 strong, >=0.6 decent,
+ *  else weak, before the availability override and the fixture nudge. */
+export const BAND_STRONG_RATIO = 0.8;
+export const BAND_DECENT_RATIO = 0.6;
+
+/** One band step down — strong to decent, decent to weak, weak stays weak. */
+function dropOneBand(band: Band): Band {
+  if (band === "strong") return "decent";
+  return "weak";
+}
+
+/** Groups the XI into strong/decent/weak, one BandedPlayer per starter, in the
+ *  XI's given order. Pure and deterministic, same discipline as scoreSquad():
+ *
+ *  1. Position ceiling: the best ep_next among `inputs.pool` players of the
+ *     SAME position (the realistic top for that slot). No pool player at that
+ *     position -> fall back to the player's own ep_next.
+ *  2. ratio = epNext / ceiling (ceiling <= 0 is guarded to ratio 0, never a
+ *     divide-by-zero).
+ *  3. Base band from the ratio thresholds above, base note "projected N".
+ *  4. Availability override (takes precedence over the ratio band): unavailable
+ *     (i/s/u) forces "weak" with note "unavailable"; a doubt (status d, or a
+ *     sub-75% chance) drops the base band one step with an "a doubt" note.
+ *  5. Fixture nudge — only when available and not already a doubt: a tough
+ *     next fixture drops one more band and appends to the note; a kind fixture
+ *     appends to the note when the band isn't already "strong". An empty
+ *     fixtures map is the same "we don't trust this batch" signal as
+ *     computeSFix() uses, so it nudges nothing. */
+export function bandPlayers(inputs: RatingInputs): BandedPlayer[] {
+  const posCeiling = new Map<FantasyPos, number>();
+  for (const pos of ["GK", "DEF", "MID", "FWD"] as FantasyPos[]) {
+    let best = -Infinity;
+    for (const p of inputs.pool) if (p.pos === pos) best = Math.max(best, p.epNext ?? 0);
+    if (best !== -Infinity) posCeiling.set(pos, best);
+  }
+
+  return inputs.xi.map((p) => {
+    const ep = p.epNext ?? 0;
+    const ceiling = posCeiling.get(p.pos) ?? ep;
+    const ratio = ceiling <= 0 ? 0 : ep / ceiling;
+    let band: Band = ratio >= BAND_STRONG_RATIO ? "strong" : ratio >= BAND_DECENT_RATIO ? "decent" : "weak";
+    let note = `projected ${round1(ep)}`;
+
+    const unavailable = OUT_STATUSES.has(p.status);
+    const doubt = !unavailable && (p.status === "d" || (p.chance !== null && p.chance < AVAIL_CHANCE_FLOOR));
+
+    if (unavailable) {
+      band = "weak";
+      note = "unavailable";
+    } else if (doubt) {
+      band = dropOneBand(band);
+      note = `a doubt, projected ${round1(ep)}`;
+    }
+
+    if (!unavailable && !doubt) {
+      const cell = inputs.fixtures[p.clubId]?.[0];
+      if (cell?.difficulty === "tough") {
+        band = dropOneBand(band);
+        note += ", tough opponent";
+      } else if (cell?.difficulty === "kind" && band !== "strong") {
+        note += ", kind fixture";
+      }
+    }
+
+    return { id: p.id, name: p.name, pos: p.pos, band, note };
+  });
+}
+
+/** Splits banded players into their three groups, preserving XI order within
+ *  each. Pure. */
+export function groupBands(banded: BandedPlayer[]): { strong: BandedPlayer[]; decent: BandedPlayer[]; weak: BandedPlayer[] } {
+  return {
+    strong: banded.filter((b) => b.band === "strong"),
+    decent: banded.filter((b) => b.band === "decent"),
+    weak: banded.filter((b) => b.band === "weak"),
   };
-  // A forced line: surfaces on its own logic (not a sub-score band) because it
-  // is directly actionable. High distance so it wins a pill slot.
-  const force = (kind: "strength" | "risk", about: string, club: string, num: number, fact: string) =>
-    lines.push({ about, club, number: num, fact, kind, distance: 6 });
-
-  const xi = inputs.xi;
-  const round1x = (v: number) => Math.round(v * 10) / 10;
-
-  // 1) CAPTAIN CHOICE — the single most actionable check. The armband doubles a
-  //    score, so captaining anyone but your best projected ATTACKER leaves points
-  //    on the table. Only MID/FWD are realistic captains (never a keeper), so the
-  //    comparison is against them. Names both players and both numbers.
-  const captain = xi.find((p) => p.id === inputs.captainId);
-  const attackers = xi.filter((p) => p.pos === "MID" || p.pos === "FWD");
-  const best = attackers.slice().sort((a, b) => (b.epNext ?? 0) - (a.epNext ?? 0))[0];
-  if (captain && best && best.id !== captain.id && (best.epNext ?? 0) - (captain.epNext ?? 0) >= 0.3) {
-    force("risk", captain.name, captain.club, round1x(best.epNext ?? 0),
-      `You have captained ${captain.name}, projected ${round1x(captain.epNext ?? 0)} this week. ${best.name} projects ${round1x(best.epNext ?? 0)} and would score more with the armband on him.`);
-  }
-
-  // 2) PROJECTION — the number in context: yours versus a strong XI this week.
-  const projRounded = Math.round(raw.projRaw);
-  const benchRounded = Math.round(raw.benchmark);
-  add(subScores.sProj, "your squad", "", projRounded,
-    subScores.sProj >= 7
-      ? `Your XI projects ${projRounded} points this week, up near a strong XI's ${benchRounded}.`
-      : `Your XI projects ${projRounded} points this week, short of a strong XI's ${benchRounded}.`);
-
-  // 3) AVAILABILITY — name who is out, or confirm a clean bill.
-  const outXi = xi.filter((p) => OUT_STATUSES.has(p.status));
-  const doubtXi = xi.filter((p) => p.status === "d" || (p.chance !== null && p.chance < AVAIL_CHANCE_FLOOR));
-  if (outXi.length) {
-    const worst = outXi[0];
-    add(subScores.sAvail, worst.name, worst.club, outXi.length,
-      `${worst.name} is unavailable for ${worst.club}${outXi.length > 1 ? `, and ${outXi.length} of your starters are out in total` : ""}. Move him out of your XI.`);
-  } else if (doubtXi.length) {
-    const d = doubtXi[0];
-    force("risk", d.name, d.club, doubtXi.length,
-      `${d.name} is a doubt for ${d.club} this week${doubtXi.length > 1 ? `, one of ${doubtXi.length} in your XI` : ""}. Check the team news before the deadline.`);
-  } else {
-    add(subScores.sAvail, "your squad", "", xi.length, `All ${xi.length} of your starters are fit and available.`);
-  }
-
-  // 4) FIXTURES — name the players facing a tough week (who to bench or not captain).
-  const tough = xi.filter((p) => inputs.fixtures[p.clubId]?.[0]?.difficulty === "tough");
-  const kindCount = xi.filter((p) => inputs.fixtures[p.clubId]?.[0]?.difficulty === "kind").length;
-  if (subScores.sFix <= 4 && tough.length) {
-    const names = tough.slice(0, 2).map((p) => p.name).join(" and ");
-    add(subScores.sFix, tough[0].name, tough[0].club, tough.length,
-      `${tough.length} of your XI face a tough opponent next week, including ${names}.`);
-  } else if (subScores.sFix >= 7) {
-    add(subScores.sFix, "your squad", "", kindCount,
-      `${kindCount} of your XI have a kind fixture next week, a good week to back them.`);
-  }
-
-  // 5) BUDGET — only ever a RISK, and only when money is genuinely being wasted.
-  //    "A little in the bank" is not a strength worth a pill (founder: no vanity).
-  if (subScores.sBal <= 4) {
-    const bankM = round1x(inputs.bankTenths / 10);
-    force("risk", "your bank", "", inputs.bankTenths,
-      `${bankM} million is sitting idle in your bank, enough to upgrade a starter.`);
-  }
-
-  // 6) DIFFERENTIALS — framed for someone chasing rank, not as a stat.
-  const diffs = xi.filter(
-    (p) => p.ownershipPct !== null && p.ownershipPct < DIFF_OWNERSHIP_CEILING && (p.epNext ?? 0) >= DIFF_EPNEXT_FLOOR,
-  );
-  if (diffs.length === 0 && subScores.sDiff <= 4) {
-    add(subScores.sDiff, "your squad", "", 0,
-      `No one in your XI is owned by under ${DIFF_OWNERSHIP_CEILING} percent, so you rise and fall with the crowd.`);
-  } else if (subScores.sDiff >= 7) {
-    add(subScores.sDiff, diffs[0]?.name ?? "your squad", diffs[0]?.club ?? "", diffs.length,
-      `You back ${diffs.length} low ownership pick${diffs.length === 1 ? "" : "s"} that could pull you clear of the pack.`);
-  }
-
-  return lines;
-}
-
-/** Keep the 2 to 3 most extreme candidate lines (by distance from 5.5), and
- *  guarantee at least one risk survives if a risk exists anywhere in the set
- *  — a squad rating that only ever shows good news isn't useful. */
-function selectTopCandidates(lines: InternalCandidate[]): InternalCandidate[] {
-  const sorted = lines.slice().sort((a, b) => b.distance - a.distance);
-  let top = sorted.slice(0, 3);
-  const anyRisk = lines.some((l) => l.kind === "risk");
-  const topHasRisk = top.some((l) => l.kind === "risk");
-  if (anyRisk && !topHasRisk) {
-    const bestRisk = sorted.find((l) => l.kind === "risk")!;
-    top = [...top.slice(0, Math.max(0, Math.min(top.length, 3) - 1)), bestRisk];
-  }
-  return top.slice(0, 3);
 }
 
 // ── the closed payload the model may speak from ─────────────────────────────
@@ -465,9 +440,10 @@ function selectTopCandidates(lines: InternalCandidate[]): InternalCandidate[] {
 export interface RatingFacts {
   score: number;
   subScores: { name: string; value: number; meaning: string }[];
-  candidates: { about: string; club: string; number: number; fact: string; kind: "strength" | "risk" }[];
+  bands: { name: string; pos: string; band: Band; note: string }[];
   captain: { name: string; epNext: number | null };
   projectedPoints: number;
+  benchmark: number;
   bankM: number;
   suggestedMove: { out: string; in: string; position: string; priceM: number; epNext: number } | null;
   gameweek: number;
@@ -475,12 +451,11 @@ export interface RatingFacts {
 
 /** The facts the model is allowed to speak from — nothing else exists to it.
  *  groundRatingCopy() also treats this as the ONLY source of truth for prose
- *  validation, same pattern as pickFacts()/tipFacts(). `chosen` is the
- *  already-selected 2-3 candidate lines (selectTopCandidates output) so the
- *  facts payload and the mechanical fallback copy are built from the exact
- *  same set, never two different views of "what's worth saying". */
+ *  validation, same pattern as pickFacts()/tipFacts(). `banded` is ALL 11 XI
+ *  players (bandPlayers() output) so the verdict can cite any of them —
+ *  including a captain who sits in a weaker band than a teammate. */
 export function ratingFacts(
-  inputs: RatingInputs, result: ScoreResult, move: SuggestedMove | null, chosen: InternalCandidate[],
+  inputs: RatingInputs, result: ScoreResult, move: SuggestedMove | null, banded: BandedPlayer[],
 ): RatingFacts {
   const captain = inputs.xi.find((p) => p.id === inputs.captainId);
   return {
@@ -492,9 +467,10 @@ export function ratingFacts(
       { name: "balance", value: result.subScores.sBal, meaning: "how much of your budget sits unused in the bank" },
       { name: "differentials", value: result.subScores.sDiff, meaning: "how many low ownership picks are projected to score" },
     ],
-    candidates: chosen.map(({ about, club, number, fact, kind }) => ({ about, club, number, fact, kind })),
+    bands: banded.map(({ name, pos, band, note }) => ({ name, pos, band, note })),
     captain: { name: captain?.name ?? "no one set", epNext: captain?.epNext ?? null },
     projectedPoints: Math.round(result.raw.projRaw),
+    benchmark: Math.round(result.raw.benchmark),
     bankM: Math.round((inputs.bankTenths / 10) * 10) / 10,
     suggestedMove: move
       ? { out: move.outName, in: move.inName, position: move.position, priceM: Math.round((move.priceTenths / 10) * 10) / 10, epNext: move.epNext }
@@ -505,20 +481,19 @@ export function ratingFacts(
 
 // ── mechanical templates (deterministic, from ratingFacts only) ─────────────
 
-/** One or two plain sentences per score band. Every band is dash free and
- *  under three sentence terminators, same lint the model's verdict must
- *  clear. */
+/** One or two plain, tense-free sentences per score band. Dash free and under
+ *  three sentence terminators, same lint the model's verdict must clear. */
 export function composeTemplatedVerdict(score: number): string {
-  if (score >= 8) return "A strong squad this week, with few weak spots to worry about.";
-  if (score >= 6.5) return "A solid squad this week, with a couple of things worth watching.";
-  if (score >= 5) return "A mixed squad this week, some strong picks alongside a few question marks.";
-  if (score >= 3) return "A shaky squad this week, worth a look before the deadline.";
-  return "A tough squad this week, with several issues worth weighing up.";
+  if (score >= 8) return "A strong squad, with few weak spots to worry about.";
+  if (score >= 6.5) return "A solid squad, with a couple of things worth watching.";
+  if (score >= 5) return "A mixed squad, some strong picks alongside a few question marks.";
+  if (score >= 3) return "A shaky squad, worth a look before the deadline.";
+  return "A tough squad, with several issues worth weighing up.";
 }
 
 function composeMoveLine(move: RatingFacts["suggestedMove"]): string {
-  if (!move) return "No obvious move this week, your fifteen holds up.";
-  return `Consider ${move.in} in place of ${move.out}, projected for more points this gameweek.`;
+  if (!move) return "No obvious move, your fifteen holds up.";
+  return `Consider ${move.in} in place of ${move.out}, who projects higher.`;
 }
 
 // ── no-dash copy lint ───────────────────────────────────────────────────────
@@ -541,16 +516,15 @@ export function lintRatingCopy(text: string): boolean {
 
 // ── grounding (reuses tips.ts, does not re-implement it) ────────────────────
 
-export interface ModelRatingOutput { verdict: string; strengths?: string[]; risks?: string[] }
-export interface GroundedRatingCopy { verdict: string | null; strengths: string[]; risks: string[] }
+export interface ModelRatingOutput { verdict: string }
+export interface GroundedRatingCopy { verdict: string | null }
 
-/** Ground the model's verdict/strengths/risks against ratingFacts(). Pure —
- *  unit-testable without touching the API, same shape as tips.ts's
- *  groundTips() and scoutPicks.ts's groundPickCopy(), except grounding here is
- *  PER FIELD: a field that fails is simply dropped (null / empty array), never
- *  taking the other fields down with it — the caller pads any gap with the
- *  mechanical template for that field. The verdict additionally fails if it
- *  runs past two sentences: this is a phone card, not a column. */
+/** Ground the model's verdict against ratingFacts(). Pure — unit-testable
+ *  without touching the API, same shape as tips.ts's groundTips() and
+ *  scoutPicks.ts's groundPickCopy(). The verdict is dropped (null) rather than
+ *  crashing anything if it fails — the caller pads the gap with the
+ *  mechanical template. It additionally fails if it runs past two sentences:
+ *  this is a phone card, not a column. */
 export function groundRatingCopy(out: ModelRatingOutput, facts: RatingFacts): GroundedRatingCopy {
   const base = collectPayloadTokens(facts);
   const words = new Set<string>();
@@ -565,34 +539,27 @@ export function groundRatingCopy(out: ModelRatingOutput, facts: RatingFacts): Gr
   const terminators = (verdictClean.match(/[.!?]+/g) ?? []).length;
   const verdict = verdictClean && terminators > 0 && terminators <= 2 && safe(verdictClean) ? verdictClean : null;
 
-  const strengths = (out.strengths ?? []).map((s) => cleanField(s)).filter((s) => s.length > 0 && safe(s)).slice(0, 3);
-  const risks = (out.risks ?? []).map((s) => cleanField(s)).filter((s) => s.length > 0 && safe(s)).slice(0, 3);
-
-  return { verdict, strengths, risks };
+  return { verdict };
 }
 
-/** Compose the final copy: model output where it survives grounding, the
- *  mechanical template for anything that doesn't (or when there is no model
- *  output at all — no key, an API failure, or a rejected response).
- *  `copy_source` is "model" only when the verdict itself came from the model,
- *  since the verdict is the one line every rating shows. */
+/** Compose the final copy: the model's verdict where it survives grounding,
+ *  the mechanical template otherwise (or when there is no model output at
+ *  all — no key, an API failure, or a rejected response). `copy_source` is
+ *  "model" only when the verdict itself came from the model, since the
+ *  verdict is the one line every rating shows. */
 function composeRatingCopy(
-  facts: RatingFacts, chosen: InternalCandidate[], modelOut: ModelRatingOutput | null,
-): { verdict: string; strengths: string[]; risks: string[]; moveLine: string; copySource: CopySource } {
+  facts: RatingFacts, modelOut: ModelRatingOutput | null,
+): { verdict: string; moveLine: string; copySource: CopySource } {
   const mechanicalVerdict = composeTemplatedVerdict(facts.score);
-  const mechStrengths = chosen.filter((c) => c.kind === "strength").map((c) => c.fact);
-  const mechRisks = chosen.filter((c) => c.kind === "risk").map((c) => c.fact);
   const moveLine = composeMoveLine(facts.suggestedMove);
 
   if (!modelOut) {
-    return { verdict: mechanicalVerdict, strengths: mechStrengths, risks: mechRisks, moveLine, copySource: "mechanical" };
+    return { verdict: mechanicalVerdict, moveLine, copySource: "mechanical" };
   }
 
   const grounded = groundRatingCopy(modelOut, facts);
   return {
     verdict: grounded.verdict ?? mechanicalVerdict,
-    strengths: grounded.strengths.length ? grounded.strengths : mechStrengths,
-    risks: grounded.risks.length ? grounded.risks : mechRisks,
     moveLine,
     copySource: grounded.verdict ? "model" : "mechanical",
   };
@@ -600,8 +567,8 @@ function composeRatingCopy(
 
 // ── AI copy layer (Sonnet, tool-forced — same fetch shape as tips.ts) ───────
 
-const RATING_SYSTEM = `You write a short verdict and a few strength/risk lines for a YourScore
-fantasy football squad rating.
+const RATING_SYSTEM = `You write a short verdict for a YourScore fantasy
+football squad rating.
 
 THE ABSOLUTE RULE
 You know NOTHING about football beyond the JSON you are given. Every name, club
@@ -609,29 +576,33 @@ and number you mention MUST appear in that JSON. If it is not there, it does
 not exist and you may not refer to it. Do not add context you "know".
 
 THE SCORE IS ALREADY DECIDED
-The numeric score and every sub score in the JSON were computed by code before
-you saw them. Your job is to explain what they show in plain words. Never
-argue with the score, soften it, or recompute it yourself.
+The numeric score, every sub score, and the strong/decent/weak band on every
+XI player in the JSON were computed by code before you saw them. Your job is
+to explain what they show in plain words. Never argue with the score, soften
+it, or recompute it yourself.
+
+IT IS PRE-SEASON
+The season has not started. Every number in the JSON is a projection, not a
+result. Never use phrasing that implies a match has already been played or a
+matchweek is currently live. Write in a tense-free way, e.g. "projects 3.1"
+rather than naming any live or current matchweek.
 
 VOICE
-- The verdict is one sentence, two at the absolute most.
-- No em dashes, en dashes or double hyphens anywhere in any field.
+- One sentence, two at the absolute most.
+- No em dashes, en dashes or double hyphens anywhere in the field.
 - No hype, no verdict language beyond stating what the numbers show.
-- Plain prose. Never output JSON, quotes or braces inside a field.
+- Plain prose. Never output JSON, quotes or braces inside the field.
 
 WHAT TO PRODUCE
-- verdict: one or two sentences describing the squad's week, grounded in the
-  score and sub scores in the JSON.
-- strengths: 0 to 3 short factual lines, each grounded in one of the
-  candidate facts in the JSON.
-- risks: 0 to 3 short factual lines, each grounded in one of the candidate
-  facts in the JSON.`;
+- verdict: one or two sentences describing the squad, grounded in the score,
+  the sub scores, and the bands in the JSON. If the captain sits in a weaker
+  band than a teammate who projects higher, it is fine to say so.`;
 
 interface AnthropicResponse { content?: { type: string; input?: ModelRatingOutput }[] }
 
-/** Ask the model to rephrase ratingFacts() into a verdict + strength/risk
- *  lines. Never throws — returns null on any failure so rateSquad() can fall
- *  back to the mechanical template and still ship a full rating. */
+/** Ask the model to rephrase ratingFacts() into a verdict. Never throws —
+ *  returns null on any failure so rateSquad() can fall back to the mechanical
+ *  template and still ship a full rating. */
 export async function callModelForRating(facts: RatingFacts): Promise<ModelRatingOutput | null> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {
@@ -641,13 +612,11 @@ export async function callModelForRating(facts: RatingFacts): Promise<ModelRatin
 
   const tool = {
     name: "squad_rating",
-    description: "The verdict and strength/risk lines for a fantasy squad rating.",
+    description: "The verdict for a fantasy squad rating.",
     input_schema: {
       type: "object",
       properties: {
         verdict: { type: "string" },
-        strengths: { type: "array", items: { type: "string" } },
-        risks: { type: "array", items: { type: "string" } },
       },
       required: ["verdict"],
     },
@@ -663,7 +632,7 @@ export async function callModelForRating(facts: RatingFacts): Promise<ModelRatin
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 600,
+        max_tokens: 400,
         system: RATING_SYSTEM,
         tools: [tool],
         tool_choice: { type: "tool", name: "squad_rating" },
@@ -671,7 +640,7 @@ export async function callModelForRating(facts: RatingFacts): Promise<ModelRatin
           role: "user",
           content:
             `These are the ONLY facts that exist for this squad:\n\n${JSON.stringify(facts, null, 2)}\n\n`
-            + `Write the verdict, strengths and risks. Every name and number must come from that JSON.`,
+            + `Write the verdict. Every name and number must come from that JSON.`,
         }],
       }),
       cache: "no-store",
@@ -695,11 +664,13 @@ export async function callModelForRating(facts: RatingFacts): Promise<ModelRatin
 
 // ── orchestration (impure: DB reads, the AI call, the cache write) ──────────
 
+export interface BandCard { name: string; pos: string; note: string }
+export interface RatingBands { strong: BandCard[]; decent: BandCard[]; weak: BandCard[] }
+
 export interface RatingResponse {
   score: number;
   verdict: string;
-  strengths: string[];
-  risks: string[];
+  bands: RatingBands;
   moveLine: string;
   copySource: CopySource;
   subScores: { name: string; value: number }[];
@@ -723,23 +694,27 @@ type SnapRow = {
   selected_by_percent: number | string | null; next_event: number | null;
 };
 
+/** `bands` is optional on the stored payload shape so a row written before
+ *  this rework (no `bands` key) never crashes shapeStoredRow — it defaults to
+ *  three empty groups instead. */
 type StoredRatingRow = {
   score: number | string;
   sub_scores: SubScores;
   snapshot_cutoff: string;
   payload: {
-    verdict: string; strengths: string[]; risks: string[]; moveLine: string;
+    verdict: string; bands?: RatingBands; moveLine: string;
     copySource: CopySource; gameweek: number; generatedAt: string;
   };
 };
+
+const EMPTY_BANDS: RatingBands = { strong: [], decent: [], weak: [] };
 
 function shapeStoredRow(row: StoredRatingRow): RatingResponse {
   const sub = row.sub_scores;
   return {
     score: Number(row.score),
     verdict: row.payload.verdict,
-    strengths: row.payload.strengths,
-    risks: row.payload.risks,
+    bands: row.payload.bands ?? EMPTY_BANDS,
     moveLine: row.payload.moveLine,
     copySource: row.payload.copySource,
     subScores: [
@@ -812,18 +787,25 @@ async function loadRatingInputs(db: Db, squad: SquadRow): Promise<{ inputs: Rati
   return { inputs, cutoff };
 }
 
-/** Compute a full rating (score, verdict, pills, move), calling the model
+/** Compute a full rating (score, verdict, bands, move), calling the model
  *  once, and upsert it onto (user_id, squad_hash). One model call per call to
  *  this function — the cache logic in rateSquad() decides WHEN to call it. */
 async function computeAndStore(db: Db, userId: string, hash: string, inputs: RatingInputs, cutoff: string): Promise<RatingResponse> {
   const result = scoreSquad(inputs);
   const move = deriveMove(inputs);
-  const allCandidates = buildCandidateLines(inputs, result.subScores, result.raw);
-  const chosen = selectTopCandidates(allCandidates);
-  const facts = ratingFacts(inputs, result, move, chosen);
+  const banded = bandPlayers(inputs);
+  const grouped = groupBands(banded);
+  const facts = ratingFacts(inputs, result, move, banded);
 
   const modelOut = await callModelForRating(facts);
-  const copy = composeRatingCopy(facts, chosen, modelOut);
+  const copy = composeRatingCopy(facts, modelOut);
+
+  const toCard = (b: BandedPlayer): BandCard => ({ name: b.name, pos: b.pos, note: b.note });
+  const bands: RatingBands = {
+    strong: grouped.strong.map(toCard),
+    decent: grouped.decent.map(toCard),
+    weak: grouped.weak.map(toCard),
+  };
 
   const generatedAt = new Date().toISOString();
   const row = {
@@ -832,7 +814,7 @@ async function computeAndStore(db: Db, userId: string, hash: string, inputs: Rat
     score: result.score,
     sub_scores: result.subScores,
     payload: {
-      verdict: copy.verdict, strengths: copy.strengths, risks: copy.risks, moveLine: copy.moveLine,
+      verdict: copy.verdict, bands, moveLine: copy.moveLine,
       copySource: copy.copySource, gameweek: inputs.gameweek, generatedAt,
     },
     snapshot_cutoff: cutoff,

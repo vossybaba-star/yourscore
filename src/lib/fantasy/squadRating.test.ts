@@ -15,7 +15,8 @@ import {
   scoreSquad, computeSAvail, computeSFix, computeSBal, computeSDiff, deriveMove,
   composeTemplatedVerdict, lintRatingCopy, groundRatingCopy, squadHash, buildRatingInputs,
   ratingFacts, benchmarkRaw, PROJ_FLOOR_FRACTION,
-  type RatingPlayer, type RatingInputs, type Difficulty, type RatingFacts,
+  bandPlayers, groupBands, BAND_STRONG_RATIO, BAND_DECENT_RATIO,
+  type RatingPlayer, type RatingInputs, type Difficulty, type RatingFacts, type BandedPlayer,
 } from "./squadRating";
 
 /** A pool with enough players per position for benchmarkRaw's 4-4-2 shape, each
@@ -280,12 +281,13 @@ function baseFacts(): RatingFacts {
       { name: "balance", value: 10, meaning: "x" },
       { name: "differentials", value: 4, meaning: "x" },
     ],
-    candidates: [
-      { about: "Bukayo Saka", club: "Arsenal", number: 42, fact: "Your XI is projected 42 points, led by Bukayo Saka at 8 (captained).", kind: "strength" },
-      { about: "your squad", club: "", number: 1, fact: "1 low ownership pick projected 3 or more points this gameweek.", kind: "risk" },
+    bands: [
+      { name: "Bukayo Saka", pos: "MID", band: "strong", note: "projected 8" },
+      { name: "Player 2", pos: "DEF", band: "weak", note: "a doubt, projected 1" },
     ],
     captain: { name: "Bukayo Saka", epNext: 8 },
     projectedPoints: 42,
+    benchmark: 46,
     bankM: 0,
     suggestedMove: null,
     gameweek: 3,
@@ -294,37 +296,34 @@ function baseFacts(): RatingFacts {
 
 test("groundRatingCopy: a verdict built only from the payload's own words/numbers survives", () => {
   const facts = baseFacts();
-  const out = groundRatingCopy({ verdict: "A strong week, projected 42 points behind Bukayo Saka." }, facts);
+  const out = groundRatingCopy({ verdict: "A strong squad, projected 42 points behind Bukayo Saka." }, facts);
   assert.ok(out.verdict, "grounded prose using only payload words must survive");
 });
 
 test("groundRatingCopy: a verdict naming a player absent from the facts is dropped", () => {
   const facts = baseFacts();
-  const out = groundRatingCopy({ verdict: "A big week for Erling Haaland up front." }, facts);
+  const out = groundRatingCopy({ verdict: "A big squad for Erling Haaland up front." }, facts);
   assert.equal(out.verdict, null, "\"Haaland\" is not in the facts payload — the field must fail grounding");
 });
 
 test("groundRatingCopy: an unlicensed claim-term sentence is dropped even with no proper noun or number", () => {
   const facts = baseFacts();
-  const out = groundRatingCopy({ verdict: "He is back from injury and starting again this week." }, facts);
+  const out = groundRatingCopy({ verdict: "He is back from injury and starting again." }, facts);
   assert.equal(out.verdict, null, "\"injury\" is a CLAIM_TERM the payload never licenses");
-});
-
-test("groundRatingCopy: strengths/risks are graded independently — a poisoned line is dropped, a grounded one survives", () => {
-  const facts = baseFacts();
-  const out = groundRatingCopy({
-    verdict: "A strong week, projected 42 points.",
-    strengths: ["Bukayo Saka is projected to lead the line.", "He just returned from a hamstring injury."],
-    risks: ["1 low ownership pick projected 3 or more points."],
-  }, facts);
-  assert.equal(out.strengths.length, 1, "the injury-claiming line must be dropped, the grounded one kept");
-  assert.equal(out.risks.length, 1);
 });
 
 test("groundRatingCopy: a verdict past two sentences falls back to the template (dropped here, composed by the caller)", () => {
   const facts = baseFacts();
-  const out = groundRatingCopy({ verdict: "A strong week. Projected 42 points. Bukayo Saka leads it." }, facts);
+  const out = groundRatingCopy({ verdict: "A strong squad. Projected 42 points. Bukayo Saka leads it." }, facts);
   assert.equal(out.verdict, null, "three sentence-terminators is past the two-sentence cap");
+});
+
+test("groundRatingCopy: band player names and notes from the payload are groundable tokens", () => {
+  const facts = baseFacts();
+  // "Player 2" and "a doubt" come only from the bands entry, not the captain
+  // or score fields — proves collectPayloadTokens walks the whole facts object.
+  const out = groundRatingCopy({ verdict: "Player 2 is a doubt, but Bukayo Saka projects 8." }, facts);
+  assert.ok(out.verdict, "names and note-vocabulary from bands[] must ground");
 });
 
 // ── squadHash (acceptance criterion 6) ─────────────────────────────────────
@@ -365,14 +364,133 @@ test("buildRatingInputs: resolves xi/bench ids against the squad player list, dr
 
 // ── ratingFacts: the closed payload shape ──────────────────────────────────
 
-test("ratingFacts: sanity — score, captain and candidates are carried through from the inputs", () => {
+test("ratingFacts: sanity — score, captain and bands are carried through from the inputs", () => {
   const inputs = baseInputs();
   const result = scoreSquad(inputs);
   const move = deriveMove(inputs);
-  const facts = ratingFacts(inputs, result, move, []);
+  const banded = bandPlayers(inputs);
+  const facts = ratingFacts(inputs, result, move, banded);
   assert.equal(facts.score, result.score);
   assert.equal(facts.captain.name, "Player 1");
   assert.equal(facts.gameweek, inputs.gameweek);
+  assert.equal(facts.bands.length, 11, "one band entry per XI player");
+});
+
+// ── bandPlayers (deterministic, mirrors the scoreSquad discipline) ─────────
+
+test("bandPlayers: BAND_STRONG_RATIO/BAND_DECENT_RATIO are the documented thresholds", () => {
+  assert.equal(BAND_STRONG_RATIO, 0.8);
+  assert.equal(BAND_DECENT_RATIO, 0.6);
+});
+
+test("bandPlayers: a player at the position ceiling bands strong", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 }); // MID ceiling = 5
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { pos: "MID", epNext: 5 }));
+  const inputs = baseInputs({ xi, pool });
+  const banded = bandPlayers(inputs);
+  assert.ok(banded.every((b) => b.band === "strong"), "ratio 1.0 (>= 0.8) must band strong");
+  assert.equal(banded[0].note, "projected 5", "base note is a tense-free 'projected N'");
+});
+
+test("bandPlayers: a low-ep player against a strong pool bands weak", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 10, FWD: 5 }); // MID ceiling = 10
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { pos: "MID", epNext: 2 })); // ratio 0.2
+  const inputs = baseInputs({ xi, pool });
+  const banded = bandPlayers(inputs);
+  assert.ok(banded.every((b) => b.band === "weak"), "ratio 0.2 (< 0.6) must band weak");
+});
+
+test("bandPlayers: an injured/suspended/unavailable starter is always weak, note 'unavailable'", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  for (const status of ["i", "s", "u"]) {
+    const xi = [mkPlayer(1, { pos: "MID", epNext: 5, status }), ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 }))];
+    const inputs = baseInputs({ xi, pool });
+    const banded = bandPlayers(inputs);
+    const player = banded.find((b) => b.id === 1)!;
+    assert.equal(player.band, "weak", `status ${status} must force weak even at ratio 1.0`);
+    assert.equal(player.note, "unavailable");
+  }
+});
+
+test("bandPlayers: a doubt (status d) drops the base band by one step", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 }); // MID ceiling 5
+  const xi = [mkPlayer(1, { pos: "MID", epNext: 5, status: "d" }), ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 }))];
+  const inputs = baseInputs({ xi, pool });
+  const banded = bandPlayers(inputs);
+  const player = banded.find((b) => b.id === 1)!;
+  // Base ratio 1.0 -> strong, doubt drops it to decent.
+  assert.equal(player.band, "decent");
+  assert.equal(player.note, "a doubt, projected 5");
+});
+
+test("bandPlayers: a tough next fixture drops the band by one step and appends to the note", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 }); // MID ceiling 5
+  const xi = [mkPlayer(1, { pos: "MID", epNext: 5, clubId: 9 }), ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 }))];
+  const inputs = baseInputs({ xi, pool, fixtures: { 9: [{ difficulty: "tough" }] } });
+  const banded = bandPlayers(inputs);
+  const player = banded.find((b) => b.id === 1)!;
+  // Base ratio 1.0 -> strong, tough fixture drops it to decent.
+  assert.equal(player.band, "decent");
+  assert.equal(player.note, "projected 5, tough opponent");
+});
+
+test("bandPlayers: a kind next fixture appends to the note when the band isn't already strong", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 10, FWD: 5 }); // MID ceiling 10, ratio 0.6 -> decent
+  const xi = [mkPlayer(1, { pos: "MID", epNext: 6, clubId: 9 }), ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 }))];
+  const inputs = baseInputs({ xi, pool, fixtures: { 9: [{ difficulty: "kind" }] } });
+  const banded = bandPlayers(inputs);
+  const player = banded.find((b) => b.id === 1)!;
+  assert.equal(player.band, "decent");
+  assert.equal(player.note, "projected 6, kind fixture");
+});
+
+test("bandPlayers: a kind next fixture leaves an already-strong band's note untouched", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 }); // MID ceiling 5, ratio 1.0 -> strong
+  const xi = [mkPlayer(1, { pos: "MID", epNext: 5, clubId: 9 }), ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 }))];
+  const inputs = baseInputs({ xi, pool, fixtures: { 9: [{ difficulty: "kind" }] } });
+  const banded = bandPlayers(inputs);
+  const player = banded.find((b) => b.id === 1)!;
+  assert.equal(player.band, "strong");
+  assert.equal(player.note, "projected 5", "kind fixtures only earn a note when the band isn't already strong");
+});
+
+test("bandPlayers: an empty fixtures map nudges nothing (same 'don't trust this batch' signal as computeSFix)", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  const xi = [mkPlayer(1, { pos: "MID", epNext: 5, clubId: 9 }), ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 }))];
+  const inputs = baseInputs({ xi, pool, fixtures: {} });
+  const banded = bandPlayers(inputs);
+  const player = banded.find((b) => b.id === 1)!;
+  assert.equal(player.band, "strong");
+  assert.equal(player.note, "projected 5", "no fixture nudge with an empty map");
+});
+
+test("bandPlayers: an empty pool guards the ratio to 0 (weak), never a divide-by-zero", () => {
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 0 }));
+  const inputs = baseInputs({ xi, pool: [] });
+  const banded = bandPlayers(inputs);
+  assert.ok(banded.every((b) => b.band === "weak"), "no pool ceiling and epNext 0 -> guarded ratio 0 -> weak");
+});
+
+test("bandPlayers: returns one entry per XI player, in XI order", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  const inputs = baseInputs({ pool });
+  const banded = bandPlayers(inputs);
+  assert.deepEqual(banded.map((b) => b.id), inputs.xi.map((p) => p.id));
+});
+
+// ── groupBands ──────────────────────────────────────────────────────────────
+
+test("groupBands: splits by band and preserves membership and XI order within each group", () => {
+  const banded: BandedPlayer[] = [
+    { id: 1, name: "A", pos: "MID", band: "weak", note: "x" },
+    { id: 2, name: "B", pos: "DEF", band: "strong", note: "x" },
+    { id: 3, name: "C", pos: "FWD", band: "decent", note: "x" },
+    { id: 4, name: "D", pos: "MID", band: "strong", note: "x" },
+  ];
+  const grouped = groupBands(banded);
+  assert.deepEqual(grouped.strong.map((b) => b.id), [2, 4]);
+  assert.deepEqual(grouped.decent.map((b) => b.id), [3]);
+  assert.deepEqual(grouped.weak.map((b) => b.id), [1]);
 });
 
 test("s_proj: a stronger XI beats a weaker one against the same benchmark", () => {
