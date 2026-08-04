@@ -22,7 +22,7 @@ import { join } from "path";
 import { createClient } from "@supabase/supabase-js";
 import { validateSquad, smartDefaults, BASELINE_CREDITS_PER_GW, type PoolPlayer } from "../../src/lib/fantasy/engine";
 import { solvePreset, PRESETS, type PresetPlayer } from "../../src/lib/fantasy/presets";
-import { BOT_PERSONAS, generateBotMove, type BotPoolPlayer } from "../../src/lib/fantasy/botContent";
+import { BOT_PERSONAS, activeBotPersonas, generateBotMove, type BotPoolPlayer } from "../../src/lib/fantasy/botContent";
 
 const DRY = process.argv.includes("--dry");
 const TEARDOWN = process.argv.includes("--teardown");
@@ -193,7 +193,10 @@ async function main() {
     for (const e of (prior ?? []) as { payload: { k?: string } | null }[]) if (e.payload?.k) usedKeys.add(e.payload.k);
 
     const rows: { actor_id: string; type: string; gw: null; payload: Record<string, unknown>; created_at: string }[] = [];
-    const personasLooped = shuffle([...BOT_PERSONAS, ...BOT_PERSONAS, ...BOT_PERSONAS]);
+    // Backfill only speaks with the personas whose ramp day has arrived — a
+    // day-0 feed written by all 16 would undo the gradual-arrival story.
+    const rampActive = activeBotPersonas(Date.now());
+    const personasLooped = shuffle([...rampActive, ...rampActive, ...rampActive]);
     for (const persona of personasLooped) {
       if (rows.length >= BACKFILL) break;
       const actorId = botIdByKey.get(persona.key);

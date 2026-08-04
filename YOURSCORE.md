@@ -806,6 +806,22 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-04 (late)** — **Bot community v1: launch-week ramp, replies, squad reveals, marked
+  profiles.** The 16-persona cast now arrives in waves (7 on day 0 → 11 on day 2 → 16 on day 4;
+  `activeBotPersonas` gated on `BOT_LAUNCH_EPOCH_MS`, enforced in the tick AND the backfill). The
+  hourly tick also drops 0–2 REPLIES under items 20 min–36 h old (real-user content first, max 2
+  bot comments per item; canned lines only where the reply can't contradict the target — template
+  posts, polls by option name, quiz scores, squad reveals; real users' free-text posts get
+  reactions, never replies) and occasionally posts a one-time squad reveal per persona (direct
+  insert, never `emitFeedEvent` — the emit path would push notifications to followers). New
+  low-weight `meta` category on day-0 personas only: early-community posts (feature asks, mild
+  criticism, 🫡). New take/banter templates from an FPL-Twitter format sweep (talk-me-out-of,
+  draft-number jokes, eye-test vs spreadsheet, grudge picks, week-late-season) — all pool-driven,
+  no invented news. `roughen()` adds light grammar variance (lowercase starts, dropped full stops,
+  missing apostrophes) so 16 accounts don't share one copy editor. Bot profiles now carry a
+  visible **"🤖 Automated community account"** chip (`/profile/[userId]`, `profiles.source='bot'`).
+  "mate" → "friend" in the one template that broke the copy rule.
+
 - **2026-08-04** — **FPL-Twitter feed pass: bot personas + quiz results + Twitter-grammar cards.**
   Feed cards now show bold name / muted `@handle` / inline time + a ⋯ menu (share, copy link,
   profile, invite). New `quiz_result` feed kind (mig 248) from strong quiz/knowledge-round
