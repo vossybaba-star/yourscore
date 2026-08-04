@@ -24,6 +24,7 @@ import { PRESETS, solvePreset } from "@/lib/fantasy/presets";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { trackFantasySquad } from "@/lib/analytics/trackGame";
+import { useUser } from "@/hooks/useUser";
 
 const BUDGET = 1000;
 const DRAFT_KEY = "ys-fantasy-draft";
@@ -31,6 +32,7 @@ const POS_WORD: Record<Pos, string> = { GK: "keepers", DEF: "defenders", MID: "m
 
 export default function BuildPage() {
   const router = useRouter();
+  const { user } = useUser();
   const [pool, setPool] = useState<ClientPoolPlayer[]>([]);
   const [view, setView] = useState<"squad" | "add">("squad");
   const [tab, setTab] = useState<Pos>("GK");
@@ -56,13 +58,19 @@ export default function BuildPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((c: FantasyContext | null) => { if (c) setCtx(c); })
       .catch(() => {});
+    // Restore an in-progress team from the local draft (2 GK / 5 DEF / …). Used by
+    // both a signed-in newcomer and a signed-out guest, so a team survives a reload
+    // and the build → sign-in → save round trip.
+    const restoreDraft = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "[]") as number[];
+        if (Array.isArray(saved) && saved.length) setPicked(saved.filter((n) => Number.isInteger(n)));
+      } catch { /* corrupt draft — start clean */ }
+    };
     api<FantasyState>("state").then((s) => {
       setDeadline(s.gw.deadline);
       if (!s.squad) {
-        try {
-          const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "[]") as number[];
-          if (Array.isArray(saved) && saved.length) setPicked(saved.filter((n) => Number.isInteger(n)));
-        } catch { /* corrupt draft — start clean */ }
+        restoreDraft();
         setRestored(true);
         return;
       }
@@ -70,7 +78,11 @@ export default function BuildPage() {
       setEditing(true);
       setPicked(s.squad.picks.map((p) => p.id));
       setRestored(true);
-    }).catch(() => setRestored(true));
+    }).catch(() => {
+      // Signed-out guest: no server state, just their local draft.
+      restoreDraft();
+      setRestored(true);
+    });
   }, [router]);
 
   useEffect(() => {
@@ -181,6 +193,10 @@ export default function BuildPage() {
   const firstGap = (): Pos => POS_ORDER.find((pos) => posCount(pos) < QUOTA[pos]) ?? "GK";
 
   const submit = async () => {
+    // Saving is the one thing that needs an account (founder, 4 Aug). A guest has
+    // built a full team by now; send them to sign-in with the draft still in
+    // localStorage, so they land back on the builder and confirm in one tap.
+    if (!user) { router.push("/auth/sign-in?next=/fantasy/build"); return; }
     setBusy(true); setErr(null);
     try {
       await api("squad", { pickIds: picked });
@@ -424,7 +440,7 @@ export default function BuildPage() {
         ) : complete ? (
           <>
             <Btn lime disabled={busy} onClick={submit}>
-              {busy ? "Saving…" : editing ? "Save my squad" : "Confirm my squad"}
+              {busy ? "Saving…" : !user ? "Sign in to save my squad" : editing ? "Save my squad" : "Confirm my squad"}
             </Btn>
             <p style={{ fontSize: 11.5, color: MUTED, margin: "7px 0 0", lineHeight: 1.4, textAlign: "center" }}>
               We&apos;ll pick your starting XI, captain and bench order. Change any of it next.

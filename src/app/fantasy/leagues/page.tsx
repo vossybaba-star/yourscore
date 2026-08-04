@@ -20,6 +20,7 @@ import {
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
 import { CreateLeagueFlow, JoinLeagueFlow, LeagueEmptyState } from "@/components/fantasy/league/LeagueFlows";
+import { DiscoverLeagues } from "@/components/fantasy/DiscoverLeagues";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { VerifiedTick } from "@/components/ui/Seal";
 
@@ -236,13 +237,18 @@ export default function LeaguesHome() {
   const myLeagues = (
     <>
       {needsAuth ? (
-        <Card style={{ marginTop: 2 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Sign in to play with friends</div>
-          <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-            Leagues are saved to your YourScore account, so you&apos;ll need to be signed in.
-          </p>
-          <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/leagues")}>Sign in</Btn>
-        </Card>
+        <>
+          {/* Guests browse every league (founder, 4 Aug) — creating your own or
+              joining one is the part that needs an account. */}
+          <Card style={{ marginTop: 2, marginBottom: 14 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Have a look around</div>
+            <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
+              Browse every league below. Sign in when you want to start your own or join one.
+            </p>
+            <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/leagues")}>Sign in to create or join</Btn>
+          </Card>
+          <DiscoverLeagues />
+        </>
       ) : (
         <>
           {!loaded ? (

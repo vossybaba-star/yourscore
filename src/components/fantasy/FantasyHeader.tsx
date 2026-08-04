@@ -12,7 +12,6 @@
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@/hooks/useUser";
 
 const TEAL = "#00d8c0";
 const LIME = "#aeea00";
@@ -42,12 +41,11 @@ const TABS = [
 
 export function FantasyHeader({ subtitle }: { subtitle?: string }) {
   const pathname = usePathname() || "/fantasy";
-  const { user } = useUser();
-  // Fantasy PL isn't gated to view (founder, 3 Aug): Home, Scout and Social are all
-  // browsable signed-out — you just can't contribute without an account. Squad and
-  // Leagues are personal tools, so those still route a guest through sign-in.
-  const publicHref = (href: string) => href === "/fantasy" || href === "/fantasy/news" || href === "/fantasy/social";
-  const hrefFor = (href: string) => (!user && !publicHref(href)) ? `/auth/sign-in?next=${encodeURIComponent(href)}` : href;
+  // No tab is gated to view (founder, 4 Aug): a signed-out visitor can open every
+  // Fantasy tab — Home, Squad, Social, Leagues, Scout — and even build a team. The
+  // only thing an account unlocks is SAVING (a squad, a league), gated at the point
+  // of action, not the door.
+  const hrefFor = (href: string) => href;
   return (
     <div style={{ marginBottom: 14 }}>
       <h1 className="font-display" style={{ fontSize: 27, color: INK, lineHeight: 1, letterSpacing: "-0.005em", margin: 0 }}>

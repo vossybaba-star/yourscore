@@ -330,10 +330,13 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     </main>
   );
 
+  // A signed-out visitor gets the SAME intro and goes straight into the builder —
+  // no sign-in wall at the door (founder, 4 Aug). They can pick a full team; the
+  // account is only asked for when they save it.
   if (needsAuth) return intro({
-    label: "Build my squad",
-    onClick: () => router.push("/auth/sign-in?next=/fantasy"),
-    note: "Takes a minute. Your squad saves to your account, so it's there every week.",
+    label: "Build your squad",
+    onClick: () => router.push("/fantasy/build"),
+    note: "Fifteen players, one budget. Build it now, sign in when you want to save.",
   });
   if (noSquad) return intro({
     label: "Build your squad",
