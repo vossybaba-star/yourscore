@@ -34,6 +34,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { MAX_PER_CLUB, XI_SIZE, type FantasyPos } from "./engine";
 import { pricedPool } from "./pool";
 import { fantasyContext } from "./context";
+import { faceUrlById } from "./faces";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import {
   cleanField, collectPayloadTokens, hasUngroundedClaim, isProseGrounded,
@@ -676,7 +677,12 @@ export async function callModelForRating(facts: RatingFacts): Promise<ModelRatin
 
 // ── orchestration (impure: DB reads, the AI call, the cache write) ──────────
 
-export interface BandCard { name: string; pos: string; note: string }
+/** `avatarUrl` is resolved here, server-side, from `faceUrlById()` — the same
+ *  real SportMonks headshot map pool.ts serves — so both the guest result
+ *  screen and the member SquadRating card can show a portrait beside every
+ *  banded player without a client-side lookup. `null` when we hold no photo
+ *  for that id; the client falls back to faceFor(name) then the monogram. */
+export interface BandCard { id: number; name: string; pos: string; note: string; avatarUrl: string | null }
 export interface RatingBands { strong: BandCard[]; decent: BandCard[]; weak: BandCard[] }
 
 export interface RatingResponse {
@@ -839,7 +845,8 @@ async function computeAndStore(db: Db, userId: string, hash: string, inputs: Rat
   const modelOut = await callModelForRating(facts);
   const copy = composeRatingCopy(facts, modelOut);
 
-  const toCard = (b: BandedPlayer): BandCard => ({ name: b.name, pos: b.pos, note: b.note });
+  const toCard = (b: BandedPlayer): BandCard =>
+    ({ id: b.id, name: b.name, pos: b.pos, note: b.note, avatarUrl: faceUrlById(b.id) ?? null });
   const bands: RatingBands = {
     strong: grouped.strong.map(toCard),
     decent: grouped.decent.map(toCard),

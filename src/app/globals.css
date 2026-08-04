@@ -488,3 +488,37 @@ main[data-fantasy] > * { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) {
   .rules-card-in-next, .rules-card-in-back { animation: none; }
 }
+
+/* /fantasy/rate — the Scout's branded "reading"/"grading" beat: a calm teal
+   band sweeping down the empty pitch, not a spinner. Reused for both the
+   vision-read wait and the brief grading beat after the intro cards. */
+@keyframes scoutScanSweep {
+  0% { transform: translateY(-140%); opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateY(140%); opacity: 0; }
+}
+.scout-scan-sweep { animation: scoutScanSweep 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .scout-scan-sweep { animation: none; opacity: 0.6; }
+}
+
+/* /fantasy/rate confirm step — the matched XI/bench land on the pitch with a
+   short staggered rise+fade so it reads as populating in real time, not
+   appearing all at once. Each marker sets --stagger-delay inline. Plays once,
+   on mount, since editing a slot afterward re-renders in place rather than
+   remounting its siblings. */
+@keyframes rateMarkerIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.rate-marker-in { animation: rateMarkerIn 0.32s ease both; animation-delay: var(--stagger-delay, 0ms); }
+@media (prefers-reduced-motion: reduce) {
+  .rate-marker-in { animation: none; }
+}
+
+/* /fantasy/rate result reveal — the score/bands card lands in once the
+   three-card beat and the rating have both finished, rather than snapping
+   straight in. */
+@keyframes rateResultIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.rate-result-in { animation: rateResultIn 0.4s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .rate-result-in { animation: none; }
+}

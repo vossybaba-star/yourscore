@@ -2,22 +2,29 @@
 /**
  * /fantasy/rate — rate an FPL team from a screenshot, no account needed.
  *
- * Upload a "Pick Team" screenshot -> we read it and match it against our pool
- * -> confirm the XI (fix anything we misread) -> the Scout grades it, same
- * score/bands a signed-in manager gets -> save it, which is where an account
- * comes in. Screenshot only, four steps, no dead ends.
+ * Upload a "Pick Team" screenshot -> the Scout reads it and matches it
+ * against our pool -> confirm the XI on a real pitch (fix anything we
+ * misread) -> a three-card "how it works" beat while the Scout grades it,
+ * same score/bands a signed-in manager gets -> save it, which is where an
+ * account comes in. Screenshot only, four steps, no dead ends.
  *
  * The image never leaves this component except in the one POST to
  * /api/fantasy/rate-photo — it isn't kept in any longer-lived state, isn't
  * written anywhere, and the response never echoes it back.
  */
-import { useCallback, useRef, useState } from "react";
+import {
+  useCallback, useEffect, useRef, useState, type CSSProperties,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
-  Btn, Card, Crest, ErrorState, Header, INK, LINE, MUTED, PANEL, PosTag,
-  Sheet, TEAL, CORAL, GOLD, page, tint, type ClientPoolPlayer,
+  Btn, Card, ErrorState, Header, INK, LINE, MUTED, PANEL, PosTag,
+  Sheet, TEAL, CORAL, GOLD, page, tint, type ClientPoolPlayer, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
+import { PitchSurface } from "@/components/fantasy/board/PitchSurface";
+import { BenchStrip } from "@/components/fantasy/board/BenchStrip";
+import { RateIntroCards } from "@/components/fantasy/RateIntroCards";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BandGroups, scoreColor, type RatingBandsShape } from "@/components/fantasy/RatingBands";
@@ -70,65 +77,142 @@ function flagNote(flags: string[]): string | null {
   return null;
 }
 
-/** One confirm-screen row: a resolved or unresolved slot, with a way to fix
- *  either. Low-confidence and unresolved slots get a coral outline so they
- *  stand out from the ones we're sure about. */
-function SlotRow({
-  slot, player, isCaptain, isVice, onPick, onSetCaptain, onSetVice, onToggleBench,
+const surname = (name: string) => name.trim().split(/\s+/).slice(-1)[0] ?? name;
+
+/** The Scout's branded wait state — a real pitch with a calm teal sweep, not
+ *  a spinner. Used both while the vision call reads the screenshot and, if
+ *  it's still running once the intro cards finish, for the brief grading
+ *  beat before the result reveals. Respects prefers-reduced-motion via the
+ *  .scout-scan-sweep class in globals.css (animation dropped, sweep stays
+ *  put at a fixed opacity). */
+function ScoutScanState({ heading, subline }: { heading: string; subline: string }) {
+  return (
+    <div className="rounded-2xl" style={{ border: `1px solid ${LINE}`, overflow: "hidden" }}>
+      <PitchSurface>
+        <div aria-hidden className="scout-scan-sweep" style={{
+          position: "absolute", left: "8%", right: "8%", height: "18%", borderRadius: 10,
+          background: `linear-gradient(180deg, transparent, ${tint(TEAL, "40")}, transparent)`,
+        }} />
+      </PitchSurface>
+      <div style={{ padding: 16, background: PANEL }}>
+        <div className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 6 }}>{heading}</div>
+        <p style={{ fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>{subline}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── the confirm-step pitch ──────────────────────────────────────────────
+// The 11 land on a real PitchSurface, grouped by position, attackers nearest
+// the top of the pitch the same way every other Fantasy scene draws a squad
+// (see RulesCards.tsx's SquadScene). The 4 bench sit in the real BenchStrip.
+// Tapping a marker's face opens the existing PickerSheet to fix that slot;
+// the small C/V/Bench controls underneath keep the rest of the confirm
+// screen's logic (captain, vice, bench) reachable without a second list.
+
+const ROW_ORDER: Pos[] = ["FWD", "MID", "DEF", "GK"];
+
+function resolvedPos(slot: Slot, player: ClientPoolPlayer | null): Pos {
+  return (player?.pos ?? slot.extracted.position) as Pos;
+}
+
+function buildXiRows(slots: Slot[], poolById: (id: number | null) => ClientPoolPlayer | null) {
+  const withIndex = slots.map((slot, index) => ({ slot, index }));
+  return ROW_ORDER.map((pos) => ({
+    pos,
+    entries: withIndex.filter(({ slot }) => !slot.isBench && resolvedPos(slot, poolById(slot.id)) === pos),
+  }));
+}
+
+/** Delay, in ms, for each slot's staggered landing — top row to bottom row,
+ *  then the bench — so the pitch reads as populating in real time on first
+ *  paint rather than appearing all at once. */
+function buildStaggerDelays(slots: Slot[], poolById: (id: number | null) => ClientPoolPlayer | null): Record<number, number> {
+  const order: number[] = [];
+  for (const pos of ROW_ORDER) {
+    slots.forEach((slot, index) => { if (!slot.isBench && resolvedPos(slot, poolById(slot.id)) === pos) order.push(index); });
+  }
+  slots.forEach((slot, index) => { if (slot.isBench) order.push(index); });
+  const delays: Record<number, number> = {};
+  order.forEach((slotIndex, i) => { delays[slotIndex] = i * 60; });
+  return delays;
+}
+
+function XiMarker({
+  slot, player, isCaptain, isVice, size, delayMs, onPick, onSetCaptain, onSetVice, onToggleBench,
 }: {
-  slot: Slot; player: ClientPoolPlayer | null; isCaptain: boolean; isVice: boolean;
+  slot: Slot; player: ClientPoolPlayer | null; isCaptain: boolean; isVice: boolean; size: number; delayMs: number;
   onPick: () => void; onSetCaptain: () => void; onSetVice: () => void; onToggleBench: () => void;
 }) {
   const needsCheck = slot.confidence === "low" || slot.id === null;
   const note = flagNote(slot.flags);
   const name = player?.name ?? slot.extracted.surname;
+  const label = player ? surname(player.name) : slot.extracted.surname;
   const club = player?.club ?? slot.extracted.club;
-  const pos = player?.pos ?? slot.extracted.position;
+  const pos = resolvedPos(slot, player);
   const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12,
-      background: PANEL, border: `1px solid ${needsCheck ? tint(CORAL, "66") : LINE}`,
-    }}>
-      <PlayerAvatar name={name} avatarUrl={avatarUrl} size={38} />
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: slot.id ? INK : CORAL, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {name}
-          </span>
-          <PosTag pos={pos} />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-          <Crest club={club} size={14} />
-          <span style={{ fontSize: 11.5, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{club}</span>
-        </div>
-        {note && <div style={{ fontSize: 11, color: CORAL, marginTop: 3 }}>{note}</div>}
+    <div className="rate-marker-in" style={{
+      flex: "1 1 0", minWidth: 0, maxWidth: 72, display: "flex", flexDirection: "column",
+      alignItems: "center", gap: 4, "--stagger-delay": `${delayMs}ms`,
+    } as CSSProperties}>
+      <button type="button" onClick={onPick}
+        aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ". Tap to change"}`}
+        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%" }}>
+        <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size}
+          isCaptain={isCaptain} isVice={isVice} pos={pos} doubt={needsCheck ? (note ?? "Check this pick") : undefined} />
+      </button>
+      <div style={{ display: "flex", gap: 3 }}>
+        <button type="button" onClick={onSetCaptain} aria-pressed={isCaptain} aria-label="Set captain"
+          style={{
+            width: 17, height: 17, borderRadius: 999, fontSize: 9, fontWeight: 800, cursor: "pointer", padding: 0, lineHeight: 1,
+            border: `1px solid ${isCaptain ? GOLD : LINE}`, background: isCaptain ? tint(GOLD, "26") : "transparent",
+            color: isCaptain ? GOLD : MUTED,
+          }}>C</button>
+        <button type="button" onClick={onSetVice} aria-pressed={isVice} aria-label="Set vice captain"
+          style={{
+            width: 17, height: 17, borderRadius: 999, fontSize: 9, fontWeight: 800, cursor: "pointer", padding: 0, lineHeight: 1,
+            border: `1px solid ${isVice ? TEAL : LINE}`, background: isVice ? tint(TEAL, "26") : "transparent",
+            color: isVice ? TEAL : MUTED,
+          }}>V</button>
+        <button type="button" onClick={onToggleBench} aria-label="Move to bench"
+          style={{
+            fontSize: 8.5, fontWeight: 700, cursor: "pointer", padding: "0 5px", height: 17, lineHeight: "16px",
+            border: `1px solid ${LINE}`, borderRadius: 999, background: "transparent", color: MUTED,
+          }}>Bench</button>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={onSetCaptain} aria-pressed={isCaptain}
-            style={{
-              width: 22, height: 22, borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer",
-              border: `1px solid ${isCaptain ? GOLD : LINE}`, background: isCaptain ? tint(GOLD, "26") : "transparent",
-              color: isCaptain ? GOLD : MUTED,
-            }}>C</button>
-          <button onClick={onSetVice} aria-pressed={isVice}
-            style={{
-              width: 22, height: 22, borderRadius: 999, fontSize: 11, fontWeight: 800, cursor: "pointer",
-              border: `1px solid ${isVice ? TEAL : LINE}`, background: isVice ? tint(TEAL, "26") : "transparent",
-              color: isVice ? TEAL : MUTED,
-            }}>V</button>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onToggleBench} style={{ background: "none", border: "none", color: MUTED, fontSize: 11, fontWeight: 600, cursor: "pointer", padding: 0 }}>
-            {slot.isBench ? "Move to XI" : "Bench"}
-          </button>
-          <button onClick={onPick} style={{ background: "none", border: "none", color: TEAL, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0 }}>
-            Change
-          </button>
-        </div>
-      </div>
+    </div>
+  );
+}
+
+function BenchMarker({ slot, player, size, delayMs, onPick, onToggleBench }: {
+  slot: Slot; player: ClientPoolPlayer | null; size: number; delayMs: number;
+  onPick: () => void; onToggleBench: () => void;
+}) {
+  const needsCheck = slot.confidence === "low" || slot.id === null;
+  const note = flagNote(slot.flags);
+  const name = player?.name ?? slot.extracted.surname;
+  const label = player ? surname(player.name) : slot.extracted.surname;
+  const club = player?.club ?? slot.extracted.club;
+  const pos = resolvedPos(slot, player);
+  const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
+
+  return (
+    <div className="rate-marker-in" style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 3, "--stagger-delay": `${delayMs}ms`,
+    } as CSSProperties}>
+      <button type="button" onClick={onPick}
+        aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ". Tap to change"}`}
+        style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: "100%" }}>
+        <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size} pos={pos}
+          doubt={needsCheck ? (note ?? "Check this pick") : undefined} dim />
+      </button>
+      <button type="button" onClick={onToggleBench} aria-label="Move to starting XI"
+        style={{
+          fontSize: 8.5, fontWeight: 700, cursor: "pointer", padding: "0 6px", height: 16, lineHeight: "15px",
+          border: `1px solid ${tint(TEAL, "44")}`, borderRadius: 999, background: "transparent", color: TEAL,
+        }}>Start</button>
     </div>
   );
 }
@@ -192,6 +276,7 @@ export default function RateFromScreenshotPage() {
   const [viceId, setViceId] = useState<number | null>(null);
   const [pickingIndex, setPickingIndex] = useState<number | null>(null);
   const [result, setResult] = useState<RatingResult | null>(null);
+  const [introDone, setIntroDone] = useState(false);
 
   const poolById = useCallback((id: number | null) => pool.find((p) => p.id === id) ?? null, [pool]);
 
@@ -240,10 +325,13 @@ export default function RateFromScreenshotPage() {
   const captainInXi = captainId !== null && xiSlots.some((s) => s.id === captainId);
   const canContinue = slots.length === 15 && allIds.length === 15 && uniqueIds.size === 15
     && xiSlots.length === 11 && benchSlots.length === 4 && captainInXi;
+  const needsCheckCount = slots.filter((s) => s.confidence === "low" || s.id === null).length;
 
   const submitForRating = async () => {
     if (!canContinue || captainId === null) return;
     setStep("rating");
+    setIntroDone(false);
+    setResult(null);
     setErr(null);
     try {
       const res = await fetch("/api/fantasy/rate-guest", {
@@ -255,17 +343,28 @@ export default function RateFromScreenshotPage() {
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Couldn't rate that squad. Try again.");
       setResult(json as RatingResult);
-      setStep("result");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't rate that squad. Try again.");
       setStep("confirm");
     }
   };
 
+  // The result only reveals once BOTH the three-card beat is finished and
+  // the rating has actually landed — whichever comes last. If the POST beat
+  // the user to the end of the cards, this fires the instant they finish
+  // and nothing else renders in between; if the cards beat the POST, the
+  // ScoutScanState grading beat below holds the screen for the gap.
+  useEffect(() => {
+    if (step === "rating" && introDone && result) setStep("result");
+  }, [step, introDone, result]);
+
   const saveAndSignIn = () => {
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(allIds)); } catch { /* private mode */ }
     router.push("/auth/sign-in?next=/fantasy/build");
   };
+
+  const xiRows = buildXiRows(slots, poolById);
+  const staggerDelays = buildStaggerDelays(slots, poolById);
 
   return (
     <>
@@ -292,10 +391,9 @@ export default function RateFromScreenshotPage() {
         )}
 
         {step === "reading" && (
-          <Card>
-            <div className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 6 }}>Reading your team</div>
-            <p style={{ fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>Give us a moment, friend.</p>
-          </Card>
+          <ScoutScanState
+            heading="The Scout is reading your team"
+            subline="Matching each name on your screenshot to the real Premier League squad." />
         )}
 
         {step === "confirm" && (
@@ -305,32 +403,37 @@ export default function RateFromScreenshotPage() {
               Fix anything we got wrong, set your captain and vice, then carry on.
             </p>
 
-            <div style={{ fontSize: 11.5, letterSpacing: "0.08em", color: MUTED, fontWeight: 700, margin: "10px 2px 6px" }}>
-              STARTING XI ({xiSlots.length}/11)
-            </div>
-            <div style={{ display: "grid", gap: 6, marginBottom: 14 }}>
-              {slots.map((slot, i) => !slot.isBench && (
-                <SlotRow key={i} slot={slot} player={poolById(slot.id)}
-                  isCaptain={slot.id !== null && slot.id === captainId}
-                  isVice={slot.id !== null && slot.id === viceId}
-                  onPick={() => setPickingIndex(i)}
-                  onSetCaptain={() => slot.id !== null && setCaptainId(slot.id)}
-                  onSetVice={() => slot.id !== null && setViceId(slot.id)}
-                  onToggleBench={() => setSlotAt(i, { ...slot, isBench: true })} />
-              ))}
-            </div>
+            {needsCheckCount > 0 && (
+              <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>
+                {needsCheckCount} pick{needsCheckCount === 1 ? "" : "s"} need a check. Tap the marker to fix it.
+              </p>
+            )}
 
-            <div style={{ fontSize: 11.5, letterSpacing: "0.08em", color: MUTED, fontWeight: 700, margin: "10px 2px 6px" }}>
-              BENCH ({benchSlots.length}/4)
-            </div>
-            <div style={{ display: "grid", gap: 6, marginBottom: 16 }}>
-              {slots.map((slot, i) => slot.isBench && (
-                <SlotRow key={i} slot={slot} player={poolById(slot.id)}
-                  isCaptain={false} isVice={false}
-                  onPick={() => setPickingIndex(i)}
-                  onSetCaptain={() => {}} onSetVice={() => {}}
-                  onToggleBench={() => setSlotAt(i, { ...slot, isBench: false })} />
-              ))}
+            <div className="rounded-2xl" style={{ border: `1px solid ${LINE}`, display: "flex", alignItems: "stretch", overflow: "hidden", marginBottom: 16 }}>
+              <PitchSurface round="left">
+                {xiRows.map((row) => row.entries.length > 0 && (
+                  <div key={row.pos} style={{ display: "flex", justifyContent: "center", gap: 4 }}>
+                    {row.entries.map(({ slot, index }) => (
+                      <XiMarker key={index} slot={slot} player={poolById(slot.id)}
+                        isCaptain={slot.id !== null && slot.id === captainId}
+                        isVice={slot.id !== null && slot.id === viceId}
+                        size={row.entries.length >= 5 ? 26 : row.entries.length >= 4 ? 30 : 36}
+                        delayMs={staggerDelays[index] ?? 0}
+                        onPick={() => setPickingIndex(index)}
+                        onSetCaptain={() => slot.id !== null && setCaptainId(slot.id)}
+                        onSetVice={() => slot.id !== null && setViceId(slot.id)}
+                        onToggleBench={() => setSlotAt(index, { ...slot, isBench: true })} />
+                    ))}
+                  </div>
+                ))}
+              </PitchSurface>
+              <BenchStrip>
+                {slots.map((slot, index) => slot.isBench && (
+                  <BenchMarker key={index} slot={slot} player={poolById(slot.id)} size={26} delayMs={staggerDelays[index] ?? 0}
+                    onPick={() => setPickingIndex(index)}
+                    onToggleBench={() => setSlotAt(index, { ...slot, isBench: false })} />
+                ))}
+              </BenchStrip>
             </div>
 
             {err && <div style={{ marginBottom: 12 }}><ErrorState message={err} /></div>}
@@ -360,28 +463,33 @@ export default function RateFromScreenshotPage() {
         )}
 
         {step === "rating" && (
-          <Card>
-            <div className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 6 }}>Grading your team</div>
-            <p style={{ fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>The Scout is having a look.</p>
-          </Card>
+          !introDone
+            ? <RateIntroCards onDone={() => setIntroDone(true)} />
+            : !result
+            ? <ScoutScanState
+                heading="The Scout is grading your team"
+                subline="Weighing projections, fixtures and who is actually fit." />
+            : null
         )}
 
         {step === "result" && result && (
           <>
-            <Card>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-                <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(result.score) }}>
-                  {result.score.toFixed(1)}
-                </span>
-                <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
-              </div>
-              <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{result.verdict}</p>
-              <BandGroups bands={result.bands} />
-              <div style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6, marginTop: 4 }}>
-                WORTH A LOOK
-              </div>
-              <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{result.moveLine}</p>
-            </Card>
+            <div className="rate-result-in">
+              <Card>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
+                  <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(result.score) }}>
+                    {result.score.toFixed(1)}
+                  </span>
+                  <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
+                </div>
+                <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{result.verdict}</p>
+                <BandGroups bands={result.bands} />
+                <div style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6, marginTop: 4 }}>
+                  WORTH A LOOK
+                </div>
+                <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{result.moveLine}</p>
+              </Card>
+            </div>
 
             <div style={{ marginTop: 14, borderRadius: 16, padding: 18, background: `linear-gradient(150deg, ${tint(TEAL, "22")}, ${PANEL})`, border: `1px solid ${tint(TEAL, "55")}` }}>
               <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>

@@ -9,8 +9,10 @@
  * Purely presentational — no fetching, no state beyond what's passed in.
  */
 import { CORAL, INK, LIME, MUTED, tint } from "./shared";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { faceFor } from "@/lib/fantasy/faces";
 
-export interface BandCard { name: string; pos: string; note: string }
+export interface BandCard { id: number; name: string; pos: string; note: string; avatarUrl?: string | null }
 export interface RatingBandsShape { strong: BandCard[]; decent: BandCard[]; weak: BandCard[] }
 
 export const scoreColor = (score: number): string => {
@@ -41,11 +43,14 @@ export function BandGroup({ tone, players }: { tone: BandTone; players: BandCard
           <div key={`${tone}${i}`} className="font-body rounded-xl" style={{
             padding: "8px 12px", fontSize: 12.5, lineHeight: 1.45,
             background: tint(accent, "12"), border: `1px solid ${tint(accent, "3a")}`,
-            display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap",
+            display: "flex", alignItems: "center", gap: 8,
           }}>
-            <span style={{ color: INK, fontWeight: 700 }}>{p.name}</span>
-            <span style={{ color: MUTED, fontSize: 11 }}>{p.pos}</span>
-            <span style={{ color: MUTED }}>{p.note}</span>
+            <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl ?? faceFor(p.name)} size={28} />
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap", minWidth: 0 }}>
+              <span style={{ color: INK, fontWeight: 700 }}>{p.name}</span>
+              <span style={{ color: MUTED, fontSize: 11 }}>{p.pos}</span>
+              <span style={{ color: MUTED }}>{p.note}</span>
+            </div>
           </div>
         ))}
       </div>

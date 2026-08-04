@@ -15,6 +15,7 @@
  */
 import "server-only";
 import { BUDGET_TENTHS, XI_SIZE } from "./engine";
+import { faceUrlById } from "./faces";
 import {
   type Db, type RatingInputs, type RatingPlayer, type RatingResponse, type RatingBands, type BandCard,
   buildRatingInputs, loadRatingMarket, scoreSquad, deriveMove, bandPlayers, groupBands, ratingFacts,
@@ -77,7 +78,8 @@ export async function rateGuestSquad(db: Db, squad: GuestSquadShape): Promise<Ra
   const modelOut = await callModelForRating(facts);
   const copy = composeRatingCopy(facts, modelOut);
 
-  const toCard = (b: (typeof banded)[number]): BandCard => ({ name: b.name, pos: b.pos, note: b.note });
+  const toCard = (b: (typeof banded)[number]): BandCard =>
+    ({ id: b.id, name: b.name, pos: b.pos, note: b.note, avatarUrl: faceUrlById(b.id) ?? null });
   const bands: RatingBands = {
     strong: grouped.strong.map(toCard),
     decent: grouped.decent.map(toCard),
