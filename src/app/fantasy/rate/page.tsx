@@ -149,13 +149,20 @@ function buildStaggerDelays(slots: Slot[], poolById: (id: number | null) => Clie
   return delays;
 }
 
+// The confirm step exists for ONE job: fix the picks we could not match, so the
+// grade can run. A matched pick is therefore display-only (no tap, no options);
+// only an unmatched/low-confidence pick is a button, and tapping it goes straight
+// to the picker to choose who it is. Unmatched picks wear a bold coral ring
+// (PlayerMarker's `flagged`) so a viewer sees which ones need them at a glance.
 function XiMarker({
-  slot, player, isCaptain, isVice, size, delayMs, selected, onSelect,
+  slot, player, isCaptain, isVice, size, delayMs, onFix, duplicate = false,
 }: {
   slot: Slot; player: ClientPoolPlayer | null; isCaptain: boolean; isVice: boolean; size: number; delayMs: number;
-  selected: boolean; onSelect: () => void;
+  onFix: () => void; duplicate?: boolean;
 }) {
-  const needsCheck = slot.confidence === "low" || slot.id === null;
+  // A duplicate (two slots resolved to the same player) is a wrong match, so it
+  // needs fixing too — otherwise it would be a locked, unfixable dead end.
+  const needsCheck = slot.confidence === "low" || slot.id === null || duplicate;
   const note = flagNote(slot.flags);
   const name = player?.name ?? slot.extracted.surname;
   const label = player ? surname(player.name) : slot.extracted.surname;
@@ -163,28 +170,34 @@ function XiMarker({
   const pos = resolvedPos(slot, player);
   const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
 
-  // Just the face and name on the pitch — clean. The captain, vice, bench and
-  // change controls live in the action bar below, shown only for the tapped
-  // player, so eleven sets of buttons never crowd the pitch at once.
+  const marker = (
+    <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size}
+      isCaptain={isCaptain} isVice={isVice} pos={pos}
+      flagged={needsCheck} doubt={needsCheck ? (note ?? "Tap to pick who this is") : undefined} />
+  );
+  if (!needsCheck) {
+    return (
+      <div className="rate-marker-in" style={{ flex: "1 1 0", minWidth: 0, maxWidth: 72, padding: 2, "--stagger-delay": `${delayMs}ms` } as CSSProperties}>
+        {marker}
+      </div>
+    );
+  }
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className="rate-marker-in"
-      aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ""}. Tap for options`}
+    <button type="button" onClick={onFix} className="rate-marker-in"
+      aria-label={`${name}: we could not match this one. Tap to pick the right player.`}
       style={{
         flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
-        padding: 2, borderRadius: 12, "--stagger-delay": `${delayMs}ms`, outlineOffset: 1,
-        border: "none", outline: `1.5px solid ${selected ? tint(TEAL, "cc") : "transparent"}`,
+        padding: 2, borderRadius: 12, border: "none", "--stagger-delay": `${delayMs}ms`,
       } as CSSProperties}>
-      <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size}
-        isCaptain={isCaptain} isVice={isVice} pos={pos} doubt={needsCheck ? (note ?? "Check this pick") : undefined} />
+      {marker}
     </button>
   );
 }
 
-function BenchMarker({ slot, player, size, delayMs, selected, onSelect }: {
-  slot: Slot; player: ClientPoolPlayer | null; size: number; delayMs: number;
-  selected: boolean; onSelect: () => void;
+function BenchMarker({ slot, player, size, delayMs, onFix, duplicate = false }: {
+  slot: Slot; player: ClientPoolPlayer | null; size: number; delayMs: number; onFix: () => void; duplicate?: boolean;
 }) {
-  const needsCheck = slot.confidence === "low" || slot.id === null;
+  const needsCheck = slot.confidence === "low" || slot.id === null || duplicate;
   const note = flagNote(slot.flags);
   const name = player?.name ?? slot.extracted.surname;
   const label = player ? surname(player.name) : slot.extracted.surname;
@@ -192,15 +205,20 @@ function BenchMarker({ slot, player, size, delayMs, selected, onSelect }: {
   const pos = resolvedPos(slot, player);
   const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
 
+  const marker = (
+    <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size} pos={pos}
+      flagged={needsCheck} doubt={needsCheck ? (note ?? "Tap to pick who this is") : undefined} dim />
+  );
+  if (!needsCheck) {
+    return (
+      <div className="rate-marker-in" style={{ padding: 2, "--stagger-delay": `${delayMs}ms` } as CSSProperties}>{marker}</div>
+    );
+  }
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className="rate-marker-in"
-      aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ""}. Tap for options`}
-      style={{
-        background: "none", cursor: "pointer", padding: 2, borderRadius: 12, "--stagger-delay": `${delayMs}ms`,
-        outlineOffset: 1, border: "none", outline: `1.5px solid ${selected ? tint(TEAL, "cc") : "transparent"}`,
-      } as CSSProperties}>
-      <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size} pos={pos}
-        doubt={needsCheck ? (note ?? "Check this pick") : undefined} dim />
+    <button type="button" onClick={onFix} className="rate-marker-in"
+      aria-label={`${name}: we could not match this one. Tap to pick the right player.`}
+      style={{ background: "none", cursor: "pointer", padding: 2, borderRadius: 12, border: "none", "--stagger-delay": `${delayMs}ms` } as CSSProperties}>
+      {marker}
     </button>
   );
 }
@@ -263,7 +281,6 @@ export default function RateFromScreenshotPage() {
   const [captainId, setCaptainId] = useState<number | null>(null);
   const [viceId, setViceId] = useState<number | null>(null);
   const [pickingIndex, setPickingIndex] = useState<number | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   // The persisted share id — once the grade lands it's created server-side and
   // the flow redirects to /r/[id], the single end page for a Scout analysis.
   const [shareId, setShareId] = useState<string | null>(null);
@@ -347,10 +364,14 @@ export default function RateFromScreenshotPage() {
   const benchSlots = slots.filter((s) => s.isBench);
   const allIds = slots.map((s) => s.id).filter((id): id is number => id !== null);
   const uniqueIds = new Set(allIds);
+  // Ids that landed in more than one slot — every slot holding one is a wrong
+  // match to flag (circle + make tappable), same as an unmatched pick.
+  const dupIdSet = new Set(allIds.filter((id, i) => allIds.indexOf(id) !== i));
+  const isDup = (id: number | null): boolean => id !== null && dupIdSet.has(id);
   const captainInXi = captainId !== null && xiSlots.some((s) => s.id === captainId);
   const canContinue = slots.length === 15 && allIds.length === 15 && uniqueIds.size === 15
     && xiSlots.length === 11 && benchSlots.length === 4 && captainInXi;
-  const needsCheckCount = slots.filter((s) => s.confidence === "low" || s.id === null).length;
+  const needsCheckCount = slots.filter((s) => s.confidence === "low" || s.id === null || isDup(s.id)).length;
 
   const submitForRating = async () => {
     if (!canContinue || captainId === null) return;
@@ -512,12 +533,12 @@ export default function RateFromScreenshotPage() {
           <>
             <div className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 4 }}>Is this your team?</div>
             <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-              Tap a player to change them, set your captain or move them to the bench.
+              This is the team we read from your screenshot.
             </p>
 
             {needsCheckCount > 0 && (
               <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>
-                {needsCheckCount} pick{needsCheckCount === 1 ? "" : "s"} need a check. Tap the marker to fix it.
+                {needsCheckCount} pick{needsCheckCount === 1 ? "" : "s"} we could not match {needsCheckCount === 1 ? "is" : "are"} circled in red. Tap {needsCheckCount === 1 ? "it" : "each one"} to pick who it is.
               </p>
             )}
 
@@ -531,8 +552,8 @@ export default function RateFromScreenshotPage() {
                         isVice={slot.id !== null && slot.id === viceId}
                         size={row.entries.length >= 5 ? 26 : row.entries.length >= 4 ? 30 : 36}
                         delayMs={staggerDelays[index] ?? 0}
-                        selected={selectedIndex === index}
-                        onSelect={() => setSelectedIndex(selectedIndex === index ? null : index)} />
+                        duplicate={isDup(slot.id)}
+                        onFix={() => setPickingIndex(index)} />
                     ))}
                   </div>
                 ))}
@@ -540,39 +561,11 @@ export default function RateFromScreenshotPage() {
               <BenchStrip>
                 {slots.map((slot, index) => slot.isBench && (
                   <BenchMarker key={index} slot={slot} player={poolById(slot.id)} size={26} delayMs={staggerDelays[index] ?? 0}
-                    selected={selectedIndex === index}
-                    onSelect={() => setSelectedIndex(selectedIndex === index ? null : index)} />
+                    duplicate={isDup(slot.id)}
+                    onFix={() => setPickingIndex(index)} />
                 ))}
               </BenchStrip>
             </div>
-
-            {/* Action bar for the tapped player — keeps the pitch clean by
-                showing captain/vice/bench/change for ONE marker at a time. */}
-            {selectedIndex !== null && slots[selectedIndex] && (() => {
-              const s = slots[selectedIndex];
-              const p = poolById(s.id);
-              const nm = p ? p.name : (s.extracted.surname || "This pick");
-              const chip = (text: string, onClick: () => void, active = false) => (
-                <button type="button" onClick={onClick} style={{
-                  fontSize: 12, fontWeight: 700, padding: "7px 12px", borderRadius: 999, cursor: "pointer",
-                  border: `1px solid ${active ? TEAL : LINE}`, background: active ? tint(TEAL, "1e") : "transparent",
-                  color: active ? TEAL : INK,
-                }}>{text}</button>
-              );
-              return (
-                <div style={{
-                  display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "10px 12px", marginBottom: 12,
-                  background: PANEL, border: `1px solid ${tint(TEAL, "55")}`, borderRadius: 12,
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: INK, marginRight: "auto" }}>{nm}</span>
-                  {!s.isBench && chip("Captain", () => { if (s.id !== null) setCaptainId(s.id); }, s.id !== null && s.id === captainId)}
-                  {!s.isBench && chip("Vice", () => { if (s.id !== null) setViceId(s.id); }, s.id !== null && s.id === viceId)}
-                  {!s.isBench && chip("Bench", () => { setSlotAt(selectedIndex, { ...s, isBench: true }); setSelectedIndex(null); })}
-                  {s.isBench && chip("Start", () => { setSlotAt(selectedIndex, { ...s, isBench: false }); setSelectedIndex(null); })}
-                  {chip("Change", () => setPickingIndex(selectedIndex))}
-                </div>
-              );
-            })()}
 
             {err && <div style={{ marginBottom: 12 }}><ErrorState message={err} /></div>}
 
@@ -584,9 +577,9 @@ export default function RateFromScreenshotPage() {
               const dupIds = Array.from(new Set(allIds.filter((id, i) => allIds.indexOf(id) !== i)));
               const dupNames = dupIds.map((id) => poolById(id)?.name ?? "a pick");
               const msg = unresolved.length
-                ? `We could not match ${listNames(unresolved)}. Tap ${unresolved.length === 1 ? "that marker" : "each amber marker"}, then Change to pick the right player.`
+                ? `We could not match ${listNames(unresolved)}. Tap ${unresolved.length === 1 ? "the circled player" : "each circled player"} to pick who it is.`
                 : dupNames.length
-                ? `${listNames(dupNames)} ${dupNames.length === 1 ? "is" : "are"} picked twice. Tap one and change it.`
+                ? `${listNames(dupNames)} ${dupNames.length === 1 ? "is" : "are"} picked twice. Tap ${dupNames.length === 1 ? "it" : "one"} to pick who it is.`
                 : xiSlots.length !== 11 || benchSlots.length !== 4
                 ? "You need exactly eleven starters and four on the bench."
                 : "Pick a captain from your starting eleven.";
