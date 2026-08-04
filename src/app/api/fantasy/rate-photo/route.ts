@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { matchExtractedSquad, sanitizeExtracted, enforceOneGkStarter, padSlots, type ExtractedPlayer, type MatchPoolPlayer } from "@/lib/fantasy/screenshotMatch";
+import { matchExtractedSquad, sanitizeExtracted, enforceOneGkStarter, repairInvalidFormation, padSlots, type ExtractedPlayer, type MatchPoolPlayer } from "@/lib/fantasy/screenshotMatch";
 import { enginePool } from "@/lib/fantasy/pool";
 
 /**
@@ -30,9 +30,28 @@ const PER_IP_HOURLY_CAP = 5;
 const PER_IP_DAILY_CAP = 20;
 const GLOBAL_DAILY_CAP = 500;
 
-const EXTRACT_SYSTEM = `You read an FPL "Pick Team" screenshot for YourScore, a
-football app. Extract exactly what is printed on the pitch — never invent a
-player and never skip a slot you can read.
+const EXTRACT_SYSTEM = `You read an FPL squad screenshot for YourScore, a
+football app. Extract exactly what is printed — never invent a player and
+never skip one you can read.
+
+There are TWO different FPL screens you might see, and they need different
+handling:
+
+1. "PICK TEAM" screen — a formation drawn on a pitch, with a separate strip of
+   4 substitutes set apart from it (to the side or below, often smaller or
+   shaded, numbered). Here the bench is VISUALLY OBVIOUS: put the 11 inside the
+   formation in "starters", the 4 set-apart ones in "substitutes".
+2. "TRANSFERS" (or squad-list) screen — your full 15 shown grouped ONLY by
+   position count (always 2 goalkeepers, 5 defenders, 5 midfielders, 3
+   forwards), usually under a "Transfers" heading with a budget/deadline bar
+   above and a Pitch/List toggle. This screen shows NO starting XI and NO
+   bench — that distinction simply is not on screen, so do not guess it from
+   row position. Instead, split starters/substitutes using PRICE as your best
+   guide: the higher-priced player at each position is more likely to start
+   (a manager's best players cost more), while keeping to a legal XI shape —
+   one goalkeeper, 3 to 5 defenders, 2 to 5 midfielders, 1 to 3 forwards, eleven
+   total. Never leave the highest-priced forward among the substitutes if a
+   cheaper one could make way instead.
 
 RULES
 - Read each player's club from the KIT they are wearing, not from a guess
@@ -45,18 +64,10 @@ RULES
   same-surname squad members (e.g. "N.Williams"), keep it exactly like that. If
   a name is clearly cut off on screen (e.g. "Calvert-Le..."), give the player's
   full surname ("Calvert-Lewin").
-- STARTERS vs SUBSTITUTES matters most, so get this right. The 11 STARTERS are
-  the players arranged in the formation on the pitch. The 4 SUBSTITUTES are shown
-  SEPARATELY from that formation: in FPL they sit in their own strip, set apart
-  from the pitch (usually to the side or below it, often smaller or shaded, and
-  numbered). Put the 11 players inside the formation in "starters" and the 4
-  set-apart players in "substitutes". It is always exactly 11 and exactly 4.
-- Read each starter's position from the row they sit in: ONE goalkeeper at the
-  very back, then defenders, midfielders and forwards in rows moving up the pitch.
-  The starting eleven has EXACTLY ONE goalkeeper; the second goalkeeper is always
-  a substitute. If you end up with two goalkeepers among the starters, or an
-  obvious first-choice player sitting among the substitutes, you have mixed up the
-  two groups, so look again at which players are inside the formation.
+- Read each player's price if one is printed near them (e.g. "£4.5m" -> 4.5).
+  Leave it out if no price is shown.
+- On EITHER screen: the starting eleven has EXACTLY ONE goalkeeper; the second
+  goalkeeper is always a substitute.
 - A "C" armband means captain, a "V" armband means vice captain. If no armband is
   visible on anyone, set isCaptain and isVice false for everyone.
 - If part of the squad is cut off or unreadable, extract what you CAN read and
@@ -81,17 +92,18 @@ async function extractSquad(image: string, mediaType: string): Promise<Extracted
       position: { type: "string", enum: ["GK", "DEF", "MID", "FWD"] },
       isCaptain: { type: "boolean" },
       isVice: { type: "boolean" },
+      price: { type: "number", description: "£m price printed near the player, e.g. 4.5 for '£4.5m'. Omit if not shown." },
     },
     required: ["surname", "club", "position", "isCaptain", "isVice"],
   };
   const tool = {
     name: "extract_squad",
-    description: "The players read off an FPL Pick Team screenshot, split into the eleven on the pitch and the four substitutes set apart from the formation.",
+    description: "The players read off an FPL squad screenshot, split into the eleven starters and the four substitutes.",
     input_schema: {
       type: "object",
       properties: {
-        starters: { type: "array", description: "The 11 players arranged in the formation on the pitch (exactly one is a goalkeeper).", items: playerItem },
-        substitutes: { type: "array", description: "The 4 players shown set apart from the formation (the bench), including the backup goalkeeper.", items: playerItem },
+        starters: { type: "array", description: "The 11 players you judge to be starting (exactly one is a goalkeeper).", items: playerItem },
+        substitutes: { type: "array", description: "The 4 remaining players (the bench), including the backup goalkeeper.", items: playerItem },
       },
       required: ["starters", "substitutes"],
     },
@@ -140,9 +152,11 @@ async function extractSquad(image: string, mediaType: string): Promise<Extracted
       ...substitutes.map((p) => (p && typeof p === "object" ? { ...(p as object), isBench: true } : p)),
     ];
     // The model output is untrusted — drop malformed entries, cap the length —
-    // then repair the one structural rule vision most often breaks: exactly one
-    // goalkeeper starts (the other is always a sub).
-    return enforceOneGkStarter(sanitizeExtracted(combined));
+    // then deterministically repair what vision most often gets wrong: exactly
+    // one goalkeeper starts, then the outfield formation is actually legal (FPL's
+    // "Transfers" screen has no bench signal at all, so a naive top-to-bottom
+    // read can leave zero forwards starting — see repairInvalidFormation).
+    return repairInvalidFormation(enforceOneGkStarter(sanitizeExtracted(combined)));
   } catch (e) {
     console.error("[rate-photo] vision call failed: exception", e);
     return null;
