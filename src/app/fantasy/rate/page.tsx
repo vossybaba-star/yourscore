@@ -155,10 +155,10 @@ function buildStaggerDelays(slots: Slot[], poolById: (id: number | null) => Clie
 // to the picker to choose who it is. Unmatched picks wear a bold coral ring
 // (PlayerMarker's `flagged`) so a viewer sees which ones need them at a glance.
 function XiMarker({
-  slot, player, isCaptain, isVice, size, delayMs, onFix, duplicate = false,
+  slot, player, isCaptain, isVice, size, delayMs, onFix, duplicate = false, captainMode = false, onSetCaptain,
 }: {
   slot: Slot; player: ClientPoolPlayer | null; isCaptain: boolean; isVice: boolean; size: number; delayMs: number;
-  onFix: () => void; duplicate?: boolean;
+  onFix: () => void; duplicate?: boolean; captainMode?: boolean; onSetCaptain?: () => void;
 }) {
   // A duplicate (two slots resolved to the same player) is a wrong match, so it
   // needs fixing too — otherwise it would be a locked, unfixable dead end.
@@ -175,22 +175,37 @@ function XiMarker({
       isCaptain={isCaptain} isVice={isVice} pos={pos}
       flagged={needsCheck} doubt={needsCheck ? (note ?? "Tap to pick who this is") : undefined} />
   );
-  if (!needsCheck) {
+  if (needsCheck) {
     return (
-      <div className="rate-marker-in" style={{ flex: "1 1 0", minWidth: 0, maxWidth: 72, padding: 2, "--stagger-delay": `${delayMs}ms` } as CSSProperties}>
+      <button type="button" onClick={onFix} className="rate-marker-in"
+        aria-label={`${name}: we could not match this one. Tap to pick the right player.`}
+        style={{
+          flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
+          padding: 2, borderRadius: 12, border: "none", "--stagger-delay": `${delayMs}ms`,
+        } as CSSProperties}>
         {marker}
-      </div>
+      </button>
+    );
+  }
+  // Captain-selection mode: no captain was read, so a matched starter becomes
+  // tappable (teal cue) to make them captain. Otherwise a matched pick is static.
+  if (captainMode && onSetCaptain) {
+    return (
+      <button type="button" onClick={onSetCaptain} className="rate-marker-in"
+        aria-label={`${name}: tap to make captain.`}
+        style={{
+          flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
+          padding: 2, borderRadius: 12, border: "none", outlineOffset: 1,
+          outline: `1.5px solid ${tint(TEAL, "aa")}`, "--stagger-delay": `${delayMs}ms`,
+        } as CSSProperties}>
+        {marker}
+      </button>
     );
   }
   return (
-    <button type="button" onClick={onFix} className="rate-marker-in"
-      aria-label={`${name}: we could not match this one. Tap to pick the right player.`}
-      style={{
-        flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
-        padding: 2, borderRadius: 12, border: "none", "--stagger-delay": `${delayMs}ms`,
-      } as CSSProperties}>
+    <div className="rate-marker-in" style={{ flex: "1 1 0", minWidth: 0, maxWidth: 72, padding: 2, "--stagger-delay": `${delayMs}ms` } as CSSProperties}>
       {marker}
-    </button>
+    </div>
   );
 }
 
@@ -369,8 +384,12 @@ export default function RateFromScreenshotPage() {
   const dupIdSet = new Set(allIds.filter((id, i) => allIds.indexOf(id) !== i));
   const isDup = (id: number | null): boolean => id !== null && dupIdSet.has(id);
   const captainInXi = captainId !== null && xiSlots.some((s) => s.id === captainId);
-  const canContinue = slots.length === 15 && allIds.length === 15 && uniqueIds.size === 15
-    && xiSlots.length === 11 && benchSlots.length === 4 && captainInXi;
+  const squadReady = slots.length === 15 && allIds.length === 15 && uniqueIds.size === 15
+    && xiSlots.length === 11 && benchSlots.length === 4;
+  const canContinue = squadReady && captainInXi;
+  // Everything matched but no captain was read — let the viewer tap one on the
+  // pitch. Without this the flow could ask for a captain with no way to set it.
+  const needsCaptain = squadReady && !captainInXi;
   const needsCheckCount = slots.filter((s) => s.confidence === "low" || s.id === null || isDup(s.id)).length;
 
   const submitForRating = async () => {
@@ -553,6 +572,8 @@ export default function RateFromScreenshotPage() {
                         size={row.entries.length >= 5 ? 26 : row.entries.length >= 4 ? 30 : 36}
                         delayMs={staggerDelays[index] ?? 0}
                         duplicate={isDup(slot.id)}
+                        captainMode={needsCaptain}
+                        onSetCaptain={() => { if (slot.id !== null) setCaptainId(slot.id); }}
                         onFix={() => setPickingIndex(index)} />
                     ))}
                   </div>
@@ -582,7 +603,7 @@ export default function RateFromScreenshotPage() {
                 ? `${listNames(dupNames)} ${dupNames.length === 1 ? "is" : "are"} picked twice. Tap ${dupNames.length === 1 ? "it" : "one"} to pick who it is.`
                 : xiSlots.length !== 11 || benchSlots.length !== 4
                 ? "You need exactly eleven starters and four on the bench."
-                : "Pick a captain from your starting eleven.";
+                : "No captain was on your screenshot. Tap a player in your eleven to make them captain.";
               return <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>{msg}</p>;
             })()}
             <Btn gold disabled={!canContinue} onClick={submitForRating}>Grade my team</Btn>

@@ -241,6 +241,32 @@ export function sanitizeExtracted(raw: unknown): ExtractedPlayer[] {
   return out;
 }
 
+/** Repair the one structural rule the vision model most often breaks on an FPL
+ *  team: EXACTLY ONE goalkeeper starts (the second is always a substitute). Only
+ *  touches the clear case — a standard two-keeper squad whose GK split is wrong —
+ *  and leaves everything else (cropped reads, odd shapes) to padSlots. Works on
+ *  the isBench flags so it composes before matching. Pure. */
+export function enforceOneGkStarter(players: ExtractedPlayer[]): ExtractedPlayer[] {
+  const gks = players.filter((p) => p.position === "GK");
+  if (gks.length !== 2) return players; // not the standard two-keeper squad
+  const startingGks = gks.filter((p) => !p.isBench);
+  if (startingGks.length === 1) return players; // already valid
+
+  const out = players.map((p) => ({ ...p }));
+  if (startingGks.length === 2) {
+    // Two keepers starting: bench the second, start the first spare outfielder.
+    const secondGk = out.filter((p) => p.position === "GK" && !p.isBench)[1];
+    const spareOutfielder = out.find((p) => p.isBench && p.position !== "GK");
+    if (secondGk && spareOutfielder) { secondGk.isBench = true; spareOutfielder.isBench = false; }
+  } else {
+    // No keeper starting: start the first benched keeper, bench a starting outfielder.
+    const benchGk = out.find((p) => p.position === "GK" && p.isBench);
+    const startingOutfielder = out.find((p) => !p.isBench && p.position !== "GK");
+    if (benchGk && startingOutfielder) { benchGk.isBench = false; startingOutfielder.isBench = true; }
+  }
+  return out;
+}
+
 const XI_SLOTS = 11;
 const BENCH_SLOTS = 4;
 

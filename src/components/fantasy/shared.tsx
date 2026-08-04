@@ -218,6 +218,8 @@ export function Sheet({ onClose, labelledBy, children }: {
   // at the document root frees the z-60 overlay to sit above the nav everywhere.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // Visual-viewport rect, so the sheet can dodge the on-screen keyboard (see below).
+  const [vv, setVv] = useState<{ top: number; height: number } | null>(null);
 
   // Latest onClose without making it an effect dependency. Callers often pass an
   // inline arrow (e.g. the composer's `() => { reset(); onClose() }`) that is a new
@@ -262,13 +264,35 @@ export function Sheet({ onClose, labelledBy, children }: {
     };
   }, [mounted, focusables]);
 
+  // Track the VISUAL viewport so the bottom-anchored sheet sits above the iOS
+  // on-screen keyboard instead of behind it. A `position:fixed` element is
+  // pinned to the LAYOUT viewport, which the keyboard does not shrink, so
+  // without this the field a user is typing into is hidden under the keyboard
+  // until some reflow (pressing return) nudges it up. Following visualViewport's
+  // offsetTop/height keeps the sheet in the visible band the whole time.
+  useEffect(() => {
+    if (!mounted) return;
+    const visual = window.visualViewport;
+    if (!visual) return;
+    const update = () => setVv({ top: visual.offsetTop, height: visual.height });
+    update();
+    visual.addEventListener("resize", update);
+    visual.addEventListener("scroll", update);
+    return () => {
+      visual.removeEventListener("resize", update);
+      visual.removeEventListener("scroll", update);
+    };
+  }, [mounted]);
+
   const overlay = (
     <div onClick={onClose}
       style={{
         // z-60 above the BottomNav (z-50); portaled to <body> so main's stacking
-        // context can't sink it below the nav. Bottom padding clears the
-        // home-indicator safe area so the last row isn't under the gesture bar.
-        position: "fixed", inset: 0, zIndex: 60, background: "rgba(4,8,6,0.72)",
+        // context can't sink it below the nav. Sized to the visual viewport (see
+        // above) so flex-end lands the sheet just above the keyboard.
+        position: "fixed", left: 0, right: 0,
+        top: vv ? vv.top : 0, height: vv ? vv.height : "100%",
+        zIndex: 60, background: "rgba(4,8,6,0.72)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
         padding: "14px 14px calc(14px + env(safe-area-inset-bottom)) 14px",
       }}>
@@ -282,7 +306,7 @@ export function Sheet({ onClose, labelledBy, children }: {
         className="rounded-2xl"
         style={{
           background: PANEL, border: `1px solid ${tint(TEAL, "44")}`, padding: 18,
-          width: "100%", maxWidth: 480, maxHeight: "82dvh", overflowY: "auto",
+          width: "100%", maxWidth: 480, maxHeight: "100%", overflowY: "auto",
         }}>
         {children}
       </div>
