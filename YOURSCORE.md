@@ -775,6 +775,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-04** — **Engagement email fallback for non-app users** (ships DARK behind
+  `ENGAGEMENT_EMAILS_ENABLED`). Twitter-style events (likes, replies, feed reactions) reach people
+  without the app by email: the **first 2 a day** send as individual emails the moment they happen
+  (templates 31), everything after is held and wrapped into **one end-of-day digest** at 19:00 UTC
+  (template 32 + `cron/engagement-digest`), which also lists what the managers you follow did today.
+  "No app" = no `device_tokens` row (same signal gameday uses), so nobody the push reached is
+  double-emailed; suppression-aware; unsubscribe on every send. Also closes a real gap: **liking a
+  feed post used to notify nobody** — `feed_reaction` now writes an aggregated inbox row too (mig 248
+  adds `notifications.emailed_at` + the feed-reaction aggregate index). Friend requests keep their
+  existing dedicated immediate email, unchanged.
 - **2026-08-04** — **Fantasy identity + guest access.** (1) Settings now has a real **Display
   name** field, separate from the @username (previously username was mirrored into display_name);
   it's the headline shown above the @handle. (2) Every activity feed (Social, league feed, Hub

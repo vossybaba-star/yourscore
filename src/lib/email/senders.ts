@@ -683,3 +683,84 @@ export async function sendFantasyDeadlineEmail(args: {
     ],
   });
 }
+
+/**
+ * 31 · Engagement — a single Twitter-style event (a like, reply or reaction on
+ * your post), emailed the moment it happens to people who don't have the app.
+ * The first 2 a day arrive this way; the rest roll into the daily digest (32).
+ */
+export async function sendEngagementEmail(args: {
+  userId: string;
+  email: string;
+  kind: "like" | "reply" | "reaction";
+  actorName: string;
+  snippet: string;
+  url: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const verb =
+    args.kind === "reply" ? "replied to you" : args.kind === "reaction" ? "reacted to your post" : "liked your comment";
+  const eyebrow = args.kind === "reply" ? "New reply" : "New reaction";
+  const headline = args.kind === "reply" ? "SOMEONE REPLIED" : "SOMEONE'S FEELING IT";
+  // Strip curly braces from user-derived text: a snippet or name containing
+  // "{{x}}" would survive substitution and trip renderEmail's leftover-token
+  // guard, throwing instead of sending. Never let user content break the send.
+  const noBraces = (s: string) => s.replace(/[{}]/g, "");
+  const actorName = noBraces(args.actorName);
+  const html = await renderEmail("31-engagement", {
+    eyebrow,
+    headline,
+    actor_name: actorName,
+    actor_initial: (actorName.replace(/^@/, "")[0] ?? "?").toUpperCase(),
+    verb,
+    snippet: noBraces(args.snippet),
+    cta_url: `${base}${args.url}`,
+    ...buildFooterUrls(args.userId, "social"),
+  });
+  await sendOrLog("sendEngagementEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: `${args.actorName} ${verb}`,
+    html,
+    headers: { "X-Entity-Ref-ID": `engagement-${args.kind}-${args.userId}-${Date.now()}` },
+    tags: [
+      { name: "category", value: "social" },
+      { name: "template", value: "31-engagement" },
+    ],
+  });
+}
+
+/**
+ * 32 · Engagement digest — the once-a-day wrap for people without the app: the
+ * activity that landed after their first 2 emails, plus a rundown of what the
+ * managers they follow got up to. Sent by cron/engagement-digest.
+ */
+export async function sendEngagementDigestEmail(args: {
+  userId: string;
+  email: string;
+  activityLine: string;
+  feedHtml: string;
+  hasFeed: boolean;
+  url: string;
+}) {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourscore.app";
+  const html = await renderEmail("32-engagement-digest", {
+    activity_line: args.activityLine,
+    feed_html: args.hasFeed ? args.feedHtml : "",
+    cta_url: `${base}${args.url}`,
+    ...buildFooterUrls(args.userId, "social"),
+  });
+  await sendOrLog("sendEngagementDigestEmail", args.userId, {
+    from: FROM,
+    to: args.email,
+    replyTo: REPLY_TO,
+    subject: "Here's what you missed today",
+    html,
+    headers: { "X-Entity-Ref-ID": `engagement-digest-${args.userId}-${new Date().toISOString().slice(0, 10)}` },
+    tags: [
+      { name: "category", value: "social" },
+      { name: "template", value: "32-engagement-digest" },
+    ],
+  });
+}
