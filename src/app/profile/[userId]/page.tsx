@@ -76,7 +76,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
 
   const { data: profile } = await db
     .from("profiles")
-    .select("id, display_name, avatar_url, username")
+    .select("id, display_name, avatar_url, username, source")
     .eq("id", userId)
     .single();
 
@@ -213,6 +213,12 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
               <p className="font-body text-sm truncate" style={{ color: "#8a948f", marginTop: 2 }}>@{profile.username}</p>
             )}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              {profile.source === "bot" && (
+                <span className="font-body text-xs px-2 py-0.5 rounded-full"
+                  style={{ background: "rgba(138,148,143,0.12)", color: "#8a948f", border: "1px solid rgba(138,148,143,0.25)" }}>
+                  🤖 Automated community account
+                </span>
+              )}
               {rank && (
                 <span className="font-body text-xs px-2 py-0.5 rounded-full"
                   style={{ background: "rgba(174,234,0,0.12)", color: LIME, border: "1px solid rgba(174,234,0,0.2)" }}>
