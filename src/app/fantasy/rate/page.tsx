@@ -18,7 +18,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   Btn, Card, ErrorState, Header, INK, LINE, MUTED, PANEL, PosTag,
-  Sheet, TEAL, CORAL, page, tint, type ClientPoolPlayer, type Pos,
+  Sheet, TEAL, CORAL, GOLD, LIME, page, tint, type ClientPoolPlayer, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
@@ -27,12 +27,34 @@ import { BenchStrip } from "@/components/fantasy/board/BenchStrip";
 import { RateIntroCards } from "@/components/fantasy/RateIntroCards";
 import { ScoutScanState } from "@/components/fantasy/ScoutScanState";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { faceFor } from "@/lib/fantasy/faces";
+import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 import {
   BandGroups, scoreColor, HorizonTabs, HORIZON_HELPER,
   type RatingBandsShape, type Horizon,
 } from "@/components/fantasy/RatingBands";
 import type { Slot } from "@/lib/fantasy/screenshotMatch";
+
+// ── the upload-step landing's sample payoff card ────────────────────────────
+// A STATIC preview of a real rating so a visitor sees the actual product
+// before uploading anything — real pool ids/names (Haaland, O'Reilly,
+// Mbeumo, Nedeljkovic), never invented players. Never fetched, never sent
+// anywhere; purely a sample render of the same BandGroups/scoreColor the
+// real result step uses.
+const SAMPLE_SCORE = 7.4;
+const SAMPLE_VERDICT = "A strong spine, but thin at the back before the fixtures turn.";
+const SAMPLE_MOVE_LINE = "Consider a stronger option in place of your weakest starter.";
+const SAMPLE_BANDS: RatingBandsShape = {
+  strong: [
+    { id: 411, name: "Erling Haaland", pos: "FWD", note: "Nailed on, huge fixture run", avatarUrl: faceUrlById(411) },
+  ],
+  decent: [
+    { id: 387, name: "Nico O'Reilly", pos: "DEF", note: "Good returns, keep an eye on rotation", avatarUrl: faceUrlById(387) },
+    { id: 427, name: "Bryan Mbeumo", pos: "MID", note: "Involved every week", avatarUrl: faceUrlById(427) },
+  ],
+  weak: [
+    { id: 39, name: "Kosta Nedeljkovic", pos: "DEF", note: "Toughest run of the lot right now", avatarUrl: faceUrlById(39) },
+  ],
+};
 
 const DRAFT_KEY = "ys-fantasy-draft";
 const MAX_EDGE = 1600;
@@ -401,20 +423,95 @@ export default function RateFromScreenshotPage() {
 
         {step === "upload" && (
           <>
-            <Card>
-              <div className="font-display" style={{ fontSize: 22, color: INK, lineHeight: 1.1, marginBottom: 6 }}>
+            <input ref={fileInput} type="file" accept="image/*" onChange={onFilePicked} style={{ display: "none" }} />
+
+            {/* ── hero ── */}
+            <div className="rounded-2xl" style={{
+              padding: 20, marginBottom: 22, position: "relative", overflow: "hidden",
+              background: `linear-gradient(160deg, ${tint(TEAL, "22")}, ${PANEL} 65%)`,
+              border: `1px solid ${tint(TEAL, "44")}`,
+            }}>
+              <span className="font-body rounded-full" style={{
+                display: "inline-block", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+                padding: "5px 12px", marginBottom: 14,
+                background: tint(GOLD, "1e"), border: `1px solid ${tint(GOLD, "55")}`, color: GOLD,
+              }}>
+                FANTASY PL IS LIVE ON YOURSCORE
+              </span>
+              <div className="font-display" style={{ fontSize: 36, color: INK, lineHeight: 1.02, marginBottom: 10 }}>
                 Rate your FPL team
               </div>
-              <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-                Upload a screenshot of your Pick Team screen and the Scout will grade it, the same way he grades every YourScore squad. No account needed to see your score.
+              <p style={{ fontSize: 14, color: MUTED, margin: "0 0 18px", lineHeight: 1.55, maxWidth: 420 }}>
+                Upload one screenshot and the YourScore Scout scores it out of 10 in seconds, with your strengths, your weak spots and the one move worth making.
               </p>
-              <input ref={fileInput} type="file" accept="image/*" onChange={onFilePicked} style={{ display: "none" }} />
-              <Btn gold onClick={() => fileInput.current?.click()}>Upload your screenshot</Btn>
+              <Btn gold glow onClick={() => fileInput.current?.click()}>Upload your screenshot</Btn>
               <p style={{ fontSize: 11.5, color: MUTED, margin: "10px 0 0", lineHeight: 1.5 }}>
-                We only look at it to read your team. It is never saved.
+                Free. We only read your team from the image, and it is never saved.
               </p>
+            </div>
+
+            {err && <div style={{ marginBottom: 20 }}><ErrorState message={err} /></div>}
+
+            {/* ── the payoff preview ── */}
+            <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058", marginBottom: 8 }}>
+              HERE IS WHAT YOU GET BACK
+            </div>
+            <Card style={{ marginBottom: 22 }}>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                <span className="font-body" style={{
+                  fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 999,
+                  border: `1px solid ${tint(TEAL, "55")}`, background: tint(TEAL, "14"), color: TEAL,
+                }}>This month</span>
+                <span className="font-body" style={{
+                  fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 999,
+                  border: `1px solid ${LINE}`, color: MUTED,
+                }}>Season</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
+                <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(SAMPLE_SCORE) }}>
+                  {SAMPLE_SCORE.toFixed(1)}
+                </span>
+                <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
+              </div>
+              <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{SAMPLE_VERDICT}</p>
+              <BandGroups bands={SAMPLE_BANDS} />
+              <div style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6, marginTop: 4 }}>
+                WORTH A LOOK
+              </div>
+              <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{SAMPLE_MOVE_LINE}</p>
             </Card>
-            {err && <div style={{ marginTop: 12 }}><ErrorState message={err} /></div>}
+
+            {/* ── why it's worth it ── */}
+            <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058", marginBottom: 8 }}>
+              WHY IT IS WORTH A LOOK
+            </div>
+            <div style={{ display: "grid", gap: 10, marginBottom: 22 }}>
+              {[
+                { accent: TEAL, title: "Graded by the Scout", body: "A real read on your XI, not a guess." },
+                { accent: GOLD, title: "Monthly prizes", body: "Top the monthly table and you win." },
+                { accent: LIME, title: "League chats", body: "Start a league and the group chat runs all season." },
+              ].map((hook) => (
+                <div key={hook.title} className="rounded-2xl" style={{
+                  display: "flex", alignItems: "center", gap: 12, padding: "13px 14px",
+                  background: PANEL, border: `1px solid ${LINE}`,
+                }}>
+                  <span aria-hidden style={{
+                    width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                    background: tint(hook.accent, "1e"), border: `1px solid ${tint(hook.accent, "55")}`,
+                  }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 2 }}>{hook.title}</div>
+                    <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.4 }}>{hook.body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── closing CTA ── */}
+            <Btn gold onClick={() => fileInput.current?.click()}>Upload your screenshot</Btn>
+            <p style={{ fontSize: 11.5, color: MUTED, margin: "10px 0 0", lineHeight: 1.5, textAlign: "center" }}>
+              Free. We only read your team from the image, and it is never saved.
+            </p>
           </>
         )}
 
