@@ -19,6 +19,15 @@
 > 15/15 high-confidence match, model-written verdict. Commits `0d23495`..`f1e7939`. Same session the Rate My
 > Squad verdict was fixed to name players not recite numbers, so both surfaces now show a real AI line.)
 >
+> **Update (same day):** the analysis now ends on a shareable page `/r/[id]` — the single end page for BOTH an
+> uploader and a future Twitter bot. It carries a share row (native sheet on mobile / copy link / X / WhatsApp)
+> and an auth-aware save CTA: create a free account when signed out, save to the account when signed in, or
+> keep/replace when a squad already exists. New `/api/fantasy/rate-share` grades AND persists server-side (so a
+> shared "rated by the Scout" score can never be client-faked) into the `fantasy_rate_share` snapshot table;
+> `/r/[id]/opengraph-image` is the per-team "Scout's Report" unfurl (real score + verdict + strong/risk/move on
+> the left, the analysed squad with player portraits + bench + grade on the right). The upload flow at
+> `/fantasy/rate` no longer shows an inline result — it redirects here after grading. Commits ..`18a8bb0`.
+>
 > **Previously confirmed:** 2026-08-04 (**"Rate My Squad" AI shipped to prod, founder-gated.** A one-tap read on the
 > Fantasy Scout's "Your Squad" surface: a 0 to 10 SCORE computed 100% in code from our own data
 > (projected points, availability, next-GW fixture difficulty, balance/budget, differential mix), plus an
