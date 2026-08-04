@@ -1,4 +1,8 @@
 # YourScore — Social Media Content Brief
+> ⚠️ **STALE — do not post from this brief.** It predates the fantasy launch, uses retired
+> vocabulary ("football IQ", "Rooms") and a fake-stats tactic that is banned. Current plan:
+> [`fantasy-preseason-x-plan.md`](./fantasy-preseason-x-plan.md).
+
 **Period: May 22 → June 11, 2026 (First post → World Cup Day 1)**
 **Purpose: Feed this into Gemini alongside a screenshot of the YourScore website for design reference**
 
