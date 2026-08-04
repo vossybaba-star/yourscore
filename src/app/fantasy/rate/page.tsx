@@ -120,6 +120,10 @@ function flagNote(flags: string[]): string | null {
 
 const surname = (name: string) => name.trim().split(/\s+/).slice(-1)[0] ?? name;
 
+/** "A", "A and B", "A, B and C" — for naming the picks that block grading. */
+const listNames = (xs: string[]): string =>
+  xs.length <= 1 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
+
 // ── the confirm-step pitch ──────────────────────────────────────────────
 // The 11 land on a real PitchSurface, grouped by position, attackers nearest
 // the top of the pitch the same way every other Fantasy scene draws a squad
@@ -608,15 +612,22 @@ export default function RateFromScreenshotPage() {
 
             {err && <div style={{ marginBottom: 12 }}><ErrorState message={err} /></div>}
 
-            {!canContinue && (
-              <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>
-                {allIds.length < 15 || uniqueIds.size < 15
-                  ? "Every slot needs a player before you can carry on."
-                  : xiSlots.length !== 11 || benchSlots.length !== 4
-                  ? "You need exactly eleven starters and four on the bench."
-                  : "Pick a captain from your starting eleven."}
-              </p>
-            )}
+            {!canContinue && (() => {
+              // Name the exact picks that block grading rather than a vague
+              // "every slot needs a player" — an unmatched name (id null) or the
+              // same player picked twice is otherwise invisible to hunt for.
+              const unresolved = slots.filter((s) => s.id === null).map((s) => s.extracted.surname || "one pick");
+              const dupIds = Array.from(new Set(allIds.filter((id, i) => allIds.indexOf(id) !== i)));
+              const dupNames = dupIds.map((id) => poolById(id)?.name ?? "a pick");
+              const msg = unresolved.length
+                ? `We could not match ${listNames(unresolved)}. Tap ${unresolved.length === 1 ? "that marker" : "each amber marker"}, then Change to pick the right player.`
+                : dupNames.length
+                ? `${listNames(dupNames)} ${dupNames.length === 1 ? "is" : "are"} picked twice. Tap one and change it.`
+                : xiSlots.length !== 11 || benchSlots.length !== 4
+                ? "You need exactly eleven starters and four on the bench."
+                : "Pick a captain from your starting eleven.";
+              return <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>{msg}</p>;
+            })()}
             <Btn gold disabled={!canContinue} onClick={submitForRating}>Grade my team</Btn>
 
             {pickingIndex !== null && (
