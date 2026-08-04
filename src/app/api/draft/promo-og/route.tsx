@@ -75,6 +75,6 @@ export async function GET() {
         <div style={{ position: "absolute", left: 0, bottom: 0, width: "1600px", height: 12, background: GREEN }} />
       </div>
     ),
-    { width: 1600, height: 900 }
+    { width: 1600, height: 900, headers: { "cache-control": "public, no-transform, max-age=600, s-maxage=3600, stale-while-revalidate=86400" } }
   );
 }

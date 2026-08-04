@@ -131,6 +131,9 @@ export async function GET() {
     {
       width: 1200,
       height: 630,
+      // Static share card — cache hard at the edge so crawler bursts don't
+      // re-render the Satori image each hit (Vercel CPU usage, 4 Aug).
+      headers: { "cache-control": "public, no-transform, max-age=600, s-maxage=3600, stale-while-revalidate=86400" },
       fonts: [
         { name: "Bebas", data: bebas, style: "normal", weight: 400 },
         { name: "DM Sans", data: dm500, style: "normal", weight: 500 },
