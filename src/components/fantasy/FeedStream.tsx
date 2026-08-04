@@ -38,12 +38,13 @@ interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
 interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number; vice?: number }
 interface FeedReaction { emoji: string; count: number }
 interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number }
+interface FeedQuiz { correct: number; total: number; title: string | null; game: "quiz" | "round" }
 interface FeedEvent {
   id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
-  text?: string | null; poll?: FeedPoll | null; image?: string | null;
+  text?: string | null; poll?: FeedPoll | null; image?: string | null; quiz?: FeedQuiz | null;
 }
 
 /** Render post text with any http(s) URLs turned into safe, tappable links. */
@@ -191,9 +192,53 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
   );
 }
 
+/** The ⋯ overflow on every card — Twitter grammar: share lives here (and stays
+ *  inline too), plus copy link, the profile, and the league invite. */
+function CardMenu({ ev, onShare, onInvite, shareUrl }: {
+  ev: FeedEvent; onShare: () => void; onInvite: () => void; shareUrl: string;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const router = useRouter();
+  const item = (label: string, emoji: string, fn: () => void) => (
+    <button key={label} onClick={() => { setMenuOpen(false); fn(); }} style={{
+      display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+      background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK, whiteSpace: "nowrap",
+    }}><span aria-hidden style={{ fontSize: 15 }}>{emoji}</span>{label}</button>
+  );
+  return (
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <button onClick={() => setMenuOpen((o) => !o)} aria-label="More" style={{
+        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+        width: 30, height: 30, borderRadius: 999, background: menuOpen ? PANEL_2 : "none",
+        border: "none", color: MUTED, fontSize: 17, letterSpacing: "0.08em", lineHeight: 1,
+      }}>···</button>
+      {menuOpen && (
+        <>
+          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 8 }} />
+          <div style={{
+            position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 9, minWidth: 190,
+            borderRadius: 12, background: PANEL, border: `1px solid ${LINE}`, boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            padding: "4px 0", overflow: "hidden",
+          }}>
+            {item("Share post", "↗", onShare)}
+            {item(copied ? "Link copied" : "Copy link", "🔗", () => {
+              navigator.clipboard?.writeText(shareUrl).catch(() => {});
+              setCopied(true); setTimeout(() => setCopied(false), 1600);
+            })}
+            {item(`View ${ev.actorName}`, "👤", () => router.push(`/profile/${ev.actorId}`))}
+            {item("Invite to a league", "＋", onInvite)}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
   const canShare = hasBoard || (!!ev.player && ev.playerId != null);
   const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
@@ -212,6 +257,8 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
 
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12, marginBottom: 10 }}>
+      {/* Twitter grammar (founder, 4 Aug): BOLD screen name, muted non-bold
+          @handle, the time inline after a dot — then the content underneath. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {/* Manager portrait with the crest of the club they support tucked in the
             corner — the same identity the quiz shows. */}
@@ -226,17 +273,20 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
           )}
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          {/* Display name is the headline; the @handle sits under it. */}
-          <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.3 }}>
-            <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 700, textDecoration: "none" }}>{ev.actorName}</Link>
-            {ev.type !== "post" && <span style={{ color: "#c7d0cb" }}> {ev.sentence}</span>}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 5, minWidth: 0, fontSize: 13.5, lineHeight: 1.35 }}>
+            <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%" }}>{ev.actorName}</Link>
+            {ev.actorUsername && (
+              <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>@{ev.actorUsername}</span>
+            )}
+            <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}>· {timeAgo(ev.createdAt)}</span>
           </div>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
-            {ev.actorUsername ? <><span>@{ev.actorUsername}</span><span aria-hidden> · </span></> : null}{timeAgo(ev.createdAt)}
-          </div>
+          {ev.type !== "post" && (
+            <div style={{ fontSize: 13, color: "#c7d0cb", marginTop: 1, lineHeight: 1.4 }}>{ev.sentence}</div>
+          )}
         </div>
         {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts. */}
         <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
+        <CardMenu ev={ev} shareUrl={shareUrl} onShare={() => setShareOpen(true)} onInvite={() => setInviteOpen(true)} />
       </div>
 
       {/* A user post: the text (links tappable), an image, then a poll if any. */}
@@ -249,6 +299,23 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
           style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 10, border: `1px solid ${LINE}` }} />
       )}
       {ev.poll && <PollBlock ev={ev} />}
+
+      {/* A quiz result: the score line as a card, with a door to the same game. */}
+      {ev.type === "quiz_result" && ev.quiz && (
+        <Link href={ev.quiz.game === "round" ? "/fantasy/round" : "/play"}
+          style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", marginTop: 12, padding: "12px 14px", borderRadius: 12, background: tint(TEAL, "12"), border: `1px solid ${tint(TEAL, "44")}` }}>
+          <span aria-hidden style={{ fontSize: 22 }}>🧠</span>
+          <span style={{ minWidth: 0, flex: 1 }}>
+            <span className="font-display" style={{ display: "block", fontSize: 20, fontWeight: 800, color: TEAL, lineHeight: 1.1 }}>
+              {ev.quiz.correct}/{ev.quiz.total}
+            </span>
+            <span style={{ display: "block", fontSize: 12, color: MUTED, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {ev.quiz.game === "round" ? `GW${ev.gw ?? ""} knowledge round` : (ev.quiz.title ?? "Football Quiz")}
+            </span>
+          </span>
+          <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: TEAL }}>Beat it ›</span>
+        </Link>
+      )}
 
       {/* Squad tiles render the real tactical PITCH (founder, 3 Aug — a row of faces
           isn't useful; we need to see the team in formation). Tap opens the
@@ -281,24 +348,25 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         )
       )}
 
-      {/* Primary sequence (spec): React · Comment · Share to league. Invite the
-          manager to a league trails as a lighter action. */}
+      {/* Primary sequence (spec): React · Comment · Share. Invite moved into the
+          ⋯ menu (4 Aug) so the row breathes like a tweet's. */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 12, paddingLeft: 2, flexWrap: "wrap" }}>
         <ReactionBar ev={ev} />
         <button onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: open ? TEAL : MUTED, fontSize: 13, fontWeight: 600 }}>
-          <span style={{ fontSize: 14 }}>💬</span>{ev.commentCount > 0 ? ev.commentCount : "Comment"}
+          {/* Silhouette, not emoji (founder, 4 Aug) — the Twitter-style outline bubble. */}
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          </svg>
+          {ev.commentCount > 0 ? ev.commentCount : "Comment"}
         </button>
-        <SharePost url={shareUrl} text={shareText} leagueBody={leagueBody}
-          trigger={(openShare) => (
-            <button onClick={openShare} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
-              <span style={{ fontSize: 14 }}>↗</span>Share
-            </button>
-          )}
-        />
-        <button onClick={() => setInviteOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
-          <span style={{ fontSize: 14 }}>＋</span>Invite
+        <button onClick={() => setShareOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
+          <span style={{ fontSize: 14 }}>↗</span>Share
         </button>
       </div>
+
+      {/* One share sheet per card, opened from the inline Share OR the ⋯ menu. */}
+      <SharePost url={shareUrl} text={shareText} leagueBody={leagueBody}
+        open={shareOpen} onClose={() => setShareOpen(false)} />
 
       {open && (
         <div style={{ marginTop: 10, borderTop: `1px solid ${LINE}`, paddingTop: 8 }}>

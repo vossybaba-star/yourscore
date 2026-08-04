@@ -21,7 +21,8 @@ type Db = SupabaseClient<any, "public", any>;
 export type FeedType =
   | "transfer" | "captain" | "chip" | "haul" | "rank_jump"
   | "squad_complete" | "squad_update" | "shortlist_add"
-  | "post"; // a user-authored text/poll post (Social → Live)
+  | "post" // a user-authored text/poll/image/player post (Social → Live)
+  | "quiz_result"; // a finished quiz pack or knowledge round worth shouting about
 export type FeedScope = "following" | "global";
 export type FeedSort = "recent" | "top";
 export interface FeedResult { events: FeedEvent[]; followingCount: number }
@@ -52,6 +53,15 @@ export interface FeedPoll {
 }
 export const MAX_POLL_OPTIONS = 4;
 export const POST_MAX = 500;
+
+/** A quiz_result tile: the score line plus where the game lives, so the tile
+ *  can send a reader off to play the same thing. */
+export interface FeedQuiz {
+  correct: number;
+  total: number;
+  title: string | null;
+  game: "quiz" | "round";
+}
 
 export interface FeedEvent {
   id: string;
@@ -86,6 +96,8 @@ export interface FeedEvent {
   poll?: FeedPoll | null;
   /** An optional image attached to a post (public post-media URL). */
   image?: string | null;
+  /** A quiz_result's score card. */
+  quiz?: FeedQuiz | null;
 }
 
 const CHIP_LABEL: Record<string, string> = {
@@ -220,6 +232,13 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
       return `shortlisted ${nameOf(Number(payload.player))}`;
     case "post":
       return "posted";
+    case "quiz_result": {
+      const correct = Number(payload.correct);
+      const total = Number(payload.total);
+      if (payload.game === "round") return `went ${correct}/${total} in the GW${gw ?? "?"} knowledge round`;
+      const title = typeof payload.title === "string" && payload.title ? payload.title : "the Football Quiz";
+      return `scored ${correct}/${total} on ${title}`;
+    }
     default:
       return "made a move";
   }
@@ -229,8 +248,17 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
  *  moderation as comments. Renders in Live like any other event, and gets
  *  reactions + comments for free (they key off the event id). */
 export async function postToFeed(db: Db, userId: string, body: unknown): Promise<{ id: string }> {
-  const b = (body ?? {}) as { text?: unknown; poll?: unknown; image?: unknown };
+  const b = (body ?? {}) as { text?: unknown; poll?: unknown; image?: unknown; playerId?: unknown };
   const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
+
+  // An attached player card — must be a real pool id (the tile links to their
+  // profile, so a junk id would mint a dead link).
+  let playerId: number | null = null;
+  if (b.playerId != null) {
+    const pid = Number(b.playerId);
+    if (!Number.isInteger(pid) || !clientPool().players.some((p) => p.id === pid)) throw new HttpError(400, "bad player");
+    playerId = pid;
+  }
 
   let poll: { question: string; options: string[] } | null = null;
   const rawPoll = b.poll as { question?: unknown; options?: unknown } | undefined;
@@ -254,7 +282,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     image = image.slice(0, 500);
   }
 
-  if (!text && !poll && !image) throw new HttpError(400, "Write something, add a poll or an image");
+  if (!text && !poll && !image && playerId == null) throw new HttpError(400, "Write something, add a poll or an image");
   const why = commentRejection([text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "));
   if (why) throw new HttpError(400, why);
 
@@ -262,6 +290,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   if (text) payload.text = text;
   if (poll) payload.poll = poll;
   if (image) payload.image = image;
+  if (playerId != null) payload.player = playerId;
   const { data, error } = await db.from("fantasy_feed_events")
     .insert({ actor_id: userId, type: "post", gw: null, payload })
     .select("id").single();
@@ -436,9 +465,20 @@ async function hydrateEvents(
         captain: payload.captain != null ? Number(payload.captain) : undefined,
         vice: payload.vice != null ? Number(payload.vice) : undefined,
       };
-    } else if ((type === "shortlist_add" || type === "squad_update") && payload.player != null) {
+    } else if ((type === "shortlist_add" || type === "squad_update" || type === "post") && payload.player != null) {
+      // A post can carry an attached player card too — same tile as shortlist.
       playerId = Number(payload.player);
       player = faceOf(playerId);
+    }
+    // A quiz_result carries its score line.
+    let quiz: FeedQuiz | null | undefined;
+    if (type === "quiz_result") {
+      quiz = {
+        correct: Number(payload.correct ?? 0),
+        total: Number(payload.total ?? 0),
+        title: typeof payload.title === "string" ? payload.title : null,
+        game: payload.game === "round" ? "round" : "quiz",
+      };
     }
     // A user post carries its text, an optional image, and (optionally) a poll.
     let text: string | null | undefined;
@@ -476,6 +516,7 @@ async function hydrateEvents(
       text,
       poll,
       image,
+      quiz,
     };
   });
 

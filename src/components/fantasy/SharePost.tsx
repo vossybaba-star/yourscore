@@ -31,20 +31,25 @@ function ChannelRow({ onClick, accent, label, sub, icon }: { onClick: () => void
   );
 }
 
-export function SharePost({ url, text, leagueBody, trigger }: {
+export function SharePost({ url, text, leagueBody, trigger, open: openProp, onClose }: {
   /** The public link to share (a manager's squad, a player, or the feed). */
   url: string;
   /** The message that leads the share. */
   text: string;
   /** Payload for the in-app "Share to a league" option (null hides it). */
   leagueBody?: () => Record<string, unknown> | null;
-  trigger: (open: () => void) => ReactNode;
+  trigger?: (open: () => void) => ReactNode;
+  /** Controlled mode — the parent owns open state (the feed's ⋯ menu). When
+   *  provided, `trigger` may be omitted and `onClose` must be handled. */
+  open?: boolean;
+  onClose?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openState, setOpen] = useState(false);
+  const open = openProp ?? openState;
   const [copied, setCopied] = useState(false);
   const msg = `${text} ${url}`;
 
-  const close = () => setOpen(false);
+  const close = () => { setOpen(false); onClose?.(); };
   const openExternal = (href: string) => { window.open(href, "_blank", "noopener,noreferrer"); close(); };
   const shareNative = () => {
     if (navigator.share) navigator.share({ text, url }).catch(() => {});
@@ -65,7 +70,7 @@ export function SharePost({ url, text, leagueBody, trigger }: {
 
   return (
     <>
-      {trigger(() => { setCopied(false); setOpen(true); })}
+      {trigger?.(() => { setCopied(false); setOpen(true); })}
       {open && (
         <Sheet onClose={close} labelledBy="share-post-title">
           <div id="share-post-title" className="font-display" style={{ fontSize: 20, color: INK, lineHeight: 1.1 }}>Share</div>
