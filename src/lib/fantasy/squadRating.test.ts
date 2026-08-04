@@ -14,9 +14,21 @@ import assert from "node:assert/strict";
 import {
   scoreSquad, computeSAvail, computeSFix, computeSBal, computeSDiff, deriveMove,
   composeTemplatedVerdict, lintRatingCopy, groundRatingCopy, squadHash, buildRatingInputs,
-  ratingFacts, PROJ_FLOOR, PROJ_CEIL,
+  ratingFacts, benchmarkRaw, PROJ_FLOOR_FRACTION,
   type RatingPlayer, type RatingInputs, type Difficulty, type RatingFacts,
 } from "./squadRating";
+
+/** A pool with enough players per position for benchmarkRaw's 4-4-2 shape, each
+ *  position at a chosen ep_next. benchmarkRaw = 1 GK + 4 DEF + 4 MID + 2 FWD of
+ *  the best ep_next, plus the single best player doubled. */
+function benchPool(ep: { GK: number; DEF: number; MID: number; FWD: number }): RatingPlayer[] {
+  const mk = (pos: FantasyPos, epNext: number, n: number, base: number) =>
+    Array.from({ length: n }, (_, i) => mkPlayer(base + i, { pos, epNext }));
+  return [
+    ...mk("GK", ep.GK, 2, 100), ...mk("DEF", ep.DEF, 6, 110),
+    ...mk("MID", ep.MID, 6, 120), ...mk("FWD", ep.FWD, 4, 130),
+  ];
+}
 import { XI_SIZE as XI_SIZE_FOR_TEST, type FantasyPos } from "./engine";
 
 // ── fixtures ──────────────────────────────────────────────────────────────
@@ -53,21 +65,30 @@ test("scoreSquad: pure and deterministic — same inputs twice give identical ou
 
 // ── s_proj ──────────────────────────────────────────────────────────────
 
-test("s_proj: raw ep_next sum + captain counted twice, clamped 0..10 over the 35..70 band", () => {
-  // 11 players at ep_next 3.5 -> raw XI sum 38.5; captain (also 3.5) counted
-  // again -> raw 42; (42-35)/35*10 = 2
-  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 3.5 }));
-  const inputs = baseInputs({ xi, captainId: 1 });
-  const { subScores, raw } = scoreSquad(inputs);
-  assert.equal(raw.projRaw, 42);
-  assert.equal(subScores.sProj, 2);
+test("benchmarkRaw: best 4-4-2 by ep_next plus the single best doubled", () => {
+  // xiSum = 4*1 + 3*4 + 3*4 + 5*2 = 38; best across pool = 5; benchmark = 43
+  assert.equal(benchmarkRaw(benchPool({ GK: 4, DEF: 3, MID: 3, FWD: 5 })), 43);
 });
 
-test("s_proj: floor and ceiling clamp — very low and very high projections both stay in 0..10", () => {
-  const low = baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 0 })), captainId: 1 });
-  const high = baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 20 })), captainId: 1 });
-  assert.equal(scoreSquad(low).subScores.sProj, 0);
-  assert.equal(scoreSquad(high).subScores.sProj, 10);
+test("s_proj: adaptive band — raw at the benchmark scores 10, at the floor 0, midway ~5", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 }); // benchmark = 5*11 + 5 = 60
+  // A top XI (ep 5, captain 5): raw = 55 + 5 = 60 == benchmark -> 10.
+  const strong = baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 5 })), captainId: 1, pool });
+  assert.ok(scoreSquad(strong).subScores.sProj > 9.9, "an XI at the benchmark scores ~10");
+  // Floor = 0.62 * 60 = 37.2. raw = 12 * 3.1 ~= 37.2 -> ~0 (float-tolerant).
+  const weak = baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 3.1 })), captainId: 1, pool });
+  assert.ok(scoreSquad(weak).subScores.sProj < 0.1, "an XI at the floor scores ~0");
+  // Midway raw = (37.2 + 60) / 2 = 48.6 -> 12 * 4.05 -> ~5.
+  const mid = baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 4.05 })), captainId: 1, pool });
+  assert.equal(Math.round(scoreSquad(mid).subScores.sProj), 5);
+});
+
+test("s_proj: the band is anchored to live data, not a fixed 35..70", () => {
+  assert.equal(PROJ_FLOOR_FRACTION, 0.62);
+  // With no pool there is no benchmark, so projection is neutral (5), never a
+  // spurious 0 that tanks the whole score pre-season.
+  const noPool = baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 3 })), captainId: 1, pool: [] });
+  assert.equal(scoreSquad(noPool).subScores.sProj, 5);
 });
 
 // ── s_avail (acceptance criterion 2: injured starter -3) ──────────────────
@@ -354,9 +375,9 @@ test("ratingFacts: sanity — score, captain and candidates are carried through 
   assert.equal(facts.gameweek, inputs.gameweek);
 });
 
-// referenced so `PROJ_FLOOR`/`PROJ_CEIL` stay covered if the s_proj band ever
-// changes shape without a test above catching it directly.
-test("PROJ_FLOOR/PROJ_CEIL: exported constants match the documented 35..70 band", () => {
-  assert.equal(PROJ_FLOOR, 35);
-  assert.equal(PROJ_CEIL, 70);
+test("s_proj: a stronger XI beats a weaker one against the same benchmark", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  const strong = scoreSquad(baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 4.5 })), captainId: 1, pool })).subScores.sProj;
+  const weak = scoreSquad(baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 3.5 })), captainId: 1, pool })).subScores.sProj;
+  assert.ok(strong > weak, "a higher-projected XI scores higher on projection");
 });

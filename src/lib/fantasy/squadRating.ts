@@ -155,8 +155,14 @@ export const W_FIX = 0.15;
 export const W_BAL = 0.15;
 export const W_DIFF = 0.10;
 
-export const PROJ_FLOOR = 35;
-export const PROJ_CEIL = 70;
+/** Projection is scored on a band anchored to the LIVE data, not a fixed points
+ *  total. Pre-season FPL's ep_next values are tiny (a top XI barely projects into
+ *  the 40s); mid-season they ramp. A fixed 35-70 band floored every pre-season
+ *  squad at zero, which killed the biggest-weighted dimension. Instead "10" is a
+ *  strong XI's projection computed from the current pool (benchmarkRaw), and "0"
+ *  is this fraction of it (a weak but real XI). The fraction is set so an average
+ *  squad lands near the middle; the whole band moves with the season's scale. */
+export const PROJ_FLOOR_FRACTION = 0.62;
 
 const AVAIL_START = 10;
 const AVAIL_XI_OUT_PENALTY = 3;
@@ -197,15 +203,34 @@ export interface ScoreResult {
   score: number;
   subScores: SubScores;
   flags: { allTemplate: boolean };
-  raw: { projRaw: number };
+  raw: { projRaw: number; benchmark: number };
 }
 
-function computeSProj(inputs: RatingInputs): { value: number; raw: number } {
+/** The shape a strong XI's projection is measured in — a standard 4-4-2. */
+const BENCH_SHAPE = { GK: 1, DEF: 4, MID: 4, FWD: 2 } as const;
+
+/** A strong XI's projected raw for THIS gameweek, from the available pool: the
+ *  best ep_next in a 4-4-2 shape plus the single best player doubled (as a
+ *  captain would be). This is the live "10" anchor for the projection sub score,
+ *  so the band tracks the current ep_next scale instead of a fixed guess. Pure. */
+export function benchmarkRaw(pool: RatingPlayer[]): number {
+  const topByPos = (pos: FantasyPos, n: number): number =>
+    pool.filter((p) => p.pos === pos).map((p) => p.epNext ?? 0).sort((a, b) => b - a)
+      .slice(0, n).reduce((s, v) => s + v, 0);
+  const xiSum = topByPos("GK", BENCH_SHAPE.GK) + topByPos("DEF", BENCH_SHAPE.DEF)
+    + topByPos("MID", BENCH_SHAPE.MID) + topByPos("FWD", BENCH_SHAPE.FWD);
+  const best = pool.reduce((m, p) => Math.max(m, p.epNext ?? 0), 0);
+  return xiSum + best;
+}
+
+function computeSProj(inputs: RatingInputs): { value: number; raw: number; benchmark: number } {
   const sum = inputs.xi.reduce((s, p) => s + (p.epNext ?? 0), 0);
   const captain = inputs.xi.find((p) => p.id === inputs.captainId);
   const raw = sum + (captain?.epNext ?? 0); // captain counted twice
-  const value = clamp(((raw - PROJ_FLOOR) / (PROJ_CEIL - PROJ_FLOOR)) * 10, 0, 10);
-  return { value, raw };
+  const benchmark = benchmarkRaw(inputs.pool);
+  const floor = benchmark * PROJ_FLOOR_FRACTION;
+  const value = benchmark > floor ? clamp(((raw - floor) / (benchmark - floor)) * 10, 0, 10) : 5;
+  return { value, raw, benchmark };
 }
 
 /** Exported for the unit tests to drive each branch directly. */
@@ -271,7 +296,7 @@ export function scoreSquad(inputs: RatingInputs): ScoreResult {
     W_PROJ * subScores.sProj + W_AVAIL * subScores.sAvail + W_FIX * subScores.sFix
     + W_BAL * subScores.sBal + W_DIFF * subScores.sDiff,
   );
-  return { score, subScores, flags: { allTemplate: diff.allTemplate }, raw: { projRaw: proj.raw } };
+  return { score, subScores, flags: { allTemplate: diff.allTemplate }, raw: { projRaw: proj.raw, benchmark: proj.benchmark } };
 }
 
 // ── suggested move (code derived, never the model's call) ───────────────────
@@ -334,45 +359,88 @@ interface InternalCandidate {
  *  enough to be worth surfacing (>=7 strength, <=4 risk) — a middling sub
  *  score has nothing worth a pill. Every line names a real player/number
  *  pulled from `inputs`, which is what makes it groundable. */
-function buildCandidateLines(inputs: RatingInputs, subScores: SubScores, raw: { projRaw: number }): InternalCandidate[] {
+function buildCandidateLines(inputs: RatingInputs, subScores: SubScores, raw: { projRaw: number; benchmark: number }): InternalCandidate[] {
   const lines: InternalCandidate[] = [];
+  // A gated line: only worth a pill when its sub score is genuinely extreme
+  // (>=7 a strength, <=4 a risk). Distance from the midpoint decides priority.
   const add = (value: number, about: string, club: string, num: number, fact: string) => {
     if (value >= 7) lines.push({ about, club, number: num, fact, kind: "strength", distance: Math.abs(value - 5.5) });
     else if (value <= 4) lines.push({ about, club, number: num, fact, kind: "risk", distance: Math.abs(value - 5.5) });
   };
+  // A forced line: surfaces on its own logic (not a sub-score band) because it
+  // is directly actionable. High distance so it wins a pill slot.
+  const force = (kind: "strength" | "risk", about: string, club: string, num: number, fact: string) =>
+    lines.push({ about, club, number: num, fact, kind, distance: 6 });
 
-  const captain = inputs.xi.find((p) => p.id === inputs.captainId);
+  const xi = inputs.xi;
+  const round1x = (v: number) => Math.round(v * 10) / 10;
+
+  // 1) CAPTAIN CHOICE — the single most actionable check. The armband doubles a
+  //    score, so captaining anyone but your best projected ATTACKER leaves points
+  //    on the table. Only MID/FWD are realistic captains (never a keeper), so the
+  //    comparison is against them. Names both players and both numbers.
+  const captain = xi.find((p) => p.id === inputs.captainId);
+  const attackers = xi.filter((p) => p.pos === "MID" || p.pos === "FWD");
+  const best = attackers.slice().sort((a, b) => (b.epNext ?? 0) - (a.epNext ?? 0))[0];
+  if (captain && best && best.id !== captain.id && (best.epNext ?? 0) - (captain.epNext ?? 0) >= 0.3) {
+    force("risk", captain.name, captain.club, round1x(best.epNext ?? 0),
+      `You have captained ${captain.name}, projected ${round1x(captain.epNext ?? 0)} this week. ${best.name} projects ${round1x(best.epNext ?? 0)} and would score more with the armband on him.`);
+  }
+
+  // 2) PROJECTION — the number in context: yours versus a strong XI this week.
   const projRounded = Math.round(raw.projRaw);
-  add(subScores.sProj, captain?.name ?? "your captain", captain?.club ?? "", projRounded,
-    `Your XI is projected ${projRounded} points, led by ${captain?.name ?? "no captain set"} at ${captain?.epNext ?? 0} (captained).`);
+  const benchRounded = Math.round(raw.benchmark);
+  add(subScores.sProj, "your squad", "", projRounded,
+    subScores.sProj >= 7
+      ? `Your XI projects ${projRounded} points this week, up near a strong XI's ${benchRounded}.`
+      : `Your XI projects ${projRounded} points this week, short of a strong XI's ${benchRounded}.`);
 
-  const outXi = inputs.xi.filter((p) => OUT_STATUSES.has(p.status));
+  // 3) AVAILABILITY — name who is out, or confirm a clean bill.
+  const outXi = xi.filter((p) => OUT_STATUSES.has(p.status));
+  const doubtXi = xi.filter((p) => p.status === "d" || (p.chance !== null && p.chance < AVAIL_CHANCE_FLOOR));
   if (outXi.length) {
     const worst = outXi[0];
     add(subScores.sAvail, worst.name, worst.club, outXi.length,
-      `${worst.name} is listed as unavailable for ${worst.club}, ${outXi.length} starter${outXi.length === 1 ? "" : "s"} affected in total.`);
+      `${worst.name} is unavailable for ${worst.club}${outXi.length > 1 ? `, and ${outXi.length} of your starters are out in total` : ""}. Move him out of your XI.`);
+  } else if (doubtXi.length) {
+    const d = doubtXi[0];
+    force("risk", d.name, d.club, doubtXi.length,
+      `${d.name} is a doubt for ${d.club} this week${doubtXi.length > 1 ? `, one of ${doubtXi.length} in your XI` : ""}. Check the team news before the deadline.`);
   } else {
-    add(subScores.sAvail, "your squad", "", inputs.xi.length,
-      `All ${inputs.xi.length} starters are available.`);
+    add(subScores.sAvail, "your squad", "", xi.length, `All ${xi.length} of your starters are fit and available.`);
   }
 
-  const kindCount = inputs.xi.filter((p) => inputs.fixtures[p.clubId]?.[0]?.difficulty === "kind").length;
-  const toughCount = inputs.xi.filter((p) => {
-    const cell = inputs.fixtures[p.clubId]?.[0];
-    return !cell || cell.difficulty === "tough";
-  }).length;
-  add(subScores.sFix, "your squad", "", kindCount,
-    `${kindCount} of your XI have a kind fixture next gameweek, ${toughCount} face a tough one or none at all.`);
+  // 4) FIXTURES — name the players facing a tough week (who to bench or not captain).
+  const tough = xi.filter((p) => inputs.fixtures[p.clubId]?.[0]?.difficulty === "tough");
+  const kindCount = xi.filter((p) => inputs.fixtures[p.clubId]?.[0]?.difficulty === "kind").length;
+  if (subScores.sFix <= 4 && tough.length) {
+    const names = tough.slice(0, 2).map((p) => p.name).join(" and ");
+    add(subScores.sFix, tough[0].name, tough[0].club, tough.length,
+      `${tough.length} of your XI face a tough opponent next week, including ${names}.`);
+  } else if (subScores.sFix >= 7) {
+    add(subScores.sFix, "your squad", "", kindCount,
+      `${kindCount} of your XI have a kind fixture next week, a good week to back them.`);
+  }
 
-  const bankM = Math.round((inputs.bankTenths / 10) * 10) / 10;
-  add(subScores.sBal, "your bank", "", inputs.bankTenths,
-    `${bankM} million sits unused in the bank.`);
+  // 5) BUDGET — only ever a RISK, and only when money is genuinely being wasted.
+  //    "A little in the bank" is not a strength worth a pill (founder: no vanity).
+  if (subScores.sBal <= 4) {
+    const bankM = round1x(inputs.bankTenths / 10);
+    force("risk", "your bank", "", inputs.bankTenths,
+      `${bankM} million is sitting idle in your bank, enough to upgrade a starter.`);
+  }
 
-  const diffCount = inputs.xi.filter(
+  // 6) DIFFERENTIALS — framed for someone chasing rank, not as a stat.
+  const diffs = xi.filter(
     (p) => p.ownershipPct !== null && p.ownershipPct < DIFF_OWNERSHIP_CEILING && (p.epNext ?? 0) >= DIFF_EPNEXT_FLOOR,
-  ).length;
-  add(subScores.sDiff, "your squad", "", diffCount,
-    `${diffCount} low ownership pick${diffCount === 1 ? "" : "s"} projected ${DIFF_EPNEXT_FLOOR} or more points this gameweek.`);
+  );
+  if (diffs.length === 0 && subScores.sDiff <= 4) {
+    add(subScores.sDiff, "your squad", "", 0,
+      `No one in your XI is owned by under ${DIFF_OWNERSHIP_CEILING} percent, so you rise and fall with the crowd.`);
+  } else if (subScores.sDiff >= 7) {
+    add(subScores.sDiff, diffs[0]?.name ?? "your squad", diffs[0]?.club ?? "", diffs.length,
+      `You back ${diffs.length} low ownership pick${diffs.length === 1 ? "" : "s"} that could pull you clear of the pack.`);
+  }
 
   return lines;
 }
