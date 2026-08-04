@@ -48,6 +48,13 @@ interface RatingResult {
 
 type Step = "upload" | "reading" | "confirm" | "rating" | "result";
 
+/** Where the viewer stands when they land on the result step:
+ *  - "out": no account. Both end-of-flow buttons lead to signup.
+ *  - "in-no-squad": signed in, never built a squad. No signup copy needed.
+ *  - "in-with-squad": signed in with a live squad — swapping in the
+ *    uploaded team REPLACES it, so that choice needs its own framing. */
+type AuthState = "out" | "in-no-squad" | "in-with-squad";
+
 /** Read a file, downscale to at most MAX_EDGE on the longest edge and
  *  re-encode as JPEG — a phone screenshot is easily 10 to 15MB straight off
  *  the camera roll, well past what's worth sending for text extraction. */
@@ -244,10 +251,36 @@ export default function RateFromScreenshotPage() {
   // Defaults to "month" — the immediate August competition. Both horizons
   // ride along on one response, so switching tabs never refetches.
   const [horizon, setHorizon] = useState<Horizon>("month");
+  // Defaults to "out" so the result step never has to block on this — a
+  // signed-out viewer is the common case and the safe default while the
+  // check is still in flight (a signed-in viewer just gets a beat of the
+  // wrong buttons before this resolves, never the reverse).
+  const [authState, setAuthState] = useState<AuthState>("out");
+  // Cancels a "reading" fetch that's still in flight when the viewer backs
+  // out — the request isn't aborted, but its result is ignored so it can't
+  // yank them into "confirm" after they've already left.
+  const cancelledReadRef = useRef(false);
 
   const poolById = useCallback((id: number | null) => pool.find((p) => p.id === id) ?? null, [pool]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/fantasy/state");
+        if (!res.ok) { if (!cancelled) setAuthState("out"); return; }
+        const json = await res.json().catch(() => null) as { squad?: unknown } | null;
+        if (cancelled) return;
+        setAuthState(json?.squad ? "in-with-squad" : "in-no-squad");
+      } catch {
+        if (!cancelled) setAuthState("out");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const handleFile = async (file: File) => {
+    cancelledReadRef.current = false;
     setErr(null);
     setStep("reading");
     try {
@@ -263,6 +296,7 @@ export default function RateFromScreenshotPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Couldn't read that screenshot. Try again.");
+      if (cancelledReadRef.current) return;
 
       const readSlots = json.slots as Slot[];
       setSlots(readSlots);
@@ -272,6 +306,7 @@ export default function RateFromScreenshotPage() {
       setViceId(vice?.id ?? null);
       setStep("confirm");
     } catch (e) {
+      if (cancelledReadRef.current) return;
       setErr(e instanceof Error ? e.message : "Couldn't read that screenshot. Try again.");
       setStep("upload");
     }
@@ -325,10 +360,36 @@ export default function RateFromScreenshotPage() {
     if (step === "rating" && introDone && result) setStep("result");
   }, [step, introDone, result]);
 
-  const saveAndSignIn = () => {
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(allIds)); } catch { /* private mode */ }
-    router.push("/auth/sign-in?next=/fantasy/build");
+  /** Step-aware back control, shown top-left on every step. Never a dead
+   *  end: "upload" is the front door, so backing out of it leaves the
+   *  flow entirely instead of looping in place. */
+  const goBack = () => {
+    if (step === "result" || step === "rating") { setStep("confirm"); return; }
+    if (step === "confirm") { setErr(null); setStep("upload"); return; }
+    if (step === "reading") { cancelledReadRef.current = true; setErr(null); setStep("upload"); return; }
+    router.push("/fantasy");
   };
+
+  const writeDraft = () => {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(allIds)); } catch { /* private mode */ }
+  };
+
+  // "Make this my team" always carries the uploaded XI into the builder —
+  // for a signed-out viewer that means signing up first; for anyone signed
+  // in (with or without an existing squad) the builder is one tap away.
+  const makeThisMyTeam = () => {
+    writeDraft();
+    router.push(authState === "out" ? "/auth/sign-in?next=/fantasy/build" : "/fantasy/build");
+  };
+
+  // "Build my own" is a fresh start — never carries the uploaded XI.
+  const buildMyOwn = () => {
+    router.push(authState === "out" ? "/auth/sign-in?next=/fantasy/build" : "/fantasy/build");
+  };
+
+  // Only reachable when authState is "in-with-squad": leaves their live
+  // squad untouched, this upload was only ever a look.
+  const keepMyTeam = () => router.push("/fantasy/scout/squad");
 
   const xiRows = buildXiRows(slots, poolById);
   const staggerDelays = buildStaggerDelays(slots, poolById);
@@ -336,7 +397,7 @@ export default function RateFromScreenshotPage() {
   return (
     <>
       <main data-fantasy style={page}>
-        <Header />
+        <Header exit={{ label: "Back", onClick: goBack }} />
 
         {step === "upload" && (
           <>
@@ -491,13 +552,46 @@ export default function RateFromScreenshotPage() {
             </div>
 
             <div style={{ marginTop: 14, borderRadius: 16, padding: 18, background: `linear-gradient(150deg, ${tint(TEAL, "22")}, ${PANEL})`, border: `1px solid ${tint(TEAL, "55")}` }}>
-              <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
-                Save this team
-              </div>
-              <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-                Create your free YourScore account and this exact team will be waiting for you when the season opens. One transfer a gameweek, and what you know earns you more.
-              </p>
-              <Btn gold onClick={saveAndSignIn}>Create your account and save it</Btn>
+              {authState === "in-with-squad" ? (
+                <>
+                  <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
+                    This team vs your squad
+                  </div>
+                  <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
+                    This was just a look at the team in your screenshot, friend, your real squad has not moved. Like it better than what you are running now? Make it official and it replaces your current squad.
+                  </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ flex: 1 }}><Btn onClick={keepMyTeam}>Keep my team</Btn></div>
+                    <div style={{ flex: 1 }}><Btn gold onClick={makeThisMyTeam}>Make this my team</Btn></div>
+                  </div>
+                </>
+              ) : authState === "in-no-squad" ? (
+                <>
+                  <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
+                    Set this as your squad
+                  </div>
+                  <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
+                    Take this exact team into the builder to finalise it, friend, or start clean and build your own from scratch.
+                  </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ flex: 1 }}><Btn onClick={buildMyOwn}>Build my own</Btn></div>
+                    <div style={{ flex: 1 }}><Btn gold onClick={makeThisMyTeam}>Make this my team</Btn></div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
+                    Save this team
+                  </div>
+                  <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
+                    Create your free YourScore account, friend, and this exact team will be waiting for you when the season opens. One transfer a gameweek, and what you know earns you more.
+                  </p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ flex: 1 }}><Btn onClick={buildMyOwn}>Build my own</Btn></div>
+                    <div style={{ flex: 1 }}><Btn gold onClick={makeThisMyTeam}>Make this my team</Btn></div>
+                  </div>
+                </>
+              )}
             </div>
           </>
           );
