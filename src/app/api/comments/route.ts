@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { commentRejection } from "@/lib/moderation";
 import { createNotification, pushCommentReply, commentDeepLink } from "@/lib/notifications";
+import { dispatchEngagementEmail, displayNameOf } from "@/lib/engagement";
 
 // comments.parent_id and club_supporters are additive/not yet in the
 // generated src/types/database.ts — same untyped-client cast used across the
@@ -277,7 +278,7 @@ export async function POST(req: NextRequest) {
   // never take the inbox row down with it).
   if (parentAuthorId && parentAuthorId !== user.id) {
     const deepLink = commentDeepLink(type, id, data.id);
-    await createNotification({
+    const notifId = await createNotification({
       userId: parentAuthorId,
       type: "comment_reply",
       actorId: user.id,
@@ -294,6 +295,18 @@ export async function POST(req: NextRequest) {
       subjectType: type,
       subjectId: id,
     });
+    // Email fallback for a non-app parent author (first 2 a day, rest digested).
+    if (notifId) {
+      const actorName = await displayNameOf(createServiceClient() as unknown as SupabaseClient, user.id);
+      await dispatchEngagementEmail({
+        userId: parentAuthorId,
+        notifId,
+        kind: "reply",
+        actorName,
+        snippet: body.length > 90 ? `${body.slice(0, 90)}…` : body,
+        url: deepLink,
+      });
+    }
   }
 
   return NextResponse.json({ id: data.id, createdAt: data.created_at, parentId });

@@ -2,7 +2,7 @@
 
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
-import { GOLD, AMBER, INK, MUTED, POS_COLOR, tint, type Pos } from "@/components/fantasy/shared";
+import { GOLD, AMBER, CORAL, INK, MUTED, POS_COLOR, tint, type Pos } from "@/components/fantasy/shared";
 
 /**
  * One player on the tactical pitch — a PORTRAIT marker (founder, 25 Jul: the
@@ -17,7 +17,7 @@ import { GOLD, AMBER, INK, MUTED, POS_COLOR, tint, type Pos } from "@/components
  * the calm state is the default.
  */
 export function PlayerMarker({
-  name, label, avatarUrl, club, size = 34, isCaptain = false, isVice = false, doubt, datum, dim = false, pos,
+  name, label, avatarUrl, club, size = 34, isCaptain = false, isVice = false, doubt, datum, dim = false, pos, flagged = false,
 }: {
   /** Full name — seeds the monogram fallback. */
   name: string;
@@ -36,13 +36,21 @@ export function PlayerMarker({
   dim?: boolean;
   /** Position — colours the name plate so the pitch reads by role, not one hue. */
   pos?: Pos;
+  /** A pick we could not confidently match — draws a bold CORAL ring around the
+   *  face (a circle) so a viewer sees straight away which players need fixing. */
+  flagged?: boolean;
 }) {
-  const ring = isCaptain ? GOLD : isVice ? "rgba(0,216,192,0.75)" : undefined;
+  const ring = flagged ? CORAL : isCaptain ? GOLD : isVice ? "rgba(0,216,192,0.75)" : undefined;
   const badge = size >= 30 ? 15 : 13;
   const posC = pos ? POS_COLOR[pos] : undefined;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, opacity: dim ? 0.85 : 1, minWidth: 0, width: "100%" }}>
-      <div style={{ position: "relative", flexShrink: 0 }}>
+      <div style={{
+        position: "relative", flexShrink: 0,
+        // Flagged picks wear a bold coral halo on top of the ring, so a viewer
+        // sees the exact faces that still need them without hunting for a dot.
+        ...(flagged ? { borderRadius: "50%", boxShadow: `0 0 0 4px ${CORAL}, 0 0 18px 4px ${tint(CORAL, "aa")}` } : null),
+      }}>
         <PlayerAvatar name={name} avatarUrl={avatarUrl} size={size} ring={ring} />
         {club && (
           <span aria-hidden style={{

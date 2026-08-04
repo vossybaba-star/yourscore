@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
-import { matchExtractedSquad, sanitizeExtracted, padSlots, type ExtractedPlayer, type MatchPoolPlayer } from "@/lib/fantasy/screenshotMatch";
+import { matchExtractedSquad, sanitizeExtracted, enforceOneGkStarter, repairInvalidFormation, padSlots, type ExtractedPlayer, type MatchPoolPlayer } from "@/lib/fantasy/screenshotMatch";
 import { enginePool } from "@/lib/fantasy/pool";
 
 /**
@@ -30,9 +30,28 @@ const PER_IP_HOURLY_CAP = 5;
 const PER_IP_DAILY_CAP = 20;
 const GLOBAL_DAILY_CAP = 500;
 
-const EXTRACT_SYSTEM = `You read an FPL "Pick Team" screenshot for YourScore, a
-football app. Extract exactly what is printed on the pitch — never invent a
-player and never skip a slot you can read.
+const EXTRACT_SYSTEM = `You read an FPL squad screenshot for YourScore, a
+football app. Extract exactly what is printed — never invent a player and
+never skip one you can read.
+
+There are TWO different FPL screens you might see, and they need different
+handling:
+
+1. "PICK TEAM" screen — a formation drawn on a pitch, with a separate strip of
+   4 substitutes set apart from it (to the side or below, often smaller or
+   shaded, numbered). Here the bench is VISUALLY OBVIOUS: put the 11 inside the
+   formation in "starters", the 4 set-apart ones in "substitutes".
+2. "TRANSFERS" (or squad-list) screen — your full 15 shown grouped ONLY by
+   position count (always 2 goalkeepers, 5 defenders, 5 midfielders, 3
+   forwards), usually under a "Transfers" heading with a budget/deadline bar
+   above and a Pitch/List toggle. This screen shows NO starting XI and NO
+   bench — that distinction simply is not on screen, so do not guess it from
+   row position. Instead, split starters/substitutes using PRICE as your best
+   guide: the higher-priced player at each position is more likely to start
+   (a manager's best players cost more), while keeping to a legal XI shape —
+   one goalkeeper, 3 to 5 defenders, 2 to 5 midfielders, 1 to 3 forwards, eleven
+   total. Never leave the highest-priced forward among the substitutes if a
+   cheaper one could make way instead.
 
 RULES
 - Read each player's club from the KIT they are wearing, not from a guess
@@ -45,17 +64,17 @@ RULES
   same-surname squad members (e.g. "N.Williams"), keep it exactly like that. If
   a name is clearly cut off on screen (e.g. "Calvert-Le..."), give the player's
   full surname ("Calvert-Lewin").
-- The row a player sits in on the pitch tells you their position: goalkeeper
-  at the back, then defenders, midfielders, forwards moving up the pitch.
-- A "C" armband means captain, a "V" armband means vice captain.
-- The row of four below the pitch (the dugout) is the bench — mark those
-  players isBench true.
-- If part of the squad is cut off or unreadable, extract what you CAN read
-  and leave the rest out. Fewer than fifteen players is fine. Never guess a
-  name or club to fill a gap.`;
+- Read each player's price if one is printed near them (e.g. "£4.5m" -> 4.5).
+  Leave it out if no price is shown.
+- On EITHER screen: the starting eleven has EXACTLY ONE goalkeeper; the second
+  goalkeeper is always a substitute.
+- A "C" armband means captain, a "V" armband means vice captain. If no armband is
+  visible on anyone, set isCaptain and isVice false for everyone.
+- If part of the squad is cut off or unreadable, extract what you CAN read and
+  leave the rest out. Never invent a name or club to fill a gap.`;
 
 interface AnthropicResponse {
-  content?: { type: string; input?: { players?: unknown } }[];
+  content?: { type: string; input?: { starters?: unknown; substitutes?: unknown } }[];
 }
 
 async function extractSquad(image: string, mediaType: string): Promise<ExtractedPlayer[] | null> {
@@ -65,29 +84,28 @@ async function extractSquad(image: string, mediaType: string): Promise<Extracted
     return null;
   }
 
+  const playerItem = {
+    type: "object",
+    properties: {
+      surname: { type: "string" },
+      club: { type: "string" },
+      position: { type: "string", enum: ["GK", "DEF", "MID", "FWD"] },
+      isCaptain: { type: "boolean" },
+      isVice: { type: "boolean" },
+      price: { type: "number", description: "£m price printed near the player, e.g. 4.5 for '£4.5m'. Omit if not shown." },
+    },
+    required: ["surname", "club", "position", "isCaptain", "isVice"],
+  };
   const tool = {
     name: "extract_squad",
-    description: "The players read off an FPL Pick Team screenshot.",
+    description: "The players read off an FPL squad screenshot, split into the eleven starters and the four substitutes.",
     input_schema: {
       type: "object",
       properties: {
-        players: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              surname: { type: "string" },
-              club: { type: "string" },
-              position: { type: "string", enum: ["GK", "DEF", "MID", "FWD"] },
-              isCaptain: { type: "boolean" },
-              isVice: { type: "boolean" },
-              isBench: { type: "boolean" },
-            },
-            required: ["surname", "club", "position", "isCaptain", "isVice", "isBench"],
-          },
-        },
+        starters: { type: "array", description: "The 11 players you judge to be starting (exactly one is a goalkeeper).", items: playerItem },
+        substitutes: { type: "array", description: "The 4 remaining players (the bench), including the backup goalkeeper.", items: playerItem },
       },
-      required: ["players"],
+      required: ["starters", "substitutes"],
     },
   };
 
@@ -121,14 +139,24 @@ async function extractSquad(image: string, mediaType: string): Promise<Extracted
     }
     const json = (await res.json()) as AnthropicResponse;
     const block = json.content?.find((c) => c.type === "tool_use");
-    const players = block?.input?.players;
-    if (!Array.isArray(players)) {
+    const starters = Array.isArray(block?.input?.starters) ? block!.input!.starters as unknown[] : [];
+    const substitutes = Array.isArray(block?.input?.substitutes) ? block!.input!.substitutes as unknown[] : [];
+    if (!starters.length && !substitutes.length) {
       console.error("[rate-photo] vision call failed: no-tool-use-block");
       return null;
     }
-    // The model output is untrusted — drop malformed entries, cap the length,
-    // before any of it reaches the matcher (a non-string surname would throw).
-    return sanitizeExtracted(players);
+    // Flatten the two groups into the isBench shape the matcher expects: the
+    // pitch eleven are starters, the set-apart four are the bench.
+    const combined = [
+      ...starters.map((p) => (p && typeof p === "object" ? { ...(p as object), isBench: false } : p)),
+      ...substitutes.map((p) => (p && typeof p === "object" ? { ...(p as object), isBench: true } : p)),
+    ];
+    // The model output is untrusted — drop malformed entries, cap the length —
+    // then deterministically repair what vision most often gets wrong: exactly
+    // one goalkeeper starts, then the outfield formation is actually legal (FPL's
+    // "Transfers" screen has no bench signal at all, so a naive top-to-bottom
+    // read can leave zero forwards starting — see repairInvalidFormation).
+    return repairInvalidFormation(enforceOneGkStarter(sanitizeExtracted(combined)));
   } catch (e) {
     console.error("[rate-photo] vision call failed: exception", e);
     return null;

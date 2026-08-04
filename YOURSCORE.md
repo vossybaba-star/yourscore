@@ -39,6 +39,26 @@
 > 15/15 high-confidence match, model-written verdict. Commits `0d23495`..`f1e7939`. Same session the Rate My
 > Squad verdict was fixed to name players not recite numbers, so both surfaces now show a real AI line.)
 >
+> **Update (same day):** the analysis now ends on a shareable page `/r/[id]` — the single end page for BOTH an
+> uploader and a future Twitter bot. It carries a share row (native sheet on mobile / copy link / X / WhatsApp)
+> and an auth-aware save CTA: create a free account when signed out, save to the account when signed in, or
+> keep/replace when a squad already exists. New `/api/fantasy/rate-share` grades AND persists server-side (so a
+> shared "rated by the Scout" score can never be client-faked) into the `fantasy_rate_share` snapshot table;
+> `/r/[id]/opengraph-image` is the per-team "Scout's Report" unfurl (real score + verdict + strong/risk/move on
+> the left, the analysed squad with player portraits + bench + grade on the right). The upload flow at
+> `/fantasy/rate` no longer shows an inline result — it redirects here after grading. Commits ..`18a8bb0`.
+>
+> **Update (same day):** the Scout rating's two horizons are now **August ｜ Next 5** (was
+> Month ｜ Season). A season-long score never made sense once fantasy shipped a transfer every
+> gameweek — the fifteen being rated won't exist in that form for long. Both horizons now read
+> the SAME fixture-run signal (`computeSFixRun`) and diverge only by weight: NEXT5 leans harder
+> on fixtures (0.45) and less on projection/balance than MONTH (0.35). The MONTH tab's label and
+> copy are computed from the real calendar month (`currentMonthName()`), never hardcoded
+> "August" again. `FIXTURE_LOOKAHEAD` bumped 3→5 so NEXT5 genuinely covers five games (the
+> upstream ticker already builds 5 GW windows; this was the one place still truncating it).
+> Applies everywhere a rating renders: `/fantasy/rate`, the member Scout card, and the `/r/[id]`
+> share page. Commit `180ce9b`.
+>
 > **Previously confirmed:** 2026-08-04 (**"Rate My Squad" AI shipped to prod, founder-gated.** A one-tap read on the
 > Fantasy Scout's "Your Squad" surface: a 0 to 10 SCORE computed 100% in code from our own data
 > (projected points, availability, next-GW fixture difficulty, balance/budget, differential mix), plus an
@@ -794,6 +814,24 @@ Confirmed preamble above and the referenced section.
   voice, `source='bot'`, one-command teardown. See Confirmed preamble. **Prod steps pending:**
   apply mig 248, run `bots.sh` + `--seed-handles` + `--backfill`.
 
+- **2026-08-04** — **Engagement email fallback for non-app users** (ships DARK behind
+  `ENGAGEMENT_EMAILS_ENABLED`). Twitter-style events (likes, replies, feed reactions) reach people
+  without the app by email: the **first 2 a day** send as individual emails the moment they happen
+  (templates 31), everything after is held and wrapped into **one end-of-day digest** at 19:00 UTC
+  (template 32 + `cron/engagement-digest`), which also lists what the managers you follow did today.
+  "No app" = no `device_tokens` row (same signal gameday uses), so nobody the push reached is
+  double-emailed; suppression-aware; unsubscribe on every send. Also closes a real gap: **liking a
+  feed post used to notify nobody** — `feed_reaction` now writes an aggregated inbox row too (mig 248
+  adds `notifications.emailed_at` + the feed-reaction aggregate index). Friend requests keep their
+  existing dedicated immediate email, unchanged.
+- **2026-08-04** — **Fantasy identity + guest access.** (1) Settings now has a real **Display
+  name** field, separate from the @username (previously username was mirrored into display_name);
+  it's the headline shown above the @handle. (2) Every activity feed (Social, league feed, Hub
+  rail) leads with display name over @handle and shows the crest of the club the manager
+  **supports** (club_supporters), matching the quiz. (3) **All Fantasy tabs are open to guests** —
+  a signed-out visitor can browse every tab and build a full XI; only SAVE needs an account
+  (build → sign-in keeps the local draft). (4) `/api/og/fantasy-squad` now sends edge cache-control
+  so a crawler burst stops re-rendering the Satori card each hit (Vercel CPU usage alert).
 - **2026-08-02** — **Rules page: four missing definitions added** (`/fantasy/rules` + rules bot
   grounding). Gap analysis vs the Premier League's own FPL explainer ecosystem found four rules
   the engine enforces but nothing user facing defined; all four are now in THE DETAIL (new LIVE

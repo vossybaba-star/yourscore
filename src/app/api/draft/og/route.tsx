@@ -107,6 +107,6 @@ export async function GET(req: NextRequest) {
         <div style={{ position: "absolute", left: 0, bottom: 0, width: "1200px", height: 10, background: accent }} />
       </div>
     ),
-    { width: 1200, height: 630 }
+    { width: 1200, height: 630, headers: { "cache-control": "public, no-transform, max-age=600, s-maxage=3600, stale-while-revalidate=86400" } }
   );
 }

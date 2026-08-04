@@ -5,6 +5,7 @@
 import type { NextRequest } from "next/server";
 import { withFantasyUser } from "@/app/api/fantasy/_lib";
 import { FEED_REACTIONS } from "@/lib/fantasy/feed";
+import { recordFeedReaction, removeFeedReaction } from "@/lib/engagement";
 
 export const fetchCache = "force-no-store";
 
@@ -18,6 +19,9 @@ export async function POST(req: NextRequest) {
   return withFantasyUser("feed-react", async (db, userId) => {
     await db.from("fantasy_feed_likes")
       .upsert({ event_id: eventId, user_id: userId, emoji }, { onConflict: "event_id,user_id" });
+    // Notify the post's author (inbox + email fallback for non-app users). Never
+    // fails the reaction — recordFeedReaction resolves the author and skips self.
+    await recordFeedReaction({ eventId, actorId: userId, emoji });
     return { reacted: emoji };
   });
 }
@@ -27,6 +31,7 @@ export async function DELETE(req: NextRequest) {
   if (!eventId) return Response.json({ error: "Missing eventId" }, { status: 400 });
   return withFantasyUser("feed-react", async (db, userId) => {
     await db.from("fantasy_feed_likes").delete().eq("event_id", eventId).eq("user_id", userId);
+    await removeFeedReaction({ eventId });
     return { reacted: null };
   });
 }

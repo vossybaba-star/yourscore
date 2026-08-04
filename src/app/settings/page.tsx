@@ -78,19 +78,22 @@ export default function SettingsPage() {
     setUsernameError("");
     const handle = username.trim();
     if (handle && handle.length < 3) { setSaving(false); setUsernameError("At least 3 characters."); return; }
+    // Display name is its own field now (founder, 4 Aug): the headline shown above
+    // the @handle. If it's left blank we fall back to the handle so nobody is
+    // nameless, but a name you set always wins.
+    const name = displayName.trim().slice(0, 30);
+    const effectiveName = name || handle || null;
     const { createClient } = await import("@/lib/supabase/client");
-    // Username is the public identity — mirror it into display_name (what every surface
-    // reads) so the handle shows everywhere without rewiring them.
     const { error } = await createClient()
       .from("profiles")
-      .update({ username: handle || null, ...(handle ? { display_name: handle } : {}) })
+      .update({ username: handle || null, display_name: effectiveName })
       .eq("id", user.id);
     setSaving(false);
     if (error) {
       setUsernameError(/duplicate|unique/i.test(error.message) ? "That username is taken." : "Couldn't save — try again.");
       return;
     }
-    if (handle) setDisplayName(handle);
+    setDisplayName(effectiveName ?? "");
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -259,9 +262,21 @@ export default function SettingsPage() {
             className="rounded-2xl overflow-hidden bg-surface"
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}
           >
+            <div className="px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+              <label className="font-body text-xs text-text-muted block mb-1">Display name</label>
+              <p className="font-body text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>The name shown above your @handle across the feed, leaderboards, leagues &amp; shared cards.</p>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value.slice(0, 30))}
+                placeholder="Your name"
+                className="w-full font-body text-sm text-white bg-transparent outline-none placeholder:text-white/20"
+                onKeyDown={(e) => e.key === "Enter" && handleSave()}
+              />
+            </div>
             <div className="px-5 py-4">
               <label className="font-body text-xs text-text-muted block mb-1">Username</label>
-              <p className="font-body text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>Your public name across YourScore — leaderboards, leagues &amp; shared cards.</p>
+              <p className="font-body text-xs mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>Your unique @handle. If you leave the display name blank, this is used instead.</p>
               <div className="flex items-center gap-1">
                 <span className="font-body text-sm text-text-muted">@</span>
                 <input

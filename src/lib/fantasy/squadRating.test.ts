@@ -16,6 +16,8 @@ import {
   composeTemplatedVerdict, lintRatingCopy, groundRatingCopy, squadHash, buildRatingInputs,
   ratingFacts, benchmarkRaw, PROJ_FLOOR_FRACTION,
   bandPlayers, groupBands, BAND_STRONG_RATIO, BAND_DECENT_RATIO,
+  computeSFixRun, scoreSquadForHorizon, MONTH_WEIGHTS, NEXT5_WEIGHTS,
+  bandPlayersMonth,
   type RatingPlayer, type RatingInputs, type Difficulty, type RatingFacts, type BandedPlayer,
 } from "./squadRating";
 
@@ -204,10 +206,22 @@ test("deriveMove: an injured starter is ranked out ahead of a fit but low-projec
   const pool = [mkPlayer(99, { pos: "MID", status: "a", epNext: 0, priceTenths: 60, clubId: 5 })];
   const inputs = baseInputs({ xi, bench: [], captainId: 1, bankTenths: 0, pool });
   const move = deriveMove(inputs);
-  // Nobody in the pool beats either candidate's ep_next here, so move is null,
-  // but the important assertion is WHICH player would be picked as "out" —
-  // exercised directly via the ranking a passing move would target.
-  assert.equal(move, null, "no replacement improves on the outgoing player's ep_next");
+  // The injured player (id 2) is ranked out first, and because an injured
+  // starter scores nothing if he sits, a fit same-position replacement is picked
+  // even though it projects lower — an injured starter is always swappable.
+  assert.ok(move, "an injured starter should be replaceable");
+  assert.equal(move.outId, 2, "the injured starter is the one moved out");
+  assert.equal(move.inId, 99, "the fit replacement comes in");
+});
+
+test("deriveMove: with everyone fit, no move unless a replacement genuinely projects higher", () => {
+  const xi = [
+    mkPlayer(1, { status: "a", epNext: 3, pos: "MID" }),
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { status: "a", epNext: 5, pos: "DEF" })),
+  ];
+  const pool = [mkPlayer(99, { pos: "MID", status: "a", epNext: 3, priceTenths: 60, clubId: 5 })]; // equal ep_next
+  const inputs = baseInputs({ xi, bench: [], captainId: 1, bankTenths: 0, pool });
+  assert.equal(deriveMove(inputs), null, "no strictly-better fit replacement means no move");
 });
 
 test("deriveMove: the replacement respects position, affordability, ownership and the 3-per-club cap", () => {
@@ -498,4 +512,98 @@ test("s_proj: a stronger XI beats a weaker one against the same benchmark", () =
   const strong = scoreSquad(baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 4.5 })), captainId: 1, pool })).subScores.sProj;
   const weak = scoreSquad(baseInputs({ xi: Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { epNext: 3.5 })), captainId: 1, pool })).subScores.sProj;
   assert.ok(strong > weak, "a higher-projected XI scores higher on projection");
+});
+
+// ── computeSFixRun (the MONTH horizon's fixture sub score) ─────────────────
+
+function runFixturesFor(clubIds: number[], run: Difficulty[]): Record<number, { difficulty: Difficulty }[]> {
+  const out: Record<number, { difficulty: Difficulty }[]> = {};
+  for (const id of clubIds) out[id] = run.map((difficulty) => ({ difficulty }));
+  return out;
+}
+
+test("computeSFixRun: a full kind run outscores a full tough run, both hitting the extremes", () => {
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { clubId: i + 1 }));
+  const clubIds = xi.map((p) => p.clubId);
+  const kind = computeSFixRun({ xi, fixtures: runFixturesFor(clubIds, ["kind", "kind", "kind", "kind", "kind"]) });
+  const tough = computeSFixRun({ xi, fixtures: runFixturesFor(clubIds, ["tough", "tough", "tough", "tough", "tough"]) });
+  assert.ok(kind > tough, `a kind run (${kind}) must outscore a tough run (${tough})`);
+  assert.equal(kind, 10);
+  assert.equal(tough, 0);
+});
+
+test("computeSFixRun: an empty fixtures map is neutral (5), the same all-or-nothing rule as computeSFix", () => {
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { clubId: i + 1 }));
+  assert.equal(computeSFixRun({ xi, fixtures: {} }), 5);
+});
+
+test("computeSFixRun: a club missing from a non-empty map counts as one missing (-1) cell, not neutral", () => {
+  const xi = [mkPlayer(1, { clubId: 1 })];
+  // Map is non-empty (club 2 has a run) but club 1 (the XI's own club) has none.
+  const fixtures = runFixturesFor([2], ["kind"]);
+  const value = computeSFixRun({ xi, fixtures });
+  assert.ok(Math.abs(value - (5 - 5 / XI_SIZE_FOR_TEST)) < 1e-9, "a club absent from a non-empty map is one missing cell, pulling below the neutral base of 5");
+});
+
+// ── scoreSquadForHorizon: MONTH vs NEXT5 weights (acceptance) ──────────────
+
+test("scoreSquadForHorizon: MONTH and NEXT5 weights diverge on the same fixture run", () => {
+  const xi = Array.from({ length: 11 }, (_, i) => mkPlayer(i + 1, { clubId: i + 1, epNext: 4 }));
+  const clubIds = xi.map((p) => p.clubId);
+  // Both horizons read the SAME fixture run (computeSFixRun) — there is no
+  // separate next-GW-only reading any more, so divergence must come purely
+  // from the weights (NEXT5 leans harder on fixtures, less on projection and
+  // balance — see NEXT5_WEIGHTS).
+  const fixtures = runFixturesFor(clubIds, ["kind", "kind", "kind", "kind", "kind"]);
+  const inputs = baseInputs({ xi, fixtures });
+  const fixScore = computeSFixRun(inputs);
+  const monthScore = scoreSquadForHorizon(inputs, MONTH_WEIGHTS, fixScore).score;
+  const next5Score = scoreSquadForHorizon(inputs, NEXT5_WEIGHTS, fixScore).score;
+  assert.notEqual(monthScore, next5Score, "MONTH and NEXT5 must diverge since they weight the same fixture run differently");
+  assert.ok(next5Score > monthScore, "NEXT5 weights fixtures more heavily (0.45 vs 0.35), so a fully kind run scores higher for NEXT5");
+});
+
+// ── bandPlayersMonth: the fixture-run band nudge (acceptance) ──────────────
+
+function fullRunFor(clubId: number, run: Difficulty[]): Record<number, { difficulty: Difficulty }[]> {
+  return { [clubId]: run.map((difficulty) => ({ difficulty })) };
+}
+
+test("bandPlayersMonth: a clearly kind run bumps the base band up one step", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 }); // MID ceiling 5
+  const xi = [
+    mkPlayer(1, { pos: "MID", epNext: 3.5, clubId: 9 }), // ratio 0.7 -> base band "decent"
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 })),
+  ];
+  const fixtures = fullRunFor(9, ["kind", "kind", "kind", "kind", "kind"]); // run value = 1
+  const inputs = baseInputs({ xi, pool, fixtures });
+  const player = bandPlayersMonth(inputs).find((b) => b.id === 1)!;
+  assert.equal(player.band, "strong", "a clearly kind run bumps decent up to strong");
+  assert.ok(player.note.includes("kind run"), `note "${player.note}" should mention the kind run`);
+});
+
+test("bandPlayersMonth: a clearly tough run drops the base band down one step", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  const xi = [
+    mkPlayer(1, { pos: "MID", epNext: 3.5, clubId: 9 }), // ratio 0.7 -> base band "decent"
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 })),
+  ];
+  const fixtures = fullRunFor(9, ["tough", "tough", "tough", "tough", "tough"]); // run value = -1
+  const inputs = baseInputs({ xi, pool, fixtures });
+  const player = bandPlayersMonth(inputs).find((b) => b.id === 1)!;
+  assert.equal(player.band, "weak", "a clearly tough run drops decent down to weak");
+  assert.ok(player.note.includes("tough run"), `note "${player.note}" should mention the tough run`);
+});
+
+test("bandPlayersMonth: an unavailable player is still forced weak, a kind run never overrides it", () => {
+  const pool = benchPool({ GK: 5, DEF: 5, MID: 5, FWD: 5 });
+  const xi = [
+    mkPlayer(1, { pos: "MID", epNext: 5, clubId: 9, status: "i" }),
+    ...Array.from({ length: 10 }, (_, i) => mkPlayer(i + 2, { pos: "DEF", epNext: 5 })),
+  ];
+  const fixtures = fullRunFor(9, ["kind", "kind", "kind", "kind", "kind"]);
+  const inputs = baseInputs({ xi, pool, fixtures });
+  const player = bandPlayersMonth(inputs).find((b) => b.id === 1)!;
+  assert.equal(player.band, "weak");
+  assert.equal(player.note, "unavailable", "the availability override wins outright, no fixture wording appended");
 });

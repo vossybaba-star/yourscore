@@ -22,15 +22,23 @@ import {
   api, Btn, Card, ErrorState, SectionLabel,
   INK, MUTED,
 } from "./shared";
-import { BandGroups, scoreColor, type RatingBandsShape as RatingBands } from "./RatingBands";
+import {
+  BandGroups, scoreColor, HorizonTabs, HORIZON_HELPER,
+  type RatingBandsShape as RatingBands, type Horizon,
+} from "./RatingBands";
 import { ScoutScanState } from "./ScoutScanState";
 
-interface SquadRatingResponse {
+interface HorizonResult {
   score: number;
   verdict: string;
   bands: RatingBands;
   moveLine: string;
   copySource: "model" | "mechanical";
+}
+
+interface SquadRatingResponse {
+  month: HorizonResult;
+  next5: HorizonResult;
   generatedAt: string;
 }
 
@@ -54,6 +62,10 @@ export function SquadRating() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [freshError, setFreshError] = useState<string | null>(null);
+  // Defaults to "month" — the current month's competition is the immediate
+  // objective right now. Both horizons already ride along on every rating,
+  // so this is a pure client-side switch, never a refetch.
+  const [horizon, setHorizon] = useState<Horizon>("month");
 
   const peek = useCallback(async () => {
     try {
@@ -124,20 +136,27 @@ export function SquadRating() {
         </Card>
       )}
 
-      {!busy && rating && (
+      {!busy && rating && rating.month && rating.next5 && (() => {
+        const h = rating[horizon];
+        return (
         <div className="rate-result-in">
         <Card>
+          <HorizonTabs active={horizon} onChange={setHorizon} />
+          <p className="font-body" style={{ fontSize: 12, color: MUTED, margin: "0 0 10px", lineHeight: 1.4 }}>
+            {HORIZON_HELPER[horizon]}
+          </p>
+
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-            <span className="font-display" style={{ fontSize: 40, lineHeight: 1, color: scoreColor(rating.score) }}>
-              {rating.score.toFixed(1)}
+            <span className="font-display" style={{ fontSize: 40, lineHeight: 1, color: scoreColor(h.score) }}>
+              {h.score.toFixed(1)}
             </span>
             <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
           </div>
           <p className="font-body" style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>
-            {rating.verdict}
+            {h.verdict}
           </p>
 
-          <BandGroups bands={rating.bands} />
+          <BandGroups bands={h.bands} />
 
           <div className="font-body" style={{
             fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6,
@@ -145,7 +164,7 @@ export function SquadRating() {
             WORTH A LOOK
           </div>
           <p className="font-body" style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>
-            {rating.moveLine}
+            {h.moveLine}
           </p>
 
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
@@ -170,7 +189,8 @@ export function SquadRating() {
           )}
         </Card>
         </div>
-      )}
+        );
+      })()}
     </section>
   );
 }

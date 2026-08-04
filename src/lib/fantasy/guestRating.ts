@@ -5,21 +5,18 @@
  * exists yet, so there is nothing to load by user id and nothing to cache by
  * squad hash: every call here reads the live market fresh and computes once.
  *
- * Deliberately thin — every actual scoring/banding/copy rule lives in
- * squadRating.ts and is reused verbatim (scoreSquad, bandPlayers, groupBands,
- * deriveMove, ratingFacts, callModelForRating, composeRatingCopy) so a guest's
- * take and a member's take are computed by the exact same code, not a
- * parallel implementation that could drift from it. `server-only` because it
- * calls callModelForRating() with the raw ANTHROPIC_API_KEY, same as
- * squadRating.ts.
+ * Deliberately thin — every actual scoring/banding/copy rule for BOTH
+ * horizons lives in squadRating.ts's computeHorizonResults() and is reused
+ * verbatim, so a guest's two-horizon take and a member's are computed by the
+ * exact same code, not a parallel implementation that could drift from it.
+ * `server-only` because computeHorizonResults() calls callModelForHorizons()
+ * with the raw ANTHROPIC_API_KEY, same as squadRating.ts.
  */
 import "server-only";
 import { BUDGET_TENTHS, XI_SIZE } from "./engine";
-import { faceUrlById } from "./faces";
 import {
-  type Db, type RatingInputs, type RatingPlayer, type RatingResponse, type RatingBands, type BandCard,
-  buildRatingInputs, loadRatingMarket, scoreSquad, deriveMove, bandPlayers, groupBands, ratingFacts,
-  callModelForRating, composeRatingCopy,
+  type Db, type RatingInputs, type RatingPlayer, type RatingResponse,
+  buildRatingInputs, loadRatingMarket, computeHorizonResults,
 } from "./squadRating";
 
 export interface GuestSquadShape {
@@ -59,48 +56,16 @@ export async function loadGuestRatingInputs(
   return { inputs, cutoff: market.cutoff };
 }
 
-/** Compute a full rating for a guest's confirmed 15 — one model call, zero DB
- *  writes (no cache row, no squad row, no auth). Returns the same
- *  RatingResponse shape a member's /api/fantasy/squad-rating POST returns, so
- *  SquadRating.tsx's rendering (via RatingBands.tsx) works unmodified for
- *  either surface. */
+/** Compute a full two-horizon rating for a guest's confirmed 15 — one model
+ *  call, zero DB writes (no cache row, no squad row, no auth). Returns the
+ *  same RatingResponse shape a member's /api/fantasy/squad-rating POST
+ *  returns, so SquadRating.tsx's and /fantasy/rate's rendering (via
+ *  RatingBands.tsx) works unmodified for either surface. */
 export async function rateGuestSquad(db: Db, squad: GuestSquadShape): Promise<RatingResponse | null> {
   const loaded = await loadGuestRatingInputs(db, squad);
   if (!loaded) return null;
   const { inputs, cutoff } = loaded;
 
-  const result = scoreSquad(inputs);
-  const move = deriveMove(inputs);
-  const banded = bandPlayers(inputs);
-  const grouped = groupBands(banded);
-  const facts = ratingFacts(inputs, result, move, banded);
-
-  const modelOut = await callModelForRating(facts);
-  const copy = composeRatingCopy(facts, modelOut);
-
-  const toCard = (b: (typeof banded)[number]): BandCard =>
-    ({ id: b.id, name: b.name, pos: b.pos, note: b.note, avatarUrl: faceUrlById(b.id) ?? null });
-  const bands: RatingBands = {
-    strong: grouped.strong.map(toCard),
-    decent: grouped.decent.map(toCard),
-    weak: grouped.weak.map(toCard),
-  };
-
-  return {
-    score: result.score,
-    verdict: copy.verdict,
-    bands,
-    moveLine: copy.moveLine,
-    copySource: copy.copySource,
-    subScores: [
-      { name: "projection", value: result.subScores.sProj },
-      { name: "availability", value: result.subScores.sAvail },
-      { name: "fixtures", value: result.subScores.sFix },
-      { name: "balance", value: result.subScores.sBal },
-      { name: "differentials", value: result.subScores.sDiff },
-    ],
-    gameweek: inputs.gameweek,
-    generatedAt: new Date().toISOString(),
-    snapshotCutoff: cutoff,
-  };
+  const { month, next5, generatedAt } = await computeHorizonResults(inputs);
+  return { month, next5, generatedAt, snapshotCutoff: cutoff };
 }

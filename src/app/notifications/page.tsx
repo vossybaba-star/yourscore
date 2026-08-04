@@ -65,6 +65,12 @@ function renderRow(
         : `${actorName} liked your comment`;
   } else if (n.type === "comment_reply") {
     headline = `${actorName} replied to your comment`;
+  } else if (n.type === "feed_reaction") {
+    const others = n.like_count - 1;
+    headline =
+      others > 0
+        ? `${actorName} and ${others} other${others === 1 ? "" : "s"} reacted to your post`
+        : `${actorName} reacted to your post`;
   } else {
     // Broadcasts carry their own copy, stored at write time.
     headline = n.title ?? "";

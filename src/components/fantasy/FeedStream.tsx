@@ -26,6 +26,7 @@ import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
 import { SharePost } from "@/components/fantasy/SharePost";
 import { FollowButton } from "@/components/social/FollowButton";
 import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -39,7 +40,7 @@ interface FeedReaction { emoji: string; count: number }
 interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number }
 interface FeedQuiz { correct: number; total: number; title: string | null; game: "quiz" | "round" }
 interface FeedEvent {
-  id: string; actorId: string; actorName: string; actorHandle: string | null; actorAvatar: string | null;
+  id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
@@ -240,6 +241,7 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [shareOpen, setShareOpen] = useState(false);
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
   const canShare = hasBoard || (!!ev.player && ev.playerId != null);
+  const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
   // Where a shared post points: a squad → the manager's XI, a player → that
   // player, anything else → the live feed. Plus a one-line lead for the share.
   const origin = typeof window !== "undefined" ? window.location.origin : "https://yourscore.app";
@@ -258,14 +260,23 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
       {/* Twitter grammar (founder, 4 Aug): BOLD screen name, muted non-bold
           @handle, the time inline after a dot — then the content underneath. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <AvatarLightbox name={ev.actorName} avatarUrl={ev.actorAvatar}>
-          <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={34} />
-        </AvatarLightbox>
+        {/* Manager portrait with the crest of the club they support tucked in the
+            corner — the same identity the quiz shows. */}
+        <div style={{ position: "relative", flexShrink: 0, width: 38, height: 38 }}>
+          <AvatarLightbox name={ev.actorName} avatarUrl={ev.actorAvatar}>
+            <PlayerAvatar name={ev.actorName} avatarUrl={ev.actorAvatar} size={38} />
+          </AvatarLightbox>
+          {crestUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={crestUrl} alt="" width={17} height={17}
+              style={{ position: "absolute", right: -3, bottom: -2, width: 17, height: 17, objectFit: "contain", borderRadius: "50%", background: PANEL, padding: 1, boxShadow: "0 0 0 1.5px " + PANEL }} />
+          )}
+        </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 5, minWidth: 0, fontSize: 13.5, lineHeight: 1.35 }}>
             <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%" }}>{ev.actorName}</Link>
-            {ev.actorHandle && (
-              <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>@{ev.actorHandle}</span>
+            {ev.actorUsername && (
+              <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>@{ev.actorUsername}</span>
             )}
             <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}>· {timeAgo(ev.createdAt)}</span>
           </div>

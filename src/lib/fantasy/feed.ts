@@ -66,13 +66,14 @@ export interface FeedQuiz {
 export interface FeedEvent {
   id: string;
   actorId: string;
+  /** display_name — the headline, shown above the handle. */
   actorName: string;
-  /** The @username handle (never bold in the UI — Twitter grammar). Null when
-   *  the account hasn't picked one. */
-  actorHandle: string | null;
+  /** @username — the handle, shown under the name. Null if they've not set one. */
+  actorUsername: string | null;
   actorAvatar: string | null;
-  /** The manager's captain's club — the crest we show beside them (no stored
-   *  favourite club exists, so the player they backed most stands in for it). */
+  /** The crest of the club they SUPPORT (club_supporters — the same club the quiz
+   *  shows beside them), falling back to their captain's club if they've not
+   *  picked one. Null → no crest. */
   actorClub: string | null;
   type: FeedType;
   gw: number | null;
@@ -381,24 +382,32 @@ async function hydrateEvents(
   };
 
   const postEventIds = events.filter((e) => e.type === "post").map((e) => e.id as string);
-  const [{ data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }, { data: pollVoteRows }] = await Promise.all([
-    db.from("profiles").select("id, display_name, username, avatar_url").in("id", actorIds),
+  const [{ data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }, { data: pollVoteRows }, { data: supporterRows }] = await Promise.all([
+    db.from("profiles").select("id, display_name, avatar_url, username").in("id", actorIds),
     db.from("fantasy_feed_likes").select("event_id, user_id, emoji").in("event_id", eventIds),
     db.from("comments").select("subject_id").eq("subject_type", "fantasy_feed").in("subject_id", eventIds).is("deleted_at", null),
     db.from("fantasy_squads").select("user_id, captain").in("user_id", actorIds),
     postEventIds.length
       ? db.from("fantasy_feed_poll_votes").select("event_id, user_id, option_index").in("event_id", postEventIds)
       : Promise.resolve({ data: [] as { event_id: string; user_id: string; option_index: number }[] }),
+    // The club each manager SUPPORTS — the crest the quiz shows beside them.
+    db.from("club_supporters").select("user_id, club, season_id").in("user_id", actorIds).order("season_id", { ascending: false }),
   ]);
 
-  const profById = new Map<string, { display_name: string | null; username: string | null; avatar_url: string | null }>();
+  const profById = new Map<string, { display_name: string | null; avatar_url: string | null; username: string | null }>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (profs ?? []).forEach((p: any) => profById.set(p.id, p));
 
-  // The crest beside each manager = their captain's club (their headline pick).
-  const clubByActor = new Map<string, string | null>();
+  // The crest beside each manager = the club they support (newest season on file),
+  // matching the quiz. If they've never picked one, their captain's club stands in.
+  const supportedByActor = new Map<string, string>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (squadRows ?? []).forEach((s: any) => clubByActor.set(s.user_id, s.captain != null ? (poolById.get(s.captain)?.club ?? null) : null));
+  (supporterRows ?? []).forEach((s: any) => { if (s.club && !supportedByActor.has(s.user_id)) supportedByActor.set(s.user_id, s.club); });
+  const captainClubByActor = new Map<string, string | null>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (squadRows ?? []).forEach((s: any) => captainClubByActor.set(s.user_id, s.captain != null ? (poolById.get(s.captain)?.club ?? null) : null));
+  const clubByActor = new Map<string, string | null>();
+  actorIds.forEach((id) => clubByActor.set(id, supportedByActor.get(id) ?? captainClubByActor.get(id) ?? null));
 
   // Per-event emoji tallies (map emoji -> count), plus the viewer's own reaction.
   const reactionTally = new Map<string, Map<string, number>>();
@@ -490,8 +499,8 @@ async function hydrateEvents(
     return {
       id: e.id,
       actorId: e.actor_id,
-      actorName: profById.get(e.actor_id)?.display_name ?? "A manager",
-      actorHandle: profById.get(e.actor_id)?.username ?? null,
+      actorName: profById.get(e.actor_id)?.display_name ?? (profById.get(e.actor_id)?.username ? `@${profById.get(e.actor_id)!.username}` : "A manager"),
+      actorUsername: profById.get(e.actor_id)?.username ?? null,
       actorAvatar: profById.get(e.actor_id)?.avatar_url ?? null,
       actorClub: clubByActor.get(e.actor_id) ?? null,
       type,

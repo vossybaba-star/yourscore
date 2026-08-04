@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyUsers } from "@/lib/notify";
+import { dispatchEngagementEmail } from "@/lib/engagement";
 
 /**
  * In-app notification inbox writers (stage 2). Service-role, best-effort —
@@ -46,10 +47,10 @@ export async function createNotification(row: {
   body?: string | null;
   url: string;
   dedupeKey?: string | null;
-}): Promise<void> {
+}): Promise<string | null> {
   try {
     const svc = createServiceClient() as unknown as SupabaseClient;
-    const { error } = await svc.from("notifications").insert({
+    const { data, error } = await svc.from("notifications").insert({
       user_id: row.userId,
       type: row.type,
       actor_id: row.actorId ?? null,
@@ -60,10 +61,12 @@ export async function createNotification(row: {
       body: row.body ?? null,
       url: row.url,
       dedupe_key: row.dedupeKey ?? null,
-    });
-    if (error) console.error("[notifications] createNotification insert failed:", error);
+    }).select("id").single();
+    if (error) { console.error("[notifications] createNotification insert failed:", error); return null; }
+    return (data?.id as string | undefined) ?? null;
   } catch (err) {
     console.error("[notifications] createNotification failed:", err);
+    return null;
   }
 }
 
@@ -164,6 +167,7 @@ export async function recordCommentLike(opts: {
 }): Promise<void> {
   if (opts.authorId === opts.actorId) return;
   if (!NOTIFIABLE_SUBJECT_TYPES.has(opts.subjectType)) return;
+  let notifId: string | null = null;
   try {
     const svc = createServiceClient() as unknown as SupabaseClient;
     const { data: existing } = await svc
@@ -174,6 +178,7 @@ export async function recordCommentLike(opts: {
       .maybeSingle();
 
     if (existing) {
+      notifId = existing.id as string;
       const { error } = await svc
         .from("notifications")
         .update({
@@ -184,7 +189,7 @@ export async function recordCommentLike(opts: {
         .eq("id", existing.id);
       if (error) console.error("[notifications] recordCommentLike update failed:", error);
     } else {
-      const { error } = await svc.from("notifications").insert({
+      const { data: ins, error } = await svc.from("notifications").insert({
         user_id: opts.authorId,
         type: "comment_like",
         actor_id: opts.actorId,
@@ -193,8 +198,9 @@ export async function recordCommentLike(opts: {
         subject_id: opts.subjectId,
         like_count: 1,
         url: opts.url,
-      });
+      }).select("id").single();
       if (error) console.error("[notifications] recordCommentLike insert failed:", error);
+      notifId = (ins?.id as string | undefined) ?? null;
     }
   } catch (err) {
     console.error("[notifications] recordCommentLike failed:", err);
@@ -216,6 +222,19 @@ export async function recordCommentLike(opts: {
       url: deepLink,
       dedupeKey: `comment-like:${opts.commentId}`,
     });
+    // Email fallback for non-app authors (first 2 a day, rest digested). No-op
+    // for app users and when the aggregate row already existed (only the first
+    // like on a comment mints a fresh, un-emailed row worth an individual email).
+    if (notifId) {
+      await dispatchEngagementEmail({
+        userId: opts.authorId,
+        notifId,
+        kind: "like",
+        actorName: name,
+        snippet: truncate(opts.commentBody, 90),
+        url: deepLink,
+      });
+    }
   } catch (err) {
     console.error("[notifications] recordCommentLike push failed:", err);
   }

@@ -70,6 +70,12 @@ export interface ExtractedPlayer {
   isCaptain: boolean;
   isVice: boolean;
   isBench: boolean;
+  /** The £m price printed next to the player, if the screenshot shows one
+   *  (e.g. 4.5 for "£4.5m"). Undefined when not visible. Some FPL screens
+   *  (the "Transfers"/squad-list view) show all 15 grouped by position with NO
+   *  visual bench separation at all — price is the one reliable signal left
+   *  for guessing who starts, see repairInvalidFormation(). */
+  price?: number;
 }
 
 /** The minimal pool shape this file needs — deliberately narrower than
@@ -96,10 +102,15 @@ export interface Slot {
 /** Every folded key a pool player's surname could plausibly be read as: the
  *  last token alone (covers single-word surnames and hyphenated ones, which
  *  are already one token — "Gibbs-White"), the last two tokens joined (a
- *  short compound or a two-word mononym like "João Pedro"), and everything
- *  after the first token joined (a longer compound surname in full, e.g.
- *  "van de Ven"). Deduped per player so a short name doesn't add the same key
- *  twice. */
+ *  short compound or a two-word mononym like "João Pedro"), everything after
+ *  the first token joined (a longer compound surname in full, e.g. "van de
+ *  Ven"), and the FIRST token alone — FPL prints the first name as the shirt
+ *  name for a whole class of players (Gabriel Magalhães shows "Gabriel", Son
+ *  Heung-min shows "Son", Rodri-style Brazilians and Koreans especially), so
+ *  without this key those read as an unmatched surname the last-token index
+ *  never sees. Collisions it introduces (three Arsenal "Gabriel"s) are what
+ *  the club + position narrowing in resolveAmbiguous is there to split.
+ *  Deduped per player so a short name doesn't add the same key twice. */
 function surnameKeys(name: string): string[] {
   const tokens = name.trim().split(/\s+/);
   const keys = new Set<string>();
@@ -107,6 +118,7 @@ function surnameKeys(name: string): string[] {
   if (tokens.length > 1) {
     keys.add(foldName(tokens.slice(-2).join(" ")));
     keys.add(foldName(tokens.slice(1).join(" ")));
+    keys.add(foldName(tokens[0]));
   }
   return Array.from(keys);
 }
@@ -223,6 +235,7 @@ export function sanitizeExtracted(raw: unknown): ExtractedPlayer[] {
     const o = r as Record<string, unknown>;
     if (typeof o.surname !== "string" || !o.surname.trim()) continue;
     const pos = POSITIONS.includes(o.position as ExtractedPosition) ? (o.position as ExtractedPosition) : "MID";
+    const price = typeof o.price === "number" && Number.isFinite(o.price) && o.price > 0 ? o.price : undefined;
     out.push({
       surname: o.surname.trim(),
       club: typeof o.club === "string" ? o.club.trim() : "",
@@ -230,9 +243,108 @@ export function sanitizeExtracted(raw: unknown): ExtractedPlayer[] {
       isCaptain: o.isCaptain === true,
       isVice: o.isVice === true,
       isBench: o.isBench === true,
+      ...(price !== undefined ? { price } : null),
     });
   }
   return out;
+}
+
+/** Repair the one structural rule the vision model most often breaks on an FPL
+ *  team: EXACTLY ONE goalkeeper starts (the second is always a substitute). Only
+ *  touches the clear case — a standard two-keeper squad whose GK split is wrong —
+ *  and leaves everything else (cropped reads, odd shapes) to padSlots. Works on
+ *  the isBench flags so it composes before matching. Pure. */
+export function enforceOneGkStarter(players: ExtractedPlayer[]): ExtractedPlayer[] {
+  const gks = players.filter((p) => p.position === "GK");
+  if (gks.length !== 2) return players; // not the standard two-keeper squad
+  const startingGks = gks.filter((p) => !p.isBench);
+  if (startingGks.length === 1) return players; // already valid
+
+  const out = players.map((p) => ({ ...p }));
+  if (startingGks.length === 2) {
+    // Two keepers starting: bench the second, start the first spare outfielder.
+    const secondGk = out.filter((p) => p.position === "GK" && !p.isBench)[1];
+    const spareOutfielder = out.find((p) => p.isBench && p.position !== "GK");
+    if (secondGk && spareOutfielder) { secondGk.isBench = true; spareOutfielder.isBench = false; }
+  } else {
+    // No keeper starting: start the first benched keeper, bench a starting outfielder.
+    const benchGk = out.find((p) => p.position === "GK" && p.isBench);
+    const startingOutfielder = out.find((p) => !p.isBench && p.position !== "GK");
+    if (benchGk && startingOutfielder) { benchGk.isBench = false; startingOutfielder.isBench = true; }
+  }
+  return out;
+}
+
+/** Legal FPL starting-outfielder splits: DEF 3-5, MID 2-5, FWD 1-3, ten total
+ *  (the eleventh is the goalkeeper, handled separately by enforceOneGkStarter).
+ *  Generated once at module load — nine combinations, not worth computing per call. */
+const LEGAL_FORMATIONS: { def: number; mid: number; fwd: number }[] = (() => {
+  const out: { def: number; mid: number; fwd: number }[] = [];
+  for (let def = 3; def <= 5; def++) {
+    for (let mid = 2; mid <= 5; mid++) {
+      const fwd = 10 - def - mid;
+      if (fwd >= 1 && fwd <= 3) out.push({ def, mid, fwd });
+    }
+  }
+  return out;
+})();
+
+/** Repair a starting XI that isn't a legal FPL formation — the failure mode
+ *  vision hits on FPL's "Transfers"/squad-list screen, which lists the full 15
+ *  grouped by position count (2 GK, 5 DEF, 5 MID, 3 FWD) with NO visual
+ *  distinction between a formation and a bench, unlike the "Pick Team" screen.
+ *  Reading that layout top-to-bottom as if it were bench-separated benches
+ *  every forward (0 starting, illegal — FPL requires 1 to 3) even when a
+ *  £15m striker is sitting right there. No amount of vision prompting fixes
+ *  this: the information genuinely is not in those pixels.
+ *
+ *  So this does not re-ask the model — it recomputes deterministically. Price
+ *  is the one signal that IS in the pixels and is a reasonable proxy for who a
+ *  manager actually starts (their most expensive players, almost always).
+ *  Requires exactly one starting goalkeeper already decided (run this AFTER
+ *  enforceOneGkStarter) and exactly 15 total players — a cropped/partial read
+ *  is left to padSlots, same boundary enforceOneGkStarter draws. A missing
+ *  price sorts last within its position (never preferred over a priced peer)
+ *  but never blocks the repair. Pure. */
+export function repairInvalidFormation(players: ExtractedPlayer[]): ExtractedPlayer[] {
+  if (players.length !== 15) return players;
+  const outfield = players.filter((p) => p.position !== "GK");
+  if (outfield.length !== 13) return players; // not the standard 5 DEF/5 MID/3 FWD squad
+
+  const startingCounts = { def: 0, mid: 0, fwd: 0 };
+  for (const p of outfield) {
+    if (p.isBench) continue;
+    if (p.position === "DEF") startingCounts.def++;
+    else if (p.position === "MID") startingCounts.mid++;
+    else if (p.position === "FWD") startingCounts.fwd++;
+  }
+  const alreadyLegal = LEGAL_FORMATIONS.some(
+    (f) => f.def === startingCounts.def && f.mid === startingCounts.mid && f.fwd === startingCounts.fwd,
+  );
+  if (alreadyLegal) return players;
+
+  const byPos = (pos: ExtractedPosition) => outfield
+    .map((p, i) => ({ p, i })) // stable sort: original order breaks ties, never random
+    .filter(({ p }) => p.position === pos)
+    .sort((a, b) => (b.p.price ?? -1) - (a.p.price ?? -1) || a.i - b.i)
+    .map(({ p }) => p);
+  const def = byPos("DEF"), mid = byPos("MID"), fwd = byPos("FWD");
+  if (def.length < 3 || mid.length < 2 || fwd.length < 1) return players; // can't form a legal XI at all
+
+  const sumPrice = (xs: ExtractedPlayer[]) => xs.reduce((s, p) => s + (p.price ?? 0), 0);
+  let best: { def: number; mid: number; fwd: number } | null = null;
+  let bestValue = -Infinity;
+  for (const f of LEGAL_FORMATIONS) {
+    if (f.def > def.length || f.mid > mid.length || f.fwd > fwd.length) continue;
+    const value = sumPrice(def.slice(0, f.def)) + sumPrice(mid.slice(0, f.mid)) + sumPrice(fwd.slice(0, f.fwd));
+    if (value > bestValue) { bestValue = value; best = f; }
+  }
+  if (!best) return players;
+
+  const starting = new Set([
+    ...def.slice(0, best.def), ...mid.slice(0, best.mid), ...fwd.slice(0, best.fwd),
+  ]);
+  return players.map((p) => (p.position === "GK" ? p : { ...p, isBench: !starting.has(p) }));
 }
 
 const XI_SLOTS = 11;

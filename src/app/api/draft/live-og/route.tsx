@@ -128,7 +128,9 @@ export async function GET(req: NextRequest) {
           <div style={{ position: "absolute", left: 0, bottom: 0, width: "1080px", height: 8, background: GREEN }} />
         </div>
       ),
-      { width: 1080, height: 1920 }
+      // Live scoreboard — short edge cache so it stays fresh but a crawl burst
+      // still can't re-render it on every hit.
+      { width: 1080, height: 1920, headers: { "cache-control": "public, no-transform, max-age=30, s-maxage=60, stale-while-revalidate=300" } }
     );
   }
 
@@ -195,6 +197,6 @@ export async function GET(req: NextRequest) {
         <div style={{ position: "absolute", left: 0, bottom: 0, width: "1200px", height: 10, background: GREEN }} />
       </div>
     ),
-    { width: 1200, height: 630 }
+    { width: 1200, height: 630, headers: { "cache-control": "public, no-transform, max-age=30, s-maxage=60, stale-while-revalidate=300" } }
   );
 }

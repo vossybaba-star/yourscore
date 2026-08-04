@@ -78,6 +78,8 @@ export async function GET(req: Request) {
         </div>
       </div>
     ),
-    { width: 1200, height: 630 },
+    // Per-gameweek card — shorter edge cache since scores move, but still enough
+    // to collapse a crawl burst to one render.
+    { width: 1200, height: 630, headers: { "cache-control": "public, no-transform, max-age=300, s-maxage=600, stale-while-revalidate=3600" } },
   );
 }

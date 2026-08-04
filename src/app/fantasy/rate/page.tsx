@@ -18,7 +18,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   Btn, Card, ErrorState, Header, INK, LINE, MUTED, PANEL, PosTag,
-  Sheet, TEAL, CORAL, page, tint, type ClientPoolPlayer, type Pos,
+  Sheet, TEAL, CORAL, GOLD, LIME, page, tint, type ClientPoolPlayer, type Pos,
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
@@ -27,18 +27,47 @@ import { BenchStrip } from "@/components/fantasy/board/BenchStrip";
 import { RateIntroCards } from "@/components/fantasy/RateIntroCards";
 import { ScoutScanState } from "@/components/fantasy/ScoutScanState";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { faceFor } from "@/lib/fantasy/faces";
-import { BandGroups, scoreColor, type RatingBandsShape } from "@/components/fantasy/RatingBands";
+import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
+import {
+  BandGroups, scoreColor, HORIZON_LABEL, type RatingBandsShape,
+} from "@/components/fantasy/RatingBands";
 import type { Slot } from "@/lib/fantasy/screenshotMatch";
+import {
+  trackRatePhotoStarted, trackSquadExtracted, trackSquadRated,
+} from "@/lib/analytics/trackGame";
 
-const DRAFT_KEY = "ys-fantasy-draft";
+// ── the upload-step landing's sample payoff card ────────────────────────────
+// A STATIC preview of a real rating so a visitor sees the actual product
+// before uploading anything — real pool ids/names (Haaland, O'Reilly,
+// Mbeumo, Nedeljkovic), never invented players. Never fetched, never sent
+// anywhere; purely a sample render of the same BandGroups/scoreColor the
+// real result step uses.
+const SAMPLE_SCORE = 7.4;
+const SAMPLE_VERDICT = "A strong spine, but thin at the back before the fixtures turn.";
+const SAMPLE_MOVE_LINE = "Consider a stronger option in place of your weakest starter.";
+const SAMPLE_BANDS: RatingBandsShape = {
+  strong: [
+    { id: 411, name: "Erling Haaland", pos: "FWD", note: "Nailed on, huge fixture run", avatarUrl: faceUrlById(411) },
+  ],
+  decent: [
+    { id: 387, name: "Nico O'Reilly", pos: "DEF", note: "Good returns, keep an eye on rotation", avatarUrl: faceUrlById(387) },
+    { id: 427, name: "Bryan Mbeumo", pos: "MID", note: "Involved every week", avatarUrl: faceUrlById(427) },
+  ],
+  weak: [
+    { id: 39, name: "Kosta Nedeljkovic", pos: "DEF", note: "Toughest run of the lot right now", avatarUrl: faceUrlById(39) },
+  ],
+};
+
 const MAX_EDGE = 1600;
 
-interface RatingResult {
-  score: number; verdict: string; bands: RatingBandsShape; moveLine: string;
-}
+type Step = "upload" | "reading" | "confirm" | "rating";
 
-type Step = "upload" | "reading" | "confirm" | "rating" | "result";
+/** Where the viewer stands when they land on the result step:
+ *  - "out": no account. Both end-of-flow buttons lead to signup.
+ *  - "in-no-squad": signed in, never built a squad. No signup copy needed.
+ *  - "in-with-squad": signed in with a live squad — swapping in the
+ *    uploaded team REPLACES it, so that choice needs its own framing. */
+type AuthState = "out" | "in-no-squad" | "in-with-squad";
 
 /** Read a file, downscale to at most MAX_EDGE on the longest edge and
  *  re-encode as JPEG — a phone screenshot is easily 10 to 15MB straight off
@@ -80,6 +109,10 @@ function flagNote(flags: string[]): string | null {
 
 const surname = (name: string) => name.trim().split(/\s+/).slice(-1)[0] ?? name;
 
+/** "A", "A and B", "A, B and C" — for naming the picks that block grading. */
+const listNames = (xs: string[]): string =>
+  xs.length <= 1 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
+
 // ── the confirm-step pitch ──────────────────────────────────────────────
 // The 11 land on a real PitchSurface, grouped by position, attackers nearest
 // the top of the pitch the same way every other Fantasy scene draws a squad
@@ -116,13 +149,20 @@ function buildStaggerDelays(slots: Slot[], poolById: (id: number | null) => Clie
   return delays;
 }
 
+// The confirm step exists for ONE job: fix the picks we could not match, so the
+// grade can run. A matched pick is therefore display-only (no tap, no options);
+// only an unmatched/low-confidence pick is a button, and tapping it goes straight
+// to the picker to choose who it is. Unmatched picks wear a bold coral ring
+// (PlayerMarker's `flagged`) so a viewer sees which ones need them at a glance.
 function XiMarker({
-  slot, player, isCaptain, isVice, size, delayMs, selected, onSelect,
+  slot, player, isCaptain, isVice, size, delayMs, onFix, duplicate = false, captainMode = false, onSetCaptain,
 }: {
   slot: Slot; player: ClientPoolPlayer | null; isCaptain: boolean; isVice: boolean; size: number; delayMs: number;
-  selected: boolean; onSelect: () => void;
+  onFix: () => void; duplicate?: boolean; captainMode?: boolean; onSetCaptain?: () => void;
 }) {
-  const needsCheck = slot.confidence === "low" || slot.id === null;
+  // A duplicate (two slots resolved to the same player) is a wrong match, so it
+  // needs fixing too — otherwise it would be a locked, unfixable dead end.
+  const needsCheck = slot.confidence === "low" || slot.id === null || duplicate;
   const note = flagNote(slot.flags);
   const name = player?.name ?? slot.extracted.surname;
   const label = player ? surname(player.name) : slot.extracted.surname;
@@ -130,28 +170,49 @@ function XiMarker({
   const pos = resolvedPos(slot, player);
   const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
 
-  // Just the face and name on the pitch — clean. The captain, vice, bench and
-  // change controls live in the action bar below, shown only for the tapped
-  // player, so eleven sets of buttons never crowd the pitch at once.
+  const marker = (
+    <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size}
+      isCaptain={isCaptain} isVice={isVice} pos={pos}
+      flagged={needsCheck} doubt={needsCheck ? (note ?? "Tap to pick who this is") : undefined} />
+  );
+  if (needsCheck) {
+    return (
+      <button type="button" onClick={onFix} className="rate-marker-in"
+        aria-label={`${name}: we could not match this one. Tap to pick the right player.`}
+        style={{
+          flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
+          padding: 2, borderRadius: 12, border: "none", "--stagger-delay": `${delayMs}ms`,
+        } as CSSProperties}>
+        {marker}
+      </button>
+    );
+  }
+  // Captain-selection mode: no captain was read, so a matched starter becomes
+  // tappable (teal cue) to make them captain. Otherwise a matched pick is static.
+  if (captainMode && onSetCaptain) {
+    return (
+      <button type="button" onClick={onSetCaptain} className="rate-marker-in"
+        aria-label={`${name}: tap to make captain.`}
+        style={{
+          flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
+          padding: 2, borderRadius: 12, border: "none", outlineOffset: 1,
+          outline: `1.5px solid ${tint(TEAL, "aa")}`, "--stagger-delay": `${delayMs}ms`,
+        } as CSSProperties}>
+        {marker}
+      </button>
+    );
+  }
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className="rate-marker-in"
-      aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ""}. Tap for options`}
-      style={{
-        flex: "1 1 0", minWidth: 0, maxWidth: 72, background: "none", cursor: "pointer",
-        padding: 2, borderRadius: 12, "--stagger-delay": `${delayMs}ms`, outlineOffset: 1,
-        border: "none", outline: `1.5px solid ${selected ? tint(TEAL, "cc") : "transparent"}`,
-      } as CSSProperties}>
-      <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size}
-        isCaptain={isCaptain} isVice={isVice} pos={pos} doubt={needsCheck ? (note ?? "Check this pick") : undefined} />
-    </button>
+    <div className="rate-marker-in" style={{ flex: "1 1 0", minWidth: 0, maxWidth: 72, padding: 2, "--stagger-delay": `${delayMs}ms` } as CSSProperties}>
+      {marker}
+    </div>
   );
 }
 
-function BenchMarker({ slot, player, size, delayMs, selected, onSelect }: {
-  slot: Slot; player: ClientPoolPlayer | null; size: number; delayMs: number;
-  selected: boolean; onSelect: () => void;
+function BenchMarker({ slot, player, size, delayMs, onFix, duplicate = false }: {
+  slot: Slot; player: ClientPoolPlayer | null; size: number; delayMs: number; onFix: () => void; duplicate?: boolean;
 }) {
-  const needsCheck = slot.confidence === "low" || slot.id === null;
+  const needsCheck = slot.confidence === "low" || slot.id === null || duplicate;
   const note = flagNote(slot.flags);
   const name = player?.name ?? slot.extracted.surname;
   const label = player ? surname(player.name) : slot.extracted.surname;
@@ -159,15 +220,20 @@ function BenchMarker({ slot, player, size, delayMs, selected, onSelect }: {
   const pos = resolvedPos(slot, player);
   const avatarUrl = player?.avatarUrl ?? (player ? faceFor(player.name) : undefined) ?? null;
 
+  const marker = (
+    <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size} pos={pos}
+      flagged={needsCheck} doubt={needsCheck ? (note ?? "Tap to pick who this is") : undefined} dim />
+  );
+  if (!needsCheck) {
+    return (
+      <div className="rate-marker-in" style={{ padding: 2, "--stagger-delay": `${delayMs}ms` } as CSSProperties}>{marker}</div>
+    );
+  }
   return (
-    <button type="button" onClick={onSelect} aria-pressed={selected} className="rate-marker-in"
-      aria-label={`${name}${needsCheck ? `. ${note ?? "Check this pick"}` : ""}. Tap for options`}
-      style={{
-        background: "none", cursor: "pointer", padding: 2, borderRadius: 12, "--stagger-delay": `${delayMs}ms`,
-        outlineOffset: 1, border: "none", outline: `1.5px solid ${selected ? tint(TEAL, "cc") : "transparent"}`,
-      } as CSSProperties}>
-      <PlayerMarker name={name} label={label} avatarUrl={avatarUrl} club={club} size={size} pos={pos}
-        doubt={needsCheck ? (note ?? "Check this pick") : undefined} dim />
+    <button type="button" onClick={onFix} className="rate-marker-in"
+      aria-label={`${name}: we could not match this one. Tap to pick the right player.`}
+      style={{ background: "none", cursor: "pointer", padding: 2, borderRadius: 12, border: "none", "--stagger-delay": `${delayMs}ms` } as CSSProperties}>
+      {marker}
     </button>
   );
 }
@@ -230,15 +296,42 @@ export default function RateFromScreenshotPage() {
   const [captainId, setCaptainId] = useState<number | null>(null);
   const [viceId, setViceId] = useState<number | null>(null);
   const [pickingIndex, setPickingIndex] = useState<number | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [result, setResult] = useState<RatingResult | null>(null);
+  // The persisted share id — once the grade lands it's created server-side and
+  // the flow redirects to /r/[id], the single end page for a Scout analysis.
+  const [shareId, setShareId] = useState<string | null>(null);
   const [introDone, setIntroDone] = useState(false);
+  // Defaults to "out". Only used now to tag the funnel-tracking calls with auth
+  // context (the save CTA moved to /r/[id]), so the default just needs to be safe
+  // while the check is in flight — "out" is the common case for this surface.
+  const [authState, setAuthState] = useState<AuthState>("out");
+  // Cancels a "reading" fetch that's still in flight when the viewer backs
+  // out — the request isn't aborted, but its result is ignored so it can't
+  // yank them into "confirm" after they've already left.
+  const cancelledReadRef = useRef(false);
 
   const poolById = useCallback((id: number | null) => pool.find((p) => p.id === id) ?? null, [pool]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/fantasy/state");
+        if (!res.ok) { if (!cancelled) setAuthState("out"); return; }
+        const json = await res.json().catch(() => null) as { squad?: unknown } | null;
+        if (cancelled) return;
+        setAuthState(json?.squad ? "in-with-squad" : "in-no-squad");
+      } catch {
+        if (!cancelled) setAuthState("out");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const handleFile = async (file: File) => {
+    cancelledReadRef.current = false;
     setErr(null);
     setStep("reading");
+    trackRatePhotoStarted({ auth: authState }); // top-of-funnel: a screenshot was picked
     try {
       const [{ base64, mediaType }, poolRes] = await Promise.all([
         downscaleToJpeg(file),
@@ -252,6 +345,7 @@ export default function RateFromScreenshotPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error ?? "Couldn't read that screenshot. Try again.");
+      if (cancelledReadRef.current) return;
 
       const readSlots = json.slots as Slot[];
       setSlots(readSlots);
@@ -259,8 +353,15 @@ export default function RateFromScreenshotPage() {
       const vice = readSlots.find((s) => s.isVice && s.id !== null);
       setCaptainId(cap?.id ?? null);
       setViceId(vice?.id ?? null);
+      // The Scout read a full XI back — the tool worked. `needs_check` is how
+      // many picks came back low-confidence, so we can see read quality by cohort.
+      trackSquadExtracted({
+        auth: authState,
+        needs_check: readSlots.filter((s) => s.confidence === "low" || s.id === null).length,
+      });
       setStep("confirm");
     } catch (e) {
+      if (cancelledReadRef.current) return;
       setErr(e instanceof Error ? e.message : "Couldn't read that screenshot. Try again.");
       setStep("upload");
     }
@@ -278,45 +379,65 @@ export default function RateFromScreenshotPage() {
   const benchSlots = slots.filter((s) => s.isBench);
   const allIds = slots.map((s) => s.id).filter((id): id is number => id !== null);
   const uniqueIds = new Set(allIds);
+  // Ids that landed in more than one slot — every slot holding one is a wrong
+  // match to flag (circle + make tappable), same as an unmatched pick.
+  const dupIdSet = new Set(allIds.filter((id, i) => allIds.indexOf(id) !== i));
+  const isDup = (id: number | null): boolean => id !== null && dupIdSet.has(id);
   const captainInXi = captainId !== null && xiSlots.some((s) => s.id === captainId);
-  const canContinue = slots.length === 15 && allIds.length === 15 && uniqueIds.size === 15
-    && xiSlots.length === 11 && benchSlots.length === 4 && captainInXi;
-  const needsCheckCount = slots.filter((s) => s.confidence === "low" || s.id === null).length;
+  const squadReady = slots.length === 15 && allIds.length === 15 && uniqueIds.size === 15
+    && xiSlots.length === 11 && benchSlots.length === 4;
+  const canContinue = squadReady && captainInXi;
+  // Everything matched but no captain was read — let the viewer tap one on the
+  // pitch. Without this the flow could ask for a captain with no way to set it.
+  const needsCaptain = squadReady && !captainInXi;
+  const needsCheckCount = slots.filter((s) => s.confidence === "low" || s.id === null || isDup(s.id)).length;
 
   const submitForRating = async () => {
     if (!canContinue || captainId === null) return;
     setStep("rating");
     setIntroDone(false);
-    setResult(null);
+    setShareId(null);
     setErr(null);
     try {
-      const res = await fetch("/api/fantasy/rate-guest", {
+      // Grade AND persist server-side, so the result is a real, shareable
+      // snapshot at /r/[id] — the same page the bot posts. Returns just the id.
+      const res = await fetch("/api/fantasy/rate-share", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          ids: allIds, xi: xiSlots.map((s) => s.id), bench: benchSlots.map((s) => s.id), captain: captainId,
+          ids: allIds, xi: xiSlots.map((s) => s.id), bench: benchSlots.map((s) => s.id),
+          captain: captainId, vice: viceId,
         }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error ?? "Couldn't rate that squad. Try again.");
-      setResult(json as RatingResult);
+      if (!res.ok || typeof json.id !== "string") {
+        throw new Error(json.error ?? "Couldn't rate that squad. Try again.");
+      }
+      setShareId(json.id);
+      // The payoff: a grade exists. Fires once per successful rating (re-fires
+      // for a re-rate); the /r/[id] view fires its own share-tagged twin.
+      trackSquadRated({ auth: authState, source: "upload" });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Couldn't rate that squad. Try again.");
       setStep("confirm");
     }
   };
 
-  // The result only reveals once BOTH the three-card beat is finished and
-  // the rating has actually landed — whichever comes last. If the POST beat
-  // the user to the end of the cards, this fires the instant they finish
-  // and nothing else renders in between; if the cards beat the POST, the
-  // ScoutScanState grading beat below holds the screen for the gap.
+  // Land on /r/[id] once BOTH the three-card beat is finished and the grade has
+  // been persisted — whichever comes last. If the POST beat the user to the end
+  // of the cards, this redirects the instant they finish; if the cards beat the
+  // POST, the ScoutScanState grading beat below holds the screen for the gap.
   useEffect(() => {
-    if (step === "rating" && introDone && result) setStep("result");
-  }, [step, introDone, result]);
+    if (step === "rating" && introDone && shareId) router.push(`/r/${shareId}`);
+  }, [step, introDone, shareId, router]);
 
-  const saveAndSignIn = () => {
-    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(allIds)); } catch { /* private mode */ }
-    router.push("/auth/sign-in?next=/fantasy/build");
+  /** Step-aware back control, shown top-left on every step. Never a dead
+   *  end: "upload" is the front door, so backing out of it leaves the
+   *  flow entirely instead of looping in place. */
+  const goBack = () => {
+    if (step === "rating") { setStep("confirm"); return; }
+    if (step === "confirm") { setErr(null); setStep("upload"); return; }
+    if (step === "reading") { cancelledReadRef.current = true; setErr(null); setStep("upload"); return; }
+    router.push("/fantasy");
   };
 
   const xiRows = buildXiRows(slots, poolById);
@@ -325,24 +446,99 @@ export default function RateFromScreenshotPage() {
   return (
     <>
       <main data-fantasy style={page}>
-        <Header />
+        <Header exit={{ label: "Back", onClick: goBack }} />
 
         {step === "upload" && (
           <>
-            <Card>
-              <div className="font-display" style={{ fontSize: 22, color: INK, lineHeight: 1.1, marginBottom: 6 }}>
+            <input ref={fileInput} type="file" accept="image/*" onChange={onFilePicked} style={{ display: "none" }} />
+
+            {/* ── hero ── */}
+            <div className="rounded-2xl" style={{
+              padding: 20, marginBottom: 22, position: "relative", overflow: "hidden",
+              background: `linear-gradient(160deg, ${tint(TEAL, "22")}, ${PANEL} 65%)`,
+              border: `1px solid ${tint(TEAL, "44")}`,
+            }}>
+              <span className="font-body rounded-full" style={{
+                display: "inline-block", fontSize: 11, fontWeight: 700, letterSpacing: "0.06em",
+                padding: "5px 12px", marginBottom: 14,
+                background: tint(GOLD, "1e"), border: `1px solid ${tint(GOLD, "55")}`, color: GOLD,
+              }}>
+                FANTASY PL IS LIVE ON YOURSCORE
+              </span>
+              <div className="font-display" style={{ fontSize: 36, color: INK, lineHeight: 1.02, marginBottom: 10 }}>
                 Rate your FPL team
               </div>
-              <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-                Upload a screenshot of your Pick Team screen and the Scout will grade it, the same way he grades every YourScore squad. No account needed to see your score.
+              <p style={{ fontSize: 14, color: MUTED, margin: "0 0 18px", lineHeight: 1.55, maxWidth: 420 }}>
+                Upload one screenshot and the YourScore Scout scores it out of 10 in seconds, with your strengths, your weak spots and the one move worth making.
               </p>
-              <input ref={fileInput} type="file" accept="image/*" onChange={onFilePicked} style={{ display: "none" }} />
-              <Btn gold onClick={() => fileInput.current?.click()}>Upload your screenshot</Btn>
+              <Btn gold glow onClick={() => fileInput.current?.click()}>Upload your screenshot</Btn>
               <p style={{ fontSize: 11.5, color: MUTED, margin: "10px 0 0", lineHeight: 1.5 }}>
-                We only look at it to read your team. It is never saved.
+                Free. We only read your team from the image, and it is never saved.
               </p>
+            </div>
+
+            {err && <div style={{ marginBottom: 20 }}><ErrorState message={err} /></div>}
+
+            {/* ── the payoff preview ── */}
+            <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058", marginBottom: 8 }}>
+              HERE IS WHAT YOU GET BACK
+            </div>
+            <Card style={{ marginBottom: 22 }}>
+              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                <span className="font-body" style={{
+                  fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 999,
+                  border: `1px solid ${tint(TEAL, "55")}`, background: tint(TEAL, "14"), color: TEAL,
+                }}>{HORIZON_LABEL.month}</span>
+                <span className="font-body" style={{
+                  fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 999,
+                  border: `1px solid ${LINE}`, color: MUTED,
+                }}>{HORIZON_LABEL.next5}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
+                <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(SAMPLE_SCORE) }}>
+                  {SAMPLE_SCORE.toFixed(1)}
+                </span>
+                <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
+              </div>
+              <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{SAMPLE_VERDICT}</p>
+              <BandGroups bands={SAMPLE_BANDS} />
+              <div style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6, marginTop: 4 }}>
+                WORTH A LOOK
+              </div>
+              <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{SAMPLE_MOVE_LINE}</p>
             </Card>
-            {err && <div style={{ marginTop: 12 }}><ErrorState message={err} /></div>}
+
+            {/* ── why it's worth it ── */}
+            <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058", marginBottom: 8 }}>
+              WHY IT IS WORTH A LOOK
+            </div>
+            <div style={{ display: "grid", gap: 10, marginBottom: 22 }}>
+              {[
+                { accent: TEAL, title: "Graded by the Scout", body: "A real read on your XI, not a guess." },
+                { accent: GOLD, title: "Monthly prizes", body: "Top the monthly table and you win." },
+                { accent: LIME, title: "League chats", body: "Start a league and the group chat runs all season." },
+              ].map((hook) => (
+                <div key={hook.title} className="rounded-2xl" style={{
+                  display: "flex", alignItems: "center", gap: 12, padding: "13px 14px",
+                  background: PANEL, border: `1px solid ${LINE}`,
+                }}>
+                  <span aria-hidden style={{
+                    width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                    background: tint(hook.accent, "1e"), border: `1px solid ${tint(hook.accent, "55")}`,
+                  }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 2 }}>{hook.title}</div>
+                    <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.4 }}>{hook.body}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── closing CTA ── */}
+            <Btn gold onClick={() => fileInput.current?.click()}>Upload your screenshot</Btn>
+            <p style={{ fontSize: 11.5, color: MUTED, margin: "10px 0 0", lineHeight: 1.5, textAlign: "center" }}>
+              Free. We only read your team from the image, and it is never saved.
+            </p>
           </>
         )}
 
@@ -356,12 +552,12 @@ export default function RateFromScreenshotPage() {
           <>
             <div className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 4 }}>Is this your team?</div>
             <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-              Tap a player to change them, set your captain or move them to the bench.
+              This is the team we read from your screenshot.
             </p>
 
             {needsCheckCount > 0 && (
               <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>
-                {needsCheckCount} pick{needsCheckCount === 1 ? "" : "s"} need a check. Tap the marker to fix it.
+                {needsCheckCount} pick{needsCheckCount === 1 ? "" : "s"} we could not match {needsCheckCount === 1 ? "is" : "are"} circled in red. Tap {needsCheckCount === 1 ? "it" : "each one"} to pick who it is.
               </p>
             )}
 
@@ -375,8 +571,10 @@ export default function RateFromScreenshotPage() {
                         isVice={slot.id !== null && slot.id === viceId}
                         size={row.entries.length >= 5 ? 26 : row.entries.length >= 4 ? 30 : 36}
                         delayMs={staggerDelays[index] ?? 0}
-                        selected={selectedIndex === index}
-                        onSelect={() => setSelectedIndex(selectedIndex === index ? null : index)} />
+                        duplicate={isDup(slot.id)}
+                        captainMode={needsCaptain}
+                        onSetCaptain={() => { if (slot.id !== null) setCaptainId(slot.id); }}
+                        onFix={() => setPickingIndex(index)} />
                     ))}
                   </div>
                 ))}
@@ -384,51 +582,30 @@ export default function RateFromScreenshotPage() {
               <BenchStrip>
                 {slots.map((slot, index) => slot.isBench && (
                   <BenchMarker key={index} slot={slot} player={poolById(slot.id)} size={26} delayMs={staggerDelays[index] ?? 0}
-                    selected={selectedIndex === index}
-                    onSelect={() => setSelectedIndex(selectedIndex === index ? null : index)} />
+                    duplicate={isDup(slot.id)}
+                    onFix={() => setPickingIndex(index)} />
                 ))}
               </BenchStrip>
             </div>
 
-            {/* Action bar for the tapped player — keeps the pitch clean by
-                showing captain/vice/bench/change for ONE marker at a time. */}
-            {selectedIndex !== null && slots[selectedIndex] && (() => {
-              const s = slots[selectedIndex];
-              const p = poolById(s.id);
-              const nm = p ? p.name : (s.extracted.surname || "This pick");
-              const chip = (text: string, onClick: () => void, active = false) => (
-                <button type="button" onClick={onClick} style={{
-                  fontSize: 12, fontWeight: 700, padding: "7px 12px", borderRadius: 999, cursor: "pointer",
-                  border: `1px solid ${active ? TEAL : LINE}`, background: active ? tint(TEAL, "1e") : "transparent",
-                  color: active ? TEAL : INK,
-                }}>{text}</button>
-              );
-              return (
-                <div style={{
-                  display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "10px 12px", marginBottom: 12,
-                  background: PANEL, border: `1px solid ${tint(TEAL, "55")}`, borderRadius: 12,
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: INK, marginRight: "auto" }}>{nm}</span>
-                  {!s.isBench && chip("Captain", () => { if (s.id !== null) setCaptainId(s.id); }, s.id !== null && s.id === captainId)}
-                  {!s.isBench && chip("Vice", () => { if (s.id !== null) setViceId(s.id); }, s.id !== null && s.id === viceId)}
-                  {!s.isBench && chip("Bench", () => { setSlotAt(selectedIndex, { ...s, isBench: true }); setSelectedIndex(null); })}
-                  {s.isBench && chip("Start", () => { setSlotAt(selectedIndex, { ...s, isBench: false }); setSelectedIndex(null); })}
-                  {chip("Change", () => setPickingIndex(selectedIndex))}
-                </div>
-              );
-            })()}
-
             {err && <div style={{ marginBottom: 12 }}><ErrorState message={err} /></div>}
 
-            {!canContinue && (
-              <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>
-                {allIds.length < 15 || uniqueIds.size < 15
-                  ? "Every slot needs a player before you can carry on."
-                  : xiSlots.length !== 11 || benchSlots.length !== 4
-                  ? "You need exactly eleven starters and four on the bench."
-                  : "Pick a captain from your starting eleven."}
-              </p>
-            )}
+            {!canContinue && (() => {
+              // Name the exact picks that block grading rather than a vague
+              // "every slot needs a player" — an unmatched name (id null) or the
+              // same player picked twice is otherwise invisible to hunt for.
+              const unresolved = slots.filter((s) => s.id === null).map((s) => s.extracted.surname || "one pick");
+              const dupIds = Array.from(new Set(allIds.filter((id, i) => allIds.indexOf(id) !== i)));
+              const dupNames = dupIds.map((id) => poolById(id)?.name ?? "a pick");
+              const msg = unresolved.length
+                ? `We could not match ${listNames(unresolved)}. Tap ${unresolved.length === 1 ? "the circled player" : "each circled player"} to pick who it is.`
+                : dupNames.length
+                ? `${listNames(dupNames)} ${dupNames.length === 1 ? "is" : "are"} picked twice. Tap ${dupNames.length === 1 ? "it" : "one"} to pick who it is.`
+                : xiSlots.length !== 11 || benchSlots.length !== 4
+                ? "You need exactly eleven starters and four on the bench."
+                : "No captain was on your screenshot. Tap a player in your eleven to make them captain.";
+              return <p style={{ fontSize: 12, color: CORAL, margin: "0 0 10px", lineHeight: 1.5 }}>{msg}</p>;
+            })()}
             <Btn gold disabled={!canContinue} onClick={submitForRating}>Grade my team</Btn>
 
             {pickingIndex !== null && (
@@ -447,43 +624,13 @@ export default function RateFromScreenshotPage() {
         {step === "rating" && (
           !introDone
             ? <RateIntroCards onDone={() => setIntroDone(true)} />
-            : !result
+            : !shareId
             ? <ScoutScanState
                 heading="The Scout is grading your team"
                 subline="Weighing projections, fixtures and who is actually fit." />
             : null
         )}
 
-        {step === "result" && result && (
-          <>
-            <div className="rate-result-in">
-              <Card>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
-                  <span className="font-display" style={{ fontSize: 44, lineHeight: 1, color: scoreColor(result.score) }}>
-                    {result.score.toFixed(1)}
-                  </span>
-                  <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>out of 10</span>
-                </div>
-                <p style={{ fontSize: 14, color: INK, lineHeight: 1.5, margin: "0 0 12px" }}>{result.verdict}</p>
-                <BandGroups bands={result.bands} />
-                <div style={{ fontSize: 10.5, letterSpacing: "0.08em", color: "#586058", marginBottom: 6, marginTop: 4 }}>
-                  WORTH A LOOK
-                </div>
-                <p style={{ fontSize: 13, color: INK, lineHeight: 1.5, margin: 0 }}>{result.moveLine}</p>
-              </Card>
-            </div>
-
-            <div style={{ marginTop: 14, borderRadius: 16, padding: 18, background: `linear-gradient(150deg, ${tint(TEAL, "22")}, ${PANEL})`, border: `1px solid ${tint(TEAL, "55")}` }}>
-              <div className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.15, marginBottom: 6 }}>
-                Save this team
-              </div>
-              <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-                Create your free YourScore account and this exact team will be waiting for you when the season opens. One transfer a gameweek, and what you know earns you more.
-              </p>
-              <Btn gold onClick={saveAndSignIn}>Create your account and save it</Btn>
-            </div>
-          </>
-        )}
       </main>
       <BottomNav />
     </>

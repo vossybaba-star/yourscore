@@ -218,6 +218,17 @@ export function Sheet({ onClose, labelledBy, children }: {
   // at the document root frees the z-60 overlay to sit above the nav everywhere.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // Visual-viewport rect, so the sheet can dodge the on-screen keyboard (see below).
+  const [vv, setVv] = useState<{ top: number; height: number } | null>(null);
+
+  // Latest onClose without making it an effect dependency. Callers often pass an
+  // inline arrow (e.g. the composer's `() => { reset(); onClose() }`) that is a new
+  // reference every render; if the focus effect below depended on it, it would
+  // re-run on EVERY keystroke and steal focus back to the first control, so you
+  // could never type past one character in a field that isn't the first one (the
+  // poll inputs). Read it through a ref instead.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; });
 
   const focusables = useCallback((): HTMLElement[] => {
     if (!ref.current) return [];
@@ -227,13 +238,16 @@ export function Sheet({ onClose, labelledBy, children }: {
   }, []);
 
   useEffect(() => {
+    // Wait for the portal to mount so ref.current (and its fields) exist. Runs
+    // once — never on a keystroke — so focus is set on open and then left alone.
+    if (!mounted) return;
     returnTo.current = document.activeElement as HTMLElement | null;
     // Focus the first real control, or the sheet itself if it has none.
     const first = focusables()[0] ?? ref.current;
     first?.focus();
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
+      if (e.key === "Escape") { e.preventDefault(); onCloseRef.current(); return; }
       if (e.key !== "Tab") return;
       const items = focusables();
       if (!items.length) return;
@@ -248,15 +262,37 @@ export function Sheet({ onClose, labelledBy, children }: {
       // Put focus back where the user left it, not at the top of the document.
       returnTo.current?.focus?.();
     };
-  }, [focusables, onClose]);
+  }, [mounted, focusables]);
+
+  // Track the VISUAL viewport so the bottom-anchored sheet sits above the iOS
+  // on-screen keyboard instead of behind it. A `position:fixed` element is
+  // pinned to the LAYOUT viewport, which the keyboard does not shrink, so
+  // without this the field a user is typing into is hidden under the keyboard
+  // until some reflow (pressing return) nudges it up. Following visualViewport's
+  // offsetTop/height keeps the sheet in the visible band the whole time.
+  useEffect(() => {
+    if (!mounted) return;
+    const visual = window.visualViewport;
+    if (!visual) return;
+    const update = () => setVv({ top: visual.offsetTop, height: visual.height });
+    update();
+    visual.addEventListener("resize", update);
+    visual.addEventListener("scroll", update);
+    return () => {
+      visual.removeEventListener("resize", update);
+      visual.removeEventListener("scroll", update);
+    };
+  }, [mounted]);
 
   const overlay = (
     <div onClick={onClose}
       style={{
         // z-60 above the BottomNav (z-50); portaled to <body> so main's stacking
-        // context can't sink it below the nav. Bottom padding clears the
-        // home-indicator safe area so the last row isn't under the gesture bar.
-        position: "fixed", inset: 0, zIndex: 60, background: "rgba(4,8,6,0.72)",
+        // context can't sink it below the nav. Sized to the visual viewport (see
+        // above) so flex-end lands the sheet just above the keyboard.
+        position: "fixed", left: 0, right: 0,
+        top: vv ? vv.top : 0, height: vv ? vv.height : "100%",
+        zIndex: 60, background: "rgba(4,8,6,0.72)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
         padding: "14px 14px calc(14px + env(safe-area-inset-bottom)) 14px",
       }}>
@@ -270,7 +306,7 @@ export function Sheet({ onClose, labelledBy, children }: {
         className="rounded-2xl"
         style={{
           background: PANEL, border: `1px solid ${tint(TEAL, "44")}`, padding: 18,
-          width: "100%", maxWidth: 480, maxHeight: "82dvh", overflowY: "auto",
+          width: "100%", maxWidth: 480, maxHeight: "100%", overflowY: "auto",
         }}>
         {children}
       </div>
