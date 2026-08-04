@@ -35,11 +35,16 @@ football app. Extract exactly what is printed on the pitch — never invent a
 player and never skip a slot you can read.
 
 RULES
-- Read each player's club from the KIT colours and the fixture line under
-  their name, not from a guess based on who they usually play for.
-- Transcribe the printed surname exactly, including any accents. If the
-  screenshot shows an initial to disambiguate two same-surname squad members
-  (e.g. "N.Williams"), keep it exactly like that.
+- Read each player's club from the KIT they are wearing, not from a guess
+  based on who they usually play for. Name the club IN FULL, the common name
+  a fan would use: "Chelsea", "Manchester City", "Nottingham Forest",
+  "Tottenham". Do NOT return the three letter code (CHE, MCI, NFO) shown in the
+  fixture line under the name — that code is the opponent, not their club.
+- Transcribe the printed surname exactly, including any accents ("Sánchez",
+  "Groß", "João Pedro"). If the screenshot shows an initial to disambiguate two
+  same-surname squad members (e.g. "N.Williams"), keep it exactly like that. If
+  a name is clearly cut off on screen (e.g. "Calvert-Le..."), give the player's
+  full surname ("Calvert-Lewin").
 - The row a player sits in on the pitch tells you their position: goalkeeper
   at the back, then defenders, midfielders, forwards moving up the pitch.
 - A "C" armband means captain, a "V" armband means vice captain.

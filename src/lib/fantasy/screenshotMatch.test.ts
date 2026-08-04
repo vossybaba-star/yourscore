@@ -239,3 +239,15 @@ test("padSlots: starters read beyond eleven spill onto the bench", () => {
   // the two spilled starters kept their real ids on the bench
   assert.equal(out.filter((s) => s.isBench && s.id !== null).length, 2);
 });
+
+// The vision model reads the club off the KIT and gives the common short name;
+// the pool labels Spurs as "Spurs" while the model says "Tottenham". The
+// clubKey alias must bridge them so a real read lands high, not flagged.
+test("club alias: a 'Tottenham' read matches the pool's 'Spurs' at high confidence", () => {
+  const slots = matchExtractedSquad(
+    [bench({ surname: "Van de Ven", club: "Tottenham", position: "DEF" })], REAL_POOL,
+  );
+  assert.equal(slots[0].id, 503);
+  assert.equal(slots[0].confidence, "high");
+  assert.deepEqual(slots[0].flags, []);
+});

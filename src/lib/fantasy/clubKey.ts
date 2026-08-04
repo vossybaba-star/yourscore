@@ -14,6 +14,8 @@
  *  form, mapping the long official name onto the short one the pool uses. */
 const CLUB_ALIASES: Record<string, string> = {
   tottenhamhotspur: "spurs",
+  tottenham: "spurs", // the common short form a screenshot/vision read gives
+
   manchestercity: "mancity",
   manchesterunited: "manutd",
   newcastleunited: "newcastle",
