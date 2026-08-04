@@ -25,6 +25,7 @@ import { PlayerMarker } from "@/components/fantasy/PlayerMarker";
 import { PitchSurface } from "@/components/fantasy/board/PitchSurface";
 import { BenchStrip } from "@/components/fantasy/board/BenchStrip";
 import { RateIntroCards } from "@/components/fantasy/RateIntroCards";
+import { ScoutScanState } from "@/components/fantasy/ScoutScanState";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { faceFor } from "@/lib/fantasy/faces";
 import { BandGroups, scoreColor, type RatingBandsShape } from "@/components/fantasy/RatingBands";
@@ -78,29 +79,6 @@ function flagNote(flags: string[]): string | null {
 }
 
 const surname = (name: string) => name.trim().split(/\s+/).slice(-1)[0] ?? name;
-
-/** The Scout's branded wait state — a real pitch with a calm teal sweep, not
- *  a spinner. Used both while the vision call reads the screenshot and, if
- *  it's still running once the intro cards finish, for the brief grading
- *  beat before the result reveals. Respects prefers-reduced-motion via the
- *  .scout-scan-sweep class in globals.css (animation dropped, sweep stays
- *  put at a fixed opacity). */
-function ScoutScanState({ heading, subline }: { heading: string; subline: string }) {
-  return (
-    <div className="rounded-2xl" style={{ border: `1px solid ${LINE}`, overflow: "hidden" }}>
-      <PitchSurface>
-        <div aria-hidden className="scout-scan-sweep" style={{
-          position: "absolute", left: "8%", right: "8%", height: "18%", borderRadius: 10,
-          background: `linear-gradient(180deg, transparent, ${tint(TEAL, "40")}, transparent)`,
-        }} />
-      </PitchSurface>
-      <div style={{ padding: 16, background: PANEL }}>
-        <div className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 6 }}>{heading}</div>
-        <p style={{ fontSize: 13, color: MUTED, margin: 0, lineHeight: 1.5 }}>{subline}</p>
-      </div>
-    </div>
-  );
-}
 
 // ── the confirm-step pitch ──────────────────────────────────────────────
 // The 11 land on a real PitchSurface, grouped by position, attackers nearest

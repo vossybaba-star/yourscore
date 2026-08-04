@@ -909,10 +909,17 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
               Edit my squad
             </button>
           )}
-          <button disabled={busy} onClick={() => share("squad")} className="font-body rounded-xl"
-            style={{ width: "100%", padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: busy ? "default" : "pointer", background: PANEL_2, color: INK, border: `1px solid ${LINE}`, opacity: busy ? 0.5 : 1 }}>
-            {busy ? "…" : "Share my squad"}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button disabled={busy} onClick={() => share("squad")} className="font-body rounded-xl"
+              style={{ flex: 1, padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: busy ? "default" : "pointer", background: PANEL_2, color: INK, border: `1px solid ${LINE}`, opacity: busy ? 0.5 : 1 }}>
+              {busy ? "…" : "Share my squad"}
+            </button>
+            <button onClick={() => router.push("/fantasy/scout/squad")} className="font-body rounded-xl"
+              style={{ flex: 1, padding: "8px 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", background: PANEL_2, color: INK, border: `1px solid ${tint(TEAL, "55")}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
+              <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.08em", color: TEAL }}>YS SCOUT</span>
+              <span>Rate my team</span>
+            </button>
+          </div>
           {notice && (
             <p className="font-body" style={{ fontSize: 12, color: GOLD, margin: "3px 0 0", textAlign: "center" }}>
               {notice}

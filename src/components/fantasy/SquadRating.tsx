@@ -23,6 +23,7 @@ import {
   INK, MUTED,
 } from "./shared";
 import { BandGroups, scoreColor, type RatingBandsShape as RatingBands } from "./RatingBands";
+import { ScoutScanState } from "./ScoutScanState";
 
 interface SquadRatingResponse {
   score: number;
@@ -99,9 +100,19 @@ export function SquadRating() {
     <section style={{ display: "grid", gap: 10 }}>
       <SectionLabel>SQUAD RATING</SectionLabel>
 
-      {error && !rating && <ErrorState message={error} onRetry={() => void rate(false)} />}
+      {/* A rate in flight (first ask or a fresh take) gets the same branded
+          pitch-loading beat the signed-out /fantasy/rate flow uses, instead
+          of a plain button label flip. The cached peek on mount never sets
+          busy, so this never flashes for the instant cached-result path. */}
+      {busy && (
+        <ScoutScanState
+          heading="The Scout is grading your team"
+          subline="Reading your fifteen the same way he reads every squad." />
+      )}
 
-      {!rating && !error && (
+      {!busy && error && !rating && <ErrorState message={error} onRetry={() => void rate(false)} />}
+
+      {!busy && !rating && !error && (
         <Card>
           <div className="font-body" style={{ fontSize: 14.5, fontWeight: 700, color: INK, marginBottom: 6 }}>
             Rate my squad
@@ -109,11 +120,12 @@ export function SquadRating() {
           <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
             A score out of 10 for your fifteen, with your XI banded strong, decent and weak, and one move worth a look.
           </p>
-          <Btn gold disabled={busy} onClick={() => void rate(false)}>{busy ? "Rating your squad" : "Rate my squad"}</Btn>
+          <Btn gold disabled={busy} onClick={() => void rate(false)}>Rate my squad</Btn>
         </Card>
       )}
 
-      {rating && (
+      {!busy && rating && (
+        <div className="rate-result-in">
         <Card>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10 }}>
             <span className="font-display" style={{ fontSize: 40, lineHeight: 1, color: scoreColor(rating.score) }}>
@@ -137,14 +149,13 @@ export function SquadRating() {
           </p>
 
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => void rate(true)} disabled={busy}
+            <button onClick={() => void rate(true)}
               className="font-body"
               style={{
                 background: "transparent", border: "none", color: MUTED,
-                fontSize: 12, fontWeight: 600, padding: 0, cursor: busy ? "default" : "pointer",
-                opacity: busy ? 0.5 : 1,
+                fontSize: 12, fontWeight: 600, padding: 0, cursor: "pointer",
               }}>
-              {busy ? "Getting a fresh take" : "Get a fresh take"}
+              Get a fresh take
             </button>
             {asOfLabel(rating.generatedAt) && (
               <span className="font-body" style={{ fontSize: 11, color: "#586058" }}>
@@ -158,6 +169,7 @@ export function SquadRating() {
             </p>
           )}
         </Card>
+        </div>
       )}
     </section>
   );

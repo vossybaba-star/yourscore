@@ -158,10 +158,8 @@ function YouStrip({ you, proposed, onAdopt, adopting }: { you: HomeData["you"]; 
   );
 }
 
-/** A door into /fantasy/rate for a visitor with a team already picked
- *  elsewhere — screenshot in, a Scout grade out, no account needed to see it.
- *  Sits above JoinHook so it's the first thing a "I already play" visitor
- *  hits, not buried under the generic sign-up pitch. */
+/** A door into /fantasy/rate — upload any screenshot, the Scout grades it.
+ *  Shown to signed-out visitors and members alike, as the 2nd tile on Home. */
 function RatePhotoHero() {
   const router = useRouter();
   return (
@@ -176,8 +174,8 @@ function RatePhotoHero() {
         </svg>
       </span>
       <div style={{ minWidth: 0, flex: 1 }}>
-        <div className="font-display" style={{ fontSize: 16, color: INK, lineHeight: 1.2 }}>Already picked a team elsewhere?</div>
-        <div style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>Upload a screenshot and the Scout will grade it. No account needed.</div>
+        <div className="font-display" style={{ fontSize: 16, color: INK, lineHeight: 1.2 }}>Rate any team from a screenshot</div>
+        <div style={{ fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>Upload your FPL Pick Team screenshot and the Scout grades it in seconds.</div>
       </div>
       <span aria-hidden style={{ color: GOLD, fontSize: 18, flexShrink: 0 }}>→</span>
     </button>
@@ -434,8 +432,8 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
     return (
       <main data-fantasy style={page}>
         <FantasyHeader />
-        <RatePhotoHero />
         <JoinHook />
+        <div style={{ marginTop: 12 }}><RatePhotoHero /></div>
         {err ? <p style={{ fontSize: 13, color: "#E08A6B", marginTop: 12 }}>{err}</p>
           : !pub ? <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}><Skel h={64} r={12} /><Skel h={240} r={12} /><Skel h={64} r={12} /></div>
           : (
@@ -465,6 +463,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
       ) : (
         <PullToRefresh onRefresh={refresh}>
           <YouStrip you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
+          <div style={{ marginTop: 12 }}><RatePhotoHero /></div>
           {/* Active league(s) + chat — one tap into the conversation. */}
           <LeagueChats leagues={data.leagues} />
           <ScoutRail picks={data.scout} />
