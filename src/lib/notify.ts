@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
+import { blocks, type NotifyPriority } from "@/lib/notifyPriority";
 
 /**
  * Server-side push fan-out. Respects opt-in, dedups per (user, key) via
@@ -20,7 +21,16 @@ export async function notifyUsers(opts: {
   /** Default true — only send to profiles with notifications_opt_in = true. */
   requireOptIn?: boolean;
   /**
-   * Skip anyone who has received ANY notification in the last this-many minutes.
+   * How much this send is allowed to interrupt. Default routine.
+   *
+   * Only matters alongside minGapMinutes: a "breaking" send ignores routine
+   * traffic inside its window, so a scheduled game reminder can no longer
+   * silence actual news. A routine send is still blocked by everything.
+   */
+  priority?: NotifyPriority;
+  /**
+   * Skip anyone who has received a notification of EQUAL OR HIGHER priority in
+   * the last this-many minutes.
    *
    * A per-user floor across every notification type, because each cron only
    * knows its own limits and the user experiences the sum. On 5 Aug one person
@@ -34,6 +44,14 @@ export async function notifyUsers(opts: {
    * free) and would be wrong for something that must arrive.
    */
   minGapMinutes?: number;
+  /**
+   * A shorter floor against EVERYTHING, whatever its priority.
+   *
+   * Priority stops routine traffic silencing news for hours; this stops the two
+   * landing in the same minute. Being allowed to interrupt is not the same as
+   * being allowed to buzz someone twice in thirty seconds.
+   */
+  minGapAnyMinutes?: number;
 }): Promise<{ targeted: number; skippedRecent?: number }> {
   try {
     const svc = createServiceClient();
@@ -56,16 +74,30 @@ export async function notifyUsers(opts: {
       if (!ids.length) return { targeted: 0 };
     }
 
-    // 2. Global per-user floor — anything at all sent recently.
+    // 2. Per-user floors. Two windows: a long one against sends this cannot
+    //    outrank, and a short one against absolutely anything.
     let skippedRecent = 0;
-    if (opts.minGapMinutes && opts.minGapMinutes > 0) {
-      const since = new Date(Date.now() - opts.minGapMinutes * 60_000).toISOString();
+    const priority: NotifyPriority = opts.priority ?? "routine";
+    const longGap = opts.minGapMinutes ?? 0;
+    const anyGap = opts.minGapAnyMinutes ?? 0;
+    if (longGap > 0 || anyGap > 0) {
+      const widest = Math.max(longGap, anyGap);
+      const since = new Date(Date.now() - widest * 60_000).toISOString();
       const { data: recent } = await raw
         .from("notification_log")
-        .select("user_id")
+        .select("user_id, key, sent_at")
         .in("user_id", ids)
         .gte("sent_at", since);
-      const busy = new Set((recent ?? []).map((r: { user_id: string }) => r.user_id));
+
+      const now = Date.now();
+      const busy = new Set<string>();
+      for (const r of (recent ?? []) as { user_id: string; key: string; sent_at: string }[]) {
+        const agoMin = (now - new Date(r.sent_at).getTime()) / 60_000;
+        // Anything at all, very recently.
+        if (anyGap > 0 && agoMin < anyGap) { busy.add(r.user_id); continue; }
+        // Otherwise only things this send cannot outrank.
+        if (longGap > 0 && agoMin < longGap && blocks(r.key, priority)) busy.add(r.user_id);
+      }
       const before = ids.length;
       ids = ids.filter((i) => !busy.has(i));
       skippedRecent = before - ids.length;

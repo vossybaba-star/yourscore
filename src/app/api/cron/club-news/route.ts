@@ -55,8 +55,17 @@ const MAX_PER_CLUB_PER_DAY = 2;
 const MAX_STORIES_PER_RUN = 1;
 /** Minimum spacing between two pushes to the same fanbase. */
 const CLUB_GAP_MS = 6 * 3_600_000;
-/** No user hears from ANY part of the app within this window of a club push. */
+/**
+ * No user gets two BREAKING pushes inside this window. Routine traffic (the
+ * daily game reminder, the debate nudge, the 6pm briefing) no longer blocks
+ * news — founder call: a reminder is still true in four hours, news is not.
+ */
 const USER_GAP_MINUTES = 4 * 60;
+/**
+ * But a short floor against absolutely everything. Outranking a reminder means
+ * news is not silenced by it, not that it may arrive thirty seconds later.
+ */
+const USER_GAP_ANY_MINUTES = 45;
 /** A story sharing this many entities with something already pushed to a club is
  *  the same saga wearing a new headline. */
 const SAGA_OVERLAP = 2;
@@ -212,8 +221,9 @@ export async function GET(req: NextRequest) {
 
       const { targeted } = await notifyUsers({
         userIds, title, body, url, dedupeKey: key,
-        // Nobody hears from us twice in four hours, whatever sent the first one.
+        priority: "breaking",
         minGapMinutes: USER_GAP_MINUTES,
+        minGapAnyMinutes: USER_GAP_ANY_MINUTES,
       });
       if (targeted > 0) {
         const { data: reached } = await db
