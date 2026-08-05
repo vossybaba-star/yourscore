@@ -52,7 +52,7 @@ function firstUrl(text: string): string | null {
 /** Toolbar glyphs — one stroke style across the row (X-grade, never emoji). */
 function ToolIcon({ d }: { d: string }) {
   return (
-    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {d.split(" M").map((seg, i) => <path key={i} d={(i ? "M" : "") + seg} />)}
     </svg>
@@ -234,13 +234,13 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
 
   // Compact scrollable toolbar — modern glassy chips (founder, 6 Aug: no
   // dashed outlines, no emoji icons; X-grade SVG glyphs on glossy pills).
+  // Bare icons, X-style (founder, 6 Aug: "just the icons by themselves").
+  // No chrome at rest; the padding keeps each hit area ~44px. aria-labels
+  // carry the names the visible labels used to.
   const toolbarBtn: React.CSSProperties = {
-    flexShrink: 0, display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
-    padding: "9px 13px", borderRadius: 999,
-    background: "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))",
-    border: `1px solid rgba(255,255,255,0.12)`,
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10)",
-    color: TEAL, fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap",
+    flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+    cursor: "pointer", width: 40, height: 40, borderRadius: 999,
+    background: "transparent", border: "none", color: TEAL,
   };
   const showPhoto = !gif && slots.length < MAX_POST_IMAGES;
   const showGif = slots.length === 0 && !player && !fixture;
@@ -262,7 +262,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
       <textarea ref={textareaRef} value={text}
         onChange={(e) => { setText(e.target.value.slice(0, 500)); trackCaret(e); }}
         onKeyUp={trackCaret} onClick={trackCaret}
-        placeholder={quoting ? "Add a comment" : "Share your FPL take"} rows={4}
+        placeholder={quoting ? "Add a comment" : "What’s happening?"} rows={4}
         style={{ ...input, resize: "none", lineHeight: 1.45 }} />
       <MentionDropdown query={mentionQuery} onSelect={pickMention} />
 
@@ -382,19 +382,19 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
 
       <div style={{ display: "flex", gap: 8, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
         {showPhoto && (
-          <button onClick={() => fileRef.current?.click()} style={toolbarBtn}><ToolIcon d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z M21 15l-5-5L5 21" />Photo</button>
+          <button onClick={() => fileRef.current?.click()} style={toolbarBtn} aria-label="Add photos"><ToolIcon d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z M21 15l-5-5L5 21" /></button>
         )}
         {showGif && (
-          <button onClick={() => setGifPickerOpen(true)} style={toolbarBtn}><ToolIcon d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z M7.5 9.5v5 M7.5 9.5h2 M7.5 12h1.5 M12 9.5v5 M17 9.5h-2.5v5" />GIF</button>
+          <button onClick={() => setGifPickerOpen(true)} style={toolbarBtn} aria-label="Add a GIF"><ToolIcon d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z M7.5 9.5v5 M7.5 9.5h2 M7.5 12h1.5 M12 9.5v5 M17 9.5h-2.5v5" /></button>
         )}
         {!pollOn && (
-          <button onClick={() => setPollOn(true)} style={toolbarBtn}><ToolIcon d="M4 6h12 M4 12h16 M4 18h8" />Poll</button>
+          <button onClick={() => setPollOn(true)} style={toolbarBtn} aria-label="Add a poll"><ToolIcon d="M4 6h12 M4 12h16 M4 18h8" /></button>
         )}
         {showPlayerBtn && (
-          <button onClick={() => setPlayerPickerOpen(true)} style={toolbarBtn}><ToolIcon d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z" />Player</button>
+          <button onClick={() => setPlayerPickerOpen(true)} style={toolbarBtn} aria-label="Attach a player"><ToolIcon d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z" /></button>
         )}
         {showFixtureBtn && (
-          <button onClick={() => setFixturePickerOpen(true)} style={toolbarBtn}><ToolIcon d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 9h16 M8 3v4 M16 3v4" />Fixture</button>
+          <button onClick={() => setFixturePickerOpen(true)} style={toolbarBtn} aria-label="Attach a fixture"><ToolIcon d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 9h16 M8 3v4 M16 3v4" /></button>
         )}
       </div>
 
