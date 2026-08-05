@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-04 (**FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-05 (**Social Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,6 +806,23 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05 (eve)** — **Social Phase 1 visual upgrade SHIPPED** (PR #61, merge `42ae427`) —
+  first slice of the new Social master build prompt (5 Aug), which supersedes the 3 Aug spec.
+  Social tabs renamed **For You | Following | Discover** (internal id stays `live`, old `?tab=`
+  links work); **Top | Latest** sort lives only inside For You; tab + sort persist
+  (`ys:social:tab` / `ys:social:sort`, URL `?tab=` wins). Feed is a **flat timeline** — the
+  per-post rounded cards are gone, posts are rows split by 1px dividers. Reactions collapsed
+  to ONE React control + a top-3 emoji summary chip; the 6-emoji tray opens on tap. Action row
+  (React · Comment · Share) never wraps at 375px, ~44px tap targets. Tab panes stay mounted
+  after first visit so switching keeps scroll + data (zero refetch, verified). Composer entry
+  is the user's avatar + "Share your FPL take". Signed-out visitors get a sticky portaled
+  "Join YourScore" bar that measures the real BottomNav height live (guest nav is 80px at
+  375px — "Premier League" wraps; never hardcode 58px). **Squad feed posts keep the FULL
+  pitch** — founder settled the 3×-flipped question on 5 Aug: PR #60 stands, the compact card
+  built for this branch was deleted in review; do not re-compact without a fresh founder yes.
+  No migrations, no API changes. Phases 2–5 of the master prompt (media/GIF/link unfurl,
+  replies/reposts/notification centre, league hub+chat, discovery/ranking/search) are separate
+  gated /feature runs, not started.
 - **2026-08-05 (later)** — **Bot community variety pass.** (1) **Drifters** — the 50 seed
   accounts now double as one-line-a-day visitors: 2–3 per London day (deterministic pick) each
   post ONE thing — a real quiz score or a short one-liner — at a random waking hour, so the feed
