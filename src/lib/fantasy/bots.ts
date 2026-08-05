@@ -13,7 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fantasyPool } from "./pool";
 import {
   BOT_PERSONAS, activeBotPersonas, generateBotMove, generateBotReply,
-  londonHour, personaDayOff,
+  generateDrifterMove, hash01, londonDay, londonHour, personaDayOff,
   type BotMove, type BotPoolPlayer, type ReplyTarget,
 } from "./botContent";
 import { FEED_REACTIONS } from "./feed";
@@ -37,6 +37,7 @@ export interface BotTickReport {
   pollVotes: number;
   replies: number;
   reveals: number;
+  drifters: number;
 }
 
 const botPool = (): BotPoolPlayer[] =>
@@ -58,7 +59,7 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
 
   const report: BotTickReport = {
     bots: bots.length, active: activeBots.length,
-    posted: 0, reactions: 0, pollVotes: 0, replies: 0, reveals: 0,
+    posted: 0, reactions: 0, pollVotes: 0, replies: 0, reveals: 0, drifters: 0,
   };
   // The cast lives on London time and none of them post at 4am. Everything —
   // posts, reactions, replies, reveals — sleeps outside 07:00–23:00.
@@ -120,9 +121,40 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
     }
   }
   if (moves.length) {
+    // Jittered stamps: two posts written by the same cron run must never share
+    // a minute — same-second posts are the batch tell.
     const { error } = await db.from("fantasy_feed_events")
-      .insert(moves.map((m) => ({ actor_id: m.actorId, type: m.type, gw: null, payload: m.payload })));
+      .insert(moves.map((m) => ({
+        actor_id: m.actorId, type: m.type, gw: null, payload: m.payload,
+        created_at: new Date(now - Math.floor(Math.random() * 22 * 60e3)).toISOString(),
+      })));
     if (!error) report.posted = moves.length;
+  }
+
+  // ── Drifters: a couple of NEW names every day ──────────────────────────────
+  // 2–3 seed accounts (deterministic per London day) each say ONE thing — a
+  // real quiz score or a one-liner — at some random point in the day. Fresh
+  // faces on every scroll without growing the standing cast.
+  const day = londonDay(now);
+  const { data: seedProfiles } = await db.from("profiles")
+    .select("id, username").eq("source", "seed").eq("is_seed", true).not("username", "is", null);
+  const todaysDrifters = ((seedProfiles ?? []) as { id: string; username: string }[])
+    .filter((s) => hash01(`${s.username}:${day}`) < 0.06); // ~3 of 50
+  if (todaysDrifters.length) {
+    const drifterIds = todaysDrifters.map((s) => s.id);
+    const { data: alreadyRows } = await db.from("fantasy_feed_events")
+      .select("actor_id").in("actor_id", drifterIds).eq("payload->>k", `drift:${day}`);
+    const alreadyPosted = new Set(((alreadyRows ?? []) as { actor_id: string }[]).map((r) => r.actor_id));
+    for (const s of todaysDrifters) {
+      // ~10% per waking-hour tick → lands at an unpredictable time of day.
+      if (alreadyPosted.has(s.id) || Math.random() > 0.1) continue;
+      const move = generateDrifterMove(day, Math.random, quizTitles);
+      const { error } = await db.from("fantasy_feed_events").insert({
+        actor_id: s.id, type: move.type, gw: null, payload: move.payload,
+        created_at: new Date(now - Math.floor(Math.random() * 30 * 60e3)).toISOString(),
+      });
+      if (!error) report.drifters++;
+    }
   }
 
   // ── Reactions on recent feed items (never their own) ───────────────────────

@@ -275,6 +275,9 @@ const CASUAL: Tpl[] = [
   { k: "cas-morning", cat: "casual", make: () => ({ text: "morning. changed my captain again. don't ask" }) },
   { k: "cas-overthink", cat: "casual", make: (c) => { const p = c.def(); return { text: `talked myself out of ${p.name} twice today. he's probably back in by tonight` }; } },
   { k: "cas-price-shock", cat: "casual", make: (c) => { const p = c.prem(); return { text: `${money(p)} for ${p.name}. actually laughed out loud` }; } },
+  { k: "cas-38-0", cat: "casual", make: () => ({ text: "just lost a 38-0 run I had no business losing. not talking about it" }) },
+  { k: "cas-h2h", cat: "casual", make: () => ({ text: "anyone up for a quiz head to head or is everyone still drafting" }) },
+  { k: "cas-quiz-hard", cat: "casual", make: () => ({ text: "whoever wrote the rivalries quiz needs to apologise" }) },
 ];
 
 /** The early-community voice — a NEW platform's opening week, used sparingly
@@ -427,6 +430,9 @@ const REPLY_QUIZ = [
   "posting your scores now are we. bold",
   "fine I'll go beat it, give me ten minutes",
   "the speed bonus is doing some lifting there I reckon",
+  "why don't you play me?",
+  "play me then 👀",
+  "name the quiz and the time",
 ];
 const REPLY_SQUAD = [
   "bench is brave",
@@ -448,6 +454,46 @@ const REPLY_META = [
 const REPLY_BY_CAT: Partial<Record<BotCat, string[]>> = {
   banter: REPLY_BANTER, player: REPLY_PLAYER, meta: REPLY_META, quiz: REPLY_QUIZ,
 };
+
+// ── Drifters ──────────────────────────────────────────────────────────────────
+// The 50 seed accounts double as one-line-a-day visitors, so the feed shows NEW
+// names every day instead of the same cast on every scroll (founder, 5 Aug).
+// A drifter says one short thing — or posts a real quiz score — and is gone.
+
+const DRIFTER_LINES = [
+  "this app is dangerous",
+  "squad done. see everyone in august",
+  "one more quiz then bed",
+  "up at half seven doing football quizzes. fine",
+  "first squad in. no notes",
+  "why don't any of my friends have this yet",
+  "found the fantasy bit. there goes the evening",
+  "quiz first, squad after. priorities",
+  "didn't mean to spend an hour on here but here we are",
+  "new here, who's good to follow",
+  "the gameday quiz is going to ruin my matchdays and I accept that",
+  "just me or is picking a bench harder than picking the eleven",
+];
+
+/** Hash a string to [0,1) — used to pick the day's drifters deterministically. */
+export function hash01(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0) / 4294967296;
+}
+
+/** One drifter move: usually a quiz score on a REAL pack, sometimes a one-liner.
+ *  k is day-scoped so a drifter can never post twice in one day. */
+export function generateDrifterMove(
+  day: string, rnd: Rnd, quizTitles: string[],
+): { type: "post" | "quiz_result"; payload: Record<string, unknown> } {
+  if (quizTitles.length && rnd() < 0.55) {
+    const [correct, total] = pickFrom(rnd, QUIZ_SCORES);
+    const title = pickFrom(rnd, quizTitles);
+    return { type: "quiz_result", payload: { correct, total, title, game: "quiz", k: `drift:${day}` } };
+  }
+  return { type: "post", payload: { text: pickFrom(rnd, DRIFTER_LINES), k: `drift:${day}` } };
+}
 
 export interface ReplyTarget {
   /** fantasy_feed_events.type of the target row. */

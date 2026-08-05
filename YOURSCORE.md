@@ -806,6 +806,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05 (later)** — **Bot community variety pass.** (1) **Drifters** — the 50 seed
+  accounts now double as one-line-a-day visitors: 2–3 per London day (deterministic pick) each
+  post ONE thing — a real quiz score or a short one-liner — at a random waking hour, so the feed
+  shows NEW names every day instead of the same cast per scroll. (2) **Follower trim** — a
+  standard contributor has 3–4 followers at most; existing bot follow edges trimmed on prod and
+  the seeding script now creates 1–3 each way. (3) **Around-the-app energy** — casual lines about
+  38-0 runs and quiz head-to-heads, plus "why don't you play me?" challenge replies under quiz
+  scores. (4) **De-synced stamps** — posts written by one cron run get jittered created_at
+  (up to ~22 min back) so nothing lands on the same minute.
+
 - **2026-08-05** — **Bot community realism pass (founder feedback: "it feels batch-generated").**
   (1) **Real identities** — gimmick names (Template Tim, Banter FC, Captain Cal…) replaced with
   names modelled on ACTUAL sign-up patterns (marcr, jordo88, Ellie, suecarter, tomo_9…); renamed
