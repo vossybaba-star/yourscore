@@ -30,6 +30,8 @@ import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import { ImageGrid } from "@/components/fantasy/ImageGrid";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
+import { useUser } from "@/hooks/useUser";
+import { ReportSheet } from "@/components/social/ReportSheet";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -371,17 +373,27 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
 /** The ⋯ overflow on every card — Twitter grammar: share lives here (and stays
  *  inline too), plus copy link, bookmark, the profile, the league invite, and
  *  (Phase 3b, profile-owner only) pin/unpin. */
-function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl }: {
+function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl, viewerId, onHide }: {
   ev: FeedEvent; onShare: () => void; onInvite: () => void; shareUrl: string;
   /** Present only when the viewer is looking at their OWN post from a context
    *  that tracks pin state (the profile's Posts tab) — see FeedCard. */
   pinControl?: { pinned: boolean; onTogglePin: () => void };
+  /** The signed-in viewer's id, or null for a guest (Phase 5a) — gates
+   *  Delete/Report/Block/Mute, all hidden entirely for a guest rather than
+   *  redirected to sign-in (AC8 — signed-in-only, no half-shown controls). */
+  viewerId?: string | null;
+  /** Tell the card to stop rendering itself (Phase 5a) — after a successful
+   *  delete/block/mute, since the acted-on content shouldn't linger. */
+  onHide?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [bookmarked, setBookmarked] = useState(ev.myBookmarked);
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [safetyBusy, setSafetyBusy] = useState(false);
   const router = useRouter();
+  const isOwner = !!viewerId && viewerId === ev.actorId;
 
   const toggleBookmark = useCallback(async () => {
     if (bookmarkBusy) return;
@@ -399,6 +411,42 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl }: {
     } catch { setBookmarked(!next); }
     setBookmarkBusy(false);
   }, [bookmarked, bookmarkBusy, ev.id]);
+
+  const deletePost = useCallback(async () => {
+    if (safetyBusy) return;
+    if (!window.confirm("Delete this post? This can't be undone.")) return;
+    setSafetyBusy(true);
+    try {
+      const res = await fetch("/api/fantasy/feed/post", {
+        method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id }),
+      });
+      if (res.ok) onHide?.();
+    } finally { setSafetyBusy(false); }
+  }, [safetyBusy, ev.id, onHide]);
+
+  const blockActor = useCallback(async () => {
+    if (safetyBusy) return;
+    if (!window.confirm(`Block ${ev.actorName}? You won't see each other's posts, and you'll stop following each other.`)) return;
+    setSafetyBusy(true);
+    try {
+      const res = await fetch("/api/social/block", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: ev.actorId }),
+      });
+      if (res.ok) onHide?.();
+    } finally { setSafetyBusy(false); }
+  }, [safetyBusy, ev.actorId, ev.actorName, onHide]);
+
+  const muteActor = useCallback(async () => {
+    if (safetyBusy) return;
+    if (!window.confirm(`Mute ${ev.actorName}? Their posts won't show in your feed.`)) return;
+    setSafetyBusy(true);
+    try {
+      const res = await fetch("/api/social/mute", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: ev.actorId }),
+      });
+      if (res.ok) onHide?.();
+    } finally { setSafetyBusy(false); }
+  }, [safetyBusy, ev.actorId, ev.actorName, onHide]);
 
   const item = (label: string, emoji: string, fn: () => void) => (
     <button key={label} onClick={() => { setMenuOpen(false); fn(); }} style={{
@@ -431,9 +479,16 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl }: {
             {pinControl && item(pinControl.pinned ? "Unpin" : "Pin to profile", "📌", pinControl.onTogglePin)}
             {item(`View ${ev.actorName}`, "👤", () => router.push(`/profile/${ev.actorId}`))}
             {item("Invite to a league", "＋", onInvite)}
+            {/* Report/Block/Mute/Delete (Phase 5a) — signed-in only, hidden
+                outright for a guest rather than a sign-in redirect. */}
+            {viewerId && isOwner && item("Delete post", "🗑", deletePost)}
+            {viewerId && !isOwner && item("Report post", "🚩", () => setReportOpen(true))}
+            {viewerId && !isOwner && item(`Block ${ev.actorName}`, "🚫", blockActor)}
+            {viewerId && !isOwner && item(`Mute ${ev.actorName}`, "🔇", muteActor)}
           </div>
         </>
       )}
+      {reportOpen && <ReportSheet subjectType="post" subjectId={ev.id} onClose={() => setReportOpen(false)} />}
     </div>
   );
 }
@@ -591,11 +646,18 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
   pinControl?: { pinned: boolean; onTogglePin: () => void };
 }) {
   const router = useRouter();
+  const { user } = useUser();
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+  // Phase 5a — a successful delete/block/mute from this card's CardMenu hides
+  // it immediately, client-side. Other cards by the same actor elsewhere in
+  // the list catch up on the next feed load, once the server-side filter
+  // (hiddenActorIds) excludes them.
+  const [hiddenSelf, setHiddenSelf] = useState(false);
 
+  if (hiddenSelf) return null;
   if (ev.unavailable) return <UnavailableStub repostedBy={ev.repostedBy} />;
 
   // Legacy single-image posts render through the same grid — just a one-item array.
@@ -671,7 +733,8 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
         </div>
         {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts. */}
         <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
-        <CardMenu ev={ev} shareUrl={shareUrl} onShare={() => setShareOpen(true)} onInvite={() => setInviteOpen(true)} pinControl={pinControl} />
+        <CardMenu ev={ev} shareUrl={shareUrl} onShare={() => setShareOpen(true)} onInvite={() => setInviteOpen(true)} pinControl={pinControl}
+          viewerId={user?.id ?? null} onHide={() => setHiddenSelf(true)} />
       </div>
 
       {/* A user post: the text (links + @mentions tappable), an image, then a poll if any. */}
@@ -798,6 +861,20 @@ export function FeedStream({
   const sort = controlledSort ?? sortState;
   const [events, setEvents] = useState<FeedEvent[] | null>(null);
   const [followingCount, setFollowingCount] = useState<number | null>(null);
+  // Cursor pagination (Phase 5a, AC7) — `cursor` is the oldest event's
+  // createdAt from the last page fetched; `hasMore` goes false once the
+  // server returns a shorter-than-asked-for window (the true end).
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  // loadMore reads this instead of `events` directly — `events` is left out
+  // of loadMore's own deps (below) so its identity stays stable across every
+  // page append, but that means a plain closure over `events` would go stale
+  // (permanently null, from the render loadMore was first created in) the
+  // moment the first page landed. The ref always has the live value.
+  const eventsRef = useRef<FeedEvent[] | null>(null);
+  useEffect(() => { eventsRef.current = events; }, [events]);
 
   // Restore scope+sort from the URL once on mount (only when standalone and
   // uncontrolled — the embedded/controlled copies must not touch the URL).
@@ -812,18 +889,40 @@ export function FeedStream({
     if (!silent) setEvents(null);
     try {
       const res = await fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}`);
-      const d = res.ok ? await res.json() : { events: [], followingCount: 0 };
+      const d = res.ok ? await res.json() : { events: [], followingCount: 0, nextCursor: null };
       setFollowingCount(d.followingCount ?? 0);
       if (!controlled && (d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return {}; }
       const next: FeedEvent[] = d.events ?? [];
       const updated = next[0]?.rowKey !== events?.[0]?.rowKey || next.length !== (events?.length ?? -1);
       setEvents(next);
+      setCursor(d.nextCursor ?? null);
+      setHasMore(!!d.nextCursor);
       return { updated };
     } catch {
       if (!silent) setEvents([]);
       return {};
     }
   }, [scope, sort, events, controlled]);
+
+  // Load the next page (Phase 5a, AC7) — appended, deduped by rowKey (a
+  // repost pointer row and its original share the same `id` but never the
+  // same rowKey, so rowKey is the correct dedupe key here).
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !cursor || eventsRef.current === null) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}&before=${encodeURIComponent(cursor)}`);
+      const d = res.ok ? await res.json() : { events: [], nextCursor: null };
+      const seen = new Set(eventsRef.current.map((e) => e.rowKey));
+      const fresh: FeedEvent[] = (d.events ?? []).filter((e: FeedEvent) => !seen.has(e.rowKey));
+      setEvents((prev) => [...(prev ?? []), ...fresh]);
+      setCursor(d.nextCursor ?? null);
+      setHasMore(!!d.nextCursor);
+    } catch {
+      setHasMore(false);
+    }
+    setLoadingMore(false);
+  }, [loadingMore, hasMore, cursor, scope, sort]);
 
   useEffect(() => {
     if (!embedded && !controlled && typeof window !== "undefined") {
@@ -833,18 +932,35 @@ export function FeedStream({
     }
     let live = true;
     setEvents(null);
+    setCursor(null);
+    setHasMore(true);
     fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}`)
-      .then((r) => (r.ok ? r.json() : { events: [], followingCount: 0 }))
+      .then((r) => (r.ok ? r.json() : { events: [], followingCount: 0, nextCursor: null }))
       .then((d) => {
         if (!live) return;
         setFollowingCount(d.followingCount ?? 0);
         if (!controlled && (d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return; }
         setEvents(d.events ?? []);
+        setCursor(d.nextCursor ?? null);
+        setHasMore(!!d.nextCursor);
       })
       .catch(() => { if (live) setEvents([]); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, sort, embedded, controlled]);
+
+  // Infinite scroll (Phase 5a, AC7) — a sentinel row at the list's end;
+  // loadMore fires once it's within 400px of the viewport, well before the
+  // user actually hits bottom.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) void loadMore();
+    }, { rootMargin: "400px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore]);
 
   const showScopeTabs = (followingCount ?? 0) > 0;
 
@@ -916,6 +1032,19 @@ export function FeedStream({
         )}
 
         {events?.map((ev) => <FeedCard key={ev.rowKey} ev={ev} signInNext={signInNext} />)}
+
+        {/* Infinite scroll sentinel (Phase 5a, AC7) — only once there's a
+            first page to extend; stays mounted while hasMore so the observer
+            keeps firing as the user keeps scrolling. */}
+        {events !== null && events.length > 0 && (
+          <div ref={sentinelRef} style={{ padding: "18px 0", textAlign: "center" }}>
+            {loadingMore ? (
+              <span style={{ fontSize: 12.5, color: MUTED }}>Loading more…</span>
+            ) : !hasMore ? (
+              <span style={{ fontSize: 12, color: MUTED }}>You&apos;re all caught up</span>
+            ) : null}
+          </div>
+        )}
       </PullToRefresh>
     </div>
   );

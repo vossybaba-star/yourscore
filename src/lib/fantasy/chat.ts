@@ -19,6 +19,7 @@ import { enginePool, clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
 import { loadLeagueFeed, loadFeedEvent, isPostMediaUrl, type FeedEvent } from "./feed";
 import { notifyFantasy } from "./notify";
+import { hiddenActorIds } from "@/lib/social/safety";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -540,6 +541,17 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
     return { id: pinnedId, name: nameOfAuthor(row.user_id), summary: summariseLeagueMessage(row.kind, row.body, row.payload) };
   })() : null;
 
+  // Blocked/muted members (Phase 5a, AC3/AC4) — their message BUBBLES are
+  // hidden from this viewer only, filtered in below at the very end (never
+  // upstream, so parent/pinned resolution above still sees the real row —
+  // a reply's quoted-context strip or the pinned banner shouldn't 404 just
+  // because the parent happens to be from someone this viewer blocked).
+  // Member lists and tables (memberIds, `members` above) are untouched —
+  // leagues are shared spaces, so who's IN the league still shows everyone
+  // (documented for the PR: a blocked member's messages disappear from your
+  // view of the thread, but they're still a member you can see in rosters).
+  const hidden = await hiddenActorIds(db, userId);
+
   return {
     league: { name: league.name, stakes: league.stakes, isOwner: league.owner_id === userId },
     gw: viewGw, currentGw, readOnly, notice, gameweeks,
@@ -561,7 +573,7 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
         image: card.image ?? null, feed: card.feed ?? null,
         parentId, replyTo: replyToFor(parentId ?? undefined),
       };
-    }),
+    }).filter((m) => m.kind === "system" || !hidden.has(m.userId)),
     moments: momentGw != null ? await momentsForGw(db, memberIds, momentGw) : [],
   };
 }

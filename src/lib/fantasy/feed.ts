@@ -15,6 +15,7 @@ import { notifyFantasy } from "./notify";
 import { notifyMentions } from "./mentions";
 import { extractMentions, resolveUsernames } from "@/lib/mentions";
 import { commentRejection } from "@/lib/moderation";
+import { hiddenActorIds } from "@/lib/social/safety";
 import { HttpError } from "./server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +28,13 @@ export type FeedType =
   | "quiz_result"; // a finished quiz pack or knowledge round worth shouting about
 export type FeedScope = "following" | "global";
 export type FeedSort = "recent" | "top";
-export interface FeedResult { events: FeedEvent[]; followingCount: number }
+export interface FeedResult {
+  events: FeedEvent[]; followingCount: number;
+  /** ISO cursor for the next page (Phase 5a, AC7) — pass as `before` to fetch
+   *  older events. Null once the underlying query returned fewer rows than it
+   *  asked for (the true end of the table), so the client can stop cleanly. */
+  nextCursor: string | null;
+}
 
 export interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
 
@@ -527,6 +534,27 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   return { id: postId };
 }
 
+/** Delete your own post (Phase 5a, AC5) — soft-delete via `payload.deleted`,
+ *  never a hard row delete: a repost/quote pointing at this id resolves it
+ *  through `targetById`/`targetRenderable` above, which already renders the
+ *  existing "This post is unavailable" stub for anything not renderable —
+ *  the same path a bot-authored or block-hidden target takes, no new UI
+ *  needed. A bookmark of it (fantasy_feed_bookmarks) simply stops resolving
+ *  in loadBookmarkedFeed's second query and drops out silently. Ownership is
+ *  enforced here, not just in the UI — a 403 for anyone else's post id. */
+export async function deleteFeedPost(db: Db, userId: string, eventId: unknown): Promise<{ ok: true }> {
+  const id = typeof eventId === "string" ? eventId : "";
+  if (!id) throw new HttpError(400, "bad delete");
+  const { data: row } = await db.from("fantasy_feed_events").select("id, actor_id, type, payload").eq("id", id).maybeSingle();
+  const target = row as { id: string; actor_id: string; type: string; payload: Record<string, unknown> | null } | null;
+  if (!target || target.type !== "post") throw new HttpError(404, "Post not found");
+  if (target.actor_id !== userId) throw new HttpError(403, "You can only delete your own posts");
+  const nextPayload = { ...(target.payload ?? {}), deleted: true };
+  const { error } = await db.from("fantasy_feed_events").update({ payload: nextPayload }).eq("id", id);
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
+}
+
 /** Vote on a post's poll — one choice per user, switchable. Rejects once the
  *  poll's endsAt has passed; legacy polls (no endsAt) stay open forever. */
 export async function voteFeedPoll(db: Db, userId: string, eventId: unknown, optionIndex: unknown): Promise<{ ok: true }> {
@@ -629,6 +657,8 @@ export async function loadFeedEvent(db: Db, viewerId: string | null, id: string)
 
 export async function loadFeed(
   db: Db, viewerId: string | null, scope: FeedScope, sort: FeedSort = "recent", limit = 30,
+  /** ISO cursor (Phase 5a, AC7) — only events strictly older than this. */
+  before?: string | null,
 ): Promise<FeedResult> {
   // Who the viewer follows — drives the "Following" filter AND whether the
   // Following tab should exist at all (no follows → global only).
@@ -638,17 +668,27 @@ export async function loadFeed(
     followeeIds = ((follows ?? []) as { followee_id: string }[]).map((f) => f.followee_id);
   }
   const followingCount = followeeIds.length;
-  if (scope === "following" && followingCount === 0) return { events: [], followingCount };
+  if (scope === "following" && followingCount === 0) return { events: [], followingCount, nextCursor: null };
 
   // "Top" ranks by engagement, so pull a wider recent window then sort in memory.
+  // Pagination (AC7): the cursor always advances past this WHOLE fetched
+  // window (fetchLimit rows), not just the `limit` events actually returned —
+  // for "top" sort this means Top ranks only WITHIN each fetched recency
+  // window, never globally across pages. A lower-engagement event that misses
+  // the cut on one page's window is simply never revisited on the next page,
+  // same as it would be if it just kept scrolling off a "recent" feed.
   const fetchLimit = sort === "top" ? Math.min(200, limit * 6) : limit;
   let q = db.from("fantasy_feed_events")
     .select("id, actor_id, type, gw, payload, created_at")
     .order("created_at", { ascending: false }).limit(fetchLimit);
   if (scope === "following") q = q.in("actor_id", followeeIds);
+  if (before) q = q.lt("created_at", before);
   const { data: rows } = await q;
-  const events = await hydrateEvents(db, viewerId, rows ?? [], sort, limit);
-  return { events, followingCount };
+  const rawRows = rows ?? [];
+  const events = await hydrateEvents(db, viewerId, rawRows, sort, limit);
+  const oldest = rawRows.length ? (rawRows[rawRows.length - 1] as { created_at: string }).created_at : null;
+  const nextCursor = rawRows.length === fetchLimit ? oldest : null;
+  return { events, followingCount, nextCursor };
 }
 
 /** The league-scoped feed: the SAME activity, filtered to this league's members.
@@ -674,7 +714,19 @@ async function hydrateEvents(
   // Read-time belt to the emit-time braces: rows a bot wrote under an older
   // deploy (or one missing HEALTH_BOT_USER_ID) still never render.
   const bots = syntheticActors();
-  events = events.filter((e) => !bots.has(e.actor_id as string));
+  // Blocked/muted actors (Phase 5a, AC3/AC4) — hidden from THIS viewer only;
+  // a block is bidirectional (hiddenActorIds folds in both directions), a
+  // mute only ever hides the muted user's content from the muter. Also drop
+  // a post the actor soft-deleted themselves (AC5's payload.deleted flag) —
+  // same "never render" treatment as a bot row, right here at the source so
+  // every caller of hydrateEvents (feed, league feed, profile tabs, post
+  // detail) gets it for free.
+  const hidden = await hiddenActorIds(db, viewerId);
+  events = events.filter((e) =>
+    !bots.has(e.actor_id as string) &&
+    !hidden.has(e.actor_id as string) &&
+    !(e.type === "post" && e.payload && (e.payload as Record<string, unknown>).deleted === true),
+  );
   if (!events.length) return [];
 
   // Everything a manager does is public feed content right up until the gameweek
@@ -702,7 +754,9 @@ async function hydrateEvents(
     : { data: [] as any[] };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const targetById = new Map<string, any>((targetRows ?? []).map((t: any) => [t.id, t]));
-  const targetRenderable = (t: { type: string; actor_id: string } | undefined) => !!t && t.type === "post" && !bots.has(t.actor_id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const targetRenderable = (t: { type: string; actor_id: string; payload?: any } | undefined) =>
+    !!t && t.type === "post" && !bots.has(t.actor_id) && !hidden.has(t.actor_id) && t.payload?.deleted !== true;
 
   // Mentions (Phase 3b, AC3) — batch-resolve every REAL @handle across this
   // batch's post text into id+username, so the card can linkify with no

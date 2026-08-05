@@ -15,6 +15,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
 import { uploadPostImage } from "@/lib/postMedia";
+import { ReportSheet } from "@/components/social/ReportSheet";
 import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type GifCard } from "./types";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
@@ -96,10 +97,13 @@ function CardShell({ accent, full, children }: { accent: string; full?: boolean;
  *  action row when this message is tapped. No always-on ＋ button — that padded
  *  every message with dead space, so Reply/Pin ride the exact same tap-to-open
  *  gesture reactions already use (AC2/AC6). */
-function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, isPinned, onPin }: {
+function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, isPinned, onPin, onReport, onBlock, onMute, onDelete }: {
   msg: ChatMessage; onReact: (emoji: string, on: boolean) => void; open: boolean; readOnly?: boolean;
   canReply?: boolean; onReply?: () => void;
   canPin?: boolean; isPinned?: boolean; onPin?: () => void;
+  /** Report/Block/Mute the message's author (Phase 5a) — never shown for your
+   *  own message. Delete is the reverse: only ever shown for your own. */
+  onReport?: () => void; onBlock?: () => void; onMute?: () => void; onDelete?: () => void;
 }) {
   const showActions = open && !readOnly;
   if (!msg.reactions.length && !open) return null;
@@ -133,6 +137,22 @@ function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, is
         <button onClick={(e) => { e.stopPropagation(); onPin?.(); }} style={{ ...actionBtn, color: GOLD, borderColor: tint(GOLD, "44") }}>
           {isPinned ? "Unpin" : "📌 Pin"}
         </button>
+      )}
+      {/* Report/Block/Mute (Phase 5a) — never on your own message; Delete is
+          the reverse. Each handler is only ever passed in for the case it
+          applies to (see LeagueChatView's Reactions call site), so no extra
+          isMe check is needed here. */}
+      {showActions && onReport && (
+        <button onClick={(e) => { e.stopPropagation(); onReport(); }} style={actionBtn}>🚩 Report</button>
+      )}
+      {showActions && onBlock && (
+        <button onClick={(e) => { e.stopPropagation(); onBlock(); }} style={actionBtn}>Block</button>
+      )}
+      {showActions && onMute && (
+        <button onClick={(e) => { e.stopPropagation(); onMute(); }} style={actionBtn}>Mute</button>
+      )}
+      {showActions && onDelete && (
+        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} style={{ ...actionBtn, color: "#E08A6B", borderColor: "rgba(224,138,107,0.4)" }}>Delete</button>
       )}
     </div>
   );
@@ -452,6 +472,8 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   // AC4 — the image currently open full-screen.
   const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Phase 5a — the message currently being reported (opens the sheet).
+  const [reportFor, setReportFor] = useState<ChatMessage | null>(null);
 
   const load = useCallback(async (gw: number | null) => {
     try {
@@ -486,6 +508,33 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const startReply = (m: ChatMessage) => { setReactFor(null); setReplyTo(m); };
   const pin = (id: string) => { setReactFor(null); guard(() => api(code, "chat", { kind: "pin", commentId: id }, "PATCH")); };
   const unpin = () => guard(() => api(code, "chat", { kind: "unpin" }, "PATCH"));
+
+  // Delete/Block/Mute (Phase 5a) — reuse the existing comments DELETE (soft
+  // delete, ownership-checked server-side) for a message, and the same
+  // report/block/mute endpoints the feed uses. guard() reloads the thread
+  // after each, so a block/mute's server-side filter (hiddenActorIds) takes
+  // effect immediately rather than waiting for the 15s poll.
+  const deleteMsg = (m: ChatMessage) => {
+    if (!window.confirm("Delete this message? This can't be undone.")) return;
+    setReactFor(null);
+    guard(async () => {
+      await fetch("/api/comments", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: m.id }) });
+    });
+  };
+  const blockAuthor = (m: ChatMessage) => {
+    if (!window.confirm(`Block ${m.name}? You won't see each other's posts, and you'll stop following each other.`)) return;
+    setReactFor(null);
+    guard(async () => {
+      await fetch("/api/social/block", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: m.userId }) });
+    });
+  };
+  const muteAuthor = (m: ChatMessage) => {
+    if (!window.confirm(`Mute ${m.name}? Their messages won't show for you.`)) return;
+    setReactFor(null);
+    guard(async () => {
+      await fetch("/api/social/mute", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: m.userId }) });
+    });
+  };
 
   // AC4 — pick + upload one image, then post it (own busy/err handling since it
   // wraps an upload step guard() doesn't know about).
@@ -634,7 +683,11 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                     message. */}
                 <Reactions msg={m} onReact={(emoji, on) => react(m.id, emoji, on)} open={reactFor === m.id} readOnly={readOnly}
                   canReply={chat.capabilities.replies && !m.parentId} onReply={() => startReply(m)}
-                  canPin={chat.capabilities.pin && chat.league.isOwner} isPinned={chat.pinned?.id === m.id} onPin={() => pin(m.id)} />
+                  canPin={chat.capabilities.pin && chat.league.isOwner} isPinned={chat.pinned?.id === m.id} onPin={() => pin(m.id)}
+                  onReport={m.isMe ? undefined : () => setReportFor(m)}
+                  onBlock={m.isMe ? undefined : () => blockAuthor(m)}
+                  onMute={m.isMe ? undefined : () => muteAuthor(m)}
+                  onDelete={m.isMe ? () => deleteMsg(m) : undefined} />
                 {/* AC3 — timestamp on the last bubble of a sender-group. */}
                 {showTimestamp && (
                   <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>{clock(m.createdAt)}</div>
@@ -653,6 +706,10 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
 
       {/* Full-screen gallery for a chat image (AC4) — the shared viewer. */}
       {galleryUrl && <MediaGallery images={[galleryUrl]} index={0} onClose={() => setGalleryUrl(null)} />}
+
+      {/* Report sheet (Phase 5a) — portaled, same component the feed and
+          profile use. */}
+      {reportFor && <ReportSheet subjectType="comment" subjectId={reportFor.id} onClose={() => setReportFor(null)} />}
 
       {/* Composer — FIXED just above the bottom nav, so it never scrolls away. An
           archived gameweek takes no new posts. */}
