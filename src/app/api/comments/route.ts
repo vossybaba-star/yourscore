@@ -8,6 +8,7 @@ import { createNotification, pushCommentReply, commentDeepLink } from "@/lib/not
 import { dispatchEngagementEmail, displayNameOf } from "@/lib/engagement";
 import { extractMentions, resolveUsernames } from "@/lib/mentions";
 import { notifyMentions } from "@/lib/fantasy/mentions";
+import { hiddenActorIds } from "@/lib/social/safety";
 
 // comments.parent_id and club_supporters are additive/not yet in the
 // generated src/types/database.ts — same untyped-client cast used across the
@@ -103,8 +104,17 @@ export async function GET(req: NextRequest) {
     : { data: [] as ReplyRow[] };
   const replies: ReplyRow[] = replyRows ?? [];
 
+  // Block/mute filtering (Phase 5a review pass): a blocked or muted author's
+  // comments vanish from the viewer's threads on every subject type — a block
+  // that leaves their replies visible under your posts isn't a block. Hidden
+  // replies are dropped outright; a hidden TOP-LEVEL row is treated like a
+  // soft-deleted one below (tombstone if others replied, pruned otherwise) so
+  // real people's replies never orphan.
+  const hidden = user ? await hiddenActorIds(svc, user.id) : new Set<string>();
+  const visibleReplies = hidden.size ? replies.filter((r) => !hidden.has(r.user_id)) : replies;
+
   const repliesByParent = new Map<string, ReplyRow[]>();
-  for (const r of replies) {
+  for (const r of visibleReplies) {
     const list = repliesByParent.get(r.parent_id) ?? [];
     list.push(r);
     repliesByParent.set(r.parent_id, list);
@@ -117,18 +127,19 @@ export async function GET(req: NextRequest) {
   // rather than being grouped at the end.
   const topOrdered: { row: TopRow; deleted: boolean }[] = [];
   for (const r of (topRows ?? []) as TopRow[]) {
-    if (!r.deleted_at) {
+    const hiddenAuthor = hidden.has(r.user_id);
+    if (!r.deleted_at && !hiddenAuthor) {
       topOrdered.push({ row: r, deleted: false });
     } else if ((repliesByParent.get(r.id)?.length ?? 0) > 0) {
       topOrdered.push({ row: r, deleted: true });
     }
-    // else: deleted, no replies — pruned, matches pre-replies behaviour.
+    // else: deleted or hidden, no live replies — pruned.
   }
   const liveTop = topOrdered.filter((t) => !t.deleted).map((t) => t.row);
 
   const userIds = Array.from(new Set([
     ...liveTop.map((r) => r.user_id),
-    ...replies.map((r) => r.user_id),
+    ...visibleReplies.map((r) => r.user_id),
   ]));
   const [{ data: profiles }, { data: supporterRows }] = await Promise.all([
     userIds.length
@@ -149,7 +160,7 @@ export async function GET(req: NextRequest) {
     if (!clubById.has(s.user_id)) clubById.set(s.user_id, s.club);
   }
 
-  const commentIds = [...liveTop.map((r) => r.id), ...replies.map((r) => r.id)];
+  const commentIds = [...liveTop.map((r) => r.id), ...visibleReplies.map((r) => r.id)];
   const countById = new Map<string, number>();
   const likedIds = new Set<string>();
   if (commentIds.length) {

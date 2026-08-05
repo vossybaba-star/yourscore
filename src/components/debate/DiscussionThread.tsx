@@ -233,6 +233,8 @@ export function DiscussionThread({
   }
 
   async function remove(id: string) {
+    // Confirm before delete (Social Phase 5a, AC5) — this can't be undone.
+    if (!window.confirm("Delete this comment? This can't be undone.")) return;
     // Mirror the server's prune-vs-tombstone rule optimistically. Dropping the
     // row outright would orphan its replies — they'd stay in state but never
     // render (rendering walks top-level), so the whole sub-thread would appear

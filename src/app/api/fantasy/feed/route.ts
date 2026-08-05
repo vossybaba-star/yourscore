@@ -17,12 +17,15 @@ export async function GET(req: NextRequest) {
   const sp = new URL(req.url).searchParams;
   let scope: FeedScope = sp.get("scope") === "global" ? "global" : "following";
   const sort: FeedSort = sp.get("sort") === "top" ? "top" : "recent";
+  // Cursor pagination (Phase 5a, AC7) — an ISO timestamp; only events strictly
+  // older than it come back. Absent on the first page.
+  const before = sp.get("before");
 
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) scope = "global"; // "following" needs an account
 
   const db = createServiceClient();
-  const result = await loadFeed(db, user?.id ?? null, scope, sort);
+  const result = await loadFeed(db, user?.id ?? null, scope, sort, 30, before);
   return NextResponse.json(result);
 }

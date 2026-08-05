@@ -14,6 +14,8 @@ import { ProfileGameTabs } from "@/components/profile/ProfileGameTabs";
 import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 import { LegendSeal } from "@/components/ui/Seal";
 import { ProfileSocialTabs } from "@/components/fantasy/ProfileSocialTabs";
+import { ProfileSafetyMenu } from "@/components/social/ProfileSafetyMenu";
+import { blockStatus } from "@/lib/social/safety";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -172,6 +174,11 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
     ? await loadProfileTeams(db, userId)
     : { teams: [], players: [] };
 
+  // Report / Block / Mute state (Social Phase 5a) — false/false for a guest or
+  // your own profile (blockStatus's own guard), so this never renders anything
+  // funky when `user` is null above.
+  const safety = await blockStatus(db, user?.id ?? null, userId);
+
   const avgAcc = attempts.length > 0
     ? Math.round(attempts.reduce((s, a) => s + (a.max_score > 0 ? a.score / a.max_score : 0), 0) / attempts.length * 100)
     : null;
@@ -236,6 +243,11 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
             </div>
           </div>
         </div>
+
+        {/* Report / Block / Mute (Social Phase 5a) — a full-width banner once
+            blocked, otherwise a small "···" trigger tucked at the row's end so
+            it doesn't compete with the follow/counts row below it. */}
+        <ProfileSafetyMenu userId={userId} userName={name} initialBlocked={safety.blocked} initialMuted={safety.muted} />
 
         {/* Follow (one-way) + counts — sits above the friends/challenge actions. */}
         <div className="flex items-center justify-between gap-3">
