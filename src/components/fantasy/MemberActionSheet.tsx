@@ -26,6 +26,8 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { FollowButton } from "@/components/social/FollowButton";
 import { ReportSheet } from "@/components/social/ReportSheet";
 import { CompareSquadsSheet } from "@/components/fantasy/CompareSquadsSheet";
+import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
+import { supportedChallengeGames } from "@/lib/fantasy/challengeGames";
 import { trackBlockUser, trackMuteUser, trackMemberActionSelected, trackMemberSheetOpened } from "@/lib/analytics/trackSocial";
 
 export interface MemberActionMember {
@@ -59,24 +61,38 @@ const ProfileIcon = () => <IconWrap><circle cx="12" cy="8" r="3.4" /><path d="M5
 const SquadIcon = () => <IconWrap><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></IconWrap>;
 const MentionIcon = () => <IconWrap><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.2" /><path d="M15.2 12v1.6a2.4 2.4 0 004.8 0V12a8 8 0 10-3.4 6.5" /></IconWrap>;
 const CompareIcon = () => <IconWrap><path d="M8 4v16M16 4v16" /><path d="M4 9h4M4 15h4M16 9h4M16 15h4" /></IconWrap>;
+const ChallengeIcon = () => (
+  <IconWrap>
+    <path d="M4 4l7 7M11 4l-7 7" />
+    <path d="M20 4l-7 7M13 4l7 7" />
+    <path d="M6.5 17.5l-3 3M17.5 17.5l3 3" />
+    <path d="M12 11l-5.5 6.5M12 11l5.5 6.5" />
+  </IconWrap>
+);
 const MuteIcon = () => <IconWrap><path d="M9 9v3a3 3 0 005.7 1.3M12 5a3 3 0 013 3v1" /><path d="M19 11a7 7 0 01-1 3.6M5 11a7 7 0 007 7" /><path d="M3 3l18 18" /></IconWrap>;
 const BlockIcon = () => <IconWrap><circle cx="12" cy="12" r="9" /><path d="M5.6 5.6l12.8 12.8" /></IconWrap>;
 const ReportIcon = () => <IconWrap><path d="M5 4v16" /><path d="M5 4h11l-2.5 3.5L16 11H5" /></IconWrap>;
 
-function ActionChip({ icon, label, href, onClick, onNavigate }: {
+function ActionChip({ icon, label, href, onClick, onNavigate, disabled }: {
   icon: React.ReactNode; label: string; href?: string; onClick?: () => void; onNavigate?: () => void;
+  /** A STATUS display, not a dead action (e.g. the Challenge chip's "Pending"
+   *  state) — rendered as a plain, non-interactive block, never a button/link
+   *  that goes nowhere. */
+  disabled?: boolean;
 }) {
   const style: React.CSSProperties = {
     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5,
-    flex: 1, minHeight: 60, minWidth: 60, borderRadius: 14, cursor: "pointer",
-    background: PANEL_2, border: `1px solid ${LINE}`, color: TEAL, textDecoration: "none",
+    flex: 1, minHeight: 60, minWidth: 60, borderRadius: 14, cursor: disabled ? "default" : "pointer",
+    background: PANEL_2, border: `1px solid ${LINE}`, color: disabled ? MUTED : TEAL, textDecoration: "none",
+    opacity: disabled ? 0.55 : 1,
   };
   const inner = (
     <>
       {icon}
-      <span className="font-body" style={{ fontSize: 10.5, fontWeight: 600, color: INK }}>{label}</span>
+      <span className="font-body" style={{ fontSize: 10.5, fontWeight: 600, color: disabled ? MUTED : INK }}>{label}</span>
     </>
   );
+  if (disabled) return <div aria-label={label} style={style}>{inner}</div>;
   if (href) return <Link href={href} aria-label={label} onClick={onNavigate} style={style}>{inner}</Link>;
   return <button aria-label={label} onClick={onClick} style={style}>{inner}</button>;
 }
@@ -115,10 +131,19 @@ export function MemberActionSheet({
   const pathname = usePathname();
   const isSelf = !!viewerId && viewerId === member.userId;
   const displayName = nameOfMember(member);
+  // Challenge (Phase 1C) — league context only, never for yourself, and only
+  // while at least one game in the registry is actually offered (today just
+  // Quiz Battle; unsupported games are never rendered, founder's call).
+  const showChallenge = context === "league" && !!leagueCode && !isSelf && !!viewerId && supportedChallengeGames().length > 0;
 
   const [mentionChoice, setMentionChoice] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [challengeOpen, setChallengeOpen] = useState(false);
+  // "pending" disables the chip (a status display, never a dead action — see
+  // ActionChip's disabled mode). Starts "loading" so the chip doesn't flash
+  // "Challenge" then immediately swap to "Pending" once the fetch lands.
+  const [pairChallengeStatus, setPairChallengeStatus] = useState<"loading" | "none" | "pending">("loading");
 
   // The stats section: the member's completed quiz round for THIS gameweek,
   // relocated unchanged from LeagueTableView's peek() (same fetch, same 401/
@@ -150,6 +175,22 @@ export function MemberActionSheet({
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context, leagueCode, member.userId, viewerId]);
+
+  // Fetched once on open (Phase 1C, AC4) — the chip's Challenge/Pending state.
+  useEffect(() => {
+    if (!showChallenge || !leagueCode) return;
+    let live = true;
+    setPairChallengeStatus("loading");
+    fetch(`/api/fantasy/challenges?with=${member.userId}&league=${encodeURIComponent(leagueCode)}`)
+      .then(async (res) => {
+        const j = await res.json().catch(() => ({}));
+        if (!live) return;
+        setPairChallengeStatus(j?.challenge?.status === "pending" ? "pending" : "none");
+      })
+      .catch(() => { if (live) setPairChallengeStatus("none"); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showChallenge, leagueCode, member.userId]);
 
   const signIn = () => router.push(`/auth/sign-in?next=${encodeURIComponent(pathname ?? "/")}`);
 
@@ -264,6 +305,11 @@ export function MemberActionSheet({
             <ActionChip icon={<SquadIcon />} label="Squad" href={`/profile/${member.userId}#fantasy-xi`} onNavigate={onClose} />
             {showMention && <ActionChip icon={<MentionIcon />} label="Mention" onClick={handleMention} />}
             {showCompare && <ActionChip icon={<CompareIcon />} label="Compare" onClick={handleCompare} />}
+            {showChallenge && (
+              pairChallengeStatus === "pending"
+                ? <ActionChip icon={<ChallengeIcon />} label="Pending" disabled />
+                : <ActionChip icon={<ChallengeIcon />} label="Challenge" onClick={() => { trackMemberActionSelected("challenge"); setChallengeOpen(true); }} />
+            )}
           </div>
 
           {/* Stats — this gameweek's quiz round, member-in-a-shared-league only. */}
@@ -315,6 +361,14 @@ export function MemberActionSheet({
           viewerId={viewerId}
           target={{ userId: member.userId, name: displayName, avatarUrl: member.avatarUrl, username: member.username }}
           onClose={() => setCompareOpen(false)}
+        />
+      )}
+      {challengeOpen && leagueCode && (
+        <ChallengePrepSheet
+          leagueCode={leagueCode}
+          opponent={{ userId: member.userId, name: displayName, avatarUrl: member.avatarUrl }}
+          onSent={() => setPairChallengeStatus("pending")}
+          onClose={() => setChallengeOpen(false)}
         />
       )}
     </Sheet>

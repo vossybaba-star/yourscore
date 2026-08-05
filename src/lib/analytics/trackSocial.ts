@@ -63,3 +63,9 @@ export function trackMentionPublished(surface: string, count: number): void { fi
 export function trackMemberSheetOpened(context: string): void { fire("member_sheet_opened", { context }); }
 export function trackMemberActionSelected(action: string): void { fire("member_action_selected", { action }); }
 export function trackCompareSquadsOpened(): void { fire("compare_squads_opened"); }
+
+// ── league-mate challenges (Phase 1C) ────────────────────────────────────
+export function trackChallengeFlowOpened(): void { fire("challenge_flow_opened"); }
+export function trackChallengeGameSelected(gameId: string): void { fire("challenge_game_selected", { gameId }); }
+export function trackChallengeSent(gameId: string): void { fire("challenge_sent", { gameId }); }
+export function trackChallengeAbandoned(): void { fire("challenge_abandoned"); }

@@ -350,6 +350,63 @@ function SharedCompare({ msg, onView }: { msg: ChatMessage; onView: (id: number)
   );
 }
 
+/** No dashes anywhere in user-visible copy (house rule) — dates read
+ *  "5 Aug", never "2026-08-05". */
+function expiryLine(iso: string): string {
+  return `Expires ${new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
+}
+
+/** The league-mate challenge card (Phase 1C) — GOLD accent (a challenge is a
+ *  stake, same family as the STAKES banner above). Status-aware: Accept/
+ *  Decline only render for the challenged player while it's still pending —
+ *  every other viewer/state gets a plain status line, never a dead button. */
+function ChallengeCardMsg({ msg, viewerId, onDecline, busy }: {
+  msg: ChatMessage; viewerId: string | null; onDecline: (challengeId: string) => void; busy: boolean;
+}) {
+  const c = msg.challenge!;
+  const viewerIsOpponent = !!viewerId && viewerId === c.opponentId;
+  const winnerName = c.winnerId === c.challengerId ? c.challengerName : c.winnerId === c.opponentId ? c.opponentName : null;
+  return (
+    <CardShell accent={GOLD}>
+      <KindLabel color={GOLD} text="CHALLENGE" />
+      <div className="font-display" style={{ fontSize: 14.5, fontWeight: 700, color: INK, lineHeight: 1.3, marginBottom: 3 }}>
+        {c.challengerName} challenged {c.opponentName}
+      </div>
+      <div style={{ fontSize: 12, color: MUTED, marginBottom: 9 }}>{c.gameName} · {c.quizName}</div>
+
+      {c.status === "pending" && viewerIsOpponent && (
+        <div style={{ display: "flex", gap: 8 }}>
+          {/* Accept only renders with a real play destination — a "#" link is
+              a dead button in disguise (house rule). h2hId is always set for
+              quiz_battle; this guards a malformed row, not a normal state. */}
+          {c.h2hId && (
+            <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+              flex: 1, textAlign: "center", padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700,
+              background: tint(GOLD, "22"), color: GOLD, border: `1px solid ${tint(GOLD, "66")}`, textDecoration: "none",
+            }}>Accept</Link>
+          )}
+          <button disabled={busy} onClick={(e) => { e.stopPropagation(); onDecline(c.challengeId); }} style={{
+            flex: 1, padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
+            background: PANEL_2, color: MUTED, border: `1px solid ${LINE}`, opacity: busy ? 0.6 : 1,
+          }}>Decline</button>
+        </div>
+      )}
+      {c.status === "pending" && !viewerIsOpponent && (
+        <div style={{ fontSize: 12, color: MUTED }}>Waiting on {c.opponentName}</div>
+      )}
+      {c.status === "completed" && (
+        <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{winnerName ? `${winnerName} won` : "It finished level"}</div>
+      )}
+      {c.status === "declined" && <div style={{ fontSize: 12, color: MUTED }}>Declined</div>}
+      {c.status === "expired" && <div style={{ fontSize: 12, color: MUTED }}>Expired</div>}
+
+      {c.status === "pending" && (
+        <div style={{ fontSize: 10.5, color: MUTED, marginTop: 8 }}>{expiryLine(c.expiresAt)}</div>
+      )}
+    </CardShell>
+  );
+}
+
 function Poll({ msg, onVote, readOnly }: { msg: ChatMessage; onVote: (i: number) => void; readOnly?: boolean }) {
   const poll = msg.poll!;
   const total = poll.totalVotes;
@@ -416,10 +473,11 @@ function PollComposer({ onPost, onCancel, busy }: { onPost: (q: string, opts: st
 /** The bubble/card for one message, minus the reactions row. `showHeader` is
  *  the sender-grouping signal (AC3) — only the first bubble of a same-sender
  *  run within 5 minutes carries the name. */
-function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, readOnly, showHeader = true }: {
+function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, onDeclineChallenge, viewerId, readOnly, busy, showHeader = true }: {
   m: ChatMessage; onView: (id: number) => void; onOpenNews: (m: ChatMessage) => void; onVote: (i: number) => void;
   onViewImage: (url: string) => void; onViewFeed: (eventId: string) => void; onAuthor: (m: ChatMessage) => void;
-  readOnly?: boolean; showHeader?: boolean;
+  onDeclineChallenge: (challengeId: string) => void; viewerId: string | null;
+  readOnly?: boolean; busy?: boolean; showHeader?: boolean;
 }) {
   if ((m.kind === "player" || m.kind === "captain") && m.player) return <SharedPlayer msg={m} onView={() => onView(m.player!.id)} />;
   if (m.kind === "squad" && m.squad) return <SharedSquad msg={m} />;
@@ -428,6 +486,7 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, o
   if (m.kind === "gif" && m.gif) return <SharedGif msg={m} />;
   if (m.kind === "image" && m.image) return <SharedImage msg={m} onView={() => onViewImage(m.image!.url)} />;
   if (m.kind === "feed" && m.feed) return <SharedFeedPost msg={m} onView={() => onViewFeed(m.feed!.eventId)} />;
+  if (m.kind === "challenge" && m.challenge) return <ChallengeCardMsg msg={m} viewerId={viewerId} onDecline={onDeclineChallenge} busy={!!busy} />;
   if (m.kind === "poll" && m.poll) return <Poll msg={m} onVote={onVote} readOnly={readOnly} />;
   return (
     <div style={{
@@ -687,6 +746,18 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const pin = (id: string) => { setReactFor(null); guard(() => api(code, "chat", { kind: "pin", commentId: id }, "PATCH")); };
   const unpin = () => guard(() => api(code, "chat", { kind: "unpin" }, "PATCH"));
 
+  // Decline a challenge card (Phase 1C) — a dedicated top-level route, not
+  // under /leagues/[code]/*, so it doesn't go through this file's api()
+  // helper. guard() still reloads the thread after, so the card flips to
+  // "Declined" immediately rather than waiting on the 15s poll.
+  const declineChallenge = (challengeId: string) => {
+    setReactFor(null);
+    guard(async () => {
+      const res = await fetch(`/api/fantasy/challenges/${challengeId}/decline`, { method: "POST" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not decline");
+    });
+  };
+
   // Delete/Block/Mute (Phase 5a) — reuse the existing comments DELETE (soft
   // delete, ownership-checked server-side) for a message, and the same
   // report/block/mute endpoints the feed uses. guard() reloads the thread
@@ -858,7 +929,8 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                   : <span aria-hidden style={{ width: 22, flexShrink: 0 }} />)}
                 <MessageBody m={m} onView={(id) => router.push(`/fantasy/players/${id}`)} onOpenNews={openNews}
                   onVote={(i2) => vote(m.id, i2)} onViewImage={setGalleryUrl} onViewFeed={openFeed} onAuthor={openAuthor}
-                  readOnly={readOnly} showHeader={showHeader} />
+                  onDeclineChallenge={declineChallenge} viewerId={user?.id ?? null}
+                  readOnly={readOnly} busy={busy} showHeader={showHeader} />
               </div>
               <div style={{ maxWidth: "94%", paddingLeft: mine ? 0 : (structured ? 2 : 29) }}>
                 {/* Replies are ONE level deep (the comments table's reply
