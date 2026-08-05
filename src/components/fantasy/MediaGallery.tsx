@@ -10,14 +10,18 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { trackMediaOpened } from "@/lib/analytics/trackSocial";
 
 export function MediaGallery({ images, index, onClose }: { images: string[]; index: number; onClose: () => void }) {
   const [i, setI] = useState(index);
   const [mounted, setMounted] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => setMounted(true), []);
   useEffect(() => setI(index), [index]);
+  useEffect(() => { trackMediaOpened(); }, []); // once per open (AC4)
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -25,11 +29,25 @@ export function MediaGallery({ images, index, onClose }: { images: string[]; ind
     return () => { document.body.style.overflow = prev; };
   }, []);
 
+  // Focus the close control on open, and trap Tab inside the gallery while
+  // it's open (AC5) — same technique as shared.tsx's Sheet.
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      else if (e.key === "ArrowRight") setI((v) => Math.min(v + 1, images.length - 1));
-      else if (e.key === "ArrowLeft") setI((v) => Math.max(v - 1, 0));
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "ArrowRight") { setI((v) => Math.min(v + 1, images.length - 1)); return; }
+      if (e.key === "ArrowLeft") { setI((v) => Math.max(v - 1, 0)); return; }
+      if (e.key !== "Tab" || !containerRef.current) return;
+      const items = Array.from(containerRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      )).filter((el) => el.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -50,12 +68,13 @@ export function MediaGallery({ images, index, onClose }: { images: string[]; ind
 
   const arrowBtn: React.CSSProperties = {
     position: "absolute", top: "50%", transform: "translateY(-50%)", zIndex: 1,
+    display: "flex", alignItems: "center", justifyContent: "center",
     background: "rgba(255,255,255,0.12)", border: "none", color: "#fff",
-    width: 38, height: 38, borderRadius: 999, fontSize: 18, cursor: "pointer",
+    width: 44, height: 44, borderRadius: 999, fontSize: 18, cursor: "pointer",
   };
 
   return createPortal(
-    <div onClick={onClose} style={{
+    <div ref={containerRef} onClick={onClose} role="dialog" aria-modal="true" aria-label="Image viewer" style={{
       position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.92)",
       display: "flex", flexDirection: "column",
     }}>
@@ -64,9 +83,10 @@ export function MediaGallery({ images, index, onClose }: { images: string[]; ind
         padding: "calc(14px + env(safe-area-inset-top)) 16px 10px", flexShrink: 0,
       }}>
         <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{i + 1}/{images.length}</span>
-        <button onClick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close" style={{
+        <button ref={closeBtnRef} onClick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close" style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
           background: "rgba(255,255,255,0.12)", border: "none", color: "#fff",
-          width: 34, height: 34, borderRadius: 999, fontSize: 18, cursor: "pointer", lineHeight: 1,
+          width: 44, height: 44, borderRadius: 999, fontSize: 18, cursor: "pointer", lineHeight: 1,
         }}>×</button>
       </div>
 

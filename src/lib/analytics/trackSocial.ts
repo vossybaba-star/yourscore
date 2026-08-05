@@ -1,0 +1,51 @@
+/**
+ * Social feed analytics (Phase 5b, AC4 — master prompt §27). Client-side,
+ * fire-and-forget, no PII beyond ids already used elsewhere in the app.
+ *
+ * These are product/UX diagnostics (which tab, which sort, what got tapped),
+ * not acquisition/conversion events — so this follows trackGame.ts's OWN
+ * `trackDiag` transport, not its full ad-platform fan-out (X/Meta/TikTok/
+ * Snapchat/AppsFlyer): trackDiag's comment explains why — "Sparse events
+ * starve delivery optimisation, so these deliberately stay out of the pixel
+ * fan-outs." A feed tab switch or a poll vote is exactly that kind of sparse,
+ * high-cardinality, non-bid event. GA4 (`gtag`) + Vercel Analytics both still
+ * get every event, same as every other surface in the app.
+ */
+import { track } from "@vercel/analytics";
+import { isNative } from "@/lib/native";
+
+type Props = Record<string, string | number | boolean>;
+
+function clientTag(): "native" | "web" {
+  return isNative() ? "native" : "web";
+}
+
+function fire(name: string, props: Props = {}): void {
+  if (typeof window === "undefined") return;
+  const payload: Props = { client: clientTag(), ...props };
+  window.gtag?.("event", name, payload); // Google Analytics 4
+  track(name, payload);                  // Vercel Analytics
+}
+
+export function trackFeedTabChanged(tab: string): void { fire("feed_tab_changed", { tab }); }
+export function trackFeedSortChanged(sort: string): void { fire("feed_sort_changed", { sort }); }
+export function trackPostOpened(type: string): void { fire("post_opened", { type }); }
+export function trackMediaOpened(): void { fire("media_opened"); }
+export function trackComposerOpened(): void { fire("composer_opened"); }
+export function trackPostCreated(props: { hasImages: boolean; hasGif: boolean; hasPoll: boolean; hasLink: boolean; attachment: string }): void {
+  fire("post_created", props);
+}
+export function trackPostAbandoned(): void { fire("post_abandoned"); }
+export function trackReactionAdded(emoji: string): void { fire("reaction_added", { emoji }); }
+export function trackReplyCreated(): void { fire("reply_created"); }
+export function trackRepostCreated(): void { fire("repost_created"); }
+export function trackQuoteCreated(): void { fire("quote_created"); }
+export function trackBookmarkAdded(): void { fire("bookmark_added"); }
+export function trackShareOpened(): void { fire("share_opened"); }
+export function trackFollowClicked(): void { fire("follow_clicked"); }
+export function trackPollVoted(): void { fire("poll_voted"); }
+export function trackDiscoverFilterSelected(filter: string): void { fire("discover_filter_selected", { filter }); }
+export function trackSearchPerformed(resultCounts: Record<string, number>): void { fire("search_performed", resultCounts); }
+export function trackReportSubmitted(subjectType: string): void { fire("report_submitted", { subjectType }); }
+export function trackBlockUser(): void { fire("block_user"); }
+export function trackMuteUser(): void { fire("mute_user"); }

@@ -26,6 +26,7 @@ import { FixturePickerSheet, type PickableFixture } from "@/components/fantasy/F
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { mentionQueryAt, applyMention, MentionDropdown } from "@/components/fantasy/MentionAutocomplete";
+import { trackComposerOpened, trackPostAbandoned, trackPostCreated } from "@/lib/analytics/trackSocial";
 
 interface ImageSlot { key: string; url: string | null; uploading: boolean; error: string | null }
 interface LinkPreview { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
@@ -108,7 +109,13 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [text]);
 
+  // Fires once each time the sheet opens (Phase 5b, AC4).
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => { if (open) trackComposerOpened(); }, [open]);
+
   if (!open) return null;
+
+  const hasContent = () => text.trim().length > 0 || images.length > 0 || !!gif || !!player || !!fixture || pollOn;
 
   const reset = () => {
     setText(""); setPollOn(false); setQuestion(""); setOptions(["", ""]); setPollDuration(24);
@@ -118,7 +125,12 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
     setCaret(0);
     setErr(null);
   };
-  const close = () => { reset(); onClose(); };
+  // Dismiss without posting (backdrop tap, Escape) — post_abandoned (AC4)
+  // fires only when there was actually something to lose.
+  const close = () => {
+    if (hasContent()) trackPostAbandoned();
+    reset(); onClose();
+  };
 
   const uploading = slots.some((s) => s.uploading);
   const images = slots.filter((s) => s.url).map((s) => s.url as string);
@@ -189,6 +201,15 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
       const r = await fetch("/api/fantasy/feed/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error ?? "Couldn't post");
+      // post_created (AC4) — only for a plain post/repost-quote's OWN media
+      // shape; a quote fires quote_created instead, at its own call site
+      // (RepostControl), so this never double-counts one submission as both.
+      if (!quoting) {
+        trackPostCreated({
+          hasImages: images.length > 0, hasGif: !!gif, hasPoll: pollOn, hasLink: !!(showLink && linkPreview),
+          attachment: player ? "player" : fixture ? "fixture" : "none",
+        });
+      }
       reset(); onPosted(); onClose();
     } catch (e) { setErr((e as Error).message); }
     setBusy(false);
@@ -212,6 +233,14 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
 
   return (
     <Sheet onClose={close} labelledBy="create-post-title">
+      {/* prefers-reduced-motion (AC5): the upload spinner is the only
+          animation in this sheet, so it's the only thing to guard. */}
+      <style>{`
+        .ys-post-spinner { animation: spin 0.8s linear infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .ys-post-spinner { animation: none; }
+        }
+      `}</style>
       <div id="create-post-title" className="font-display" style={{ fontSize: 19, color: INK, marginBottom: 10 }}>{quoting ? "Quote post" : "New post"}</div>
 
       <textarea ref={textareaRef} value={text}
@@ -270,9 +299,9 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
               )}
               {slot.uploading && (
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }}>
-                  <span aria-hidden style={{
+                  <span aria-hidden className="ys-post-spinner" style={{
                     width: 20, height: 20, borderRadius: 999, border: "2px solid rgba(255,255,255,0.35)",
-                    borderTopColor: "#fff", display: "block", animation: "spin 0.8s linear infinite",
+                    borderTopColor: "#fff", display: "block",
                   }} />
                 </div>
               )}

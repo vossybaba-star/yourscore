@@ -7,6 +7,7 @@ import { useUser } from "@/hooks/useUser";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { mentionQueryAt, applyMention, MentionDropdown } from "@/components/fantasy/MentionAutocomplete";
+import { trackReplyCreated } from "@/lib/analytics/trackSocial";
 
 // Two-level (IG-style) discussion thread per subject (quiz pack or debate).
 // Top-level: newest first. Replies: oldest first within a parent, collapsed
@@ -183,6 +184,10 @@ export function DiscussionThread({
       });
       const out = await res.json();
       if (!res.ok) { setError(out.error ?? "Could not post"); return; }
+      // reply_created (Phase 5b, AC4) — a Social feed comment specifically;
+      // this component also backs pack/debate discussions, which aren't
+      // in scope for the Social event set.
+      if (subjectType === "fantasy_feed") trackReplyCreated();
       setDraft("");
       setComments((prev) => [
         { id: out.id, parentId: null, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
@@ -217,6 +222,7 @@ export function DiscussionThread({
       });
       const out = await res.json();
       if (!res.ok) { setReplyError(out.error ?? "Could not post"); return; }
+      if (subjectType === "fantasy_feed") trackReplyCreated();
       setComments((prev) => [
         ...prev,
         { id: out.id, parentId, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },

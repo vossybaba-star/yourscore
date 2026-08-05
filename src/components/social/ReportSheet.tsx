@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
+import { trackReportSubmitted } from "@/lib/analytics/trackSocial";
 
 const REASONS = ["Spam", "Abuse or hate", "Unsafe link", "Other"] as const;
 const DETAIL_MAX = 200;
@@ -43,6 +44,7 @@ export function ReportSheet({ subjectType, subjectId, onClose }: {
         const d = await res.json().catch(() => ({}));
         setErr(d.error ?? "Couldn't send that report"); setBusy(false); return;
       }
+      trackReportSubmitted(subjectType);
       setDone(true); setBusy(false);
       window.setTimeout(onClose, 1400);
     } catch { setErr("Couldn't send that report"); setBusy(false); }
@@ -62,7 +64,7 @@ export function ReportSheet({ subjectType, subjectId, onClose }: {
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div className="font-display" style={{ fontSize: 17, color: INK }}>Report</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: MUTED, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Close</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: MUTED, fontSize: 13, fontWeight: 700, cursor: "pointer", minHeight: 44, padding: "0 4px" }}>Close</button>
         </div>
 
         {done ? (
@@ -74,8 +76,8 @@ export function ReportSheet({ subjectType, subjectId, onClose }: {
             <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>What&apos;s wrong with this?</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
               {REASONS.map((r) => (
-                <button key={r} onClick={() => setReason(r)} style={{
-                  padding: "8px 13px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                <button key={r} onClick={() => setReason(r)} aria-pressed={reason === r} style={{
+                  padding: "8px 13px", minHeight: 44, borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
                   background: reason === r ? tint(TEAL, "22") : PANEL_2, color: reason === r ? TEAL : MUTED,
                   border: `1px solid ${reason === r ? tint(TEAL, "66") : LINE}`,
                 }}>{r}</button>
@@ -93,7 +95,7 @@ export function ReportSheet({ subjectType, subjectId, onClose }: {
             {err && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "8px 0 0" }}>{err}</p>}
 
             <button onClick={submit} disabled={!reason || busy} style={{
-              width: "100%", marginTop: 12, padding: "12px 0", borderRadius: 999, fontSize: 14, fontWeight: 700,
+              width: "100%", marginTop: 12, padding: "12px 0", minHeight: 44, borderRadius: 999, fontSize: 14, fontWeight: 700,
               cursor: (!reason || busy) ? "default" : "pointer",
               background: (!reason || busy) ? PANEL_2 : TEAL, color: (!reason || busy) ? MUTED : "#04231f", border: "none",
             }}>{busy ? "Sending…" : "Submit"}</button>

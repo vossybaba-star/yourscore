@@ -26,9 +26,11 @@ import { LIME, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/share
 import { FeedStream } from "@/components/fantasy/FeedStream";
 import { DiscoverTabs } from "@/components/fantasy/DiscoverTabs";
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
+import { SearchOverlay } from "@/components/fantasy/SearchOverlay";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { useUser } from "@/hooks/useUser";
 import { recordVisit } from "@/lib/nav";
+import { trackFeedSortChanged, trackFeedTabChanged } from "@/lib/analytics/trackSocial";
 
 const SIGN_IN = "/auth/sign-in?next=/fantasy/social";
 const TAB_KEY = "ys:social:tab";
@@ -144,6 +146,8 @@ export function SocialHome() {
   // The composer + a key that reloads the For You feed after a new post lands.
   const [composeOpen, setComposeOpen] = useState(false);
   const [liveKey, setLiveKey] = useState(0);
+  // The full-screen search overlay (Phase 5b, AC3).
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Single window-level scroll, shared across all three panes — capture it on
   // the way out of a tab and restore it on the way back in, so a switch never
@@ -187,6 +191,7 @@ export function SocialHome() {
     pendingScroll.current = scrollPositions.current[t] ?? 0;
     setTab(t);
     setVisited((v) => (v[t] ? v : { ...v, [t]: true }));
+    trackFeedTabChanged(t);
     const url = t === "live" ? "/fantasy/social" : `/fantasy/social?tab=${t}`;
     try {
       window.history.replaceState(null, "", url);
@@ -197,6 +202,7 @@ export function SocialHome() {
 
   const selectSort = useCallback((s: FeedSort) => {
     setFeedSort(s);
+    trackFeedSortChanged(s);
     try { localStorage.setItem(SORT_KEY, s); } catch { /* storage unavailable */ }
   }, []);
 
@@ -210,17 +216,29 @@ export function SocialHome() {
 
   return (
     <div style={{ paddingBottom: guestPromptShown ? 56 : 0 }}>
-      <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: `1px solid rgba(255,255,255,0.06)`, marginBottom: 14 }}>
-        {TABS.map((t) => {
-          const on = t.id === tab;
-          return (
-            <button key={t.id} role="tab" aria-selected={on} onClick={() => select(t.id)} style={{
-              flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-              background: on ? tint(TEAL, "22") : "transparent", color: on ? TEAL : MUTED,
-              border: `1px solid ${on ? tint(TEAL, "55") : "transparent"}`,
-            }}>{t.label}</button>
-          );
-        })}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 12, background: "rgba(255,255,255,0.04)", border: `1px solid rgba(255,255,255,0.06)`, flex: 1 }}>
+          {TABS.map((t) => {
+            const on = t.id === tab;
+            return (
+              <button key={t.id} role="tab" aria-selected={on} onClick={() => select(t.id)} style={{
+                flex: 1, padding: "8px 4px", borderRadius: 9, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
+                background: on ? tint(TEAL, "22") : "transparent", color: on ? TEAL : MUTED,
+                border: `1px solid ${on ? tint(TEAL, "55") : "transparent"}`,
+              }}>{t.label}</button>
+            );
+          })}
+        </div>
+        {/* Search (Phase 5b, AC3) — opens the full-screen search overlay. */}
+        <button onClick={() => setSearchOpen(true)} aria-label="Search" style={{
+          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+          width: 44, height: 44, borderRadius: 999, cursor: "pointer",
+          background: "rgba(255,255,255,0.04)", border: `1px solid rgba(255,255,255,0.06)`, color: MUTED,
+        }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" />
+          </svg>
+        </button>
       </div>
 
       <div style={{ display: tab === "live" ? "block" : "none" }}>
@@ -280,6 +298,7 @@ export function SocialHome() {
       </div>
 
       <CreatePostSheet open={composeOpen} onClose={() => setComposeOpen(false)} onPosted={() => setLiveKey((k) => k + 1)} />
+      {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
 
       {guestPromptShown && <GuestPrompt />}
     </div>
