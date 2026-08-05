@@ -40,8 +40,16 @@ export function PlayerPickerSheet({ open, onClose, onSelect }: {
   const results = useMemo(() => {
     if (!players) return [];
     const q = query.trim().toLowerCase();
-    const pool = q ? players.filter((p) => p.name.toLowerCase().includes(q) || p.club.toLowerCase().includes(q)) : players;
-    return pool.slice(0, MAX_RESULTS);
+    if (q) {
+      return players
+        .filter((p) => p.name.toLowerCase().includes(q) || p.club.toLowerCase().includes(q))
+        .slice(0, MAX_RESULTS);
+    }
+    // No query: the pool arrives ordered by club, and Arsenal is alphabetically
+    // first, so a raw first-20 slice showed ONLY Arsenal players and read as a
+    // club-locked picker (founder, 6 Aug). Default to the biggest names by
+    // price instead, which naturally spans clubs.
+    return [...players].sort((a, b) => b.price - a.price).slice(0, MAX_RESULTS);
   }, [players, query]);
 
   if (!open || !mounted) return null;

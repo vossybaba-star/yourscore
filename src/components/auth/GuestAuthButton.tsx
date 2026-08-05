@@ -35,6 +35,10 @@ export function GuestAuthButton() {
   // The auth pages themselves, and the marketing home page, which has its own
   // header with a Sign In/Up button in it — two would be one too many.
   if (pathname === "/" || pathname.startsWith("/auth")) return null;
+  // Social carries its own contextual join bar (master prompt §21: no floating
+  // auth control overlapping the feed) — one ask per screen, and the bottom
+  // nav's Sign in tab keeps the volitional door.
+  if (pathname.startsWith("/fantasy/social")) return null;
   if (navHidden) return null;
 
   const next = pathname && pathname !== "/" ? `?next=${encodeURIComponent(pathname)}` : "";

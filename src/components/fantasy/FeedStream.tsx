@@ -272,7 +272,11 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
         width: 44, height: 44, borderRadius: 999, fontSize: 15,
         background: trayOpen ? tint(TEAL, "22") : "none", color: trayOpen ? TEAL : MUTED,
         border: `1px solid ${trayOpen ? tint(TEAL, "66") : LINE}`,
-      }}>{total > 0 ? "＋" : "☺"}</button>
+      }}>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <circle cx="11" cy="12" r="8" /><path d="M8 14s1.2 1.6 3 1.6 3-1.6 3-1.6" /><path d="M9 10h.01" /><path d="M13.5 10h.01" /><path d="M19 3v4" /><path d="M17 5h4" />
+        </svg>
+      </button>
 
       {trayOpen && (
         <>
@@ -835,7 +839,9 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
         </button>
         {ev.type === "post" && <RepostControl ev={ev} signInNext={signInNext} />}
         <button onClick={(e) => { e.stopPropagation(); trackShareOpened(); setShareOpen(true); }} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: "10px 9px", color: MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: 14 }}>↗</span>Share
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12 3v12" /><path d="M8 7l4-4 4 4" /><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+          </svg>Share
         </button>
       </div>
 
@@ -861,7 +867,7 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
 
 export function FeedStream({
   embedded = false, signInNext = "/fantasy/feed",
-  controlledScope, controlledSort, chrome = true, emptyFollowing,
+  controlledScope, controlledSort, chrome = true, emptyFollowing, onExplore,
 }: {
   embedded?: boolean; signInNext?: string;
   /** When the parent owns the scope/sort (the Social tabs), FeedStream renders
@@ -869,6 +875,9 @@ export function FeedStream({
    *  feed to Global — the caller's empty state takes over instead. */
   controlledScope?: FeedScope; controlledSort?: FeedSort;
   chrome?: boolean; emptyFollowing?: ReactNode;
+  /** Where the caught-up terminal sends people next (UX walk A4): the Social
+   *  shell passes a tab switch into Discover; standalone copies omit it. */
+  onExplore?: () => void;
 }) {
   const router = useRouter();
   const controlled = controlledScope != null;
@@ -1058,7 +1067,17 @@ export function FeedStream({
             {loadingMore ? (
               <span style={{ fontSize: 12.5, color: MUTED }}>Loading more…</span>
             ) : !hasMore ? (
-              <span style={{ fontSize: 12, color: MUTED }}>You&apos;re all caught up</span>
+              <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, color: MUTED }}>You&apos;re all caught up</span>
+                {onExplore && (
+                  <button onClick={onExplore} style={{
+                    cursor: "pointer", padding: "9px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))",
+                    border: "1px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10)",
+                    color: TEAL,
+                  }}>See what&apos;s trending in Discover ›</button>
+                )}
+              </span>
             ) : null}
           </div>
         )}
