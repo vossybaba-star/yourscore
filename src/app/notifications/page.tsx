@@ -46,6 +46,20 @@ type NotificationRow = {
   updated_at: string;
 };
 
+// Tabs (Social Phase 3b, AC6). "Mentions" and "Leagues" are pattern matches
+// over the type strings this app already writes, NOT a hardcoded enum — a new
+// mention-shaped or league/chat-shaped type lands in the right tab with no
+// code change here, same "no enum" call migration 222 made for `type` itself.
+// Leagues also catches anything scoped to a league via subject_type, which is
+// how fantasy_month_winner (no "league"/"chat" in its own name) gets in.
+type NotifTab = "all" | "mentions" | "leagues";
+function isMentionType(n: NotificationRow): boolean {
+  return /mention/i.test(n.type);
+}
+function isLeagueType(n: NotificationRow): boolean {
+  return n.subject_type === "fantasy_league" || /league|chat/i.test(n.type);
+}
+
 /** One rendered inbox row, built from a notification row + the read-time
  *  actor/comment enrichment. */
 function renderRow(
@@ -117,7 +131,9 @@ function renderRow(
   );
 }
 
-export default async function NotificationsPage() {
+export default async function NotificationsPage({ searchParams }: { searchParams?: { tab?: string } }) {
+  const tab: NotifTab = searchParams?.tab === "mentions" ? "mentions" : searchParams?.tab === "leagues" ? "leagues" : "all";
+
   const supabase = await createClient();
   const user = await getUserBounded(supabase);
 
@@ -196,6 +212,13 @@ export default async function NotificationsPage() {
     }
   }
 
+  const visible = notifications.filter((n) => (tab === "all" ? true : tab === "mentions" ? isMentionType(n) : isLeagueType(n)));
+  const emptyCopy = tab === "mentions"
+    ? "No mentions yet."
+    : tab === "leagues"
+      ? "Nothing from your leagues yet."
+      : "Nothing here yet. Likes, replies and daily drops will land here.";
+
   return (
     <main className="min-h-dvh bg-bg pb-28">
       <GridBackground opacity={0.02} />
@@ -204,17 +227,30 @@ export default async function NotificationsPage() {
           <BackPill fallback="/" />
           <p className="font-display text-lg text-white">Notifications</p>
         </div>
+        <div className="flex items-center gap-2 px-5 pb-3 max-w-lg mx-auto">
+          {([["all", "All"], ["mentions", "Mentions"], ["leagues", "Leagues"]] as [NotifTab, string][]).map(([t, label]) => {
+            const on = t === tab;
+            return (
+              <Link key={t} href={t === "all" ? "/notifications" : `/notifications?tab=${t}`}
+                className="font-body text-xs font-bold px-3 py-1.5 rounded-full"
+                style={{
+                  background: on ? "rgba(174,234,0,0.14)" : "rgba(255,255,255,0.04)",
+                  color: on ? LIME : "#8a948f",
+                  border: `1px solid ${on ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.08)"}`,
+                  textDecoration: "none",
+                }}>{label}</Link>
+            );
+          })}
+        </div>
       </div>
 
       <div className="relative z-0 max-w-lg mx-auto px-5 pt-4 space-y-2.5">
-        {notifications.length === 0 ? (
+        {visible.length === 0 ? (
           <div className="text-center py-16">
-            <p className="font-body text-sm" style={{ color: "#8a948f" }}>
-              Nothing here yet. Likes, replies and daily drops will land here.
-            </p>
+            <p className="font-body text-sm" style={{ color: "#8a948f" }}>{emptyCopy}</p>
           </div>
         ) : (
-          notifications.map((n) => {
+          visible.map((n) => {
             const isUnread = !readAt || new Date(n.updated_at) > new Date(readAt);
             const actorName = n.actor_id ? actorNameById.get(n.actor_id) ?? "A player" : "A player";
             const comment = n.comment_id ? commentById.get(n.comment_id) : undefined;

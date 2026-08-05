@@ -19,6 +19,7 @@ import { ProfileHero } from "@/components/profile/ProfileHero";
 import { MedalShelf } from "@/components/profile/MedalShelf";
 import { PointsBreakdown } from "@/components/profile/PointsBreakdown";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { ProfileSocialTabs } from "@/components/fantasy/ProfileSocialTabs";
 import { dayStreak, playedDays, streakCutoff } from "@/lib/streak";
 import { allMedals } from "@/lib/medals";
 
@@ -494,6 +495,13 @@ export default async function ProfilePage() {
           <span className="font-body text-sm text-white">Settings</span>
           <span className="font-body text-xs text-text-muted">Edit name, sign out →</span>
         </Link>
+
+        {/* Social — posts, replies, media (Social Phase 3b). Own profile, so
+            the pin control is available on your own posts. */}
+        <div>
+          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Social</p>
+          <ProfileSocialTabs userId={userId} isOwner signInNext="/profile" />
+        </div>
       </div>
       <BottomNav />
     </main>

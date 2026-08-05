@@ -12,6 +12,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
 import { notifyFantasy } from "./notify";
+import { notifyMentions } from "./mentions";
+import { extractMentions, resolveUsernames } from "@/lib/mentions";
 import { commentRejection } from "@/lib/moderation";
 import { HttpError } from "./server";
 
@@ -195,6 +197,15 @@ export interface FeedEvent {
   myReposted: boolean;
   /** A quote post's embedded quoted post. Null when this post isn't a quote. */
   quoteOf?: EmbeddedPost | null;
+  /** Whether the viewer has bookmarked this post (Phase 3b, AC2). Always
+   *  false for a guest (no viewer) and false when fantasy_feed_bookmarks
+   *  isn't there yet — see hydrateEvents. */
+  myBookmarked: boolean;
+  /** Real, resolved @username mentions in this post's text (Phase 3b, AC3) —
+   *  only handles that matched an actual profile; an unknown/typo'd handle
+   *  just isn't in this list and renders as plain text. Null for a non-post
+   *  event or a post with no text. */
+  mentionedUsers?: { username: string; userId: string }[] | null;
 }
 
 const CHIP_LABEL: Record<string, string> = {
@@ -211,7 +222,7 @@ const QA_ACCOUNT_IDS = [
   "cf78de0e-da93-4fb8-b3cd-8865ae0a0814", // hc
   "aa6542bc-ea1d-480c-9070-4a6b79c87381", // hc2
 ];
-const syntheticActors = () =>
+export const syntheticActors = () =>
   new Set([...QA_ACCOUNT_IDS, process.env.HEALTH_BOT_USER_ID ?? ""].filter(Boolean));
 
 /** Emit one feed event. No-throw by default at the call site — a feed write must
@@ -501,7 +512,15 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     .insert({ actor_id: userId, type: "post", gw: null, payload })
     .select("id").single();
   if (error) throw new HttpError(500, error.message);
-  return { id: (data as { id: string }).id };
+  const postId = (data as { id: string }).id;
+  // Mention notifications (Phase 3b, AC4) — fire-and-forget, never blocks the post.
+  if (text) {
+    void notifyMentions({
+      db, text, actorId: userId, dedupeSubjectId: postId,
+      url: `/fantasy/social/post/${postId}`,
+    });
+  }
+  return { id: postId };
 }
 
 /** Vote on a post's poll — one choice per user, switchable. Rejects once the
@@ -537,12 +556,14 @@ export async function repostFeedEvent(db: Db, userId: string, eventId: unknown):
   if (!target || target.type !== "post" || bots.has(target.actor_id)) throw new HttpError(404, "Post not found");
 
   let targetId = id;
+  let originalAuthorId = target.actor_id;
   const chainedRepostOf = target.payload?.repostOf;
   if (typeof chainedRepostOf === "string" && chainedRepostOf) {
     const { data: originalRow } = await db.from("fantasy_feed_events").select("id, actor_id, type").eq("id", chainedRepostOf).maybeSingle();
     const original = originalRow as { id: string; actor_id: string; type: string } | null;
     if (!original || original.type !== "post" || bots.has(original.actor_id)) throw new HttpError(404, "Post not found");
     targetId = chainedRepostOf;
+    originalAuthorId = original.actor_id;
   }
 
   const { data: already } = await db.from("fantasy_feed_events")
@@ -553,7 +574,27 @@ export async function repostFeedEvent(db: Db, userId: string, eventId: unknown):
     .insert({ actor_id: userId, type: "post", gw: null, payload: { repostOf: targetId } })
     .select("id").single();
   if (error) throw new HttpError(500, error.message);
+  // Repost notification (Phase 3b, AC5) — never self, never a synthetic reposter.
+  if (originalAuthorId !== userId && !bots.has(userId)) void notifyRepostAuthor(db, targetId, originalAuthorId, userId);
   return { id: (data as { id: string }).id };
+}
+
+/** Ping the original author that their post got reposted (AC5). Best-effort —
+ *  never throws, so a notify hiccup can't fail the repost itself. */
+async function notifyRepostAuthor(db: Db, originalId: string, originalAuthorId: string, reposterId: string): Promise<void> {
+  try {
+    const { data: prof } = await db.from("profiles").select("display_name, username").eq("id", reposterId).maybeSingle();
+    const who = prof?.display_name ?? (prof?.username ? `@${prof.username}` : "A manager");
+    await notifyFantasy({
+      userIds: [originalAuthorId],
+      title: `${who} reposted your post`,
+      body: "See it on your profile.",
+      url: `/fantasy/social/post/${originalId}`,
+      dedupeKey: `repost:${originalId}:${reposterId}`,
+      type: "social_repost",
+      actorId: reposterId,
+    });
+  } catch (e) { console.error("[fantasy:feed] repost notify failed:", e); }
 }
 
 /** Undo a repost. `eventId` here is always the CONTENT id (the original post's
@@ -659,6 +700,23 @@ async function hydrateEvents(
   const targetById = new Map<string, any>((targetRows ?? []).map((t: any) => [t.id, t]));
   const targetRenderable = (t: { type: string; actor_id: string } | undefined) => !!t && t.type === "post" && !bots.has(t.actor_id);
 
+  // Mentions (Phase 3b, AC3) — batch-resolve every REAL @handle across this
+  // batch's post text into id+username, so the card can linkify with no
+  // second round trip. A repost's text comes from its resolved TARGET (same
+  // rule the rest of this function follows for a repost pointer row), so
+  // mentions are pulled from the target's payload in that case. An unresolved
+  // handle just doesn't appear in the map — it renders as plain text.
+  const mentionHandles = Array.from(new Set(
+    events
+      .filter((e) => e.type === "post")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .flatMap((e: any) => {
+        const repostOfId = typeof e.payload?.repostOf === "string" ? (e.payload.repostOf as string) : null;
+        const p = repostOfId ? targetById.get(repostOfId)?.payload : e.payload;
+        return typeof p?.text === "string" ? extractMentions(p.text) : [];
+      }),
+  ));
+
   const actorIds = Array.from(new Set([
     ...events.map((e) => e.actor_id as string),
     ...(targetRows ?? []).map((t: { actor_id: string }) => t.actor_id),
@@ -685,7 +743,7 @@ async function hydrateEvents(
 
   const [
     { data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }, { data: pollVoteRows }, { data: supporterRows },
-    { data: repostRows },
+    { data: repostRows }, { data: bookmarkRows }, mentionMap,
   ] = await Promise.all([
     db.from("profiles").select("id, display_name, avatar_url, username").in("id", actorIds),
     db.from("fantasy_feed_likes").select("event_id, user_id, emoji").in("event_id", reactionCommentIds),
@@ -706,7 +764,16 @@ async function hydrateEvents(
     postEventIds.length
       ? db.from("fantasy_feed_events").select("actor_id, payload").eq("type", "post").in("payload->>repostOf", postEventIds)
       : Promise.resolve({ data: [] as { actor_id: string; payload: { repostOf?: string } }[] }),
+    // Bookmarks (Phase 3b, AC2) — the viewer's own saves among this batch's
+    // content ids. No viewer, or fantasy_feed_bookmarks not migrated yet, both
+    // resolve to the same empty result — see myBookmarked below.
+    viewerId
+      ? db.from("fantasy_feed_bookmarks").select("event_id").eq("user_id", viewerId).in("event_id", reactionCommentIds)
+      : Promise.resolve({ data: [] as { event_id: string }[] }),
+    mentionHandles.length ? resolveUsernames(db, mentionHandles) : Promise.resolve(new Map<string, { id: string; username: string }>()),
   ]);
+
+  const myBookmarkedSet = new Set<string>(((bookmarkRows ?? []) as { event_id: string }[]).map((r) => r.event_id));
 
   const profById = new Map<string, { display_name: string | null; avatar_url: string | null; username: string | null }>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -823,6 +890,7 @@ async function hydrateEvents(
         reactions: [], myEmoji: null, commentCount: 0,
         repostedBy: { id: e.actor_id, name: profById.get(e.actor_id)?.display_name ?? "A manager" },
         unavailable: true, repostCount: 0, myReposted: false,
+        myBookmarked: false, mentionedUsers: null,
       } satisfies FeedEvent;
     }
 
@@ -927,6 +995,15 @@ async function hydrateEvents(
     const quoteOfId = type === "post" && typeof payload.quoteOf === "string" ? (payload.quoteOf as string) : null;
     const quoteOf = quoteOfId ? embedFor(quoteOfId) : null;
 
+    // Mentions (Phase 3b) — only the REAL handles resolved above; an unknown
+    // one is simply absent, so it stays plain text on render.
+    const mentionedUsers = type === "post" && text
+      ? Array.from(new Set(extractMentions(text)))
+          .map((h) => (mentionMap as Map<string, { id: string; username: string }>).get(h))
+          .filter((u): u is { id: string; username: string } => !!u)
+          .map((u) => ({ username: u.username, userId: u.id }))
+      : null;
+
     return {
       id: contentId,
       rowKey: e.id,
@@ -958,6 +1035,8 @@ async function hydrateEvents(
       repostCount: repostCountByTarget.get(contentId) ?? 0,
       myReposted: viewerId ? myRepostedTargets.has(contentId) : false,
       quoteOf,
+      myBookmarked: viewerId ? myBookmarkedSet.has(contentId) : false,
+      mentionedUsers,
     } satisfies FeedEvent;
   });
 
@@ -969,4 +1048,194 @@ async function hydrateEvents(
     mapped.sort((a, b) => engagement(b) - engagement(a) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
   }
   return mapped.slice(0, limit);
+}
+
+// ── Bookmarks (Phase 3b, AC2) ────────────────────────────────────────────────
+
+/** Resolve a bookmark target to the ORIGINAL post id — defensive against a
+ *  repost pointer row's own id being passed in (the client only ever sends
+ *  `ev.id`, which is already the content id per hydrateEvents' convention,
+ *  but a raw id from elsewhere shouldn't create a bookmark on the wrong row). */
+async function resolveContentId(db: Db, eventId: string): Promise<{ id: string; type: string } | null> {
+  const { data: row } = await db.from("fantasy_feed_events").select("id, type, payload").eq("id", eventId).maybeSingle();
+  const target = row as { id: string; type: string; payload: Record<string, unknown> | null } | null;
+  if (!target) return null;
+  const repostOf = typeof target.payload?.repostOf === "string" ? (target.payload.repostOf as string) : null;
+  return { id: repostOf ?? eventId, type: target.type };
+}
+
+/** Bookmark a post (AC2). Validates the event exists. Tolerates a missing
+ *  fantasy_feed_bookmarks table pre-migration — surfaces as a friendly 503
+ *  rather than a crash (AC8), same graceful-absent discipline as the rest of
+ *  Phase 3b. */
+export async function bookmarkFeedEvent(db: Db, userId: string, eventId: unknown): Promise<{ ok: true }> {
+  const id = typeof eventId === "string" ? eventId : "";
+  if (!id) throw new HttpError(400, "bad bookmark");
+  const target = await resolveContentId(db, id);
+  if (!target || target.type !== "post") throw new HttpError(404, "Post not found");
+  const { error } = await db.from("fantasy_feed_bookmarks")
+    .upsert({ event_id: target.id, user_id: userId }, { onConflict: "event_id,user_id" });
+  if (error) throw new HttpError(503, "Bookmarks aren't available right now");
+  return { ok: true };
+}
+
+/** Remove a bookmark (AC2). No-op (still 200) if it wasn't bookmarked. */
+export async function unbookmarkFeedEvent(db: Db, userId: string, eventId: unknown): Promise<{ ok: true }> {
+  const id = typeof eventId === "string" ? eventId : "";
+  if (!id) throw new HttpError(400, "bad bookmark");
+  const target = await resolveContentId(db, id);
+  const originalId = target?.id ?? id;
+  const { error } = await db.from("fantasy_feed_bookmarks").delete().eq("event_id", originalId).eq("user_id", userId);
+  if (error) throw new HttpError(503, "Bookmarks aren't available right now");
+  return { ok: true };
+}
+
+/** The viewer's saved posts, newest-bookmark-first (AC2) — NOT the posts' own
+ *  created_at order, so a post bookmarked recently but written long ago still
+ *  sits near the top of Saved. Empty (not an error) when the bookmarks table
+ *  isn't there yet. */
+export async function loadBookmarkedFeed(db: Db, viewerId: string, limit = 30): Promise<FeedEvent[]> {
+  const { data: marks } = await db.from("fantasy_feed_bookmarks")
+    .select("event_id").eq("user_id", viewerId).order("created_at", { ascending: false }).limit(limit);
+  const ids = ((marks ?? []) as { event_id: string }[]).map((m) => m.event_id);
+  if (!ids.length) return [];
+  const { data: rows } = await db.from("fantasy_feed_events")
+    .select("id, actor_id, type, gw, payload, created_at").in("id", ids);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const byId = new Map<string, any>((rows ?? []).map((r: any) => [r.id, r]));
+  // Bookmark order, not query order — .in() doesn't promise the ids back in
+  // the order given.
+  const ordered = ids.map((id) => byId.get(id)).filter(Boolean);
+  return hydrateEvents(db, viewerId, ordered, "recent", limit);
+}
+
+// ── Pinned post (Phase 3b, AC7) ──────────────────────────────────────────────
+
+/** Pin one of YOUR OWN posts to the top of your profile's Posts tab.
+ *  Validates ownership — pinning someone else's post 403s. Tolerates a
+ *  missing profiles.pinned_event_id column pre-migration (503, AC8). */
+export async function pinPost(db: Db, userId: string, eventId: unknown): Promise<{ ok: true }> {
+  const id = typeof eventId === "string" ? eventId : "";
+  if (!id) throw new HttpError(400, "bad pin");
+  const { data: row } = await db.from("fantasy_feed_events").select("id, actor_id, type").eq("id", id).maybeSingle();
+  const target = row as { id: string; actor_id: string; type: string } | null;
+  if (!target || target.type !== "post") throw new HttpError(404, "Post not found");
+  if (target.actor_id !== userId) throw new HttpError(403, "You can only pin your own posts");
+  const { error } = await db.from("profiles").update({ pinned_event_id: id }).eq("id", userId);
+  if (error) throw new HttpError(503, "Pinning isn't available right now");
+  return { ok: true };
+}
+
+/** Unpin whatever's currently pinned (no-op if nothing was). */
+export async function unpinPost(db: Db, userId: string): Promise<{ ok: true }> {
+  const { error } = await db.from("profiles").update({ pinned_event_id: null }).eq("id", userId);
+  if (error) throw new HttpError(503, "Pinning isn't available right now");
+  return { ok: true };
+}
+
+/** The profile's pinned post, hydrated exactly like any other feed card. Null
+ *  when nothing's pinned, the column doesn't exist yet, or the pinned post
+ *  itself no longer resolves (deleted, or its author went bot/health-check). */
+export async function loadPinnedPost(db: Db, viewerId: string | null, userId: string): Promise<FeedEvent | null> {
+  const { data: prof } = await db.from("profiles").select("pinned_event_id").eq("id", userId).maybeSingle();
+  const pinnedId = (prof as { pinned_event_id?: string | null } | null)?.pinned_event_id ?? null;
+  if (!pinnedId) return null;
+  const event = await loadFeedEvent(db, viewerId, pinnedId);
+  return event && !event.unavailable ? event : null;
+}
+
+// ── Profile tabs (Phase 3b, AC7) ─────────────────────────────────────────────
+
+/** A user's own "post" events for their profile's Posts tab — hydrated same
+ *  as the main feed, newest first, excluding pure reposts (a repost pointer
+ *  row's payload is ALWAYS just `{ repostOf }`, nothing else — a quote isn't
+ *  excluded, since a quote always carries its own text/media, see quoteOf). */
+export async function loadUserPosts(db: Db, viewerId: string | null, userId: string, limit = 30): Promise<FeedEvent[]> {
+  // Headroom above `limit`: some rows get dropped as pure reposts below, and
+  // hydrateEvents' own bot filter could drop a stray row too.
+  const { data: rows } = await db.from("fantasy_feed_events")
+    .select("id, actor_id, type, gw, payload, created_at")
+    .eq("actor_id", userId).eq("type", "post")
+    .order("created_at", { ascending: false }).limit(limit * 2);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ownRows = ((rows ?? []) as any[]).filter((r) => !r.payload?.repostOf).slice(0, limit);
+  return hydrateEvents(db, viewerId, ownRows, "recent", limit);
+}
+
+export interface UserReply {
+  id: string;
+  body: string;
+  createdAt: string;
+  postId: string;
+  postText: string | null;
+  postActorName: string;
+}
+
+/** A user's own fantasy_feed comments for their profile's Replies tab —
+ *  compact rows, newest first, each linking to the post they're on. A reply
+ *  whose post no longer resolves (deleted, or by a bot/health-check account)
+ *  still shows — just with no quoted post text/author. */
+export async function loadUserReplies(db: Db, userId: string, limit = 30): Promise<UserReply[]> {
+  const { data: rows } = await db.from("comments")
+    .select("id, subject_id, body, created_at")
+    .eq("subject_type", "fantasy_feed").eq("user_id", userId).is("deleted_at", null)
+    .order("created_at", { ascending: false }).limit(limit);
+  const list = (rows ?? []) as { id: string; subject_id: string; body: string; created_at: string }[];
+  if (!list.length) return [];
+
+  const postIds = Array.from(new Set(list.map((r) => r.subject_id)));
+  const { data: postRows } = await db.from("fantasy_feed_events").select("id, actor_id, payload").in("id", postIds);
+  const bots = syntheticActors();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const postById = new Map<string, any>((postRows ?? []).map((p: any) => [p.id, p]));
+  const actorIds = Array.from(new Set(((postRows ?? []) as { actor_id: string }[]).map((p) => p.actor_id)));
+  const { data: profs } = actorIds.length
+    ? await db.from("profiles").select("id, display_name, username").in("id", actorIds)
+    : { data: [] as { id: string; display_name: string | null; username: string | null }[] };
+  const nameById = new Map(
+    ((profs ?? []) as { id: string; display_name: string | null; username: string | null }[])
+      .map((p) => [p.id, p.display_name ?? (p.username ? `@${p.username}` : "A manager")]),
+  );
+
+  return list.map((r) => {
+    const post = postById.get(r.subject_id);
+    const renderable = post && !bots.has(post.actor_id);
+    return {
+      id: r.id,
+      body: r.body,
+      createdAt: r.created_at,
+      postId: r.subject_id,
+      postText: renderable && typeof post.payload?.text === "string" ? post.payload.text : null,
+      postActorName: renderable ? nameById.get(post.actor_id) ?? "A manager" : "A manager",
+    };
+  });
+}
+
+export interface UserMediaItem { postId: string; thumbUrl: string }
+
+/** A user's own posts that carry an image or GIF, for their profile's Media
+ *  tab — newest first, one thumbnail per post (the first image, or the GIF's
+ *  still). Pure reposts carry no media of their own and are skipped. */
+export async function loadUserMedia(db: Db, userId: string, limit = 30): Promise<UserMediaItem[]> {
+  // Headroom: not every post carries media, so a plain `limit` rows fetch
+  // could come back thin even when the user has plenty of media posts further back.
+  const { data: rows } = await db.from("fantasy_feed_events")
+    .select("id, payload, created_at")
+    .eq("actor_id", userId).eq("type", "post")
+    .order("created_at", { ascending: false }).limit(limit * 3);
+
+  const items: UserMediaItem[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const r of (rows ?? []) as any[]) {
+    if (r.payload?.repostOf) continue;
+    const p = r.payload ?? {};
+    const thumb: string | null =
+      (Array.isArray(p.images) && typeof p.images[0] === "string" ? p.images[0] : null) ??
+      (typeof p.image === "string" ? p.image : null) ??
+      (p.gif && typeof p.gif.webp === "string" ? p.gif.webp : null) ??
+      (p.gif && typeof p.gif.gifUrl === "string" ? p.gif.gifUrl : null);
+    if (thumb) items.push({ postId: r.id, thumbUrl: thumb });
+    if (items.length >= limit) break;
+  }
+  return items;
 }
