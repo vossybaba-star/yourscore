@@ -43,11 +43,18 @@ function firstDefined(obj: any, keys: string[]): any {
  *  having them directly on the item itself. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function pickVariant(item: any): Omit<KlipyGif, "id" | "title"> {
-  const container = firstDefined(item, ["file", "media", "files"]) ?? item;
-  const mp4Src = firstDefined(container, ["mp4", "video", "hd", "sd"]);
+  let container = firstDefined(item, ["file", "media", "files"]) ?? item;
+  // Klipy (verified live, Aug 2026) nests the variants one level deeper under
+  // quality tiers: file.{hd,md,sm}.{gif,webp,mp4,webm,jpg}, each {url,width,
+  // height,size}. Prefer the mid tier for feed playback weight, then fall back.
+  if (!container?.mp4 && !container?.webp && !container?.gif) {
+    const tier = firstDefined(container, ["md", "sm", "hd"]);
+    if (tier) container = tier;
+  }
+  const mp4Src = firstDefined(container, ["mp4", "video"]);
   const webpSrc = firstDefined(container, ["webp"]);
   const gifSrc = firstDefined(container, ["gif", "original"]);
-  const previewSrc = firstDefined(container, ["preview", "thumbnail", "thumb"]) ?? webpSrc ?? gifSrc ?? mp4Src;
+  const previewSrc = firstDefined(container, ["preview", "thumbnail", "thumb", "jpg"]) ?? webpSrc ?? gifSrc ?? mp4Src;
 
   const mp4 = urlOf(mp4Src);
   const webp = urlOf(webpSrc);
