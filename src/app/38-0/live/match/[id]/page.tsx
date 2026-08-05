@@ -30,6 +30,8 @@ import { positionColor } from "@/lib/rank";
 import { trackGamePlay, trackGameComplete, trackShare, firedOnce } from "@/lib/analytics/trackGame";
 import { asCompetition, type Competition, type Formation, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
+import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
 
 const BG = "#0a0a0f";
 
@@ -81,6 +83,15 @@ export default function LiveMatchScreen() {
       const t = setTimeout(() => setPensHold(false), 3200);
       return () => clearTimeout(t);
     }
+  }, [m?.phase]);
+
+  // Whether this mount ever watched a pre-result phase — the fantasy pop only
+  // fires for a player who was actually here when the match ended, never on a
+  // later revisit that loads straight into "result".
+  const observedPreResultRef = useRef(false);
+  useEffect(() => {
+    const phase = m?.phase;
+    if (phase && phase !== "result") observedPreResultRef.current = true;
   }, [m?.phase]);
 
   // Per-game audience signals: "play" once on entering a live H2H match, "complete"
@@ -294,7 +305,9 @@ export default function LiveMatchScreen() {
           );
         })()}
 
-        {m.phase === "result" && !pensHold && <ResultPanel view={view} sim={sim} m={m} />}
+        {m.phase === "result" && !pensHold && (
+          <ResultPanel view={view} sim={sim} m={m} justFinished={observedPreResultRef.current} />
+        )}
         {m.phase === "abandoned" && (
           <Panel>
             <p className="text-center text-2xl mb-3">⏰</p>
@@ -396,12 +409,13 @@ function TwoXI({ view, caption, countdown }: { view: View; caption: string; coun
   );
 }
 
-function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: DraftLiveMatchRow }) {
+function ResultPanel({ view, sim, m, justFinished }: { view: View; sim: MatchSim | null; m: DraftLiveMatchRow; justFinished: boolean }) {
   const router = useRouter();
   const drew = view.myGoals === view.oppGoals && (view.pens[0] == null);
   const won = view.pens[0] != null ? view.pens[0]! > view.pens[1]! : view.myGoals > view.oppGoals;
   const label = drew ? "Draw" : won ? "You win!" : "You lost";
   const color = drew ? "#ffb800" : won ? "#aeea00" : "#ff7a88";
+  const myId = view.meP1 ? m.p1_id ?? null : m.p2_id ?? null;
   // Share state
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -511,6 +525,11 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
 
   return (
     <>
+      {justFinished && (
+        <FantasyResultInterstitial surface="live-h2h" userId={myId}
+          scoreLine={`${label} ${view.myGoals}-${view.oppGoals}`} />
+      )}
+
       {meData ? (
         <div className="mt-6"><ScorecardView data={meData} /></div>
       ) : (
@@ -567,6 +586,9 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
         </Button>
 
         <Button variant="ghost" size="md" fullWidth className="mt-3" href="/38-0/live">Play again</Button>
+
+        <div className="mt-3"><FantasyPromoCard surface="live-h2h" /></div>
+
         <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8a948f" }}>View leaderboard</Link>
       </Panel>
 

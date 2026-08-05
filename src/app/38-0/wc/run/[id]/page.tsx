@@ -33,6 +33,8 @@ import { useUser } from "@/hooks/useUser";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
 import { BackPill } from "@/components/ui/BackPill";
 import type { PenKick } from "@/lib/draft/pens";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
+import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
 
 type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string } };
 type Run = {
@@ -177,6 +179,19 @@ export default function WorldCupRun() {
       } catch { /* strip just stays empty */ }
     })();
   }, [finished]);
+
+  // The fantasy pop needs a stricter signal than `finished`: only a run that
+  // was actually watched to go active → terminal THIS visit, never one that
+  // was already over on load (revisiting an old scorecard). wasActiveRef only
+  // ever flips true while the run is active, so a fresh load of a run that's
+  // already terminal never sets it.
+  const wasActiveRef = useRef(false);
+  const [justFinished, setJustFinished] = useState(false);
+  useEffect(() => {
+    if (!run) return;
+    if (run.status === "active") { wasActiveRef.current = true; return; }
+    if (wasActiveRef.current) setJustFinished(true);
+  }, [run]);
 
   // When a ranked run finishes, pull the player's season standing from the WC daily board
   // for the (positive) scorecard. Fails soft — the banner just omits the rank line.
@@ -520,6 +535,11 @@ export default function WorldCupRun() {
 
   return (
     <div className="min-h-[100dvh] pb-40" style={{ background: "#0a0a0f" }}>
+      {justFinished && (
+        <FantasyResultInterstitial surface="wc-run" userId={user?.id ?? null}
+          scoreLine={run.status === "champion" ? "WORLD CHAMPIONS" : `OUT AT THE ${RUN_STAGE_LABEL[run.stage].toUpperCase()}`} />
+      )}
+
       <div className="max-w-lg mx-auto px-4 pt-safe">
         <div className="pt-4">
           <BackPill label="Exit" tone="wc"
@@ -646,6 +666,8 @@ export default function WorldCupRun() {
             </div>
           </div>
         )}
+
+        {terminal && <div className="mt-4"><FantasyPromoCard surface="wc-run" /></div>}
 
         {/* Road to the Final */}
         <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)" }}>

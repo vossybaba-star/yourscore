@@ -25,6 +25,8 @@ import { Spinner } from "@/components/ui/Spinner";
 import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
+import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -925,6 +927,13 @@ export default function RoomPage() {
 
     return (
       <main className="min-h-dvh pb-20 bg-bg">
+        {/* hasFired means THIS device answered in THIS room — a spectator or a
+            later revisit of the same result must not get the pop. */}
+        {hasFired(`playquiz:room:${roomId}`) && (
+          <FantasyResultInterstitial surface="room-quiz" userId={user?.id ?? null}
+            scoreLine={`${(me?.total_score ?? 0).toLocaleString()} pts`} />
+        )}
+
         <nav className="pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           {/* h2h battles came from Versus — send them back there, not the quiz tab */}
           <BackPill fallback={room.room_mode === "h2h" ? "/versus" : "/play"} label="Back" tone="play" />
@@ -1076,6 +1085,8 @@ export default function RoomPage() {
               </div>
             </div>
           )}
+
+          <FantasyPromoCard surface="room-quiz" />
 
           {/* Final Standings */}
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
