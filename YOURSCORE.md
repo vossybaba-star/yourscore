@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-05 (**Social Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-05 (**Social Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,6 +806,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05 (late)** — **Social Phase 3a conversation SHIPPED** (PR #64, zero migrations):
+  post detail pages at `/fantasy/social/post/[id]` (guest-viewable, thread expanded; legacy
+  `?e=` engagement-email deep links redirect there; post share links now target it; body tap
+  on plain posts opens it), **reposts** (`payload.repostOf` pointer rows; chain-resolved to
+  the original; one per user per original; undo; "Reposted by {name}" above the ORIGINAL
+  card whose reactions/comments stay keyed to the original) and **quote posts**
+  (`payload.quoteOf`; compact tappable embed; quote-of-quote renders as a link, never nested
+  cards; missing targets render "This post is unavailable"). Bot-authored rows 404 on detail
+  and stay feed-filtered. Verified with reviewer bot drills (dup rejected, undo, quote) on a
+  live dev server; drill rows deleted.
 - **2026-08-05 (night)** — **Social Phase 2b SHIPPED** (PR #63; **migration 250 APPLIED to
   prod**): pasted links auto-unfurl in the composer (debounced, dismissable) and render as
   tappable cards in the feed. `/api/unfurl` is signed-in-only with a full SSRF guard
