@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { fantasyVisible } from "@/lib/fantasy/flag";
+import { faceFor } from "@/lib/fantasy/faces";
 import { trackDiag } from "@/lib/analytics/trackGame";
 
 const GOLD = "#ffc400";
@@ -124,17 +125,59 @@ export function FantasyResultInterstitial({ surface, scoreLine, userId }: Fantas
             boxShadow: `0 0 44px -10px ${GOLD}99`,
           }}
         >
-          <p className="font-display text-xs tracking-widest text-center mb-3" style={{ color: GOLD }}>
-            YOURSCORE FANTASY
-          </p>
+          {/* Mini pitch with three marquee portraits — drawn in CSS from the
+              same licensed PL headshots the app already ships (faces.ts), so
+              nothing here needs art approval and nothing can 404. */}
+          <div
+            className="relative rounded-2xl overflow-hidden"
+            style={{
+              background: "linear-gradient(180deg, #12331f 0%, #0a2415 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              padding: "18px 8px 14px",
+            }}
+          >
+            {/* pitch markings */}
+            <div className="absolute inset-x-0 pointer-events-none" style={{ top: "50%", height: 1, background: "rgba(255,255,255,0.14)" }} />
+            <div className="absolute pointer-events-none rounded-full" style={{ left: "50%", top: "50%", width: 110, height: 110, transform: "translate(-50%,-50%)", border: "1px solid rgba(255,255,255,0.12)" }} />
+            <div className="absolute inset-x-10 pointer-events-none" style={{ top: -1, height: 34, border: "1px solid rgba(255,255,255,0.10)", borderTop: "none" }} />
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/email/fantasy-hero.png"
-            alt="Fantasy Premier League on YourScore"
-            className="w-full rounded-2xl"
-            style={{ height: "40vh", maxHeight: 340, objectFit: "cover", border: "1px solid rgba(255,255,255,0.12)" }}
-          />
+            <div className="relative flex items-end justify-center gap-3">
+              {[
+                { name: "Saka", big: false },
+                { name: "Haaland", big: true },
+                { name: "Palmer", big: false },
+              ].map(({ name, big }) => (
+                <div key={name} className="flex flex-col items-center" style={{ width: big ? 108 : 88 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={faceFor(name)}
+                    alt={name}
+                    width={big ? 96 : 76}
+                    height={big ? 96 : 76}
+                    className="rounded-full"
+                    style={{
+                      objectFit: "cover",
+                      background: "#0e1611",
+                      border: `2px solid ${GOLD}`,
+                      boxShadow: `0 0 22px -6px ${GOLD}`,
+                    }}
+                  />
+                  <span className="font-display text-xs tracking-wide text-white mt-1.5">{name}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="relative text-center mt-3">
+              <p className="font-display text-white" style={{ fontSize: 34, lineHeight: 0.95, letterSpacing: 0.5 }}>
+                FANTASY
+                <br />
+                PREMIER LEAGUE
+              </p>
+              <p className="font-display mt-1" style={{ color: GOLD, fontSize: 19, letterSpacing: 2 }}>
+                ON YOURSCORE
+              </p>
+            </div>
+          </div>
 
           <p className="font-body text-sm text-center mt-4 leading-snug" style={{ color: "#e8e8ec" }}>
             Fantasy Premier League is live. More transfers, more chips and play games directly with your league members.
