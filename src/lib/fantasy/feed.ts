@@ -108,8 +108,33 @@ export interface FeedQuiz {
   game: "quiz" | "round";
 }
 
+/** A repost/quote target's compact summary — what a mini-embed or a repost's
+ *  full card needs. `available: false` means the target row is missing or by
+ *  a bot/health-check account: render a muted stub, never crash. Capped at
+ *  EMBED_TEXT_MAX chars. `isQuoteOfQuote` is true when the target is ITSELF a
+ *  quote post — the embed then renders as a plain link to its detail page,
+ *  never a nested card (Phase 3a rule: embeds are always one level deep). */
+export interface EmbeddedPost {
+  id: string;
+  available: boolean;
+  actorId?: string;
+  actorName?: string;
+  actorAvatar?: string | null;
+  createdAt?: string;
+  text?: string | null;
+  image?: string | null;
+  isQuoteOfQuote?: boolean;
+}
+const EMBED_TEXT_MAX = 280;
+
 export interface FeedEvent {
   id: string;
+  /** React-list identity for this FEED ROW. Equal to `id` for every event
+   *  except a repost pointer row, where the row itself has its own place in
+   *  the timeline (this) but its content — and everything reactions/comments/
+   *  poll-votes key off — is the ORIGINAL post (`id`). Never sent to an API;
+   *  purely for the client's list rendering. */
+  rowKey: string;
   actorId: string;
   /** display_name — the headline, shown above the handle. */
   actorName: string;
@@ -156,6 +181,20 @@ export interface FeedEvent {
   fixture?: FeedFixture | null;
   /** A quiz_result's score card. */
   quiz?: FeedQuiz | null;
+  /** Set when this row is a REPOST: who reposted it, rendered as a compact
+   *  "Reposted by {name}" line above the original's full card (which is what
+   *  the rest of this event's fields already carry — see `id`/`rowKey`). */
+  repostedBy?: { id: string; name: string } | null;
+  /** True when this row is a repost/quote whose target no longer resolves
+   *  (missing, or by a bot/health-check account). The card renders a muted
+   *  "This post is unavailable" stub instead of crashing. */
+  unavailable?: boolean;
+  /** Reposts of THIS post's content (`id`) — combined across every reposter,
+   *  plus whether the viewer is one of them. 0/false for non-post events. */
+  repostCount: number;
+  myReposted: boolean;
+  /** A quote post's embedded quoted post. Null when this post isn't a quote. */
+  quoteOf?: EmbeddedPost | null;
 }
 
 const CHIP_LABEL: Record<string, string> = {
@@ -308,7 +347,7 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
 export async function postToFeed(db: Db, userId: string, body: unknown): Promise<{ id: string }> {
   const b = (body ?? {}) as {
     text?: unknown; poll?: unknown; image?: unknown; images?: unknown; gif?: unknown; playerId?: unknown;
-    link?: unknown; fixture?: unknown;
+    link?: unknown; fixture?: unknown; quoteOf?: unknown;
   };
   const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
 
@@ -422,7 +461,25 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     fixture = { homeClub, awayClub, kickoffIso: new Date(kickoffMs).toISOString(), gw };
   }
 
-  if (!text && !poll && !image && !images.length && !gif && playerId == null && !link && !fixture)
+  // A quote (Phase 3a) — payload.quoteOf points at another user's post. The
+  // target must exist and render (not a bot/health-check drill); a quote OF a
+  // quote is allowed (the embed just renders one level deep — see EmbeddedPost).
+  // Unlike a plain post, a quote always needs its own text or media: an empty
+  // "quote" would be indistinguishable from a repost, which has its own action.
+  let quoteOf: string | null = null;
+  if (b.quoteOf != null) {
+    const qid = typeof b.quoteOf === "string" ? b.quoteOf.trim() : "";
+    if (!qid) throw new HttpError(400, "bad quote");
+    const { data: qRow } = await db.from("fantasy_feed_events").select("id, actor_id, type").eq("id", qid).maybeSingle();
+    const bots = syntheticActors();
+    if (!qRow || (qRow as { type: string }).type !== "post" || bots.has((qRow as { actor_id: string }).actor_id))
+      throw new HttpError(400, "That post is no longer available");
+    quoteOf = qid;
+  }
+  if (quoteOf && !text && !image && !images.length && !gif)
+    throw new HttpError(400, "Add a comment or some media to your quote");
+
+  if (!text && !poll && !image && !images.length && !gif && playerId == null && !link && !fixture && !quoteOf)
     throw new HttpError(400, "Write something, add a poll or some media");
   const why = commentRejection(
     [text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "),
@@ -439,6 +496,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   if (playerId != null) payload.player = playerId;
   if (link) payload.link = link;
   if (fixture) payload.fixture = fixture;
+  if (quoteOf) payload.quoteOf = quoteOf;
   const { data, error } = await db.from("fantasy_feed_events")
     .insert({ actor_id: userId, type: "post", gw: null, payload })
     .select("id").single();
@@ -462,6 +520,66 @@ export async function voteFeedPoll(db: Db, userId: string, eventId: unknown, opt
     .upsert({ event_id: id, user_id: userId, option_index: idx }, { onConflict: "event_id,user_id" });
   if (error) throw new HttpError(500, error.message);
   return { ok: true };
+}
+
+/** Repost an existing post — a pointer row (`payload.repostOf`), never a copy.
+ *  If the target is ITSELF a repost, resolves to its original server-side (so
+ *  reposts never chain — repost-of-a-repost repost-of-the-original). Rejects a
+ *  missing/unrenderable target (gone, or by a bot/health-check account) and a
+ *  duplicate (one repost per user per original). */
+export async function repostFeedEvent(db: Db, userId: string, eventId: unknown): Promise<{ id: string }> {
+  const id = typeof eventId === "string" ? eventId : "";
+  if (!id) throw new HttpError(400, "bad repost");
+  const bots = syntheticActors();
+
+  const { data: row } = await db.from("fantasy_feed_events").select("id, actor_id, type, payload").eq("id", id).maybeSingle();
+  const target = row as { id: string; actor_id: string; type: string; payload: Record<string, unknown> | null } | null;
+  if (!target || target.type !== "post" || bots.has(target.actor_id)) throw new HttpError(404, "Post not found");
+
+  let targetId = id;
+  const chainedRepostOf = target.payload?.repostOf;
+  if (typeof chainedRepostOf === "string" && chainedRepostOf) {
+    const { data: originalRow } = await db.from("fantasy_feed_events").select("id, actor_id, type").eq("id", chainedRepostOf).maybeSingle();
+    const original = originalRow as { id: string; actor_id: string; type: string } | null;
+    if (!original || original.type !== "post" || bots.has(original.actor_id)) throw new HttpError(404, "Post not found");
+    targetId = chainedRepostOf;
+  }
+
+  const { data: already } = await db.from("fantasy_feed_events")
+    .select("id").eq("type", "post").eq("actor_id", userId).eq("payload->>repostOf", targetId).maybeSingle();
+  if (already) throw new HttpError(400, "Already reposted");
+
+  const { data, error } = await db.from("fantasy_feed_events")
+    .insert({ actor_id: userId, type: "post", gw: null, payload: { repostOf: targetId } })
+    .select("id").single();
+  if (error) throw new HttpError(500, error.message);
+  return { id: (data as { id: string }).id };
+}
+
+/** Undo a repost. `eventId` here is always the CONTENT id (the original post's
+ *  id) — the client only ever sees that one, per the `repostOf`-resolution
+ *  above, so this just deletes the viewer's own pointer row for it. */
+export async function undoRepost(db: Db, userId: string, eventId: unknown): Promise<{ ok: true }> {
+  const id = typeof eventId === "string" ? eventId : "";
+  if (!id) throw new HttpError(400, "bad repost");
+  const { error } = await db.from("fantasy_feed_events")
+    .delete().eq("type", "post").eq("actor_id", userId).eq("payload->>repostOf", id);
+  if (error) throw new HttpError(500, error.message);
+  return { ok: true };
+}
+
+/** Load a single feed event for the post-detail route — reuses `hydrateEvents`
+ *  on a one-row batch, so a post gets the exact same identity/reactions/repost/
+ *  quote resolution as it would inline in the feed. Null for a missing row or
+ *  one by a bot/health-check account (hydrateEvents' own filter) — the caller
+ *  turns that into a 404. */
+export async function loadFeedEvent(db: Db, viewerId: string | null, id: string): Promise<FeedEvent | null> {
+  if (!id) return null;
+  const { data: row } = await db.from("fantasy_feed_events")
+    .select("id, actor_id, type, gw, payload, created_at").eq("id", id).maybeSingle();
+  if (!row) return null;
+  const [event] = await hydrateEvents(db, viewerId, [row], "recent", 1);
+  return event ?? null;
 }
 
 export async function loadFeed(
@@ -520,7 +638,31 @@ async function hydrateEvents(
   // gameweek is under way the moves are locked and simply historical anyway.
 
   const eventIds = events.map((e) => e.id as string);
-  const actorIds = Array.from(new Set(events.map((e) => e.actor_id as string)));
+
+  // Repost/quote targets (Phase 3a) — resolved BEFORE the main batch below, in
+  // ONE extra query (AC6), so their authors can ride the SAME profiles fetch
+  // rather than a second one. A repost pointer row's own payload carries only
+  // `{ repostOf }`; everything the card shows (author, text, media, poll) comes
+  // from the TARGET row instead — resolved here.
+  const repostTargetIds = Array.from(new Set(
+    events.filter((e) => e.type === "post" && typeof e.payload?.repostOf === "string").map((e) => e.payload.repostOf as string),
+  ));
+  const quoteTargetIds = Array.from(new Set(
+    events.filter((e) => e.type === "post" && typeof e.payload?.quoteOf === "string").map((e) => e.payload.quoteOf as string),
+  ));
+  const embedTargetIds = Array.from(new Set([...repostTargetIds, ...quoteTargetIds]));
+  const { data: targetRows } = embedTargetIds.length
+    ? await db.from("fantasy_feed_events").select("id, actor_id, type, payload, created_at").in("id", embedTargetIds)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : { data: [] as any[] };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const targetById = new Map<string, any>((targetRows ?? []).map((t: any) => [t.id, t]));
+  const targetRenderable = (t: { type: string; actor_id: string } | undefined) => !!t && t.type === "post" && !bots.has(t.actor_id);
+
+  const actorIds = Array.from(new Set([
+    ...events.map((e) => e.actor_id as string),
+    ...(targetRows ?? []).map((t: { actor_id: string }) => t.actor_id),
+  ]));
 
   // Player resolver — name for the sentence, face for the portrait, board marker
   // (pos + club + face) for the squad_complete pitch.
@@ -532,22 +674,79 @@ async function hydrateEvents(
     return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: p?.pos ?? "MID", club: p?.club, avatarUrl: p?.avatarUrl ?? null };
   };
 
-  const postEventIds = events.filter((e) => e.type === "post").map((e) => e.id as string);
-  const [{ data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }, { data: pollVoteRows }, { data: supporterRows }] = await Promise.all([
+  // Reactions/comments key off the CONTENT id — for a repost pointer row
+  // that's the original, which may not itself be in this page's batch, so it
+  // has to be folded into these ids too. Same for poll votes.
+  const postEventIds = Array.from(new Set([
+    ...events.filter((e) => e.type === "post").map((e) => e.id as string),
+    ...repostTargetIds,
+  ]));
+  const reactionCommentIds = Array.from(new Set([...eventIds, ...repostTargetIds]));
+
+  const [
+    { data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }, { data: pollVoteRows }, { data: supporterRows },
+    { data: repostRows },
+  ] = await Promise.all([
     db.from("profiles").select("id, display_name, avatar_url, username").in("id", actorIds),
-    db.from("fantasy_feed_likes").select("event_id, user_id, emoji").in("event_id", eventIds),
-    db.from("comments").select("subject_id").eq("subject_type", "fantasy_feed").in("subject_id", eventIds).is("deleted_at", null),
+    db.from("fantasy_feed_likes").select("event_id, user_id, emoji").in("event_id", reactionCommentIds),
+    db.from("comments").select("subject_id").eq("subject_type", "fantasy_feed").in("subject_id", reactionCommentIds).is("deleted_at", null),
     db.from("fantasy_squads").select("user_id, captain").in("user_id", actorIds),
     postEventIds.length
       ? db.from("fantasy_feed_poll_votes").select("event_id, user_id, option_index").in("event_id", postEventIds)
       : Promise.resolve({ data: [] as { event_id: string; user_id: string; option_index: number }[] }),
     // The club each manager SUPPORTS — the crest the quiz shows beside them.
     db.from("club_supporters").select("user_id, club, season_id").in("user_id", actorIds).order("season_id", { ascending: false }),
+    // Repost counts (AC7) — one grouped query over payload->>'repostOf' for
+    // every content id this batch could need a count for: the page's own post
+    // ids (covers an original rendered directly) plus every resolved repost
+    // target (covers a repost row rendered through its original). Verified
+    // against the live Supabase instance: supabase-js's `.in()` over a jsonb
+    // `->>`-extracted path filters correctly via PostgREST (same pattern
+    // already used in lib/fantasy/bots.ts for `.eq("payload->>k", ...)`).
+    postEventIds.length
+      ? db.from("fantasy_feed_events").select("actor_id, payload").eq("type", "post").in("payload->>repostOf", postEventIds)
+      : Promise.resolve({ data: [] as { actor_id: string; payload: { repostOf?: string } }[] }),
   ]);
 
   const profById = new Map<string, { display_name: string | null; avatar_url: string | null; username: string | null }>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (profs ?? []).forEach((p: any) => profById.set(p.id, p));
+
+  // Repost tallies per content id, plus whether the viewer is one of the reposters.
+  const repostCountByTarget = new Map<string, number>();
+  const myRepostedTargets = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (repostRows ?? []).forEach((r: any) => {
+    const targetId = r.payload?.repostOf;
+    if (typeof targetId !== "string" || !targetId) return;
+    repostCountByTarget.set(targetId, (repostCountByTarget.get(targetId) ?? 0) + 1);
+    if (viewerId && r.actor_id === viewerId) myRepostedTargets.add(targetId);
+  });
+
+  /** A repost/quote target's compact summary for the embed — capped text,
+   *  one level deep (never resolves the target's OWN quoteOf further). */
+  const embedFor = (targetId: string): EmbeddedPost => {
+    const t = targetById.get(targetId);
+    if (!targetRenderable(t)) return { id: targetId, available: false };
+    const p = (t.payload ?? {}) as Record<string, unknown>;
+    const rawText = typeof p.text === "string" ? p.text : null;
+    const thumb =
+      (Array.isArray(p.images) && typeof p.images[0] === "string" ? (p.images[0] as string) : null) ??
+      (typeof p.image === "string" ? p.image : null) ??
+      (p.gif && typeof (p.gif as { webp?: unknown }).webp === "string" ? (p.gif as { webp: string }).webp : null) ??
+      (p.gif && typeof (p.gif as { gifUrl?: unknown }).gifUrl === "string" ? (p.gif as { gifUrl: string }).gifUrl : null);
+    return {
+      id: targetId,
+      available: true,
+      actorId: t.actor_id,
+      actorName: profById.get(t.actor_id)?.display_name ?? (profById.get(t.actor_id)?.username ? `@${profById.get(t.actor_id)!.username}` : "A manager"),
+      actorAvatar: profById.get(t.actor_id)?.avatar_url ?? null,
+      createdAt: t.created_at,
+      text: rawText ? rawText.slice(0, EMBED_TEXT_MAX) : null,
+      image: thumb,
+      isQuoteOfQuote: typeof p.quoteOf === "string" && !!p.quoteOf,
+    };
+  };
 
   // The crest beside each manager = the club they support (newest season on file),
   // matching the quiz. If they've never picked one, their captain's club stands in.
@@ -601,7 +800,40 @@ async function hydrateEvents(
 
   const mapped: FeedEvent[] = events.map((e) => {
     const type = e.type as FeedType;
-    const payload = (e.payload ?? {}) as Record<string, unknown>;
+    const rawPayload = (e.payload ?? {}) as Record<string, unknown>;
+
+    // Repost pointer row (Phase 3a): everything the card shows comes from the
+    // ORIGINAL, not this row — resolve it here, once, before the rest of the
+    // per-event parsing below (which then just reads `payload`/`actorId`/
+    // `createdAt`/`contentId` as if this WERE the original).
+    const repostOfId = type === "post" && typeof rawPayload.repostOf === "string" ? (rawPayload.repostOf as string) : null;
+    const repostTarget = repostOfId ? targetById.get(repostOfId) : undefined;
+    const repostAvailable = repostOfId ? targetRenderable(repostTarget) : false;
+
+    if (repostOfId && !repostAvailable) {
+      // Muted stub (AC6) — no crash, no reactions/comments to fetch for
+      // content that no longer resolves.
+      return {
+        id: e.id, rowKey: e.id, actorId: e.actor_id,
+        actorName: profById.get(e.actor_id)?.display_name ?? "A manager",
+        actorUsername: profById.get(e.actor_id)?.username ?? null,
+        actorAvatar: profById.get(e.actor_id)?.avatar_url ?? null,
+        actorClub: clubByActor.get(e.actor_id) ?? null,
+        type, gw: e.gw ?? null, sentence: "posted", createdAt: e.created_at,
+        reactions: [], myEmoji: null, commentCount: 0,
+        repostedBy: { id: e.actor_id, name: profById.get(e.actor_id)?.display_name ?? "A manager" },
+        unavailable: true, repostCount: 0, myReposted: false,
+      } satisfies FeedEvent;
+    }
+
+    const payload = repostOfId && repostTarget ? (repostTarget.payload ?? {}) as Record<string, unknown> : rawPayload;
+    const contentActorId: string = repostOfId && repostTarget ? repostTarget.actor_id : e.actor_id;
+    const contentCreatedAt: string = repostOfId && repostTarget ? repostTarget.created_at : e.created_at;
+    const contentId: string = repostOfId ?? e.id;
+    const repostedBy = repostOfId
+      ? { id: e.actor_id, name: profById.get(e.actor_id)?.display_name ?? (profById.get(e.actor_id)?.username ? `@${profById.get(e.actor_id)!.username}` : "A manager") }
+      : null;
+
     // squad_complete tiles render the real pitch board; shortlist/squad_update
     // tiles show the one player's portrait.
     let board: FeedBoard | undefined;
@@ -679,30 +911,37 @@ async function hydrateEvents(
       const p = payload.poll as { question?: unknown; options?: unknown; endsAt?: unknown } | undefined;
       if (p && Array.isArray(p.options)) {
         const opts = (p.options as unknown[]).map((o) => (typeof o === "string" ? o : "")).filter(Boolean).slice(0, MAX_POLL_OPTIONS);
-        const byOpt = pollCounts.get(e.id);
+        const byOpt = pollCounts.get(contentId);
         let total = 0;
         const options = opts.map((t, i) => { const c = byOpt?.get(i) ?? 0; total += c; return { text: t, votes: c }; });
         poll = {
           question: typeof p.question === "string" ? p.question : "", options,
-          myChoice: myPollChoice.has(e.id) ? myPollChoice.get(e.id)! : null, total,
+          myChoice: myPollChoice.has(contentId) ? myPollChoice.get(contentId)! : null, total,
           endsAt: typeof p.endsAt === "string" ? p.endsAt : null,
         };
       }
     }
+
+    // A quote post's embedded quoted post (Phase 3a) — one level deep, capped
+    // text, muted stub if the target no longer resolves.
+    const quoteOfId = type === "post" && typeof payload.quoteOf === "string" ? (payload.quoteOf as string) : null;
+    const quoteOf = quoteOfId ? embedFor(quoteOfId) : null;
+
     return {
-      id: e.id,
-      actorId: e.actor_id,
-      actorName: profById.get(e.actor_id)?.display_name ?? (profById.get(e.actor_id)?.username ? `@${profById.get(e.actor_id)!.username}` : "A manager"),
-      actorUsername: profById.get(e.actor_id)?.username ?? null,
-      actorAvatar: profById.get(e.actor_id)?.avatar_url ?? null,
-      actorClub: clubByActor.get(e.actor_id) ?? null,
+      id: contentId,
+      rowKey: e.id,
+      actorId: contentActorId,
+      actorName: profById.get(contentActorId)?.display_name ?? (profById.get(contentActorId)?.username ? `@${profById.get(contentActorId)!.username}` : "A manager"),
+      actorUsername: profById.get(contentActorId)?.username ?? null,
+      actorAvatar: profById.get(contentActorId)?.avatar_url ?? null,
+      actorClub: clubByActor.get(contentActorId) ?? null,
       type,
       gw: e.gw ?? null,
       sentence: sentenceFor(type, payload, e.gw ?? null, nameOf),
-      createdAt: e.created_at,
-      reactions: reactionsFor(e.id),
-      myEmoji: myEmojiByEvent.get(e.id) ?? null,
-      commentCount: commentCount.get(e.id) ?? 0,
+      createdAt: contentCreatedAt,
+      reactions: reactionsFor(contentId),
+      myEmoji: myEmojiByEvent.get(contentId) ?? null,
+      commentCount: commentCount.get(contentId) ?? 0,
       board,
       player,
       playerId,
@@ -714,10 +953,17 @@ async function hydrateEvents(
       link,
       fixture,
       quiz,
-    };
+      repostedBy,
+      unavailable: false,
+      repostCount: repostCountByTarget.get(contentId) ?? 0,
+      myReposted: viewerId ? myRepostedTargets.has(contentId) : false,
+      quoteOf,
+    } satisfies FeedEvent;
   });
 
   // "Top" = most engaged first (reactions + comments), recency as the tiebreak.
+  // Reactions/comments are keyed by content id (`e.id`, post-mapping) — the
+  // same id `reactionsFor`/`commentCount` above were built against.
   if (sort === "top") {
     const engagement = (e: FeedEvent) => totalReactions(e.id) + e.commentCount;
     mapped.sort((a, b) => engagement(b) - engagement(a) || Date.parse(b.createdAt) - Date.parse(a.createdAt));

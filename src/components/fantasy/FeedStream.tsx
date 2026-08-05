@@ -29,6 +29,7 @@ import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import { ImageGrid } from "@/components/fantasy/ImageGrid";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
+import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -44,13 +45,32 @@ interface FeedQuiz { correct: number; total: number; title: string | null; game:
 interface FeedGif { mp4: string | null; webp: string | null; gifUrl: string | null; width: number; height: number }
 interface FeedLink { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
 interface FeedFixture { homeClub: string; awayClub: string; kickoffIso: string; gw: number }
-interface FeedEvent {
-  id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
+/** A repost/quote target's compact summary (kept in sync with EmbeddedPost in
+ *  lib/fantasy/feed.ts — that module is server-only, so duplicated here). */
+export interface EmbeddedPost {
+  id: string; available: boolean;
+  actorId?: string; actorName?: string; actorAvatar?: string | null; createdAt?: string;
+  text?: string | null; image?: string | null; isQuoteOfQuote?: boolean;
+}
+export interface FeedEvent {
+  id: string;
+  /** React-list identity for this feed ROW — see lib/fantasy/feed.ts. Equal to
+   *  `id` for every event except a repost pointer row. */
+  rowKey: string;
+  actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
   text?: string | null; poll?: FeedPoll | null; image?: string | null; images?: string[] | null; gif?: FeedGif | null;
   link?: FeedLink | null; fixture?: FeedFixture | null; quiz?: FeedQuiz | null;
+  /** Set when this row is a repost: who reposted it. */
+  repostedBy?: { id: string; name: string } | null;
+  /** True when this row is a repost/quote whose target no longer resolves. */
+  unavailable?: boolean;
+  repostCount: number;
+  myReposted: boolean;
+  /** A quote post's embedded quoted post. Null when this post isn't a quote. */
+  quoteOf?: EmbeddedPost | null;
 }
 
 /** A post's GIF: mp4 renders as a looping muted autoplay video; otherwise the
@@ -229,7 +249,11 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
 
       {trayOpen && (
         <>
-          <div onClick={() => setTrayOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 4 }} />
+          {/* stopPropagation: this overlay is a plain div, not one of the
+              a/button/video tags the card's own body-tap-to-detail ignores —
+              without it, tapping outside the tray to close it would ALSO open
+              the post detail page underneath. */}
+          <div onClick={(e) => { e.stopPropagation(); setTrayOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 4 }} />
           <div style={{
             position: "absolute", bottom: "calc(100% + 6px)", left: 0, zIndex: 5,
             display: "flex", gap: 2, padding: 5, borderRadius: 999,
@@ -349,7 +373,8 @@ function CardMenu({ ev, onShare, onInvite, shareUrl }: {
       }}>···</button>
       {menuOpen && (
         <>
-          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 8 }} />
+          {/* stopPropagation — same reason as ReactionBar's tray overlay above. */}
+          <div onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 8 }} />
           <div style={{
             position: "absolute", top: "calc(100% + 4px)", right: 0, zIndex: 9, minWidth: 190,
             borderRadius: 12, background: PANEL, border: `1px solid ${LINE}`, boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
@@ -369,21 +394,173 @@ function CardMenu({ ev, onShare, onInvite, shareUrl }: {
   );
 }
 
-function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
+/** The reposted-by attribution line — a compact "↻ Reposted by {name}" strip
+ *  above the ORIGINAL post's full card. Plain (non-interactive) row, since the
+ *  card underneath already links everywhere that matters. */
+function RepostedByLine({ repostedBy }: { repostedBy: { id: string; name: string } }) {
+  return (
+    <Link href={`/profile/${repostedBy.id}`} onClick={(e) => e.stopPropagation()}
+      style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 700, color: MUTED, textDecoration: "none" }}>
+      <span aria-hidden style={{ fontSize: 13 }}>↻</span>Reposted by {repostedBy.name}
+    </Link>
+  );
+}
+
+/** A repost/quote whose target no longer resolves (AC6) — muted stub, no crash. */
+function UnavailableStub({ repostedBy }: { repostedBy?: { id: string; name: string } | null }) {
+  return (
+    <div style={{ padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+      {repostedBy && <RepostedByLine repostedBy={repostedBy} />}
+      <div style={{ padding: "14px 12px", borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`, fontSize: 13, color: MUTED, textAlign: "center" }}>
+        This post is unavailable
+      </div>
+    </div>
+  );
+}
+
+/** A quote post's embedded quoted post — compact, taps through to its detail
+ *  page. A target that's ITSELF a quote renders as a plain link (never a
+ *  nested card — Phase 3a rule: embeds are always one level deep). A missing
+ *  target renders the same muted stub as an unavailable repost. */
+function QuoteEmbedCard({ embed }: { embed: EmbeddedPost }) {
+  const router = useRouter();
+  const open = (e: React.MouseEvent) => { e.stopPropagation(); router.push(`/fantasy/social/post/${embed.id}`); };
+
+  if (!embed.available) {
+    return (
+      <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`, fontSize: 12.5, color: MUTED, textAlign: "center" }}>
+        This post is unavailable
+      </div>
+    );
+  }
+  if (embed.isQuoteOfQuote) {
+    return (
+      <button onClick={open} style={{
+        display: "flex", alignItems: "center", gap: 6, width: "100%", textAlign: "left", cursor: "pointer", marginTop: 10,
+        padding: "9px 12px", borderRadius: 10, background: "none", border: `1px solid ${LINE}`, color: TEAL, fontSize: 12.5, fontWeight: 700,
+      }}>Quoted a post <span aria-hidden>›</span></button>
+    );
+  }
+  return (
+    <div onClick={open} style={{ marginTop: 10, padding: 10, borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`, cursor: "pointer" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <PlayerAvatar name={embed.actorName ?? "A manager"} avatarUrl={embed.actorAvatar ?? null} size={20} />
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{embed.actorName}</span>
+        {embed.createdAt && <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>· {timeAgo(embed.createdAt)}</span>}
+      </div>
+      {embed.text && (
+        <div style={{ fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.4, marginTop: 4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          {embed.text}
+        </div>
+      )}
+      {embed.image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={embed.image} alt="" loading="lazy" style={{ display: "block", width: "100%", maxHeight: 120, objectFit: "cover", borderRadius: 8, marginTop: 6 }} />
+      )}
+    </div>
+  );
+}
+
+/** Repost icon — two arrows forming a loop (the Twitter/X "retweet" glyph). */
+function RepostIcon() {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  );
+}
+
+/** Action-row repost control: highlighted + a combined count when the viewer
+ *  has reposted; a single tap on an ALREADY-reposted post undoes it directly
+ *  (nothing to choose); otherwise it opens a small Repost/Quote chooser.
+ *  Optimistic, 401 redirects to sign-in — same pattern as ReactionBar. */
+function RepostControl({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
+  const [reposted, setReposted] = useState(ev.myReposted);
+  const [count, setCount] = useState(ev.repostCount);
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+
+  const toggle = useCallback(async (undo: boolean) => {
+    const prevReposted = reposted, prevCount = count;
+    setReposted(!undo);
+    setCount((c) => c + (undo ? -1 : 1));
+    setChooserOpen(false);
+    try {
+      const res = undo
+        ? await fetch("/api/fantasy/feed/repost", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id }) })
+        : await fetch("/api/fantasy/feed/repost", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id }) });
+      if (res.status === 401) { window.location.href = `/auth/sign-in?next=${encodeURIComponent(signInNext)}`; return; }
+      if (!res.ok) { setReposted(prevReposted); setCount(prevCount); }
+    } catch { setReposted(prevReposted); setCount(prevCount); }
+  }, [reposted, count, ev.id, signInNext]);
+
+  const tap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (reposted) { toggle(true); return; }
+    setChooserOpen((o) => !o);
+  };
+
+  const quoted = { id: ev.id, actorName: ev.actorName, actorAvatar: ev.actorAvatar, text: ev.text ?? null, image: (ev.images?.[0] ?? ev.image ?? null), createdAt: ev.createdAt };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button onClick={tap} style={{
+        display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none",
+        padding: "10px 9px", color: reposted ? TEAL : MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
+      }}>
+        <RepostIcon />
+        {count > 0 ? count : "Repost"}
+      </button>
+      {chooserOpen && (
+        <>
+          <div onClick={(e) => { e.stopPropagation(); setChooserOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 8 }} />
+          <div style={{
+            position: "absolute", bottom: "calc(100% + 6px)", left: 0, zIndex: 9, minWidth: 150,
+            borderRadius: 12, background: PANEL, border: `1px solid ${LINE}`, boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+            padding: "4px 0", overflow: "hidden",
+          }}>
+            <button onClick={(e) => { e.stopPropagation(); toggle(false); }} style={{
+              display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+              background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK,
+            }}><RepostIcon />Repost</button>
+            <button onClick={(e) => { e.stopPropagation(); setChooserOpen(false); setQuoteOpen(true); }} style={{
+              display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+              background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK,
+            }}><span aria-hidden style={{ fontSize: 15 }}>✎</span>Quote</button>
+          </div>
+        </>
+      )}
+      <CreatePostSheet open={quoteOpen} onClose={() => setQuoteOpen(false)} onPosted={() => setQuoteOpen(false)} quoting={quoted} />
+    </div>
+  );
+}
+
+/** Exported for the post-detail route (AC1) — reuses the exact same card
+ *  rather than duplicating its render logic. `detail` suppresses the body-tap
+ *  navigation (already on the detail page) and the inline collapsed comment
+ *  thread (the page renders its own, always expanded, below). */
+export function FeedCard({ ev, signInNext, detail = false }: { ev: FeedEvent; signInNext: string; detail?: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+
+  if (ev.unavailable) return <UnavailableStub repostedBy={ev.repostedBy} />;
+
   // Legacy single-image posts render through the same grid — just a one-item array.
   const images = ev.images && ev.images.length ? ev.images : ev.image ? [ev.image] : [];
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
   const canShare = hasBoard || (!!ev.player && ev.playerId != null);
   const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
   // Where a shared post points: a squad → the manager's XI, a player → that
-  // player, anything else → the live feed. Plus a one-line lead for the share.
+  // player, a user post (or a repost/quote of one — `ev.id` is already the
+  // CONTENT id, see lib/fantasy/feed.ts) → its detail page, anything else →
+  // the live feed. Plus a one-line lead for the share.
   const origin = typeof window !== "undefined" ? window.location.origin : "https://yourscore.app";
   const shareUrl = hasBoard ? `${origin}/profile/${ev.actorId}#fantasy-xi`
     : (ev.player && ev.playerId != null) ? `${origin}/fantasy/players/${ev.playerId}`
+    : ev.type === "post" ? `${origin}/fantasy/social/post/${ev.id}`
     : `${origin}/fantasy/social`;
   const shareText = ev.type === "post" && ev.text ? ev.text.slice(0, 140)
     : hasBoard ? `${ev.actorName}'s Fantasy XI on YourScore`
@@ -392,11 +569,24 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
     ? () => (hasBoard ? { kind: "squad", ofUserId: ev.actorId } : { kind: "player", playerId: ev.playerId })
     : undefined;
 
+  // AC3: tapping the post's body opens its detail page — but not a tap that
+  // landed on (or inside) a link, button or video, and not on the detail page
+  // itself (nowhere useful to navigate to). Only "post" events HAVE a detail
+  // page — a transfer/haul/squad tile keeps its own existing destinations.
+  const openDetail = ev.type === "post" && !detail;
+  const onBodyClick = openDetail
+    ? (e: React.MouseEvent<HTMLDivElement>) => {
+        if ((e.target as HTMLElement).closest("a,button,video")) return;
+        router.push(`/fantasy/social/post/${ev.id}`);
+      }
+    : undefined;
+
   return (
     // Flat timeline row (founder: "content, not container, is the focus") — no
     // card shell, just a divider between posts. Horizontal edge-to-edge inside
     // the page's own side padding so an image can span the full content width.
-    <div style={{ padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
+    <div onClick={onBodyClick} style={{ padding: "12px 0", borderBottom: `1px solid ${LINE}`, cursor: openDetail ? "pointer" : undefined }}>
+      {ev.repostedBy && <RepostedByLine repostedBy={ev.repostedBy} />}
       {/* Twitter grammar (founder, 4 Aug): BOLD screen name, muted non-bold
           @handle, the time inline after a dot — then the content underneath. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -442,6 +632,7 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
       )}
       {ev.type === "post" && ev.link && <LinkCard link={ev.link} />}
       {ev.type === "post" && ev.fixture && <FixtureCard fixture={ev.fixture} />}
+      {ev.type === "post" && ev.quoteOf && <QuoteEmbedCard embed={ev.quoteOf} />}
       {ev.poll && <PollBlock ev={ev} />}
 
       {/* A quiz result: the score line as a card, with a door to the same game. */}
@@ -505,7 +696,8 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
           </svg>
           {ev.commentCount > 0 ? ev.commentCount : "Comment"}
         </button>
-        <button onClick={() => setShareOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: "10px 9px", color: MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+        {ev.type === "post" && <RepostControl ev={ev} signInNext={signInNext} />}
+        <button onClick={(e) => { e.stopPropagation(); setShareOpen(true); }} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: "10px 9px", color: MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
           <span style={{ fontSize: 14 }}>↗</span>Share
         </button>
       </div>
@@ -514,7 +706,10 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
       <SharePost url={shareUrl} text={shareText} leagueBody={leagueBody}
         open={shareOpen} onClose={() => setShareOpen(false)} />
 
-      {open && (
+      {/* On the detail page the DiscussionThread renders separately, always
+          expanded, underneath this card — suppress the inline collapsed copy
+          so a comment never appears (or gets posted) twice. */}
+      {open && !detail && (
         <div style={{ marginTop: 10, borderTop: `1px solid ${LINE}`, paddingTop: 8 }}>
           <DiscussionThread subjectType="fantasy_feed" subjectId={ev.id} title="Comments" accent={TEAL} embedded signInNext={signInNext} />
         </div>
@@ -564,7 +759,7 @@ export function FeedStream({
       setFollowingCount(d.followingCount ?? 0);
       if (!controlled && (d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return {}; }
       const next: FeedEvent[] = d.events ?? [];
-      const updated = next[0]?.id !== events?.[0]?.id || next.length !== (events?.length ?? -1);
+      const updated = next[0]?.rowKey !== events?.[0]?.rowKey || next.length !== (events?.length ?? -1);
       setEvents(next);
       return { updated };
     } catch {
@@ -663,7 +858,7 @@ export function FeedStream({
           )
         )}
 
-        {events?.map((ev) => <FeedCard key={ev.id} ev={ev} signInNext={signInNext} />)}
+        {events?.map((ev) => <FeedCard key={ev.rowKey} ev={ev} signInNext={signInNext} />)}
       </PullToRefresh>
     </div>
   );
