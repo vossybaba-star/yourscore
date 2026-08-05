@@ -13,7 +13,6 @@ import { fitMultiplier, canPlay, posCategory, scoreTeam, projectSeason, spineWei
 import { getPlayer, isPoolReady } from "./pool";
 import type { SeasonResult } from "./season";
 import type { MatchReport, MatchSim } from "./live-score";
-import { resolveInteractiveShootout, type PenKick, type PenZone, type PenPower } from "./pens";
 
 const STORAGE_KEY = "draftxi:team:v1";
 
@@ -26,7 +25,7 @@ export type DraftMode = "classic" | "expert";
 export type LocalTeam = {
   /** Which competition this XI is drafted in — drives the spin pool, the league
    *  opponents the season is simulated against, and which leaderboard it counts on.
-   *  Defaults to "PL" for teams saved before La Liga shipped. */
+   *  Always "PL" now (competitions beyond the PL were retired 2026-08-05). */
   league: League;
   formation: Formation;
   mode: DraftMode;
@@ -235,7 +234,7 @@ export function loadTeam(): LocalTeam | null {
     const t = JSON.parse(raw) as LocalTeam;
     if (!t.formation || !Array.isArray(t.squad)) return null;
     if (t.mode !== "expert") t.mode = "classic";
-    // Teams saved before La Liga shipped have no league — default them to PL.
+    // Older saved teams may carry another league (or none) — normalise to PL.
     t.league = asLeague(t.league);
     // "stale" is retired — teams stay playable after a loss. Clear any lingering
     // stale status saved by an older version so it can never block play.
@@ -284,22 +283,6 @@ export type LocalMatch = {
   opp: MatchSide;
   outcome: "you" | "opp" | "draw";
   goals: { you: number; opp: number };
-  /** Penalty result if a level 90' was settled by a shootout, else null. */
-  pens: { you: number; opp: number } | null;
-  /** Kick-by-kick shootout record (interactive pens), for the result screen pips. */
-  pensKicks?: { you: PenKick[]; opp: PenKick[] };
-  /** Set while a drawn match still owes its shootout. `local` mode resolves
-   *  entirely on-device with `seed`; `server` mode plays against
-   *  /api/draft/match/pens. Inputs taken so far are stored as we go, so an
-   *  abandoned shootout auto-completes (seeded) on the next visit — quitting is
-   *  never better than playing. */
-  pensPending?: {
-    mode: "local" | "server";
-    seed?: string;
-    shots: PenZone[];
-    powers: PenPower[];
-    dives: PenZone[];
-  };
   /** Full-time report (scorers, assists, ratings, MOTM, stats) — side a = you, b = opp. */
   report: MatchReport;
   /** Per-half sims (side a = you) so the watch screen can play the match out. */
@@ -309,27 +292,6 @@ export type LocalMatch = {
    *  Used to surface the friend suggestion on the result screen. */
   oppUserId?: string;
 };
-
-/**
- * Settle a local-mode shootout that's still pending (abandoned mid-way or not):
- * inputs taken so far are honored, the rest auto-fill seeded — quitting is never
- * better than playing. Returns the finalized match; no-op for anything else.
- */
-export function settleLocalPens(m: LocalMatch): LocalMatch {
-  if (!m.pensPending || m.pensPending.mode !== "local" || !m.pensPending.seed) return m;
-  const r = resolveInteractiveShootout(
-    m.pensPending.seed,
-    { aShots: m.pensPending.shots, aPowers: m.pensPending.powers, aDives: m.pensPending.dives },
-    "alternating"
-  );
-  return {
-    ...m,
-    outcome: r.winner === "a" ? "you" : "opp",
-    pens: { you: r.score.a, opp: r.score.b },
-    pensKicks: { you: r.a, opp: r.b },
-    pensPending: undefined,
-  };
-}
 
 export function saveLastMatch(m: LocalMatch): void {
   try { localStorage.setItem(MATCH_KEY, JSON.stringify(m)); } catch { /* ignore */ }

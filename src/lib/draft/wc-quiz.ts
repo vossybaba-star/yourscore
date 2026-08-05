@@ -72,7 +72,7 @@ function serve(base: WCQuizQuestion, rng: () => number): ServedQuestion {
 
 /**
  * A deterministic decider question from a seed (e.g. `${runSeed}:decider:qf:0`) — used to
- * settle a drawn knockout tie or the qualification play-off in place of a penalty shootout.
+ * settle a drawn knockout tie or the qualification play-off.
  * Deterministic so the server can re-derive the same question (and grade the answer) on the
  * follow-up submit without persisting it. Keeps `correctIndex` — callers strip it before
  * sending to the client.

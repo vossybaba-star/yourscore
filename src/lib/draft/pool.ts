@@ -106,7 +106,6 @@ export function leagueCounts(): Record<League, { players: number; buckets: numbe
   return (
     d.leagues ?? {
       PL: { players: d.counts.players, buckets: d.counts.buckets },
-      LaLiga: { players: 0, buckets: 0 },
     }
   ) as Record<League, { players: number; buckets: number }>;
 }
@@ -159,7 +158,7 @@ export function spin(
    *  window the dealt squad is filtered to, so a wrong answer deals a squad WITHOUT its
    *  stars and a correct streak opens the elite tier. Relaxed (ceiling up first, then
    *  floor down) if no squad can field anyone inside it, so a pick never dead-ends.
-   *  Omitted (Just Draft, La Liga, every pre-existing caller) = unbounded, and the
+   *  Omitted (Just Draft, every pre-existing caller) = unbounded, and the
    *  behaviour below is then identical to before the band existed. */
   band: { minOverall?: number; maxOverall?: number } = {}
 ): Spin {

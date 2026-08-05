@@ -6,7 +6,7 @@ import { slotsFor } from "@/lib/draft/formations";
 import { canPlay, playerIdentity } from "@/lib/draft/score";
 import raw from "@/data/draft/player-seasons.json";
 
-// POST /api/draft/team/random  { competition?: "PL" | "LaLiga" }
+// POST /api/draft/team/random  { competition?: "PL" }
 //
 // Generates a valid random XI in the given competition, saves it to draft_teams,
 // and returns the team so the client can immediately hydrate localStorage and enter

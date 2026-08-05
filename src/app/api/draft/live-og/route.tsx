@@ -5,7 +5,7 @@
  *
  * Neutral framing (just the scoreline) so EITHER manager can share the same card.
  * Driven by query params (kept on the edge, cacheable):
- *   p1,p2 names · s1,s2 goals · str1,str2 strength · pens "5-4"
+ *   p1,p2 names · s1,s2 goals · str1,str2 strength · pens "5-4" (legacy links only — decides the winner, never shown)
  *   potm name · potmR rating · sc scorers "Salah 2 · Henry"
  *   pos "55-45" · sh shots · sot on-target · cor corners · fo fouls · off offsides · thr throw-ins
  *
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
                 {str2 ? <span style={{ fontSize: 26, color: "#8a948f", marginTop: 6 }}>{`STR ${str2}`}</span> : <span />}
               </div>
             </div>
-            {pens ? <div style={{ display: "flex", fontSize: 30, color: AMBER, marginTop: 20 }}>{`Penalties ${pens}`}</div> : <div />}
+            <div />
           </div>
 
           {/* MOTM */}
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
           </div>
         </div>
 
-        {pens ? <div style={{ display: "flex", justifyContent: "center", marginTop: 8, fontSize: 24, color: AMBER }}>{`Penalties ${pens}`}</div> : <div />}
+        <div />
 
         {potm ? (
           <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>

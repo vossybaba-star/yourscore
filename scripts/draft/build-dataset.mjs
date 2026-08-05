@@ -3,15 +3,13 @@
  * 38-0 (Draft XI) — dataset builder.
  *
  * The pool is built ENTIRELY from real FIFA ratings — no hand-made estimates.
- * Sources (columns: name,club,season,position,overall,nationality):
+ * Source (columns: name,club,season,position,overall,nationality):
  *   • scripts/draft/data/players.csv         → Premier League  (league "PL")
- *   • scripts/draft/data/players-laliga.csv  → La Liga         (league "LaLiga")
- * produced from the per-edition EA Sports FC dumps by import-fifa.mjs / import-laliga.mjs.
+ * produced from the per-edition EA Sports FC dumps by import-fifa.mjs.
  *
- * Both competitions live in ONE shipped dataset, every player/bucket/club tagged with
- * its `league`. The runtime (pool.ts) filters by league so a competition's spins,
- * opponents and leaderboard stay self-contained. The World Cup Run nation index is
- * built from the Premier League pool ONLY, so that mode is unchanged.
+ * Every player/bucket/club is tagged with its `league` ("PL" only — La Liga was
+ * retired 2026-08-05). The World Cup Run nation index is built from the Premier
+ * League pool.
  *
  * Each spin deals one (club, season) bucket. Run: `node scripts/draft/build-dataset.mjs`.
  *
@@ -26,11 +24,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..", "..");
 const OUT = join(ROOT, "src", "data", "draft", "player-seasons.json");
 
-// Each competition's source CSV. PL is required; La Liga is optional (built when its
-// CSV is present) so the pipeline still runs if only the PL import has been done.
+// The PL source CSV (the only competition since La Liga was retired).
 const SOURCES = [
   { league: "PL", csv: join(__dirname, "data", "players.csv") },
-  { league: "LaLiga", csv: join(__dirname, "data", "players-laliga.csv") },
 ];
 
 const POSITIONS = new Set(["GK", "RB", "CB", "LB", "RWB", "LWB", "CDM", "CM", "CAM", "RW", "LW", "ST"]);
@@ -131,7 +127,7 @@ for (const p of players) {
 }
 
 // ── Nation index (World Cup Run mode) — Premier League pool ONLY ─────────────
-// WC Run is built on the PL pool; keep it that way so adding La Liga never changes it.
+// WC Run is built on the PL pool.
 // Group players by nationality. Depth is counted by DISTINCT player identity per pitch
 // line (not per season) so a star across 8 editions doesn't inflate it.
 const LINE = {
@@ -168,7 +164,7 @@ const nations = [...natMap.values()]
 const playableCount = nations.filter((n) => n.playable).length;
 const noNationality = players.filter((p) => !p.nationality).length;
 
-// Per-league counts (for UI copy — e.g. "N all-time La Liga player-seasons").
+// Per-league counts (for UI copy — e.g. "N all-time player-seasons").
 const leagues = {};
 for (const { league } of SOURCES) {
   leagues[league] = {

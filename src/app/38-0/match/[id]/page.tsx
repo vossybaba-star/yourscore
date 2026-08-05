@@ -23,7 +23,7 @@ const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
 
 // Both live (two-half) and one-off (quick/async/challenge) matches store a report in
 // `detail`; one-offs additionally carry `single: true`.
-type MatchDetail = { pens?: { a: number; b: number } | null; report?: MatchReport; single?: boolean };
+type MatchDetail = { report?: MatchReport; single?: boolean };
 
 type Match = {
   challenger_team: TeamSnapshot;
@@ -78,10 +78,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     image = `${BASE}/api/draft/live-og?${liveOgQuery({
       p1: m.challenger_team.name, p2: m.opponent_team.name, s1, s2,
       str1: m.challenger_strength, str2: m.opponent_strength,
-      pens: m.detail?.pens ?? null, report: m.detail!.report!,
+      report: m.detail!.report!,
     })}`;
-    const pens = m.detail?.pens ? ` (pens ${m.detail.pens.a}-${m.detail.pens.b})` : "";
-    title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name}${pens} — ${m.detail?.single ? "Draft XI" : "38-0 Live"}`;
+    title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name} — ${m.detail?.single ? "Draft XI" : "38-0 Live"}`;
     description = m.detail!.report!.potm
       ? `MOTM ${m.detail!.report!.potm.name} (${m.detail!.report!.potm.rating.toFixed(1)}). Build your XI and go live, head-to-head.`
       : `Build your all-time ${leagueName} XI and go live, head-to-head.`;
@@ -133,9 +132,10 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
   const live = hasReport(m);
   const rep = m.detail?.report;
   const s1 = m.challenger_goals ?? 0, s2 = m.opponent_goals ?? 0;
-  const pens = m.detail?.pens ?? null;
-  const cWon = live ? (pens ? pens.a > pens.b : s1 > s2) : challengerWon;
-  const drew = live && !pens && s1 === s2;
+  // Level scoreline: winner_id breaks the tie for legacy matches settled by the
+  // retired shootout; no winner recorded = a genuine draw.
+  const cWon = live ? (s1 > s2 || (s1 === s2 && m.winner_id != null && challengerWon)) : challengerWon;
+  const drew = live && s1 === s2 && m.winner_id == null;
 
   const cta = (
     <div className="mt-6">
@@ -166,7 +166,6 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
             you: { name: c.name, strength: m.challenger_strength, tier: c.projected?.tier, formation: c.formation, squad: c.squad },
             opp: { name: o.name, strength: m.opponent_strength, tier: o.projected?.tier, formation: o.formation, squad: o.squad },
             goals: { you: s1, opp: s2 },
-            pens: pens ? { you: pens.a, opp: pens.b } : null,
             outcome: drew ? "draw" : cWon ? "you" : "opp",
             stats: statsFromReport(rep),
             goalEvents: goalsFromReport(rep),

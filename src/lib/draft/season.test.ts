@@ -34,7 +34,6 @@ test("seasonNarrative: champions headline names the league's country", () => {
   const champ = simulateSeason(xi("4-3-3", 93), "4-3-3", 93, "title", OPP);
   champ.position = 1; champ.invincible = false;
   assert.match(seasonNarrative(champ, "PL").headline, /ENGLAND/);
-  assert.match(seasonNarrative(champ, "LaLiga").headline, /SPAIN/);
 });
 
 test("simulateSeason: a consistent 38-game season", () => {

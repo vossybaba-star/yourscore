@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * /38-0 — Draft XI entry. Premier League / La Liga / World Cup tabs. The two
- * league tabs share one draft UI (parametrised by competition); World Cup is its
- * own nation-pick flow.
+ * /38-0 — Draft XI entry. Premier League / World Cup tabs. The league draft UI is
+ * parametrised by competition; World Cup is its own nation-pick flow.
  */
 
 import { useEffect, useState } from "react";
@@ -22,20 +21,14 @@ import { leagueCounts, ensurePool, isPoolReady } from "@/lib/draft/pool";
 import { trackGamePlay } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
 
-type DraftTab = "pl" | "laliga" | "wc" | "board";
+type DraftTab = "pl" | "wc" | "board";
 
-// The two league draft tabs share all gameplay UI — only the competition, branding
-// and accent differ.
-const LEAGUE_TABS: Record<"pl" | "laliga", { league: League; emoji: string; title: string; blurb: string; accent: string; onAccent: string }> = {
+// The league draft tab's branding (parametrised so the draft UI stays generic).
+const LEAGUE_TABS: Record<"pl", { league: League; emoji: string; title: string; blurb: string; accent: string; onAccent: string }> = {
   pl: {
     league: "PL", emoji: "⚽", title: "PREMIER LEAGUE",
     blurb: "Spin for legends. Draft your all-time XI. Beat the world head-to-head.",
     accent: "#aeea00", onAccent: "#062013",
-  },
-  laliga: {
-    league: "LaLiga", emoji: "🇪🇸", title: "LA LIGA",
-    blurb: "Spin for galácticos. Draft your all-time XI. Beat the world head-to-head.",
-    accent: "#ff5b2e", onAccent: "#1c0702",
   },
 };
 
@@ -64,7 +57,7 @@ export default function DraftHome() {
     setExisting(loadTeam());
   }, []);
 
-  const cfg = tab === "pl" || tab === "laliga" ? LEAGUE_TABS[tab] : null;
+  const cfg = tab === "pl" ? LEAGUE_TABS[tab] : null;
 
   function startNew() {
     if (!cfg) return;
@@ -111,7 +104,6 @@ export default function DraftHome() {
               with Pro; World Cup Mastermind goes last now the tournament is over. */}
           {([
             { key: "pl" as DraftTab, label: "Premier League", accent: "#aeea00" },
-            { key: "laliga" as DraftTab, label: "La Liga", accent: "#ff5b2e" },
             { key: "board" as DraftTab, label: "Leaderboard", accent: "#aeea00" },
             { key: "wc" as DraftTab, label: "WC Mastermind", accent: "#ffb800" },
           ]).map((t) => (
@@ -162,7 +154,7 @@ export default function DraftHome() {
         )}
 
         {/* ══════════════════════════════════════════════════════════════════
-            LEAGUE DRAFT TAB (Premier League / La Liga — shared UI)
+            LEAGUE DRAFT TAB (Premier League)
         ══════════════════════════════════════════════════════════════════ */}
         {cfg && (
           <>
@@ -225,8 +217,7 @@ export default function DraftHome() {
               </Link>
             )}
 
-            {/* ── How you draft, FIRST. Premier League only: the gate's question bank is
-                Premier League clubs and moments, so La Liga stays open-draft.
+            {/* ── How you draft, FIRST.
                 Above the formation picker on purpose (UX walk 2026-07-23): it used to sit
                 344px below the fold, under a full pitch diagram, while the sticky lime CTA
                 started the OTHER mode — so a first-timer could draft without ever learning
@@ -421,7 +412,7 @@ type BoardData = { seasons: SeasonBoardRow[]; wc: WcBoardRow[]; mine: { season: 
 const medal = (i: number): string => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`);
 
 function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
-  const [comp, setComp] = useState<League>("PL");
+  const comp: League = "PL";
   const [boardWindow, setBoardWindow] = useState<"today" | "all">("all");
   const [data, setData] = useState<BoardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -466,7 +457,7 @@ function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
       {/* Your best */}
       {mySeason && (
         <div className="mb-5 rounded-2xl p-4" style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.3)" }}>
-          <div className="font-body" style={{ fontSize: 11, color: "#aeea00", letterSpacing: 2 }}>YOUR BEST {comp === "PL" ? "PREMIER LEAGUE" : "LA LIGA"} SEASON</div>
+          <div className="font-body" style={{ fontSize: 11, color: "#aeea00", letterSpacing: 2 }}>YOUR BEST PREMIER LEAGUE SEASON</div>
           <div className="flex items-baseline gap-3 mt-1">
             <span className="font-display tracking-wide" style={{ fontSize: 34, color: "#fff" }}>{mySeason.wins}-{mySeason.draws}-{mySeason.losses}</span>
             <span className="font-body" style={{ fontSize: 14, color: "#8a948f" }}>{mySeason.points} pts</span>
@@ -483,15 +474,7 @@ function VerifiedBoard({ signedIn }: { signedIn: boolean }) {
       {/* ── Season board ── */}
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-display tracking-wide" style={{ fontSize: 20, color: "#fff" }}>CLOSEST TO 38-0</h3>
-        <div className="flex gap-1 p-0.5 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }}>
-          {(["PL", "LaLiga"] as League[]).map((c) => (
-            <button key={c} onClick={() => setComp(c)}
-              className="px-3 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
-              style={comp === c ? { background: c === "PL" ? "#aeea00" : "#ff5b2e", color: "#0a0a0f" } : { background: "transparent", color: "#8a948f" }}>
-              {c === "PL" ? "⚽ PL" : "🇪🇸 La Liga"}
-            </button>
-          ))}
-        </div>
+
       </div>
       <div className="flex gap-1 mb-3 p-0.5 rounded-xl w-fit" style={{ background: "rgba(255,255,255,0.05)" }}>
         {([["today", "Today"], ["all", "All-time"]] as const).map(([k, label]) => (

@@ -4,7 +4,7 @@
  * DraftHubHero — the 38-0 hub hero. Left: title + tagline (real app font/tokens) and an
  * optional PLAY. Right: the real Pitch showing a showcase XI in a tactical view (squad
  * numbers 1–11), so a new player instantly sees the game. Used per competition tab (World
- * Cup / Premier League / La Liga) with its own title + accent. WcHubHero is the WC preset.
+ * Cup / Premier League) with its own title + accent. WcHubHero is the WC preset.
  */
 
 import Link from "next/link";

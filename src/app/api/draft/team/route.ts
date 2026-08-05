@@ -26,7 +26,7 @@ export async function GET() {
     .eq("status", "active")
     // The World Cup H2H team lives in draft_teams under competition="WC" so the live
     // engine can load it, but it must never surface as the user's generic "active team"
-    // in the base PL/La Liga flows (team page, prematch, league/challenge join, etc.).
+    // in the base PL flows (team page, prematch, league/challenge join, etc.).
     .neq("competition", "WC")
     .order("updated_at", { ascending: false })
     .limit(1)

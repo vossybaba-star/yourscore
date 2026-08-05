@@ -15,7 +15,7 @@ function run(over: Partial<WcRun> = {}): WcRun {
   };
 }
 const RES = (outcome: "A" | "B" | "draw", a: number, b: number) =>
-  ({ outcome, goals: { a, b }, pens: null, report: {} as never });
+  ({ outcome, goals: { a, b }, report: {} as never });
 
 test("group qualify threshold (W=3, D=1)", () => {
   assert.equal(qualifiesFromGroup(GROUP_QUALIFY_POINTS), true);
@@ -102,7 +102,7 @@ test("group: exactly 3 points sends the run to the qualification play-off", () =
   assert.equal(patch.resolved, false);
 });
 
-test("playoff: shootout win advances to ko, loss eliminates", () => {
+test("playoff: decider win advances to ko, loss eliminates", () => {
   assert.equal(advanceStage(run({ stage: "playoff", group_points: 3 }), ["win"]).stage, "ko");
   assert.equal(advanceStage(run({ stage: "playoff", group_points: 3 }), ["win"]).upgrades_left, STAGE_UPGRADES.ko);
   assert.equal(advanceStage(run({ stage: "playoff", group_points: 3 }), ["loss"]).status, "eliminated");

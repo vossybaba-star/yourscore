@@ -4,7 +4,7 @@
  * The ranked daily run must be earned, not crafted. So for ranked runs the server — not the
  * client — owns the draft: it serves the day's questions WITHOUT the answer, grades each one,
  * and spins the slate of candidate players for every pick from a SERVER-SECRET seed
- * (pensSeed's HMAC pepper) so a client can't precompute the slates offline even though it has
+ * (serverSeed's HMAC pepper) so a client can't precompute the slates offline even though it has
  * the spin code. On submit, `verifyRankedDraft` replays the whole draft and rejects any XI
  * whose picks weren't legitimate, server-offered options for the band the answers earned.
  *
@@ -17,7 +17,7 @@ import { playerIdentity, seededRng } from "./score";
 import { slotsFor } from "./formations";
 import { dailyQuestions } from "./wc-quiz";
 import { gradeAnswer } from "./draft-quiz";
-import { pensSeed } from "./pens-server";
+import { serverSeed } from "./seed-server";
 import type { Formation, PlayerSeason } from "./types";
 
 /** The ranked draft is always a 4-3-3 World XI — fixed server-side so the client can't
@@ -89,7 +89,7 @@ export function rankedDraftStep(date: string, salt: string, answers: number[], p
   const usedIdentities = new Set(
     priorPicks.map((p) => { const pl = getPlayer(p.player_season_id); return pl ? playerIdentity(pl.name) : ""; }),
   );
-  const seed = pensSeed(`wc-draft:${date}:${salt}:step:${k}${target ? `:target:${target.id}` : ""}`);
+  const seed = serverSeed(`wc-draft:${date}:${salt}:step:${k}${target ? `:target:${target.id}` : ""}`);
   const sp = spinWorld(openPositions, usedIds, usedIdentities, { count: 6, minOverall: band.minOverall, maxOverall: band.maxOverall }, seededRng(seed));
   return { correct, correctIndex, nation: sp.nation, crest: sp.crest, era: sp.era, players: sp.players };
 }

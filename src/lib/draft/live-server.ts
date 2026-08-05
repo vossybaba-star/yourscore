@@ -5,7 +5,7 @@
  * `advanceMatch`. Transitions are idempotent: each is a conditional UPDATE gated
  * on the expected current phase (`WHERE phase = $current`), so concurrent callers
  * (both clients pinging at the deadline) race once and only the winner mutates.
- * Goal/penalty resolution and swap validation all run here — the client is never
+ * Goal resolution and swap validation all run here — the client is never
  * trusted for a rating or an outcome (mirrors server.ts).
  */
 
@@ -23,11 +23,6 @@ import {
   LIVE_CONFIG, nextPhase, aggregate, simulateHalf, buildReport,
   type LivePhase, type MatchSim,
 } from "./live-score";
-import {
-  kickAllowed, resolveRound, resolveInteractiveShootout, shootoutStatus,
-  type PenKick, type PenZone, type PenPower,
-} from "./pens";
-import { pensSeed } from "./pens-server";
 import type { PlacedPlayer } from "./types";
 
 export type Outcome = "p1" | "p2" | "draw";
@@ -89,8 +84,8 @@ function deadlineFor(phase: LivePhase, now: number): string | null {
  *  swap phases the client fires setBotReady 2 s after the human clicks Done, which
  *  sets p2_ready = true — this function then sees it and advances immediately. */
 function bothReadyFor(row: DraftLiveMatchRow): boolean {
-  // Retired phase — legacy in-flight rows advance straight into penalties.
-  if (row.phase === "draw_decision") return true;
+  // Retired phase — legacy in-flight rows advance straight to result.
+  if (row.phase === "draw_decision" || row.phase === "penalties") return true;
   // Bot is auto-ready for lobby (no client). For pregame_swap / halftime_swap the
   // client marks p2_ready explicitly (2 s after the human taps Done), so check the
   // column normally — gives the human the 2-second "thinking" window.
@@ -144,6 +139,8 @@ function aggregateOf(row: DraftLiveMatchRow): { a: number; b: number; level: boo
 }
 
 function outcomeOf(row: DraftLiveMatchRow): Outcome {
+  // Legacy rows that settled a shootout before penalties were retired keep
+  // their decisive result; everything level since then is simply a draw.
   if (row.pens_p1 !== null && row.pens_p2 !== null) return row.pens_p1 > row.pens_p2 ? "p1" : "p2";
   const agg = aggregateOf(row);
   return agg.a > agg.b ? "p1" : agg.b > agg.a ? "p2" : "draw";
@@ -151,8 +148,8 @@ function outcomeOf(row: DraftLiveMatchRow): Outcome {
 
 // ─── Transition ───────────────────────────────────────────────────────────────
 
-/** Columns written when ENTERING a phase (goal/penalty resolution + the bot's
- *  draw-decision choice). The phase being entered resolves its own values. */
+/** Columns written when ENTERING a phase (goal resolution + bot swaps).
+ *  The phase being entered resolves its own values. */
 function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Partial<DraftLiveMatchRow> {
   switch (target) {
     case "pregame_swap":
@@ -180,101 +177,9 @@ function resolutionForEntering(target: LivePhase, row: DraftLiveMatchRow): Parti
       const prev = (row.sim ?? {}) as MatchSim;
       return { h2_p1: s.goals.a, h2_p2: s.goals.b, sim: { ...prev, h2: s } as unknown as never };
     }
-    case "penalties":
-      // Interactive: kicks arrive via liveKick; nothing resolves up front.
-      return {};
-    case "result": {
-      // Leaving the shootout: honor every submitted kick verbatim and auto-fill
-      // whatever the window's expiry left untaken (identical per-round sub-seeds,
-      // so completed kicks never shift). Legacy rows that already carry an
-      // auto-resolved pens_p1 are left exactly as they are.
-      if (row.phase !== "penalties" || row.pens_p1 !== null) return {};
-      const k = kicksOf(row);
-      const full = resolveInteractiveShootout(
-        pensSeed(`${row.id}:pens`),
-        { aShots: k.a.map((x) => x.shot), aPowers: k.a.map((x) => x.power), bShots: k.b.map((x) => x.shot), bPowers: k.b.map((x) => x.power) },
-        "simultaneous"
-      );
-      return {
-        pens_p1: full.score.a, pens_p2: full.score.b,
-        p1_kicks: full.a, p2_kicks: full.b,
-      } as unknown as Partial<DraftLiveMatchRow>;
-    }
     default:
       return {};
   }
-}
-
-// ─── Interactive shootout (kicks) ─────────────────────────────────────────────
-
-/** Kick columns land in migration 35; read fail-soft until the types regen. */
-type LiveKicksRow = DraftLiveMatchRow & { p1_kicks?: PenKick[] | null; p2_kicks?: PenKick[] | null };
-
-function kicksOf(row: DraftLiveMatchRow): { a: PenKick[]; b: PenKick[] } {
-  const r = row as LiveKicksRow;
-  return { a: r.p1_kicks ?? [], b: r.p2_kicks ?? [] };
-}
-
-/** Has the simultaneous shootout produced a winner? (false outside penalties.) */
-function pensDecidedOf(row: DraftLiveMatchRow): boolean {
-  if (row.phase !== "penalties") return false;
-  if (row.pens_p1 !== null && row.pens_p2 !== null) return true; // legacy auto rows
-  const k = kicksOf(row);
-  return shootoutStatus(k.a, k.b, "simultaneous").decided;
-}
-
-/**
- * Take one penalty in a live match. The caller's aim zone is the only input —
- * the kick resolves server-side from the peppered seed and is appended through
- * the round-gated `draft_live_kick` RPC (double-taps and racing duplicates write
- * nothing). In a bot match the bot's kick for the same round lands in the same
- * statement. Advances to result the moment the shootout is decided.
- */
-export async function liveKick(
-  db: SupabaseClient<DraftDatabase>,
-  matchId: string,
-  userId: string,
-  round: number,
-  shot: PenZone,
-  power: PenPower
-): Promise<DraftLiveMatchRow | null> {
-  const { data: row } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
-  if (!row) return null;
-  const side = sideOf(row, userId);
-  if (!side) throw new Error("Not a participant");
-  if (row.phase !== "penalties") throw new Error("Not in the shootout");
-  if (expired(row, Date.now())) return advanceMatch(db, matchId); // window closed — settle it
-
-  const k = kicksOf(row);
-  const mySide = side === "p1" ? "a" : "b";
-  const myArr = mySide === "a" ? k.a : k.b;
-  // Stale/duplicate round (a retry or a second tab) → just hand back fresh state.
-  if (round !== myArr.length + 1) return row;
-  if (!kickAllowed(k.a, k.b, mySide, "simultaneous")) throw new Error("Wait for the next kick");
-
-  const seed = pensSeed(`${row.id}:pens`);
-  const kick = resolveRound(seed, mySide, round, { shot, power });
-  const p1Kick: PenKick | null = mySide === "a" ? kick : null;
-  let p2Kick: PenKick | null = mySide === "b" ? kick : null;
-  // A disguised bot answers in the same statement, round for round.
-  if (row.is_bot && k.b.length === round - 1 && mySide === "a") {
-    p2Kick = resolveRound(seed, "b", round, {});
-  }
-
-  const rpc = db.rpc as unknown as (
-    fn: string, args: Record<string, unknown>
-  ) => PromiseLike<{ data: DraftLiveMatchRow[] | null }>;
-  const { data: updatedRows } = await rpc("draft_live_kick", {
-    p_match: matchId, p_round: round, p1_kick: p1Kick, p2_kick: p2Kick,
-  });
-  const updated = updatedRows?.[0] ?? null;
-  if (!updated) {
-    // Lost the round-guard race — return the fresh row instead of erroring.
-    const { data: fresh } = await db.from("draft_live_matches").select("*").eq("id", matchId).maybeSingle();
-    return fresh ?? row;
-  }
-  if (pensDecidedOf(updated)) return advanceMatch(db, matchId);
-  return updated;
 }
 
 /**
@@ -291,13 +196,10 @@ export async function advanceMatch(
   if (!row) return null;
 
   const now = Date.now();
-  const agg = aggregateOf(row);
   const target = nextPhase({
     phase: row.phase as LivePhase,
     bothReady: bothReadyFor(row),
     expired: expired(row, now),
-    level: agg.level,
-    pensDecided: pensDecidedOf(row),
   });
   if (target === row.phase) return row; // nothing to do
 
@@ -337,7 +239,7 @@ export async function advanceMatch(
 }
 
 /** Outcome combining the row with the patch about to be written (so the final
- *  transition sees freshly-resolved penalties/goals). */
+ *  transition sees freshly-resolved goals). */
 function outcomeWith(row: DraftLiveMatchRow, patch: Partial<DraftLiveMatchRow>): Outcome {
   const merged = { ...row, ...patch } as DraftLiveMatchRow;
   return outcomeOf(merged);
@@ -380,8 +282,6 @@ async function finalize(db: SupabaseClient<DraftDatabase>, row: DraftLiveMatchRo
       outcome,
       h1: { a: row.h1_p1, b: row.h1_p2 },
       h2: { a: row.h2_p1, b: row.h2_p2 },
-      pens: row.pens_p1 !== null ? { a: row.pens_p1, b: row.pens_p2 } : null,
-      pensKicks: kicksOf(row).a.length ? kicksOf(row) : undefined,
       report: buildReport((row.sim ?? {}) as MatchSim),
     } as unknown as never,
     played_at: new Date().toISOString(),
@@ -437,9 +337,8 @@ export async function setBotReady(db: SupabaseClient<DraftDatabase>, matchId: st
   return advanceMatch(db, matchId);
 }
 
-/** Legacy no-op (draw_decision is retired — draws always go to penalties now).
- *  Pre-rework clients still post a choice for one release; treat it as a plain
- *  advance ping so their match falls straight into the shootout. */
+/** Legacy no-op (draw_decision and penalties are both retired — draws stand).
+ *  Pre-rework clients still post a choice; treat it as a plain advance ping. */
 export async function setDrawChoice(db: SupabaseClient<DraftDatabase>, matchId: string, userId: string): Promise<DraftLiveMatchRow | null> {
   const { data: row } = await db.from("draft_live_matches").select("id, p1_id, p2_id").eq("id", matchId).maybeSingle();
   if (!row) return null;
@@ -611,9 +510,9 @@ export async function queueOrPair(
   if (!me) throw new Error("Save a team first");
 
   // 2. Claim the oldest compatible waiter, or enqueue self. Cross-competition: the
-  // waiter may have queued with a different competition's XI (a La Liga team can
-  // face a PL one) — the RPC returns whose competition it is so we load the right
-  // team and credit each side to its own board.
+  // waiter may have queued with a different competition's XI (legacy cross-
+  // competition rows) — the RPC returns whose competition it is so we load the
+  // right team and credit each side to its own board.
   // p_league is genuinely nullable at the DB (the SQL pairs with
   // `league_id is not distinct from p_league`, i.e. null = the public queue).
   // The generated type declares it non-null, so cast to preserve the null value.

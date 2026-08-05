@@ -34,7 +34,7 @@ export const WC_SEASON_END = "2026-07-19";
 //   qf / sf / final — individual DUELS where the opponent's XI is revealed first so you
 //                     can make changes before kickoff.
 // `playoff` is a CONDITIONAL detour between group and ko: a borderline group finish
-// (exactly GROUP_PLAYOFF_POINTS) goes to a qualification penalty shootout — modelling the
+// (exactly GROUP_PLAYOFF_POINTS) goes to a qualification play-off decider — modelling the
 // real WC2026 "best third-placed teams" cut-line. It is NOT in RUN_STAGES (the main
 // win-chain) because most runs skip it; it's reached only via advanceStage.
 export type RunStage = "group" | "playoff" | "ko" | "qf" | "sf" | "final";
@@ -53,7 +53,7 @@ export const RUN_STAGE_LABEL: Record<RunStage, string> = {
 export function isDuel(stage: RunStage): boolean {
   return stage === "qf" || stage === "sf" || stage === "final";
 }
-/** The play-off is a straight penalty shootout (no 90 minutes) — handled on its own
+/** The play-off is a straight decider question (no 90 minutes) — handled on its own
  *  path in the server/UI, distinct from a normal duel. */
 export function isPlayoff(stage: RunStage): boolean {
   return stage === "playoff";
@@ -84,11 +84,11 @@ export function oppTargetFor(stage: WCStage): number {
 export const STAGE_UPGRADES: Record<RunStage, number> = { group: 0, playoff: 0, ko: 3, qf: 2, sf: 2, final: 2 };
 
 export const GROUP_QUALIFY_POINTS = 4; // >= this from 3 games → auto-qualify (top-2 finish)
-export const GROUP_PLAYOFF_POINTS = 3; // exactly this → qualification shootout (best third-placed)
+export const GROUP_PLAYOFF_POINTS = 3; // exactly this → qualification play-off (best third-placed)
 export function qualifiesFromGroup(points: number): boolean {
   return points >= GROUP_QUALIFY_POINTS;
 }
-/** Group outcome tier: auto-qualify (≥4), a qualification play-off shootout (==3), or out (≤2). */
+/** Group outcome tier: auto-qualify (≥4), a qualification play-off decider (==3), or out (≤2). */
 export function groupOutcome(points: number): "qualify" | "playoff" | "out" {
   if (points >= GROUP_QUALIFY_POINTS) return "qualify";
   if (points === GROUP_PLAYOFF_POINTS) return "playoff";
@@ -127,7 +127,7 @@ export type WCFixture = {
 export type WCPlan = {
   group: WCFixture[];      // 3 real group opponents
   knockouts: WCFixture[];  // r32 → final, 5 plausible real opponents
-  playoff: WCFixture;      // opponent for the qualification shootout (only used on the play-off line)
+  playoff: WCFixture;      // opponent for the qualification play-off (only used on the play-off line)
 };
 
 /** Weighted pick from a list by a weight fn (seeded). Removes nothing. */
@@ -238,8 +238,6 @@ export type WcMatchRow = {
   opponent_strength: number;
   you_goals: number;
   opp_goals: number;
-  pens_you: number | null;
-  pens_opp: number | null;
   won: boolean | null;
   detail: unknown;
 };
@@ -277,8 +275,6 @@ export function buildMatchRow(
     opponent_strength: oppStrength,
     you_goals: result.goals.a,
     opp_goals: result.goals.b,
-    pens_you: result.pens?.a ?? null,
-    pens_opp: result.pens?.b ?? null,
     won,
     detail: result.report,
   };
@@ -308,13 +304,13 @@ export function advanceStage(run: WcRun, outcomes: GameOutcome[]): WcRunPatch {
       return { group_points, group_played: 3, stage: "ko", stage_index: 1, upgrades_left: STAGE_UPGRADES.ko, resolved: false };
     }
     if (tier === "playoff") {
-      // Borderline — to the qualification shootout. Stays at stage_index 0 (pre-knockouts).
+      // Borderline — to the qualification play-off (quiz decider). Stays at stage_index 0.
       return { group_points, group_played: 3, stage: "playoff", stage_index: 0, upgrades_left: 0, resolved: false };
     }
     return { group_points, group_played: 3, status: "eliminated", resolved: true };
   }
   if (run.stage === "playoff") {
-    // A single shootout: win → into the Round of 32, lose → out at the group.
+    // A single decider: win → into the Round of 32, lose → out at the group.
     const won = outcomes[0] === "win";
     if (won) return { stage: "ko", stage_index: 1, upgrades_left: STAGE_UPGRADES.ko, resolved: false };
     return { status: "eliminated", resolved: true };

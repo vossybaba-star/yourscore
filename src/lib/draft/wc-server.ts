@@ -5,12 +5,12 @@
  * never trusted: the nation-locked XI is re-validated and re-scored here, opponents
  * are generated server-side, and goals are resolved by the shared two-half engine.
  *
- * Drawn knockout ties (and the qualification play-off) are the player's CHOICE:
- * take an interactive penalty shootout (pens.ts) OR answer one more World Cup quiz
- * question (the decider). Both are server-authoritative. A stage in progress is held
- * in the `pens_state` column (migration 35) as a WcStageState cursor: games settled
- * so far are accumulated there, so a settled game is never re-simulated — which keeps
- * a stage that draws twice (the 2-game "ko" round) correct across mixed pens/quiz picks.
+ * Drawn knockout ties (and the qualification play-off) are settled by the quiz
+ * DECIDER: one more World Cup question, server-graded (penalties retired
+ * 2026-08-05). A stage in progress is held in the `pens_state` column (historical
+ * name, migration 35) as a WcStageState cursor: games settled so far are
+ * accumulated there, so a settled game is never re-simulated — which keeps a
+ * stage that draws twice (the 2-game "ko" round) correct across deciders.
  */
 
 import "server-only";
@@ -22,11 +22,6 @@ import { deciderQuestion } from "./wc-quiz";
 import { makeOpponentAt } from "./opponent";
 import { resolveMatch, buildReport, type MatchSim, type SingleMatchResult } from "./live-score";
 import { seededRng } from "./score";
-import {
-  resolveRound, shootoutStatus, resolveInteractiveShootout,
-  type PenKick, type PenZone, type PenPower,
-} from "./pens";
-import { pensSeed } from "./pens-server";
 import {
   planRun, planWorldRun, gamesForStage, buildMatchRow, outcomeOf, allowDraw, advanceStage, isDuel, oppTargetFor,
   WORLD_TEAM_NAME, RUN_STAGE_LABEL,
@@ -176,15 +171,14 @@ export type GameReveal = {
   opponent: WCFixture["opponent"];
   oppStrength: number;
   goals: { you: number; opp: number };
-  pens: { you: number; opp: number } | null;
   outcome: GameOutcome;
-  decidedByQuestion?: boolean; // true when a draw was settled by the quiz decider (not pens)
+  decidedByQuestion?: boolean; // true when a draw was settled by the quiz decider
 };
 
 /** A question (no correct index) sent to the client to settle a drawn tie / play-off. */
 export type PublicQuestion = { id: string; prompt: string; options: string[]; category: string };
 
-/** A drawn tie (or the play-off) awaiting the player's CHOICE — pens or quiz. */
+/** A drawn tie (or the play-off) awaiting the quiz decider. */
 export type PendingTie = {
   idx: number;
   stage: RunStage;
@@ -192,15 +186,15 @@ export type PendingTie = {
   opponent: WCFixture["opponent"];
   oppStrength: number;
   goals: { you: number; opp: number }; // the level 90' score (0-0 for the play-off)
-  question: PublicQuestion;            // shown if the player picks the quiz route
+  question: PublicQuestion;            // the decider question
   isPlayoff: boolean;
 };
 
 /**
- * A stage held mid-resolution in the `pens_state` column (migration 35). It accumulates
- * the games already settled in this stage (rows/outcomes/reveals) so resolution resumes
- * exactly where it stopped, plus the tie currently being decided. `pens` is non-null only
- * once the player has chosen the shootout and is taking kicks.
+ * A stage held mid-resolution in the `pens_state` column (historical name,
+ * migration 35). It accumulates the games already settled in this stage
+ * (rows/outcomes/reveals) so resolution resumes exactly where it stopped, plus
+ * the tie currently awaiting its decider.
  */
 export type WcStageState = {
   stage: RunStage;
@@ -209,7 +203,6 @@ export type WcStageState = {
   rowsSoFar: WcMatchRow[];
   outcomesSoFar: GameOutcome[];
   revealsSoFar: GameReveal[];
-  pens: { shots: PenZone[]; powers: PenPower[]; dives: PenZone[] } | null;
 };
 
 export type StageResolution =
@@ -228,7 +221,6 @@ function revealFor(fixture: WCFixture, oppStrength: number, result: SingleMatchR
     opponent: fixture.opponent,
     oppStrength,
     goals: { you: result.goals.a, opp: result.goals.b },
-    pens: result.pens ? { you: result.pens.a, opp: result.pens.b } : null,
     outcome: outcomeOf(result),
   };
 }
@@ -278,7 +270,7 @@ function resolveFrom(run: WcRun, fromIdx: number, prior: Prior): StageResolution
     const q = deciderQuestion(deciderSeedFor(run, "playoff", 0));
     return {
       kind: "choice",
-      state: { stage: "playoff", idx: 0, goals: { you: 0, opp: 0 }, rowsSoFar: prior.rows, outcomesSoFar: prior.outcomes, revealsSoFar: prior.reveals, pens: null },
+      state: { stage: "playoff", idx: 0, goals: { you: 0, opp: 0 }, rowsSoFar: prior.rows, outcomesSoFar: prior.outcomes, revealsSoFar: prior.reveals },
       tie: { idx: 0, stage: "playoff", label: "Qualification Play-off", opponent: fixture.opponent, oppStrength: opp.strength, goals: { you: 0, opp: 0 }, question: publicQuestion(q), isPlayoff: true },
     };
   }
@@ -291,13 +283,13 @@ function resolveFrom(run: WcRun, fromIdx: number, prior: Prior): StageResolution
   for (let idx = fromIdx; idx < fixtures.length; idx++) {
     const fixture = fixtures[idx];
     const opp = buildOpponent(run, fixture, idx);
-    const result = resolveMatch(run.squad, opp.squad, `${run.seed}:match:${fixture.stage}:${idx}`, { allowDraw: true });
+    const result = resolveMatch(run.squad, opp.squad, `${run.seed}:match:${fixture.stage}:${idx}`);
 
     if (result.outcome === "draw" && !allowDraw(run.stage)) {
       const q = deciderQuestion(deciderSeedFor(run, run.stage, idx));
       return {
         kind: "choice",
-        state: { stage: run.stage, idx, goals: { you: result.goals.a, opp: result.goals.b }, rowsSoFar: rows, outcomesSoFar: outcomes, revealsSoFar: reveals, pens: null },
+        state: { stage: run.stage, idx, goals: { you: result.goals.a, opp: result.goals.b }, rowsSoFar: rows, outcomesSoFar: outcomes, revealsSoFar: reveals },
         tie: { idx, stage: run.stage, label: fixture.label, opponent: fixture.opponent, oppStrength: opp.strength, goals: { you: result.goals.a, opp: result.goals.b }, question: publicQuestion(q), isPlayoff: false },
       };
     }
@@ -316,24 +308,23 @@ export function startStage(run: WcRun): StageResolution {
 }
 
 /** Settle the tie held in `state` (win/loss already determined) and resume the stage. */
-function settleTie(run: WcRun, state: WcStageState, won: boolean, viaQuestion: boolean, pens: { a: number; b: number } | null): Prior {
+function settleTie(run: WcRun, state: WcStageState, won: boolean): Prior {
   const fixture = fixtureAt(run, state.stage, state.idx);
   const opp = buildOpponent(run, fixture, state.idx);
   // Re-derive the 90' result (deterministic) so the stored detail matches a real game;
   // the play-off has no 90', so it's a fabricated 0-0 base.
   const base: SingleMatchResult = state.stage === "playoff"
-    ? { outcome: "draw", goals: { a: 0, b: 0 }, pens: null, report: buildReport({} as MatchSim) }
-    : resolveMatch(run.squad, opp.squad, `${run.seed}:match:${state.stage}:${state.idx}`, { allowDraw: true });
-  const result: SingleMatchResult = { ...base, outcome: won ? "A" : "B", pens };
+    ? { outcome: "draw", goals: { a: 0, b: 0 }, report: buildReport({} as MatchSim) }
+    : resolveMatch(run.squad, opp.squad, `${run.seed}:match:${state.stage}:${state.idx}`);
+  const result: SingleMatchResult = { ...base, outcome: won ? "A" : "B" };
   const row = buildMatchRow(run.id, state.stage, fixture, result, opp.strength, state.idx);
   const reveal: GameReveal = {
     label: state.stage === "playoff" ? "Qualification Play-off" : fixture.label,
     opponent: fixture.opponent,
     oppStrength: opp.strength,
     goals: { you: result.goals.a, opp: result.goals.b },
-    pens: pens ? { you: pens.a, opp: pens.b } : null,
     outcome: won ? "win" : "loss",
-    ...(viaQuestion ? { decidedByQuestion: true } : {}),
+    decidedByQuestion: true,
   };
   return {
     rows: [...state.rowsSoFar, row],
@@ -342,87 +333,12 @@ function settleTie(run: WcRun, state: WcStageState, won: boolean, viaQuestion: b
   };
 }
 
-/** The player picked the QUIZ: grade their answer against the tie's decider question
- *  (server-graded — the client never gets the correct index), then resume the stage. */
+/** Grade the player's answer against the tie's decider question (server-graded —
+ *  the client never gets the correct index), then resume the stage. */
 export function settleByQuiz(run: WcRun, state: WcStageState, answer: number): StageResolution {
   const q = deciderQuestion(deciderSeedFor(run, state.stage, state.idx));
   const won = answer === q.correctIndex;
-  return resolveFrom(run, state.idx + 1, settleTie(run, state, won, true, null));
-}
-
-/** The player picked PENS: arm the shootout sub-state (kicks come in via /wc/kick). */
-export function beginPens(state: WcStageState): WcStageState {
-  return { ...state, pens: { shots: [], powers: [], dives: [] } };
-}
-
-// ─── Interactive knockout shootout ────────────────────────────────────────────
-
-const wcPensSeed = (run: WcRun, s: WcStageState): string =>
-  pensSeed(`${run.seed}:pens:${s.stage}:${s.idx}`);
-
-/** Replay the kicks taken so far (alternating; you are side a and kick first —
- *  you shoot your rounds, you dive against the CPU's). */
-export function wcPensKicks(run: WcRun, s: WcStageState): { a: PenKick[]; b: PenKick[] } {
-  const pens = s.pens ?? { shots: [], powers: [], dives: [] };
-  const seed = wcPensSeed(run, s);
-  const a: PenKick[] = [];
-  const b: PenKick[] = [];
-  for (;;) {
-    const st = shootoutStatus(a, b, "alternating");
-    if (st.decided || !st.next) break;
-    if (st.next === "a") {
-      const shot = pens.shots[a.length];
-      if (shot === undefined) break;
-      a.push(resolveRound(seed, "a", a.length + 1, { shot, power: pens.powers[a.length] }));
-    } else {
-      const dive = pens.dives[b.length];
-      if (dive === undefined) break;
-      b.push(resolveRound(seed, "b", b.length + 1, { dive }));
-    }
-  }
-  return { a, b };
-}
-
-export type WcPensView = {
-  myKicks: PenKick[];
-  oppKicks: PenKick[];
-  role: "shoot" | "dive" | "done";
-  suddenDeath: boolean;
-  final: { outcome: "you" | "opp"; pens: { you: number; opp: number } } | null;
-};
-
-export function wcPensView(run: WcRun, s: WcStageState): WcPensView {
-  const k = wcPensKicks(run, s);
-  const st = shootoutStatus(k.a, k.b, "alternating");
-  return {
-    myKicks: k.a,
-    oppKicks: k.b,
-    role: st.decided ? "done" : st.next === "a" ? "shoot" : "dive",
-    suddenDeath: st.suddenDeath,
-    final: st.decided
-      ? { outcome: st.winner === "a" ? "you" : "opp", pens: { you: st.aGoals, opp: st.bGoals } }
-      : null,
-  };
-}
-
-/** What the run page shows alongside the shootout (opponent chip + the 90' score). */
-export function wcPensMeta(run: WcRun, s: WcStageState) {
-  const fixture = fixtureAt(run, s.stage, s.idx);
-  return { label: s.stage === "playoff" ? "Qualification Play-off" : fixture.label, opponent: fixture.opponent, goals: s.goals };
-}
-
-/**
- * The shootout has been decided — settle the game from the kicks taken and resume the
- * stage from the next game (which may itself pend a fresh choice, or finish the stage).
- */
-export function resumeAfterPens(run: WcRun, s: WcStageState): StageResolution {
-  const full = resolveInteractiveShootout(
-    wcPensSeed(run, s),
-    { aShots: s.pens?.shots ?? [], aPowers: s.pens?.powers ?? [], aDives: s.pens?.dives ?? [] },
-    "alternating",
-  );
-  const won = full.winner === "a";
-  return resolveFrom(run, s.idx + 1, settleTie(run, s, won, false, full.score));
+  return resolveFrom(run, state.idx + 1, settleTie(run, state, won));
 }
 
 /** Rebuild the pending tie (incl. its decider question) from a persisted cursor —

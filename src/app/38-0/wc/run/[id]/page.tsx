@@ -7,9 +7,8 @@
  * duels: the opponent's XI is revealed so you can make changes, then play. Upgrades
  * are spent by tapping a player on your pitch.
  *
- * Drawn knockout ties (and the qualification play-off) are the PLAYER'S CHOICE: take
- * an interactive penalty shootout, or answer one more World Cup question (25s) to go
- * through. Both are server-graded.
+ * Drawn knockout ties (and the qualification play-off) are settled by the DECIDER:
+ * one more World Cup question (25s), server-graded.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,9 +29,7 @@ import { wcNation } from "@/data/draft/wc2026";
 import type { Formation, PlacedPlayer, PlayerSeason } from "@/lib/draft/types";
 import { trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import { useUser } from "@/hooks/useUser";
-import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
 import { BackPill } from "@/components/ui/BackPill";
-import type { PenKick } from "@/lib/draft/pens";
 import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
 
@@ -46,22 +43,15 @@ type Run = {
 };
 // The signed-in player's season standing (from the WC daily board) — shown on a ranked finish.
 type Standing = { rank: number; points: number; wins: number; draws: number; losses: number; display_name?: string };
-type MatchRow = { stage: string; idx: number; you_goals: number; opp_goals: number; pens_you: number | null; pens_opp: number | null; won: boolean | null };
+type MatchRow = { stage: string; idx: number; you_goals: number; opp_goals: number; won: boolean | null };
 type Opponent = { nation: string; crest?: string; label: string; formation: Formation; squad: PlacedPlayer[]; strength: number };
-type GameReveal = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; pens: { you: number; opp: number } | null; outcome: "win" | "loss" | "draw"; decidedByQuestion?: boolean };
+type GameReveal = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; outcome: "win" | "loss" | "draw"; decidedByQuestion?: boolean };
 type PlayResp = { stage: RunStage; games: GameReveal[]; result: "through" | "eliminated" | "champion"; run: Run };
 
-// A drawn knockout / the play-off the player must settle — penalties or one question.
+// A drawn knockout / the play-off the player must settle with one question.
 // The question carries no correct index; the server grades the answer.
 type PendingTie = { idx: number; stage: string; label: string; opponent: { nation: string; crest?: string }; oppStrength: number; goals: { you: number; opp: number }; question: { id: string; prompt: string; options: string[]; category: string }; isPlayoff: boolean };
 type PlayOrTie = PlayResp | { awaitingTie: true; stage: RunStage; tie: PendingTie; run: Run };
-
-type WcPensViewT = {
-  myKicks: PenKick[]; oppKicks: PenKick[];
-  role: "shoot" | "dive" | "done"; suddenDeath: boolean;
-  final: { outcome: "you" | "opp"; pens: { you: number; opp: number } } | null;
-};
-type PensPending = { label: string; opponent: { nation: string; crest?: string }; goals: { you: number; opp: number }; view: WcPensViewT };
 
 const DECIDER_SECONDS = 25;
 
@@ -76,10 +66,6 @@ export default function WorldCupRun() {
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [reveal, setReveal] = useState<PlayResp | null>(null);
-  const [pens, setPens] = useState<PensPending | null>(null);
-  // Set when the deciding kick lands: either the finished stage payload, or the NEXT
-  // tie's choice (the 2-game knockout round can pend twice in one stage).
-  const [pensDone, setPensDone] = useState<{ stage?: PlayResp; nextTie?: PendingTie } | null>(null);
   const [pickSlot, setPickSlot] = useState<string | null>(null);
   const [slate, setSlate] = useState<PlayerSeason[] | null>(null);
   const [spunNation, setSpunNation] = useState<{ nation: string; crest?: string } | null>(null);
@@ -97,10 +83,8 @@ export default function WorldCupRun() {
   const answeredCount = useRef(0);
   const [confirmExit, setConfirmExit] = useState(false);
 
-  // Tie decider: a drawn knockout / the play-off. `tieMode` is "choose" (pens vs question)
-  // then "quiz" if the player picks the question; picking pens opens the shootout instead.
+  // Tie decider: a drawn knockout / the play-off goes straight to the question.
   const [tie, setTie] = useState<PendingTie | null>(null);
-  const [tieMode, setTieMode] = useState<"choose" | "quiz" | null>(null);
   const [decPicked, setDecPicked] = useState<number | null>(null);
   const [decTimeLeft, setDecTimeLeft] = useState(DECIDER_SECONDS);
   const [decBusy, setDecBusy] = useState(false);
@@ -120,7 +104,7 @@ export default function WorldCupRun() {
   const pitchRef = useRef<HTMLDivElement>(null);
 
   const openTie = useCallback((t: PendingTie) => {
-    setTie(t); setTieMode("choose"); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); setDecBusy(false);
+    setTie(t); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); setDecBusy(false);
   }, []);
 
   const load = useCallback(async () => {
@@ -140,16 +124,14 @@ export default function WorldCupRun() {
       ranked?: boolean;
       matches: MatchRow[];
       opponent: Opponent | null;
-      pensPending?: PensPending;
       pendingTie?: PendingTie;
     }>(res);
     if (!res.ok) { setError(data?.error ?? "Run not found"); setLoading(false); return; }
     // 200 with an unreadable body: never leave the spinner up forever.
     if (!data) { setError("Couldn't load this run — refresh to try again."); setLoading(false); return; }
     setRun({ ...data.run, ranked: data.ranked === true }); setMatches(data.matches); setOpponent(data.opponent); setLoading(false);
-    // A tie in progress resumes exactly where it was left: mid-shootout, or at the choice.
-    if (data.pensPending) { setPens(data.pensPending); setPensDone(null); }
-    else if (data.pendingTie) openTie(data.pendingTie);
+    // A tie in progress resumes exactly where it was left — at its decider.
+    if (data.pendingTie) openTie(data.pendingTie);
   }, [id, openTie]);
 
   useEffect(() => { void ensurePool(); load(); }, [load]);
@@ -210,14 +192,14 @@ export default function WorldCupRun() {
     return () => { cancelled = true; };
   }, [run, user]);
 
-  // 25s clock on the decider QUESTION (not the choice); running out locks a timeout (out).
+  // 25s clock on the decider question; running out locks a timeout (out).
   useEffect(() => {
-    if (!tie || tieMode !== "quiz" || decPicked !== null || decBusy) return;
+    if (!tie || decPicked !== null || decBusy) return;
     if (decTimeLeft <= 0) { answerDecider(-1); return; }
     const t = setTimeout(() => setDecTimeLeft((s) => s - 1), 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tie, tieMode, decPicked, decTimeLeft, decBusy]);
+  }, [tie, decPicked, decTimeLeft, decBusy]);
 
   function applyPlayResp(r: PlayResp) {
     setReveal(r);
@@ -231,34 +213,19 @@ export default function WorldCupRun() {
     setPlaying(true); setError(null); setPickSlot(null); setSlate(null);
     try {
       const res = await fetch("/api/draft/wc/play", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id }) });
-      const data = await res.json() as PlayOrTie & { error?: string; pensPending?: PensPending };
+      const data = await res.json() as PlayOrTie & { error?: string };
       if (!res.ok) { setError(data.error ?? "Could not play"); setPlaying(false); return; }
-      // A shootout was already in progress (resumed) — open it.
-      if ("pensPending" in data && data.pensPending) { setPens(data.pensPending); setPensDone(null); setPlaying(false); return; }
-      // A level knockout game / the play-off — let the player choose how to settle it.
+      // A level knockout game / the play-off — the decider question settles it.
       if ("awaitingTie" in data && data.awaitingTie) { openTie(data.tie); setPlaying(false); return; }
       applyPlayResp(data as PlayResp);
     } catch { setError("Network error — try again."); }
     setPlaying(false);
   }
 
-  // The player chose PENALTIES — arm the shootout, then drop into the kick UI.
-  async function choosePens() {
-    if (!tie || decBusy) return;
-    setDecBusy(true);
-    try {
-      const res = await fetch("/api/draft/wc/pens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id }) });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Could not start the shootout"); setDecBusy(false); return; }
-      setTie(null); setTieMode(null); setDecBusy(false);
-      if (data.pensPending) { setPens(data.pensPending); setPensDone(null); }
-    } catch { setError("Network error — try again."); setDecBusy(false); }
-  }
-
-  // The player chose the QUESTION — submit the answer; the server grades it and either
-  // resolves the stage or pends the next tie's choice. The client never sees the answer.
+  // Submit the decider answer; the server grades it and either resolves the stage
+  // or pends the next tie's decider. The client never sees the answer.
   function answerDecider(choice: number) {
-    if (!tie || tieMode !== "quiz" || decPicked !== null || decBusy) return;
+    if (!tie || decPicked !== null || decBusy) return;
     setDecPicked(choice);
     answeredCount.current += 1;
     setTimeout(() => void submitDecider(choice), 800);
@@ -269,42 +236,11 @@ export default function WorldCupRun() {
     try {
       const res = await fetch("/api/draft/wc/decide", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, answer: choice }) });
       const data = await res.json() as PlayOrTie & { error?: string };
-      if (!res.ok) { setError(data.error ?? "Could not settle the tie"); setTie(null); setTieMode(null); setDecBusy(false); return; }
+      if (!res.ok) { setError(data.error ?? "Could not settle the tie"); setTie(null); setDecBusy(false); return; }
       if ("awaitingTie" in data && data.awaitingTie) { openTie(data.tie); return; } // next tie (rare)
-      setTie(null); setTieMode(null); setDecBusy(false);
+      setTie(null); setDecBusy(false);
       applyPlayResp(data as PlayResp);
     } catch { setError("Network error — try again."); setDecBusy(false); }
-  }
-
-  async function pensAct(action: "shot" | "dive", zone: number, power?: string) {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/draft/wc/kick", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ runId: id, action, zone, power }) });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Kick failed"); setBusy(false); return; }
-      if (data.pensPending) setPens(data.pensPending);
-      if (data.stage || data.nextTie) setPensDone({ stage: data.stage, nextTie: data.nextTie });
-      if (data.stage && (data.stage.result === "champion" || data.stage.result === "eliminated")) {
-        trackGameComplete("38-0", { mode: "world_cup_run", result: data.stage.result });
-      }
-    } catch { setError("Network error — try again."); }
-    setBusy(false);
-  }
-
-  function pensContinue() {
-    if (pensDone?.stage) {
-      setPens(null); setPensDone(null);
-      setReveal(pensDone.stage);
-    } else if (pensDone?.nextTie) {
-      // The next knockout game is also level — choose again.
-      setPens(null);
-      openTie(pensDone.nextTie);
-      setPensDone(null);
-    } else {
-      setPens(null); setPensDone(null);
-      load();
-    }
   }
 
   // Save this exact XI as the active World Cup team and drop into the WC H2H lane.
@@ -477,7 +413,7 @@ export default function WorldCupRun() {
       .forEach((m, i) => rows.push(`${i === 0 ? "R32" : "R16"}~${m.you_goals}-${m.opp_goals}~${m.won ? "W" : "L"}`));
     ([["qf", "QF"], ["sf", "SF"], ["final", "Final"]] as const).forEach(([s, lbl]) => {
       const m = matches.find((x) => x.stage === s);
-      if (m) rows.push(`${lbl}~${m.you_goals}-${m.opp_goals}${m.pens_you != null ? ` p${m.pens_you}-${m.pens_opp}` : ""}~${m.won ? "W" : "L"}`);
+      if (m) rows.push(`${lbl}~${m.you_goals}-${m.opp_goals}~${m.won ? "W" : "L"}`);
     });
     const p = new URLSearchParams({ nation: run.nation, status: run.status, stage: run.stage, path: rows.join("|") });
     if (crest) p.set("crest", crest);
@@ -710,7 +646,7 @@ export default function WorldCupRun() {
           <div className="mt-4 rounded-2xl p-4" style={{ background: "#1a1300", border: "1px solid rgba(255,184,0,0.45)" }}>
             <div className="font-display tracking-wide" style={{ fontSize: 15, color: "#ffb800" }}>IT&apos;S DOWN TO THE WIRE</div>
             <p className="font-body mt-1.5" style={{ fontSize: 13, color: "#e8d6a8", lineHeight: 1.45 }}>
-              You finished 3rd in your group on <b style={{ color: "#fff" }}>{run.group_points} points</b> — level with the other nations on the qualification cut-line. In the World Cup the <b style={{ color: "#fff" }}>best third-placed teams</b> go through, so it comes down to one moment: <b style={{ color: "#fff" }}>take a shootout or answer one question</b> to grab the final Round-of-32 spot.
+              You finished 3rd in your group on <b style={{ color: "#fff" }}>{run.group_points} points</b> — level with the other nations on the qualification cut-line. In the World Cup the <b style={{ color: "#fff" }}>best third-placed teams</b> go through, so it comes down to one moment: <b style={{ color: "#fff" }}>answer one question</b> to grab the final Round-of-32 spot.
             </p>
           </div>
         )}
@@ -778,72 +714,6 @@ export default function WorldCupRun() {
         </div>
       )}
 
-      {/* Tie chooser — a level game: penalties or one more question */}
-      {tie && tieMode === "choose" && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5" style={{ background: "rgba(0,0,0,0.82)" }}>
-          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 pb-8" style={{ background: "#13131c", border: "1px solid rgba(255,184,0,0.4)" }}>
-            <div className="text-center">
-              <div className="font-body" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>
-                {tie.isPlayoff ? "QUALIFICATION PLAY-OFF" : `${tie.label.toUpperCase()} · LEVEL AT ${tie.goals.you}–${tie.goals.opp}`}
-              </div>
-              <div className="font-display tracking-wide mt-1" style={{ fontSize: 22, color: "#fff" }}>HOW DO YOU SETTLE IT?</div>
-              <div className="font-body mt-1" style={{ fontSize: 12, color: "#8a948f" }}>{run.nation} v {tie.opponent.nation}{tie.isPlayoff ? "" : " — no winner after 90"}</div>
-            </div>
-            <div className="flex flex-col gap-2.5 mt-4">
-              <button onClick={choosePens} disabled={decBusy}
-                className="w-full rounded-2xl px-4 py-3.5 text-left active:scale-[0.99] transition-transform disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg,#1a1407,#241a05)", border: "1px solid rgba(255,184,0,0.55)" }}>
-                <div className="font-display tracking-wide" style={{ fontSize: 17, color: "#ffb800" }}>⚽ PENALTY SHOOTOUT</div>
-                <div className="font-body" style={{ fontSize: 12, color: "#cdb98a" }}>Take the kicks yourself — nerve and aim decide it.</div>
-              </button>
-              <button onClick={() => { setTieMode("quiz"); setDecPicked(null); setDecTimeLeft(DECIDER_SECONDS); }} disabled={decBusy}
-                className="w-full rounded-2xl px-4 py-3.5 text-left active:scale-[0.99] transition-transform disabled:opacity-60"
-                style={{ background: "linear-gradient(135deg,#07121a,#051a1a)", border: "1px solid rgba(0,224,224,0.5)" }}>
-                <div className="font-display tracking-wide" style={{ fontSize: 17, color: "#3fe0e0" }}>🧠 SUDDEN-DEATH QUESTION</div>
-                <div className="font-body" style={{ fontSize: 12, color: "#9fd8d8" }}>One World Cup question, 25 seconds. Know it and go through.</div>
-              </button>
-            </div>
-            {decBusy && <p className="mt-3 text-center font-body" style={{ fontSize: 12, color: "#8a948f" }}>Setting it up…</p>}
-          </div>
-        </div>
-      )}
-
-      {/* Knockout shootout — a level game is settled by YOUR kicks */}
-      {pens && (() => {
-        const v = pens.view;
-        const pview: PensView = {
-          myKicks: v.myKicks,
-          oppKicks: v.oppKicks,
-          suddenDeath: v.suddenDeath,
-          role: v.role === "done" ? "done" : v.role,
-          result: v.final ? (v.final.outcome === "you" ? "win" : "loss") : null,
-        };
-        return (
-          <div className="fixed inset-0 z-50 grid place-items-center px-5 overflow-y-auto" style={{ background: "rgba(0,0,0,0.85)" }}>
-            <div className="w-full max-w-sm rounded-3xl p-4" style={{ background: "#12121e", border: "1px solid rgba(255,184,0,0.4)" }}>
-              <div className="font-body text-center" style={{ fontSize: 11, color: "#ffb800", letterSpacing: 1 }}>
-                {pens.label.toUpperCase()} · LEVEL AT {pens.goals.you}–{pens.goals.opp} — PENALTIES
-              </div>
-              <div className="font-body text-center mb-3" style={{ fontSize: 12, color: "#8888aa" }}>
-                {run.nation} v {pens.opponent.nation}
-              </div>
-              <PenaltyShootout
-                view={pview}
-                myName={run.nation}
-                oppName={pens.opponent.nation}
-                onShoot={(z, p) => pensAct("shot", z, p)}
-                onDive={(c) => pensAct("dive", c)}
-              />
-              {pensDone && v.role === "done" && (
-                <Button variant="primary" tone="lime" size="md" fullWidth className="mt-3" onClick={pensContinue}>
-                  {pensDone.nextTie ? "NEXT TIE →" : "CONTINUE →"}
-                </Button>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
       {/* Squad-upgrade popup — fires when advancing a round grants new draft picks. */}
       {upgradeAlert && run && !terminal && run.upgrades_left > 0 && (
         <div className="fixed inset-0 z-[60] grid place-items-center px-5" style={{ background: "rgba(0,0,0,0.82)" }} onClick={() => setUpgradeAlert(false)}>
@@ -875,7 +745,7 @@ export default function WorldCupRun() {
                   <span className="font-display" style={{ fontSize: 16, color: "#fff" }}>
                     {g.label === "Qualification Play-off"
                       ? "Play-off"
-                      : <>{g.goals.you}–{g.goals.opp}{g.pens ? ` (${g.pens.you}-${g.pens.opp})` : ""}</>}
+                      : <>{g.goals.you}–{g.goals.opp}</>}
                     {g.decidedByQuestion && <span style={{ fontSize: 11, color: "#3fe0e0" }}> · Q</span>}
                   </span>
                   <span className="font-display rounded px-1.5" style={{ fontSize: 12, color: "#0a0a0f", background: g.outcome === "win" ? "#aeea00" : g.outcome === "loss" ? "#ff4757" : "#ffb800" }}>{g.outcome === "win" ? "W" : g.outcome === "loss" ? "L" : "D"}</span>
@@ -933,8 +803,8 @@ export default function WorldCupRun() {
         </div>
       )}
 
-      {/* Sudden-death decider question (the player chose the quiz over penalties) */}
-      {tie && tieMode === "quiz" && (
+      {/* Sudden-death decider question — settles a level knockout / the play-off */}
+      {tie && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5" style={{ background: "rgba(0,0,0,0.78)" }}>
           <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 pb-8" style={{ background: "#13131c", border: "1px solid rgba(0,224,224,0.45)" }}>
             <div className="flex items-center justify-between mb-1">

@@ -21,7 +21,6 @@ export type LiveShareInput = {
   p1: string; p2: string;            // names (side a / side b)
   s1: number; s2: number;            // aggregate goals
   str1?: number | null; str2?: number | null;
-  pens?: { a: number; b: number } | null;
   report: MatchReport;
 };
 
@@ -32,7 +31,6 @@ export function liveOgQuery(i: LiveShareInput): string {
   q.set("s1", String(i.s1)); q.set("s2", String(i.s2));
   if (i.str1 != null) q.set("str1", String(Math.round(Number(i.str1))));
   if (i.str2 != null) q.set("str2", String(Math.round(Number(i.str2))));
-  if (i.pens) q.set("pens", `${i.pens.a}-${i.pens.b}`);
   if (i.report.potm) { q.set("potm", i.report.potm.name); q.set("potmR", i.report.potm.rating.toFixed(1)); }
   const a = i.report.a, b = i.report.b;
   q.set("pos", `${a.possession}-${b.possession}`);

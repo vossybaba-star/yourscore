@@ -68,14 +68,10 @@ export default function AcceptChallenge() {
         opp: { name: m.opp.name, formation: m.opp.formation, squad: m.opp.squad, strength: m.opp.strength, projected: m.opp.projected },
         outcome: m.outcome,
         goals: m.goals,
-        pens: m.pens ?? null,
         report: m.report,
         playedAt: Date.now(),
         oppUserId: info?.challengerId,
-        // Level after 90 → the shootout decides it; streaks settle on the pens screen.
-        pensPending: m.pensPending ? { mode: "server", shots: [], powers: [], dives: [] } : undefined,
       });
-      if (m.pensPending) { router.push("/38-0/match/pens"); return; }
       saveTeam(m.outcome === "you" ? recordWin(team) : m.outcome === "opp" ? recordLoss(team) : recordDraw(team));
       setAccepted(true); // show friend card before navigating to result
     } catch { setErr("Network error"); setBusy(false); }

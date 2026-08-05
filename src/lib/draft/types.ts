@@ -9,22 +9,22 @@
  * scoring engine can run under `node --test` with Node's native type stripping.
  */
 
-/** The football competitions 38-0 is played in. Each is a self-contained pool:
- *  its own spinnable squads, its own league opponents, its own leaderboard. The
- *  World Cup Run mode is separate again (nation-locked, built on the PL pool). */
-export type League = "PL" | "LaLiga";
+/** The football competitions 38-0 is played in. PL only (La Liga retired
+ *  2026-08-05 — teams saved with competition "LaLiga" fall back to PL on read).
+ *  The World Cup Run mode is separate (nation-locked, built on the PL pool). */
+export type League = "PL";
 
-export const LEAGUES: League[] = ["PL", "LaLiga"];
+export const LEAGUES: League[] = ["PL"];
 
 /** Per-league display + flavour strings (copy, country names for the narrative). */
 export const LEAGUE_META: Record<League, { name: string; short: string; country: string; demonym: string; accent: string }> = {
   PL: { name: "Premier League", short: "PL", country: "England", demonym: "English", accent: "#aeea00" },
-  LaLiga: { name: "La Liga", short: "La Liga", country: "Spain", demonym: "Spanish", accent: "#ff5b2e" },
 };
 
 /** Narrow an arbitrary string to a League, falling back to PL. */
 export function asLeague(v: string | null | undefined): League {
-  return v === "LaLiga" ? "LaLiga" : "PL";
+  void v;
+  return "PL";
 }
 
 /** A live-H2H matchmaking lane. A superset of League with the World Cup lane "WC":
@@ -34,19 +34,18 @@ export function asLeague(v: string | null | undefined): League {
  *  draft_teams competition column, and leaderboard are competition-keyed. */
 export type Competition = League | "WC";
 
-export const COMPETITIONS: Competition[] = ["PL", "LaLiga", "WC"];
+export const COMPETITIONS: Competition[] = ["PL", "WC"];
 
 /** Per-competition display strings (extends LEAGUE_META with the WC lane). */
 export const COMPETITION_META: Record<Competition, { name: string; short: string; accent: string }> = {
   PL: { name: LEAGUE_META.PL.name, short: LEAGUE_META.PL.short, accent: LEAGUE_META.PL.accent },
-  LaLiga: { name: LEAGUE_META.LaLiga.name, short: LEAGUE_META.LaLiga.short, accent: LEAGUE_META.LaLiga.accent },
   WC: { name: "World Cup", short: "WC", accent: "#ffb800" },
 };
 
 /** Narrow an arbitrary string to a Competition, falling back to PL. Unlike
  *  `asLeague` this PRESERVES "WC" so the World Cup lane survives request parsing. */
 export function asCompetition(v: string | null | undefined): Competition {
-  return v === "LaLiga" ? "LaLiga" : v === "WC" ? "WC" : "PL";
+  return v === "WC" ? "WC" : "PL";
 }
 
 /** Canonical playing positions. Dataset + slots both normalise to these. */
@@ -86,7 +85,7 @@ export type PlayerSeason = {
   position: Position; // canonical
   overall: number;   // 0-99
   nationality?: string; // e.g. "England" — present after the WC-Run dataset rebuild
-  league: League;    // "PL" | "LaLiga" — which competition's pool this belongs to
+  league: League;    // which competition's pool this belongs to (PL only since La Liga retired)
   curated: boolean;
 };
 

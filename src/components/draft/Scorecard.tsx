@@ -233,7 +233,6 @@ export type ScorecardData = {
   id?: string; context?: string;
   you: ScorecardSide; opp: ScorecardSide;
   goals: { you: number; opp: number };
-  pens?: { you: number; opp: number } | null;
   outcome: "you" | "opp" | "draw";
   stats?: ScorecardStat[];
   /** undefined = goals unknown (hide ledger); [] = known to be 0-0. */
@@ -284,10 +283,6 @@ export function ScorecardView({ data }: { data: ScorecardData }) {
           <span className="font-display truncate max-w-full" style={{ fontSize: 20, letterSpacing: "0.04em", color: data.outcome === "opp" ? SC_LOSS : "#fff" }}>{data.opp.name}</span>
         </div>
       </div>
-
-      {data.pens && (
-        <p className="text-center font-mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: SC_DRAW, marginTop: -18, marginBottom: 24 }}>PENALTIES {data.pens.you}–{data.pens.opp}</p>
-      )}
 
       {/* goal ledger */}
       {goals && (
@@ -397,7 +392,6 @@ export function Scorecard({ m, context = "Quick Match" }: { m: LocalMatch; conte
     you: { name: "You", strength: m.you.strength, tier: m.you.projected?.tier, formation: m.you.formation, squad: m.you.squad },
     opp: { name: m.opp.name, strength: m.opp.strength, tier: m.opp.projected?.tier, formation: m.opp.formation, squad: m.opp.squad },
     goals: { you: m.goals.you, opp: m.goals.opp },
-    pens: m.pens ? { you: m.pens.you, opp: m.pens.opp } : null,
     outcome: m.outcome,
     stats: statsFromReport(m.report),
     goalEvents: goalsFromReport(m.report),

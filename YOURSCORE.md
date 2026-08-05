@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-05 (**Postgame fantasy promo shipped — interstitial pop-up + inline card at every game end, see Recently Shipped top entry.** Same day: **Social Phase 3b (bookmarks/mentions/notification tabs/profile tabs, mig 251 applied) + Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-05 (**Penalties feature RETIRED + La Liga competition RETIRED — both removed completely, see Recently Shipped top entry.** Earlier same day: **Postgame fantasy promo shipped — interstitial pop-up + inline card at every game end, see Recently Shipped top entry.** Same day: **Social Phase 3b (bookmarks/mentions/notification tabs/profile tabs, mig 251 applied) + Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,25 +806,6 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
-- **2026-08-05** — **Postgame fantasy promo SHIPPED** (branch `feat/postgame-fantasy-promo`).
-  Every game end now advertises YourScore Fantasy twice: (1) a full-screen **interstitial
-  pop-up** before the results screen — FULL TIME + the player's score always visible on top,
-  under it a gold-glow advert (mini CSS pitch with Saka/Haaland/Palmer portraits from the
-  licensed PL headshot map in `src/lib/fantasy/faces.ts`, big "FANTASY PREMIER LEAGUE / ON
-  YOURSCORE" type, founder copy, one CTA **BUILD YOUR TEAM →** — guests route via sign-in with
-  `next=/fantasy?ref=postgame-pop`); (2) a quieter inline `FantasyPromoCard` on the results
-  screen itself (CTA PLAY FANTASY → `/fantasy?ref=postgame`). Interstitial fires on EVERY game
-  end until the player owns a fantasy squad (founder call): squad owners are suppressed via one
-  `GET /api/fantasy/state` per browser session (sessionStorage cache, permanent localStorage
-  stamp once a squad is seen; fetch failure fails CLOSED). It only fires on a genuine
-  just-finished transition — each surface passes its own gate (quiz: answered this session;
-  P10: prev phase was "playing"; WC run: went active→terminal this mount; live H2H: observed a
-  pre-result phase) — so revisiting an old result or opening a shared match link never pops.
-  Surfaces: quiz solo, multiplayer quiz, Perfect 10, 38-0 quick match, WC run, live H2H
-  (+ inline card also on the public `/38-0/match/[id]` share page, pop-up deliberately not).
-  Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
-  surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
-  `FantasyPromoCard.tsx`.
 - **2026-08-06 (am)** — **Social polish batch SHIPPED** (PR #73, no migrations) after a
   founder /ux-walk + hands-on pass: caught-up terminal now doors into Discover (walk A4);
   floating Sign In/Up pill hidden on /fantasy/social — the join bar owns the one ask, nav
@@ -863,6 +844,41 @@ Confirmed preamble above and the referenced section.
   documented; builder caught a stale-closure bug that silently disabled scroll loading).
   App Store UGC compliance surface (report + block) now exists. Bot-drilled live: block
   hides then unblock restores, report dedupes to one row, encoded cursor pages correctly.
+- **2026-08-05** — **PENALTIES RETIRED + LA LIGA RETIRED (founder call: both gone completely,
+  branch `chore/remove-pens-laliga`).** (1) The interactive penalty shootout is deleted end to
+  end — engine, 2D scene, `/38-0/match/pens`, kick/pens API routes, sprites, models, Blender
+  pipeline, sfx. **A drawn played match now stands as a draw** in every mode (quick / ranked /
+  challenge / live H2H; live phase machine goes half2 → result, legacy in-flight
+  `penalties`/`draw_decision` rows fall through to result). WC drawn knockouts + the 3-pt
+  qualification play-off are settled by the **quiz decider only** (the pens-vs-question chooser
+  is gone). Historic pens wins keep their winners via silent legacy reads; **migration 254**
+  settles stranded `pens_pending` rows as draws and drops `draft_live_kick`. `pensSeed` →
+  `serverSeed` (`seed-server.ts`, same env/pepper so dealt slates stay valid). (2) **La Liga is
+  gone as a competition** — tab, pool (dataset rebuilt PL-only, 2.7MB → 1.3MB), importer,
+  badges (30 files), launch email, board toggle, queued marketing. `League` = `"PL"` only;
+  `asLeague()` normalises legacy `"LaLiga"` rows/teams to PL; DB rows keep their history.
+  §5's feature table + Competitions block updated. 88/88 engine tests, tsc, lint, `next build`
+  all clean.
+
+- **2026-08-05** — **Postgame fantasy promo SHIPPED** (branch `feat/postgame-fantasy-promo`).
+  Every game end now advertises YourScore Fantasy twice: (1) a full-screen **interstitial
+  pop-up** before the results screen — FULL TIME + the player's score always visible on top,
+  under it a gold-glow advert (mini CSS pitch with Saka/Haaland/Palmer portraits from the
+  licensed PL headshot map in `src/lib/fantasy/faces.ts`, big "FANTASY PREMIER LEAGUE / ON
+  YOURSCORE" type, founder copy, one CTA **BUILD YOUR TEAM →** — guests route via sign-in with
+  `next=/fantasy?ref=postgame-pop`); (2) a quieter inline `FantasyPromoCard` on the results
+  screen itself (CTA PLAY FANTASY → `/fantasy?ref=postgame`). Interstitial fires on EVERY game
+  end until the player owns a fantasy squad (founder call): squad owners are suppressed via one
+  `GET /api/fantasy/state` per browser session (sessionStorage cache, permanent localStorage
+  stamp once a squad is seen; fetch failure fails CLOSED). It only fires on a genuine
+  just-finished transition — each surface passes its own gate (quiz: answered this session;
+  P10: prev phase was "playing"; WC run: went active→terminal this mount; live H2H: observed a
+  pre-result phase) — so revisiting an old result or opening a shared match link never pops.
+  Surfaces: quiz solo, multiplayer quiz, Perfect 10, 38-0 quick match, WC run, live H2H
+  (+ inline card also on the public `/38-0/match/[id]` share page, pop-up deliberately not).
+  Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
+  surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
+  `FantasyPromoCard.tsx`.
 - **2026-08-05 (late, 4)** — **Social Phase 4b hub states + system messages SHIPPED** (PR #69,
   no migrations — comments.kind is free text): pre-deadline READINESS block on the league hub
   ("{n} of {m} squads in" + neutral "Waiting on..." avatars; NOTE: no captain-unset state
@@ -1417,8 +1433,8 @@ Confirmed preamble above and the referenced section.
   all render legacy expert teams like everyone else, so nobody is stranded in a format with
   no switch left to leave it. The `DraftMode` union and the field stay so saved localStorage
   teams keep parsing. **Do not reintroduce a difficulty switch without asking.**
-  **Tab order is Premier League, La Liga, Leaderboard, WC Mastermind**, and PL is the default
-  tab. It's the year-round game and the one with Pro; the World Cup is over.
+  **Tab order is Premier League, Leaderboard, WC Mastermind** (La Liga retired 2026-08-05),
+  and PL is the default tab. It's the year-round game and the one with Pro; the World Cup is over.
   **A `/ux-walk` of Pro returned FAIL and all five crosses are fixed:**
   1. **Copy gate** — em dashes had crept back into new copy. Cleared across the whole 38-0
      hub, the draft loop, QuizGate and ProClubPrompt, including the pre-existing WC strings
@@ -1454,8 +1470,7 @@ Confirmed preamble above and the referenced section.
   dealt from — a wrong answer caps the pick at 72 overall, ~streak 5 opens the elite tier.
   Same band maths as WC (`src/lib/draft/draft-quiz.ts`, untouched). **Replayable, not a
   daily ranked competition** — no locks, no new board, no new tables; it feeds the existing
-  team → season → H2H flow. **La Liga is deliberately excluded** (the question bank is PL
-  clubs and PL moments), and Just Draft is byte-identical to the old behaviour.
+  team → season → H2H flow. Just Draft is byte-identical to the old behaviour.
   New: `src/lib/draft/pl-quiz.ts` (server-only — it carries every answer),
   `/api/draft/pl/gate-quiz` (stateless, seed-graded, anonymous-OK — cloned from the WC
   practice-quiz route), `src/components/draft/QuizGate.tsx` (shared gate UI; **the WC page
@@ -1929,7 +1944,7 @@ Use these words, with these meanings, everywhere. No synonyms.
   a paid tier** — YourScore is free forever, so never dress Pro in padlock/upgrade language.
   A player is only ever asked **neutral** questions or ones about **their own club** — never
   another club's trivia. That rule is the feature, not an implementation detail.
-- **Just Draft** — the open Premier League/La Liga draft: no questions, every squad at full
+- **Just Draft** — the open Premier League draft: no questions, every squad at full
   quality. The counterpart to Pro, and what 38-0 has always done.
 - **Spin** — deal a random squad of real-rated legends (drawn across FIFA editions/eras).
 - **Draft** — place spun players into your formation's best-fit slots to build your XI.
@@ -2023,7 +2038,7 @@ again** (the old "stale team → forced rebuild" model is retired). Ratings are 
 **Expert mode was retired 2026-07-23** and 38-0 is one format now. The only mode choice is on
 the **Premier League** tab — **Pro vs Just Draft**: Pro unlocks each spin with a Premier
 League question and lets your answers set the quality of the squads you're dealt (see §0,
-2026-07-21). La Liga is Just Draft only. **Anonymous play is the deliberate hook** — guests get the full draft + Quick
+2026-07-21). **Anonymous play is the deliberate hook** — guests get the full draft + Quick
 Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 
 **Match types — live status:**
@@ -2031,16 +2046,16 @@ Match loop on `localStorage`; sign-in unlocks cloud save / ranked / social.
 |---|---|
 | **Quick Match** (guest/anon, local) | ✅ Live |
 | **Live H2H multiplayer** (simultaneous two-half match, watch-it-play-out, halftime swaps; friend code or random queue w/ disguised bot fallback) | ✅ Live |
-| **Interactive penalty shootout** — every drawn *played* match goes to pens and **the user takes the kicks** in a real-time **2D sprite scene** (`PenaltyScene2D` — floodlit goal, keeper dive, ball arc; the R3F 3D scene was descoped, code comments corrected 2026-07-11). Pick one of **9 aim zones** (3×3) + time a **POWER meter** (under/good/perfect/over); dive as keeper vs CPU in solo modes; in live H2H both players shoot simultaneously vs a seeded AI keeper, kicks streaming live. Pens win = full win (1,500 pts / streak survives); the old live opt-in ("both must agree") is retired. Group games in WC Run and the simulated season keep draws (league formats). Outcomes resolve server-side from a peppered seed in ranked modes; abandoning a shootout auto-completes it seeded — quitting never dodges a loss. The 3D scene is lazy-loaded (code-split to the pens route); striker/keeper are GLTF-ready slots for future rigged models. | 🔧 Built 2026-06-13, awaiting migration 35 + deploy |
+| **Penalties — RETIRED 2026-08-05 (founder call: penalties are gone from every game).** The interactive shootout (2D sprite scene, 9 aim zones, power meter, live simultaneous kicks) was removed entirely: engine (`pens.ts`/`pens-server.ts`/`pens-resolve.ts`), scenes, `/38-0/match/pens`, the kick/pens API routes, sprites and models are deleted. **A drawn played match now stands as a draw** in quick/ranked/challenge/live H2H (draws credit 1 pt, streak resets, no swap); WC drawn knockouts + the qualification play-off are settled by the **quiz decider only**. Historical pens results keep their winners (legacy `pens_*` columns + `detail.pens` read silently for old records; never displayed). Migration 254 settles any stranded `pens_pending` quick/challenge rows as draws and drops `draft_live_kick`. | ⛔ Retired 2026-08-05 |
 | **Custom leagues + friend challenges** (create/join 38-0 leagues by code; challenge a specific friend via share code; shareable result graphics) | ✅ Live |
-| **World Cup** — two player-facing modes, both an open **World XI** draft (nation/National-Team mode **retired** from the UI): **🧠 World Cup Mastermind** (quiz-gated — each pick unlocked by a **25s/question** timer; right answers + streaks deal stronger players) with **Today's Run** (ranked, one locked go/day, today's seeded questions, feeds the season board + Rank via the WC bucket) and **Practice** (unlimited, random past questions, no board/Rank); plus **🌍 World Cup Run** (open, no-quiz draft, replayable). The run: group → knockouts. Group qualifies on points (**≥4 auto · =3 play-off · ≤2 out**); a 3-pt play-off and any **drawn knockout are settled by a quiz decider** — one timed WC question, server-graded (temporary, until the penalty-shootout work lands) — knockout loss = out; perfect run = **8-0-0**. Season board `/38-0/wc/board` ranks closest-to-8-0-0 across the WC2026 window; **tap any player → `/38-0/wc/board/[userId]` to browse their daily drafts** (switch between days to see each day's XI + result + match-by-match road + **Mastermind quiz score** (how many of the day's questions they got right — `quiz_correct`/`quiz_total` on the run, recorded at submit; pre-migration-42 runs read null); `get_wc_player_history` definer RPC, public read). **Share/viral loop:** the daily result has a personalised **Mastermind scorecard** (`/api/draft/wc-og?mode=mastermind` — name + record + 🧠 quiz hero + world rank + date; "38-0 for the fans that know football") that **unfurls on X** via the `/38-0/wc/share` page (its `og:image` IS the card — fixes the old generic-image unfurl); the result screen pushes a **£25 daily-giveaway** tweet (mirrors the season giveaway, `@yourscore_app_`) and a **Challenge-a-friend** invite (`InviteMastermind`, also on the `/38-0/wc` entry) that shares the mode link. World Cup is now the **first/default 38-0 tab**. | ✅ Live 2026-06-16 (migrations 39–42 applied) |
+| **World Cup** — two player-facing modes, both an open **World XI** draft (nation/National-Team mode **retired** from the UI): **🧠 World Cup Mastermind** (quiz-gated — each pick unlocked by a **25s/question** timer; right answers + streaks deal stronger players) with **Today's Run** (ranked, one locked go/day, today's seeded questions, feeds the season board + Rank via the WC bucket) and **Practice** (unlimited, random past questions, no board/Rank); plus **🌍 World Cup Run** (open, no-quiz draft, replayable). The run: group → knockouts. Group qualifies on points (**≥4 auto · =3 play-off · ≤2 out**); a 3-pt play-off and any **drawn knockout are settled by a quiz decider** — one timed WC question, server-graded (the permanent mechanic; penalties retired 2026-08-05) — knockout loss = out; perfect run = **8-0-0**. Season board `/38-0/wc/board` ranks closest-to-8-0-0 across the WC2026 window; **tap any player → `/38-0/wc/board/[userId]` to browse their daily drafts** (switch between days to see each day's XI + result + match-by-match road + **Mastermind quiz score** (how many of the day's questions they got right — `quiz_correct`/`quiz_total` on the run, recorded at submit; pre-migration-42 runs read null); `get_wc_player_history` definer RPC, public read). **Share/viral loop:** the daily result has a personalised **Mastermind scorecard** (`/api/draft/wc-og?mode=mastermind` — name + record + 🧠 quiz hero + world rank + date; "38-0 for the fans that know football") that **unfurls on X** via the `/38-0/wc/share` page (its `og:image` IS the card — fixes the old generic-image unfurl); the result screen pushes a **£25 daily-giveaway** tweet (mirrors the season giveaway, `@yourscore_app_`) and a **Challenge-a-friend** invite (`InviteMastermind`, also on the `/38-0/wc` entry) that shares the mode link. World Cup is now the **first/default 38-0 tab**. | ✅ Live 2026-06-16 (migrations 39–42 applied) |
 | **World Cup H2H** (take your WC squad head-to-head — own queue/lobbies/leaderboard, WC competition lane) | ✅ Live 2026-06-15 |
 | **Ranked + global leaderboards** (Daily/All-time, points ladder W3/D1) | 🔧 Being built now |
 | **Verified "Leaderboard ✓" tab** (closest-to-38-0 season records per competition + closest-to-8-0 WC runs; server re-simulates every submitted XI — client never trusted; personal bests card on /profile) | ✅ Live 2026-06-12 (boards activate with migration 29) |
 
-**Competitions:** **Premier League** is live. **La Liga** (2nd competition) is now
-**live** too — released 2026-06-11 (migration 26; club crests added). Pick a competition,
-then draft your all-time XI from that league's ~20 years of players.
+**Competitions:** **Premier League** only. **La Liga was RETIRED 2026-08-05** (it ran
+2026-06-11 → 2026-08-05; DB rows with competition='LaLiga' remain for history but the pool,
+tab, importer and badges are gone — `asLeague()` normalises everything to PL).
 
 **Data & engine (high level):** real **FIFA/SoFIFA ratings** across ~8 editions over ~20
 years (~4,900 player-seasons). `score.ts` → Strength; `match.ts` is the single engine for

@@ -33,7 +33,6 @@ type Match = {
   stage: string; idx: number;
   opponent_nation: string; opponent_crest: string | null; opponent_strength: number;
   you_goals: number; opp_goals: number;
-  pens_you: number | null; pens_opp: number | null;
   won: boolean | null;
 };
 type Run = {
@@ -243,7 +242,6 @@ export default function PlayerHistory() {
               <div className="rounded-2xl overflow-hidden" style={{ background: "#0d0d14", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="px-4 py-2 font-body" style={{ fontSize: 11, color: "#8888aa", letterSpacing: 1, background: "rgba(255,255,255,0.03)" }}>ROAD TO THE FINAL</div>
                 {run.matches.map((m, i) => {
-                  const pens = m.pens_you != null && m.pens_opp != null;
                   return (
                     <div key={i} className="flex items-center gap-3 px-4 py-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                       <span className="font-body flex-shrink-0" style={{ width: 84, fontSize: 10, color: "#8888aa" }}>{stageLabel(m.stage, m.idx)}</span>
@@ -255,7 +253,7 @@ export default function PlayerHistory() {
                         <span className="font-body truncate" style={{ fontSize: 13, color: "#fff" }}>{m.opponent_nation}</span>
                       </div>
                       <span className="font-display tabular-nums flex-shrink-0" style={{ fontSize: 14, color: "#fff" }}>
-                        {m.you_goals}–{m.opp_goals}{pens && <span style={{ fontSize: 10, color: "#8888aa" }}> ({m.pens_you}-{m.pens_opp}p)</span>}
+                        {m.you_goals}–{m.opp_goals}
                       </span>
                       <Pill won={m.won} />
                     </div>

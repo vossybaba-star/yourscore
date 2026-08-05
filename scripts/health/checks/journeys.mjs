@@ -207,7 +207,6 @@ export async function run(report, ctx) {
             const decide = await api("/api/draft/wc/decide", { runId, answer: -1 });
             if (decide.status !== 200) { engineOk = false; note = `decide: status ${decide.status}`; }
           }
-          if (play.json?.pensPending) break; // interactive pens = client territory; engine reached it fine
           if (play.json?.run?.status && play.json.run.status !== "active") break; // run ended naturally
         }
         report.add("journeys", "wc match engine", engineOk && played >= 1, {

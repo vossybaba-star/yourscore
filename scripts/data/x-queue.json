@@ -4023,7 +4023,7 @@
       "targetId": "2071676269071101992",
       "targetUrl": "https://x.com/Footballtweet/status/2071676269071101992",
       "targetHandle": "Footballtweet",
-      "targetText": "⚠️🇯🇵 Japan at the World Cup since 1998:\n\n❌ 1998 — 𝗢𝗨𝗧 in the Group Stage\n❌ 2002 — 𝗢𝗨𝗧 in the Round of 16 vs. Turkey\n❌ 2006 —𝗢𝗨𝗧 in the Group Stage\n❌ 2010 — 𝗢𝗨𝗧 in the Round of 16 vs. Paraguay\n❌ 2014 — 𝗢𝗨\ud835"
+      "targetText": "⚠️🇯🇵 Japan at the World Cup since 1998:\n\n❌ 1998 — 𝗢𝗨𝗧 in the Group Stage\n❌ 2002 — 𝗢𝗨𝗧 in the Round of 16 vs. Turkey\n❌ 2006 —𝗢𝗨𝗧 in the Group Stage\n❌ 2010 — 𝗢𝗨𝗧 in the Round of 16 vs. Paraguay\n❌ 2014 — 𝗢𝗨���"
     },
     "draft": "That 2022 run still gives us chills honestly. Beating Germany and Spain in the group, then so close on penalties against Croatia 🇯🇵\n\nThis squad feels ready to go even deeper.",
     "draftChars": 174,
@@ -6242,26 +6242,6 @@
       "messageId": 887,
       "pushed": true,
       "pushedAt": 1783008044307
-    }
-  },
-  {
-    "id": "ix008015687",
-    "status": "pending",
-    "createdAt": "2026-07-02T16:00:15.689Z",
-    "source": {
-      "username": "idea:community",
-      "name": "YourScore idea",
-      "url": "https://yourscore.app"
-    },
-    "draft": "Genuine question for anyone building their all-time La Liga XI.\n\nMessi and Ronaldo are obvious. But do you actually pick both? Or does one of them make your team worse?\n\nBecause fitting the midfield around them is where it gets interesting.",
-    "draftChars": 240,
-    "origin": "x-ideas",
-    "pillar": "community",
-    "why": "La Liga mode hasn't been touched in recent posts, the Messi/Ronaldo debate is evergreen and drives replies, and a no-link community question is the right shape to break up the product-heavy recent feed.",
-    "tg": {
-      "messageId": 899,
-      "pushed": true,
-      "pushedAt": 1783008794673
     }
   },
   {

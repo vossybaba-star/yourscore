@@ -5,7 +5,7 @@
  *
  * Plays a saved World Cup squad (nation-locked or World XI) against another WC
  * squad or a WC-pool bot, on its OWN queue / lobbies / leaderboard — separate from
- * the PL/La Liga ladders. It reuses the live match engine (/38-0/live/match/[id])
+ * the PL ladder. It reuses the live match engine (/38-0/live/match/[id])
  * by passing competition="WC" to the matchmaking API.
  *
  * The friend flow stays entirely inside this page (share link → /38-0/wc/h2h?join=CODE)

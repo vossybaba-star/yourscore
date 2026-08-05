@@ -5,7 +5,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { gateQuestion, resolveClubEntity } from "@/lib/draft/pl-quiz";
-import { pensSeed } from "@/lib/draft/pens-server";
+import { serverSeed } from "@/lib/draft/seed-server";
 
 // The 38-0 PL Pro draft's quiz, server-graded. The question pool + answers are
 // server-only (audit C1), so the client can't grade locally. Same stateless shape as the
@@ -39,7 +39,7 @@ import { pensSeed } from "@/lib/draft/pens-server";
 const MAX_EXCLUDE = 400;
 const DRAW_TRIES = 25; // then repeats are allowed — a long session never dead-ends
 
-const sigFor = (seed: string, club: string | null) => pensSeed(`pl-gate:${seed}:${club ?? ""}`);
+const sigFor = (seed: string, club: string | null) => serverSeed(`pl-gate:${seed}:${club ?? ""}`);
 
 /** Constant-time compare so the signature can't be probed a character at a time. */
 function sigValid(expected: string, given: unknown): boolean {

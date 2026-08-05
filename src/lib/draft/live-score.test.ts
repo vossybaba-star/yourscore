@@ -3,8 +3,8 @@
  * (compiled to CJS) — the engine is pure with extensionless imports.
  *
  * Covers the two-half match: scorers/assists/ratings are coherent, the phase machine
- * routes every branch deterministically, penalties are near coin-flip, and the
- * one-shot resolveMatch is deterministic and consistent with its scoreline.
+ * routes every branch deterministically, and the one-shot resolveMatch is
+ * deterministic and consistent with its scoreline (a level 90' stands as a draw).
  * The goal MODEL itself (λ from attack vs defence, calibration) is tested in
  * match.test.ts.
  */
@@ -12,7 +12,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  poisson, aggregate, resolveShootout, nextPhase,
+  poisson, aggregate, nextPhase,
   simulateHalf, buildReport, resolveMatch,
   type LivePhase, type PhaseInput,
 } from "./live-score";
@@ -31,12 +31,6 @@ function mkSquad(prefix: string): PlacedPlayer[] {
   }));
 }
 
-// Run a resolver many times over independent seeds and collect a sample.
-function sample<T>(n: number, fn: (rng: () => number) => T): T[] {
-  const out: T[] = [];
-  for (let i = 0; i < n; i++) out.push(fn(seededRng(`seed-${i}`)));
-  return out;
-}
 
 // ─── Poisson sanity ────────────────────────────────────────────────────────────
 
@@ -55,29 +49,9 @@ test("aggregate sums halves and flags a level tie", () => {
   assert.deepEqual(aggregate({ a: 2, b: 0 }, { a: 1, b: 2 }), { a: 3, b: 2, level: false });
 });
 
-// ─── Penalties ─────────────────────────────────────────────────────────────────
-
-test("penalties are always decisive", () => {
-  for (const r of sample(500, (rng) => resolveShootout(80, 80, rng))) {
-    assert.notEqual(r.a, r.b, "shootout must produce a winner");
-  }
-});
-
-test("penalties are near coin-flip at equal strength", () => {
-  const res = sample(4000, (rng) => resolveShootout(80, 80, rng));
-  const aWins = res.filter((r) => r.a > r.b).length / res.length;
-  assert.ok(Math.abs(aWins - 0.5) < 0.06, `equal-strength shootout ~50/50, got ${aWins.toFixed(2)}`);
-});
-
-test("penalties lean slightly to the stronger side", () => {
-  const res = sample(4000, (rng) => resolveShootout(95, 55, rng));
-  const aWins = res.filter((r) => r.a > r.b).length / res.length;
-  assert.ok(aWins > 0.5 && aWins < 0.75, `strong side leans but stays lottery-ish, got ${aWins.toFixed(2)}`);
-});
-
 // ─── Phase machine ─────────────────────────────────────────────────────────────
 
-const base: PhaseInput = { phase: "lobby", bothReady: false, expired: false, level: false, pensDecided: false };
+const base: PhaseInput = { phase: "lobby", bothReady: false, expired: false };
 
 test("lobby: ready → reveal; no-show past the deadline → abandoned; else holds", () => {
   assert.equal(nextPhase({ ...base, phase: "lobby", bothReady: true }), "reveal");
@@ -90,7 +64,7 @@ test("lobby: ready → reveal; no-show past the deadline → abandoned; else hol
 test("timed phases advance on both-ready OR deadline", () => {
   for (const [phase, next] of [
     ["reveal", "pregame_swap"], ["pregame_swap", "half1"], ["half1", "halftime_swap"],
-    ["halftime_swap", "half2"], ["penalties", "result"],
+    ["halftime_swap", "half2"],
   ] as [LivePhase, LivePhase][]) {
     assert.equal(nextPhase({ ...base, phase, expired: true }), next, `${phase} on deadline`);
     assert.equal(nextPhase({ ...base, phase, bothReady: true }), next, `${phase} on ready`);
@@ -98,24 +72,18 @@ test("timed phases advance on both-ready OR deadline", () => {
   }
 });
 
-test("half2 routes straight to penalties when level — draws are never terminal", () => {
-  assert.equal(nextPhase({ ...base, phase: "half2", expired: true, level: true }), "penalties");
-  assert.equal(nextPhase({ ...base, phase: "half2", expired: true, level: false }), "result");
+test("half2 goes straight to result — a level aggregate stands as a draw", () => {
+  assert.equal(nextPhase({ ...base, phase: "half2", expired: true }), "result");
+  assert.equal(nextPhase({ ...base, phase: "half2", bothReady: true }), "result");
 });
 
-test("retired draw_decision falls straight into penalties (legacy in-flight rows)", () => {
-  assert.equal(nextPhase({ ...base, phase: "draw_decision" }), "penalties");
-  assert.equal(nextPhase({ ...base, phase: "draw_decision", expired: true }), "penalties");
-});
-
-test("penalties end on a decided shootout or the window expiring", () => {
-  assert.equal(nextPhase({ ...base, phase: "penalties", pensDecided: true }), "result");
-  assert.equal(nextPhase({ ...base, phase: "penalties", expired: true }), "result");
-  assert.equal(nextPhase({ ...base, phase: "penalties" }), "penalties");
+test("retired phases fall straight through to result (legacy in-flight rows)", () => {
+  assert.equal(nextPhase({ ...base, phase: "draw_decision" }), "result");
+  assert.equal(nextPhase({ ...base, phase: "penalties" }), "result");
 });
 
 test("nextPhase is deterministic (same input → same output)", () => {
-  const inp: PhaseInput = { phase: "half2", bothReady: false, expired: true, level: true, pensDecided: false };
+  const inp: PhaseInput = { phase: "half2", bothReady: false, expired: true };
   assert.equal(nextPhase(inp), nextPhase(inp));
 });
 
@@ -203,29 +171,17 @@ test("resolveMatch is deterministic for a seed", () => {
   assert.deepEqual(resolveMatch(sqA, sqB, "fix"), resolveMatch(sqA, sqB, "fix"));
 });
 
-test("resolveMatch: outcome matches the scoreline; allowDraw lets a level game stand", () => {
+test("resolveMatch: outcome matches the scoreline; a level game stands as a draw", () => {
   let sawDraw = false;
   for (let i = 0; i < 400; i++) {
-    const r = resolveMatch(sqA, sqB, `rm-${i}`, { allowDraw: true });
+    const r = resolveMatch(sqA, sqB, `rm-${i}`);
     if (r.outcome === "draw") {
       sawDraw = true;
       assert.equal(r.goals.a, r.goals.b, "a draw is a level scoreline");
-      assert.equal(r.pens, null, "no shootout when draws are allowed");
     } else if (r.outcome === "A") assert.ok(r.goals.a > r.goals.b, "A wins ⇒ outscored B");
     else assert.ok(r.goals.b > r.goals.a, "B wins ⇒ outscored A");
     assert.equal(r.report.ratingsA.length, sqA.length, "every A player rated");
     assert.equal(r.report.ratingsB.length, sqB.length, "every B player rated");
   }
   assert.ok(sawDraw, "draws should occur over many even matches");
-});
-
-test("resolveMatch: a level 90' is settled by penalties when draws are not allowed", () => {
-  for (let i = 0; i < 400; i++) {
-    const r = resolveMatch(sqA, sqB, `rmd-${i}`); // allowDraw defaults to false
-    assert.notEqual(r.outcome, "draw", "never a draw when not allowed");
-    if (r.goals.a === r.goals.b) {
-      assert.ok(r.pens && r.pens.a !== r.pens.b, "level 90' settled decisively by pens");
-      assert.equal(r.outcome, r.pens!.a > r.pens!.b ? "A" : "B");
-    }
-  }
 });

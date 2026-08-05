@@ -5,11 +5,11 @@ import {
   rowToRun, settleByQuiz, finalizeResolved, createWcDb, type WcStageState,
 } from "@/lib/draft/wc-server";
 
-// The player chose the QUIZ to settle the current drawn tie / play-off.
+// Settle the current drawn tie / play-off with the quiz decider.
 // Body: { runId, answer: chosenOptionIndex } (a timeout is sent as -1 → never correct).
 // The server re-derives the same deterministic decider question and grades it (the client
 // never receives the correct index), settles the tie, then resumes the stage — which either
-// finishes (records + advances) or pends the next tie's choice.
+// finishes (records + advances) or pends the next tie's decider.
 
 export async function POST(req: NextRequest) {
   const auth = await createClient();
@@ -33,7 +33,6 @@ export async function POST(req: NextRequest) {
 
   const state = (row as { pens_state?: WcStageState | null }).pens_state;
   if (!state) return NextResponse.json({ error: "No tie to settle" }, { status: 409 });
-  if (state.pens) return NextResponse.json({ error: "A shootout is already in progress" }, { status: 409 });
 
   const stage = run.stage;
   const res = settleByQuiz(run, state, answer);

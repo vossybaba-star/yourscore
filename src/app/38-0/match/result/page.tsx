@@ -31,8 +31,6 @@ export default function MatchResult() {
   useEffect(() => {
     const lm = loadLastMatch();
     if (!lm) { router.replace("/38-0"); return; }
-    // A drawn match still owes its shootout — settle it before showing a result.
-    if (lm.pensPending) { router.replace("/38-0/match/pens"); return; }
     setM(lm);
     // Once per match — a refresh/revisit of this page must not recount the completion.
     if (firedOnce(`complete380:${lm.id}`)) {
@@ -64,7 +62,6 @@ export default function MatchResult() {
       p1: "You", p2: m.opp.name,
       s1: m.goals.you, s2: m.goals.opp,
       str1: m.you.strength, str2: m.opp.strength,
-      pens: m.pens ? { a: m.pens.you, b: m.pens.opp } : null,
       report: m.report,
     });
     return `https://yourscore.app/38-0/card?${query}`;

@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { createDraftDb, GLOBAL_LEAGUE, type TeamSnapshot } from "@/lib/draft/server";
 import { creditResult, applyTeamStreak } from "@/lib/draft/live-server";
-import { settleStalePens, type PensState } from "@/lib/draft/pens-resolve";
 import { resolveMatch, flipReport } from "@/lib/draft/live-score";
 import { asLeague, type Formation, type PlacedPlayer, type Projected } from "@/lib/draft/types";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -47,7 +46,7 @@ export async function GET(_req: NextRequest, { params }: { params: { code: strin
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { code: string } }) {
+export async function POST(_req: NextRequest, { params }: { params: { code: string } }) {
   const auth = await createClient();
   const { data: { user } } = await auth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to accept" }, { status: 401 });
@@ -87,54 +86,11 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     projected: mine.projected as unknown as Projected,
   };
 
-  // Any shootout the accepter walked away from settles first (see pens-resolve).
-  await settleStalePens(db, user.id);
-
-  let matchId = crypto.randomUUID();
+  const matchId = crypto.randomUUID();
   // Resolve challenger-first (side a = challenger) so the stored report/goals align
   // with the challenger_* columns and the public match page. The accepter is side b.
-  let res = resolveMatch(challengerSnap.squad, mySide.squad, matchId, { allowDraw: true });
-  // Dev-only: force a level 90' (seed search — the engine itself is never hooked).
-  if (process.env.NODE_ENV === "development" && req.nextUrl.searchParams.get("forceLevel") === "1") {
-    for (let i = 0; i < 400 && res.outcome !== "draw"; i++) {
-      matchId = crypto.randomUUID();
-      res = resolveMatch(challengerSnap.squad, mySide.squad, matchId, { allowDraw: true });
-    }
-  }
-
-  // ── Level after 90 → the accepter takes the shootout (side b). Credits, streaks
-  // and the challenger email all wait for /api/draft/match/pens to settle it. The
-  // challenge is still consumed now so the code can't be replayed.
-  if (res.outcome === "draw") {
-    const pensState: PensState = {
-      userId: user.id, userSide: "b", flow: "challenge",
-      shots: [], powers: [], dives: [], startedAt: new Date().toISOString(),
-    };
-    await db.from("draft_matches").insert({
-      id: matchId,
-      challenger_id: ch.challenger_id,
-      opponent_id: user.id,
-      challenger_team: challengerSnap as unknown as never,
-      opponent_team: mySide as unknown as never,
-      challenger_strength: challengerSnap.strength,
-      opponent_strength: mySide.strength,
-      winner_id: null,
-      league_id: ch.league_id,
-      competition,
-      played_at: new Date().toISOString(),
-      challenger_goals: res.goals.a,
-      opponent_goals: res.goals.b,
-      detail: { outcome: "pens_pending", single: true, pens: null, report: res.report, pensState } as unknown as never,
-    });
-    await db.from("draft_challenges").update({ status: "accepted", match_id: matchId }).eq("id", ch.id);
-    return NextResponse.json({
-      matchId, youWon: false, outcome: "draw", pensPending: true,
-      goals: { you: res.goals.b, opp: res.goals.a }, pens: null,
-      report: flipReport(res.report),
-      you: mySide,
-      opp: challengerSnap,
-    });
-  }
+  // A level 90' stands as a draw (penalties retired 2026-08-05).
+  const res = resolveMatch(challengerSnap.squad, mySide.squad, matchId);
 
   const challengerWon = res.outcome === "A";
   const iWon = res.outcome === "B";
@@ -154,7 +110,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     played_at: new Date().toISOString(),
     challenger_goals: res.goals.a,
     opponent_goals: res.goals.b,
-    detail: { outcome: res.outcome, single: true, pens: res.pens, report: res.report } as unknown as never,
+    detail: { outcome: res.outcome, single: true, report: res.report } as unknown as never,
   });
 
   // Credit W/D/L for both players (global + league board) and update both streaks.
@@ -197,7 +153,6 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
     youWon: iWon,
     outcome: iWon ? "you" : challengerWon ? "opp" : "draw",
     goals: { you: res.goals.b, opp: res.goals.a },
-    pens: res.pens ? { you: res.pens.b, opp: res.pens.a } : null,
     report: flipReport(res.report),
     you: mySide,
     opp: challengerSnap,

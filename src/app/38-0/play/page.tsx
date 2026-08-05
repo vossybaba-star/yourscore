@@ -111,7 +111,7 @@ export default function DraftPlay() {
     if (!team || spinning || quiz) return;
     setRoundOpen(true); // before the pool gate — the tray box must mount at the tap, not when the pool lands
     if (!isPoolReady()) { void ensurePool().then(() => doSpin()); return; }
-    // Just Draft (and every La Liga draft) spins immediately at full quality. Pro asks
+    // Just Draft spins immediately at full quality. Pro asks
     // first, and the answer decides the band the squad is dealt from.
     if (!team.gated) { runSpin({}); return; }
     void drawGateQuestion();

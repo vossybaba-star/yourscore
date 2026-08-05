@@ -35,7 +35,7 @@ const DIFFICULTIES: { key: Difficulty; label: string; color: string }[] = [
 const POPULAR_ENTITIES = [
   "Arsenal", "Manchester City", "Liverpool", "Manchester United",
   "Chelsea", "Real Madrid", "Barcelona", "Bayern Munich",
-  "Premier League", "Champions League", "World Cup", "La Liga",
+  "Premier League", "Champions League", "World Cup",
 ];
 
 function NewGameContent() {

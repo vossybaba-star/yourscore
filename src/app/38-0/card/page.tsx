@@ -62,11 +62,12 @@ export default function CardPage({ searchParams }: { searchParams: SP }) {
   const s1 = parseInt(one(searchParams.s1) ?? "0", 10) || 0;
   const s2 = parseInt(one(searchParams.s2) ?? "0", 10) || 0;
   const str1 = one(searchParams.str1), str2 = one(searchParams.str2);
-  const pens = pair(one(searchParams.pens));
   const potm = one(searchParams.potm), potmR = one(searchParams.potmR);
 
-  const youWon = pens ? pens[0] > pens[1] : s1 > s2;
-  const oppWon = pens ? pens[1] > pens[0] : s2 > s1;
+  // Legacy shared links may still carry a `pens` param — the score decides.
+  const legacyPens = pair(one(searchParams.pens));
+  const youWon = legacyPens ? legacyPens[0] > legacyPens[1] : s1 > s2;
+  const oppWon = legacyPens ? legacyPens[1] > legacyPens[0] : s2 > s1;
   const outcome: ScorecardData["outcome"] = youWon ? "you" : oppWon ? "opp" : "draw";
 
   const statSpec: [string, string, string?][] = [
@@ -84,7 +85,6 @@ export default function CardPage({ searchParams }: { searchParams: SP }) {
     you: { name: p1, strength: str1 ? Number(str1) : undefined },
     opp: { name: p2, strength: str2 ? Number(str2) : undefined },
     goals: { you: s1, opp: s2 },
-    pens: pens ? { you: pens[0], opp: pens[1] } : null,
     outcome,
     stats,
     potm: potm ? { name: potm, rating: potmR ? Number(potmR) : 0, mine: false } : null,

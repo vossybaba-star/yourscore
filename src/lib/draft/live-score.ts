@@ -4,8 +4,7 @@
  * Live H2H is a two-half match: a half's goals come from each side's Strength
  * Rating (recomputed by score.ts after swaps), split by winProbability and drawn
  * from a Poisson keyed on a seeded RNG so the server can resolve reproducibly and
- * audit-ably. A level aggregate ALWAYS goes to an interactive penalty shootout —
- * both players take their own kicks (see pens.ts / live-server.liveKick).
+ * audit-ably. A level aggregate stands as a draw (penalties retired 2026-08-05).
  *
  * Type-strippable (no enums) so it runs under `node --test`, like score.ts.
  */
@@ -28,11 +27,6 @@ export const LIVE_CONFIG = {
     half1: 45,
     halftime_swap: 35,
     half2: 45,
-    // Retired phase — kept so legacy in-flight rows can tick through it into pens.
-    draw_decision: 15,
-    // Both players take their kicks inside one window: 5 kicks + a few sudden-death
-    // pairs at a comfortable pace. Unanswered kicks auto-fill seeded on expiry.
-    penalties: 75,
   },
   /** Swap budgets per player. */
   swaps: { pregame: 1, halftime: 2 },
@@ -43,12 +37,13 @@ export const LIVE_CONFIG = {
    * player you brought on visibly makes the difference often — but not always.
    */
   subImpact: 3,
-  /** Penalty conversion: near coin-flip with only a faint Strength lean. */
-  pens: { base: 0.72, lean: 0.0015, min: 0.6, max: 0.82, rounds: 5 },
 } as const;
 
 // ─── Phases ───────────────────────────────────────────────────────────────────
 
+// `draw_decision` and `penalties` are RETIRED (penalties removed 2026-08-05) but
+// stay in the union so legacy in-flight rows parse — nextPhase routes them
+// straight to `result`, where a level aggregate now stands as a draw.
 export type LivePhase =
   | "lobby" | "reveal" | "pregame_swap" | "half1" | "halftime_swap"
   | "half2" | "draw_decision" | "penalties" | "result" | "abandoned";
@@ -57,7 +52,7 @@ export type LivePhase =
 // The goal model (poisson, resolveHalfGoals, attackShare) lives in match.ts and is
 // shared with the season sim and the one-shot match — see imports above.
 
-/** Aggregate the two halves. `level` flags a tie (which may go to penalties). */
+/** Aggregate the two halves. `level` flags a tie (which stands as a draw). */
 export function aggregate(
   h1: { a: number; b: number },
   h2: { a: number; b: number }
@@ -65,42 +60,6 @@ export function aggregate(
   const a = h1.a + h2.a;
   const b = h1.b + h2.b;
   return { a, b, level: a === b };
-}
-
-// ─── Penalties (legacy/auto path — interactive kicks live in pens.ts) ─────────
-// resolveShootout remains for resolveMatch({allowDraw:false}) and as the coarse
-// fallback for old rows; every interactive flow resolves kick-by-kick via pens.ts.
-
-function pConvert(self: number, opp: number): number {
-  const { base, lean, min, max } = LIVE_CONFIG.pens;
-  const p = base + (self - opp) * lean;
-  return Math.max(min, Math.min(max, p));
-}
-
-/**
- * Seeded penalty shootout: `rounds` kicks each, then sudden death until decided.
- * Slight Strength lean on conversion, so it feels like a lottery. Always returns
- * a decisive (a !== b) result.
- */
-export function resolveShootout(a: number, b: number, rng: () => number): { a: number; b: number } {
-  const pA = pConvert(a, b);
-  const pB = pConvert(b, a);
-  let ga = 0;
-  let gb = 0;
-  for (let i = 0; i < LIVE_CONFIG.pens.rounds; i++) {
-    if (rng() < pA) ga++;
-    if (rng() < pB) gb++;
-  }
-  // Sudden death — one pair of kicks per round until they differ.
-  let guard = 0;
-  while (ga === gb && guard++ < 100) {
-    const sa = rng() < pA ? 1 : 0;
-    const sb = rng() < pB ? 1 : 0;
-    ga += sa;
-    gb += sb;
-  }
-  if (ga === gb) ga++; // deterministic backstop (guard exhausted — vanishingly rare)
-  return { a: ga, b: gb };
 }
 
 // ─── Phase transitions (pure — the DB layer enforces idempotency) ──────────────
@@ -111,10 +70,6 @@ export interface PhaseInput {
   bothReady: boolean;
   /** now >= phase_deadline. */
   expired: boolean;
-  /** Aggregate is level (only meaningful at half2). */
-  level: boolean;
-  /** The interactive shootout has a winner (only meaningful at penalties). */
-  pensDecided: boolean;
 }
 
 /**
@@ -124,10 +79,9 @@ export interface PhaseInput {
  *
  * - `lobby` waits for both-ready (no deadline).
  * - Every other phase advances on both-ready OR deadline.
- * - `half2` → `penalties` if level (always — both players take their kicks), else `result`.
- * - `draw_decision` is retired: legacy in-flight rows fall straight into `penalties`.
- * - `penalties` → `result` once the shootout is decided or the window expires
- *   (unanswered kicks auto-fill seeded at result entry).
+ * - `half2` → `result` — a level aggregate stands as a draw.
+ * - `draw_decision` / `penalties` are retired: legacy in-flight rows fall
+ *   straight through to `result`.
  */
 export function nextPhase(s: PhaseInput): LivePhase {
   const advance = s.bothReady || s.expired;
@@ -137,9 +91,9 @@ export function nextPhase(s: PhaseInput): LivePhase {
     case "pregame_swap":  return advance ? "half1" : "pregame_swap";
     case "half1":         return advance ? "halftime_swap" : "half1";
     case "halftime_swap": return advance ? "half2" : "halftime_swap";
-    case "half2":         return advance ? (s.level ? "penalties" : "result") : "half2";
-    case "draw_decision": return "penalties";
-    case "penalties":     return s.pensDecided || advance ? "result" : "penalties";
+    case "half2":         return advance ? "result" : "half2";
+    case "draw_decision": return "result";
+    case "penalties":     return "result";
     default:              return s.phase; // result / abandoned are terminal
   }
 }
@@ -370,24 +324,19 @@ export function buildReport(sim: MatchSim): MatchReport {
 export type SingleMatchResult = {
   outcome: "A" | "B" | "draw";
   goals: { a: number; b: number };
-  pens: { a: number; b: number } | null;
   report: MatchReport;
   /** The two per-half sims (events + stats) so the client can play the match out.
    *  Always set by resolveMatch; optional so lighter callers/mocks needn't supply it. */
   sim?: MatchSim;
 };
 
-const meanOverall = (sq: PlacedPlayer[]): number =>
-  sq.length ? sq.reduce((s, p) => s + p.overall, 0) / sq.length : 0;
-
 /**
- * Resolve a one-off head-to-head. Deterministic by seed. A level 90' stands as a
- * draw when `allowDraw` (the 1v1 default for quick/async/challenge); otherwise it is
- * settled by a penalty shootout so the outcome is decisive.
+ * Resolve a one-off head-to-head. Deterministic by seed. A level 90' stands as
+ * a draw (penalties retired 2026-08-05 — a WC knockout tie is settled by the
+ * quiz decider in wc-server, not here).
  */
 export function resolveMatch(
-  squadA: PlacedPlayer[], squadB: PlacedPlayer[], seed: string,
-  opts?: { allowDraw?: boolean }
+  squadA: PlacedPlayer[], squadB: PlacedPlayer[], seed: string
 ): SingleMatchResult {
   const sim: MatchSim = {
     h1: simulateHalf(squadA, squadB, 1, `${seed}:h1`),
@@ -396,13 +345,8 @@ export function resolveMatch(
   const report = buildReport(sim);
   const a = report.a.goals;
   const b = report.b.goals;
-  let outcome: SingleMatchResult["outcome"] = a > b ? "A" : b > a ? "B" : "draw";
-  let pens: { a: number; b: number } | null = null;
-  if (a === b && !(opts?.allowDraw ?? false)) {
-    pens = resolveShootout(meanOverall(squadA), meanOverall(squadB), seededRng(`${seed}:pens`));
-    outcome = pens.a > pens.b ? "A" : "B";
-  }
-  return { outcome, goals: { a, b }, pens, report, sim };
+  const outcome: SingleMatchResult["outcome"] = a > b ? "A" : b > a ? "B" : "draw";
+  return { outcome, goals: { a, b }, report, sim };
 }
 
 /** Mirror a report so the other side reads as "a" — used when a stored report is

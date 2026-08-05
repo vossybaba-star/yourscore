@@ -41,8 +41,7 @@ export default function WatchPage() {
       if (p >= 1) {
         clearInterval(id);
         if (stage === "half1") setStage("halftime");
-        // Level after 90? The shootout settles it before the result screen.
-        else router.replace(m.pensPending ? "/38-0/match/pens" : "/38-0/match/result");
+        else router.replace("/38-0/match/result");
       }
     }, 100);
     return () => clearInterval(id);
@@ -96,7 +95,7 @@ export default function WatchPage() {
         {/* The result is already resolved before playback starts — watching the
             ~95s broadcast is optional, never a toll. */}
         <button
-          onClick={() => router.replace(m.pensPending ? "/38-0/match/pens" : "/38-0/match/result")}
+          onClick={() => router.replace("/38-0/match/result")}
           className="block mx-auto mt-6 font-body px-4 py-2 rounded-full"
           style={{ fontSize: 13, color: "#9aa39d", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
         >

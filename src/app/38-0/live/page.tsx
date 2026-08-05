@@ -44,7 +44,7 @@ export default function LiveEntry() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const findGenRef = useRef(0);
   const botAfterRef = useRef(0);
-  // Which competition this live session is for (PL / La Liga), from the entry link.
+  // Which competition this live session is for, from the entry link.
   const [competition, setCompetition] = useState<League>("PL");
   useEffect(() => { setCompetition(asLeague(new URLSearchParams(window.location.search).get("competition"))); }, []);
 

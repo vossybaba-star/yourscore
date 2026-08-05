@@ -10,7 +10,7 @@ import type { MatchReport } from "@/lib/draft/live-score";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
 
-type MatchDetail = { pens?: { a: number; b: number } | null; report?: MatchReport; single?: boolean };
+type MatchDetail = { report?: MatchReport; single?: boolean };
 type Match = {
   challenger_team: TeamSnapshot;
   opponent_team: TeamSnapshot;
@@ -62,10 +62,9 @@ export async function matchOgMetadata(id: string): Promise<Metadata | null> {
     image = `${BASE}/api/draft/live-og?${liveOgQuery({
       p1: m.challenger_team.name, p2: m.opponent_team.name, s1, s2,
       str1: m.challenger_strength, str2: m.opponent_strength,
-      pens: m.detail!.pens ?? null, report: m.detail!.report!,
+      report: m.detail!.report!,
     })}`;
-    const pens = m.detail?.pens ? ` (pens ${m.detail.pens.a}-${m.detail.pens.b})` : "";
-    title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name}${pens} — ${m.detail?.single ? "Draft XI" : "38-0 Live"}`;
+    title = `${m.challenger_team.name} ${s1}–${s2} ${m.opponent_team.name} — ${m.detail?.single ? "Draft XI" : "38-0 Live"}`;
     description = m.detail!.report!.potm
       ? `MOTM ${m.detail!.report!.potm.name} (${m.detail!.report!.potm.rating.toFixed(1)}). Build your XI and go live, head-to-head.`
       : `Build your all-time ${leagueName} XI and go live, head-to-head.`;
