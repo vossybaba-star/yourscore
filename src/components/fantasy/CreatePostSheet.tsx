@@ -48,6 +48,17 @@ function firstUrl(text: string): string | null {
   return m[0].replace(/[),.!?;:'"]+$/, "");
 }
 
+
+/** Toolbar glyphs — one stroke style across the row (X-grade, never emoji). */
+function ToolIcon({ d }: { d: string }) {
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {d.split(" M").map((seg, i) => <path key={i} d={(i ? "M" : "") + seg} />)}
+    </svg>
+  );
+}
+
 export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
   open: boolean; onClose: () => void; onPosted: () => void;
   /** Quote mode (Phase 3a): a compact, non-removable embed of the quoted post
@@ -220,11 +231,16 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
     background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none",
   };
 
-  // Compact scrollable toolbar (AC7) — icon + short label, one row even at 375px.
+
+  // Compact scrollable toolbar — modern glassy chips (founder, 6 Aug: no
+  // dashed outlines, no emoji icons; X-grade SVG glyphs on glossy pills).
   const toolbarBtn: React.CSSProperties = {
-    flexShrink: 0, display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
-    padding: "8px 11px", borderRadius: 999, background: "transparent",
-    border: `1px dashed ${tint(TEAL, "55")}`, color: TEAL, fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap",
+    flexShrink: 0, display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
+    padding: "9px 13px", borderRadius: 999,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03))",
+    border: `1px solid rgba(255,255,255,0.12)`,
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10)",
+    color: TEAL, fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap",
   };
   const showPhoto = !gif && slots.length < MAX_POST_IMAGES;
   const showGif = slots.length === 0 && !player && !fixture;
@@ -366,19 +382,19 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
 
       <div style={{ display: "flex", gap: 8, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
         {showPhoto && (
-          <button onClick={() => fileRef.current?.click()} style={toolbarBtn}><span aria-hidden>📷</span>Photo</button>
+          <button onClick={() => fileRef.current?.click()} style={toolbarBtn}><ToolIcon d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z M21 15l-5-5L5 21" />Photo</button>
         )}
         {showGif && (
-          <button onClick={() => setGifPickerOpen(true)} style={toolbarBtn}><span aria-hidden>🎬</span>GIF</button>
+          <button onClick={() => setGifPickerOpen(true)} style={toolbarBtn}><ToolIcon d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z M7.5 9.5v5 M7.5 9.5h2 M7.5 12h1.5 M12 9.5v5 M17 9.5h-2.5v5" />GIF</button>
         )}
         {!pollOn && (
-          <button onClick={() => setPollOn(true)} style={toolbarBtn}><span aria-hidden>📊</span>Poll</button>
+          <button onClick={() => setPollOn(true)} style={toolbarBtn}><ToolIcon d="M4 6h12 M4 12h16 M4 18h8" />Poll</button>
         )}
         {showPlayerBtn && (
-          <button onClick={() => setPlayerPickerOpen(true)} style={toolbarBtn}><span aria-hidden>⚽</span>Player</button>
+          <button onClick={() => setPlayerPickerOpen(true)} style={toolbarBtn}><ToolIcon d="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z" />Player</button>
         )}
         {showFixtureBtn && (
-          <button onClick={() => setFixturePickerOpen(true)} style={toolbarBtn}><span aria-hidden>🗓️</span>Fixture</button>
+          <button onClick={() => setFixturePickerOpen(true)} style={toolbarBtn}><ToolIcon d="M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 9h16 M8 3v4 M16 3v4" />Fixture</button>
         )}
       </div>
 

@@ -230,6 +230,26 @@ export function Sheet({ onClose, labelledBy, children }: {
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; });
 
+  // Lock the page scroll while the sheet is up. Without this the feed keeps
+  // scrolling underneath every drag that starts on the sheet, which reads as
+  // a jumpy, broken background (founder, 6 Aug). Restore on close.
+  useEffect(() => {
+    if (!mounted) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyTouch = document.body.style.touchAction;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    // <html> is the actual scroller on mobile Safari/Chrome — locking body
+    // alone still lets the page pan underneath the sheet.
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.touchAction = prevBodyTouch;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, [mounted]);
+
   const focusables = useCallback((): HTMLElement[] => {
     if (!ref.current) return [];
     return Array.from(ref.current.querySelectorAll<HTMLElement>(
@@ -305,8 +325,18 @@ export function Sheet({ onClose, labelledBy, children }: {
         onClick={(e) => e.stopPropagation()}
         className="rounded-2xl"
         style={{
-          background: PANEL, border: `1px solid ${tint(TEAL, "44")}`, padding: 18,
+          // Glassy surface (founder, 6 Aug): translucent panel over a heavy
+          // backdrop blur, a hairline top highlight for the glossy edge, and a
+          // deep soft shadow so the sheet reads as a floating pane of glass
+          // rather than a flat card.
+          background: "rgba(14,22,17,0.82)",
+          backdropFilter: "blur(24px) saturate(1.3)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+          border: `1px solid rgba(255,255,255,0.10)`,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px ${tint(TEAL, "14")}`,
+          padding: 18,
           width: "100%", maxWidth: 480, maxHeight: "100%", overflowY: "auto",
+          overscrollBehavior: "contain",
         }}>
         {children}
       </div>

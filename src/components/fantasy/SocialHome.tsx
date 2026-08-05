@@ -271,7 +271,7 @@ export function SocialHome() {
                 );
               })}
             </div>
-            <FeedStream key={liveKey} controlledScope="global" controlledSort={feedSort} chrome={false} signInNext="/fantasy/social" />
+            <FeedStream key={liveKey} controlledScope="global" controlledSort={feedSort} chrome={false} signInNext="/fantasy/social" onExplore={() => select("discover")} />
           </>
         )}
       </div>
@@ -279,7 +279,7 @@ export function SocialHome() {
       <div style={{ display: tab === "following" ? "block" : "none" }}>
         {visited.following && (
           user ? (
-            <FeedStream controlledScope="following" controlledSort="recent" chrome={false} signInNext="/fantasy/social?tab=following"
+            <FeedStream controlledScope="following" controlledSort="recent" chrome={false} signInNext="/fantasy/social?tab=following" onExplore={() => select("discover")}
               emptyFollowing={<FollowingEmpty onFind={findManagers} />} />
           ) : (
             <div style={{ borderRadius: 16, background: PANEL, border: `1px solid ${tint(LIME, "3a")}`, padding: 22, textAlign: "center" }}>
