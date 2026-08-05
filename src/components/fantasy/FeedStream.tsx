@@ -235,10 +235,13 @@ function CardMenu({ ev, onShare, onInvite, shareUrl }: {
   );
 }
 
-function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
+function FeedCard({ ev, signInNext, compactBoard = false }: { ev: FeedEvent; signInNext: string; compactBoard?: boolean }) {
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // Squad reveals after the first couple in view collapse to a summary line —
+  // several consecutive full pitches make the feed a wall (founder, 5 Aug).
+  const [boardExpanded, setBoardExpanded] = useState(false);
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
   const canShare = hasBoard || (!!ev.player && ev.playerId != null);
   const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
@@ -320,7 +323,7 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
       {/* Squad tiles render the real tactical PITCH (founder, 3 Aug — a row of faces
           isn't useful; we need to see the team in formation). Tap opens the
           manager's full squad (back retraces feed → profile → player). */}
-      {hasBoard && (
+      {hasBoard && (!compactBoard || boardExpanded) && (
         <Link href={`/profile/${ev.actorId}#fantasy-xi`} style={{ display: "block", marginTop: 12, textDecoration: "none" }}>
           <div style={{ paddingBottom: 12 }}>
             <SquadBoard mode="complete" players={ev.board!.players} xi={ev.board!.xi} bench={ev.board!.bench} captain={ev.board!.captain} vice={ev.board!.vice} />
@@ -330,6 +333,25 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
           </div>
         </Link>
       )}
+      {hasBoard && compactBoard && !boardExpanded && (() => {
+        const nameOf = (id?: number) => ev.board!.players.find((p) => p.id === id)?.name;
+        const cap = nameOf(ev.board!.captain);
+        const vice = nameOf(ev.board!.vice);
+        return (
+          <button onClick={() => setBoardExpanded(true)} style={{
+            display: "flex", alignItems: "center", gap: 10, width: "100%", cursor: "pointer", textAlign: "left",
+            marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`,
+          }}>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              {cap && <span style={{ display: "block", fontSize: 13.5, fontWeight: 700, color: INK }}>C {cap}{vice ? ` · V ${vice}` : ""}</span>}
+              <span style={{ display: "block", fontSize: 12.5, color: MUTED, marginTop: 2 }}>
+                {ev.board!.xi.length + ev.board!.bench.length} players picked
+              </span>
+            </span>
+            <span style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: TEAL }}>Show squad ›</span>
+          </button>
+        );
+      })()}
 
       {/* Shortlist / squad-update tiles show the one player. */}
       {ev.player && (
@@ -517,7 +539,16 @@ export function FeedStream({
           )
         )}
 
-        {events?.map((ev) => <FeedCard key={ev.id} ev={ev} signInNext={signInNext} />)}
+        {(() => {
+          // The first squad pitch in view renders in full; the rest collapse to
+          // a one-line summary with a Show squad expander.
+          let boardsSeen = 0;
+          return events?.map((ev) => {
+            const isBoard = !!(ev.board && ev.board.xi.length > 0);
+            const compact = isBoard && boardsSeen++ >= 1;
+            return <FeedCard key={ev.id} ev={ev} signInNext={signInNext} compactBoard={compact} />;
+          });
+        })()}
       </PullToRefresh>
     </div>
   );

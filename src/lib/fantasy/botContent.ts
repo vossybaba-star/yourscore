@@ -26,15 +26,49 @@ export interface BotPersona {
    *  all exist from day one; the CAST grows over launch week (7 → 11 → 16) so
    *  the community reads as filling up, not switched on. */
   day: number;
+  /** Writing style — the thing a reader should recognise before the name.
+   *  caps "never" = lowercase starts, full stops mostly dropped; "proper" =
+   *  full sentences left alone; default = the light roughen pass. */
+  style?: { caps?: "never" | "proper" };
+  /** Posting rhythm: hours of cooldown between posts (jittered ±30% by the
+   *  tick) and the chance any given London day is a silent one. Together they
+   *  make some accounts post twice a day and others vanish for days. */
+  tempo: { cdH: number; offChance: number };
 }
-export type BotCat = "take" | "poll" | "player" | "banter" | "quiz" | "meta";
+export type BotCat = "take" | "poll" | "player" | "banter" | "quiz" | "meta" | "casual";
 
 /** Launch day for the bot cast — day 0 of the persona ramp. */
 export const BOT_LAUNCH_EPOCH_MS = Date.parse("2026-08-04T00:00:00Z");
 
+/** Until this moment the feed is in its GETTING-STARTED phase (founder, 5 Aug):
+ *  people are joining, poking at the app and thinking out loud — mostly short,
+ *  ordinary chatter, few polished discussion prompts. From the weekend the
+ *  regular library takes back over. */
+export const CHATTER_PHASE_UNTIL_MS = Date.parse("2026-08-08T06:00:00Z");
+
 /** The personas allowed to act right now (ramp gate). */
 export const activeBotPersonas = (nowMs: number): BotPersona[] =>
   BOT_PERSONAS.filter((p) => nowMs >= BOT_LAUNCH_EPOCH_MS + p.day * 864e5);
+
+/** London wall-clock hour for a timestamp — the cast lives in one timezone and
+ *  nobody posts at 4am. */
+export function londonHour(nowMs: number): number {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "numeric", hour12: false }).format(new Date(nowMs)));
+}
+
+/** London calendar date (YYYY-MM-DD) — the unit of the per-persona day off. */
+export function londonDay(nowMs: number): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date(nowMs));
+}
+
+/** Deterministic "is this persona taking today off?" — same answer all day, no
+ *  state to store. */
+export function personaDayOff(persona: BotPersona, nowMs: number): boolean {
+  const s = `${persona.key}:${londonDay(nowMs)}`;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) / 4294967296) < persona.tempo.offChance;
+}
 
 /** A generated move, ready to insert as a fantasy_feed_events row. */
 export interface BotMove {
@@ -55,43 +89,64 @@ export interface BotPoolPlayer {
 // Original characters (not copies of real accounts): the archetypes every FPL
 // timeline has. Handles read like real sign-ups, avatars from the fan pack.
 
+// Identities follow the REAL sign-up patterns on the platform (founder, 5 Aug:
+// "look at our users" — lowercase single words, name+digits, display name often
+// just the username, no themed gimmick names). Behaviour, not the name, is what
+// separates them: kev knee-jerks, marc talks structure, cally posts captaincy
+// polls, tomo jokes, ellie argues in the comments.
 export const BOT_PERSONAS: BotPersona[] = [
   // ── Day 0: the opening seven — the "day one" crowd, so they also carry the
   //    light early-community voice (meta: testing things, feature asks, 🫡).
-  { key: "templetim", username: "templetim", name: "Template Tim", avatar: "/avatars/fan-01.webp",
-    day: 0, cats: { take: 5, poll: 3, banter: 1, player: 1 } },
-  { key: "kev", username: "kneejerkkev", name: "Knee Jerk Kev", avatar: "/avatars/fan-04.webp",
-    day: 0, cats: { take: 5, banter: 3, poll: 2, meta: 1 } },
-  { key: "ellie", username: "eo_ellie", name: "Ellie", avatar: "/avatars/fan-09.webp",
-    day: 0, cats: { take: 5, poll: 3 } },
-  { key: "nan", username: "fpl_nan", name: "FPL Nan 🍪", avatar: "/avatars/fan-11.webp",
-    day: 0, cats: { banter: 4, take: 3, poll: 2, quiz: 1, meta: 1 } },
-  { key: "banterfc", username: "banter_fc", name: "Banter FC", avatar: "/avatars/fan-12.webp",
-    day: 0, cats: { banter: 6, poll: 2, quiz: 1, meta: 1 } },
-  { key: "sana", username: "scoutsana", name: "Sana", avatar: "/avatars/fan-14.webp",
-    day: 0, cats: { player: 5, take: 3, poll: 2 } },
-  { key: "cal", username: "captaincal", name: "Cal", avatar: "/avatars/fan-15.webp",
-    day: 0, cats: { poll: 5, take: 3, banter: 2, meta: 1 } },
+  { key: "templetim", username: "marcr", name: "marcr", avatar: "/avatars/fan-01.webp",
+    day: 0, cats: { take: 5, poll: 2, banter: 1, player: 1, casual: 2 },
+    style: { caps: "proper" }, tempo: { cdH: 20, offChance: 0.25 } },
+  { key: "kev", username: "jordo88", name: "Jordan", avatar: "/avatars/fan-04.webp",
+    day: 0, cats: { take: 5, banter: 3, poll: 1, meta: 1, casual: 4 },
+    tempo: { cdH: 5, offChance: 0.12 } },
+  { key: "ellie", username: "ellieb14", name: "Ellie", avatar: "/avatars/fan-09.webp",
+    day: 0, cats: { take: 5, poll: 2, casual: 3 },
+    tempo: { cdH: 10, offChance: 0.2 } },
+  { key: "nan", username: "suecarter", name: "suecarter", avatar: "/avatars/fan-11.webp",
+    day: 0, cats: { banter: 4, take: 2, poll: 1, quiz: 1, meta: 1, casual: 2 },
+    style: { caps: "proper" }, tempo: { cdH: 26, offChance: 0.35 } },
+  { key: "banterfc", username: "tomo_9", name: "tomo", avatar: "/avatars/fan-12.webp",
+    day: 0, cats: { banter: 6, poll: 1, quiz: 1, meta: 1, casual: 3 },
+    style: { caps: "never" }, tempo: { cdH: 9, offChance: 0.2 } },
+  { key: "sana", username: "sanak92", name: "sanaa", avatar: "/avatars/fan-14.webp",
+    day: 0, cats: { player: 5, take: 3, poll: 1, casual: 2 },
+    tempo: { cdH: 16, offChance: 0.3 } },
+  { key: "cal", username: "cal_afc", name: "cally", avatar: "/avatars/fan-15.webp",
+    day: 0, cats: { poll: 5, take: 3, banter: 1, meta: 1, casual: 2 },
+    tempo: { cdH: 14, offChance: 0.3 } },
   // ── Day 2: four more voices join.
-  { key: "dre", username: "differentialdre", name: "Dre ✨", avatar: "/avatars/fan-02.webp",
-    day: 2, cats: { take: 4, player: 4, poll: 2, banter: 1 } },
-  { key: "gaz", username: "xg_gaz", name: "Gaz", avatar: "/avatars/fan-03.webp",
-    day: 2, cats: { take: 5, player: 3, poll: 2 } },
-  { key: "sam", username: "setforgetsam", name: "Sam 🔒", avatar: "/avatars/fan-05.webp",
-    day: 2, cats: { take: 3, poll: 2, banter: 2 } },
-  { key: "pete", username: "pricewatchpete", name: "Pete 📈", avatar: "/avatars/fan-08.webp",
-    day: 2, cats: { take: 5, poll: 2, player: 2 } },
+  { key: "dre", username: "dree_7", name: "dre", avatar: "/avatars/fan-02.webp",
+    day: 2, cats: { take: 4, player: 4, poll: 1, banter: 1, casual: 2 },
+    style: { caps: "never" }, tempo: { cdH: 18, offChance: 0.35 } },
+  { key: "gaz", username: "gaz74", name: "gaz", avatar: "/avatars/fan-03.webp",
+    day: 2, cats: { take: 5, player: 3, poll: 1, casual: 1 },
+    tempo: { cdH: 22, offChance: 0.4 } },
+  { key: "sam", username: "samlockett", name: "Sam Lockett", avatar: "/avatars/fan-05.webp",
+    day: 2, cats: { take: 3, poll: 1, banter: 2, casual: 1 },
+    style: { caps: "proper" }, tempo: { cdH: 30, offChance: 0.45 } },
+  { key: "pete", username: "peteb_", name: "peteb", avatar: "/avatars/fan-08.webp",
+    day: 2, cats: { take: 5, poll: 1, player: 2, casual: 2 },
+    tempo: { cdH: 16, offChance: 0.3 } },
   // ── Day 4: the rest of the cast.
-  { key: "barry", username: "benchpointsbarry", name: "Barry", avatar: "/avatars/fan-06.webp",
-    day: 4, cats: { banter: 5, take: 2, poll: 1 } },
-  { key: "marta", username: "minutesmarta", name: "Marta", avatar: "/avatars/fan-07.webp",
-    day: 4, cats: { take: 4, player: 3, poll: 2 } },
-  { key: "wes", username: "wildcardwes", name: "Wes 🃏", avatar: "/avatars/fan-10.webp",
-    day: 4, cats: { banter: 4, take: 3, poll: 1 } },
-  { key: "ces", username: "quizzyces", name: "Ces 🧠", avatar: "/avatars/fan-13.webp",
-    day: 4, cats: { quiz: 5, take: 2, poll: 2, banter: 1 } },
-  { key: "mo", username: "bargain_mo", name: "Mo", avatar: "/avatars/fan-16.webp",
-    day: 4, cats: { player: 4, take: 4, poll: 1, banter: 1 } },
+  { key: "barry", username: "bazwhu", name: "baz", avatar: "/avatars/fan-06.webp",
+    day: 4, cats: { banter: 5, take: 2, poll: 1, casual: 3 },
+    style: { caps: "never" }, tempo: { cdH: 12, offChance: 0.3 } },
+  { key: "marta", username: "martaf", name: "marta", avatar: "/avatars/fan-07.webp",
+    day: 4, cats: { take: 4, player: 3, poll: 1, casual: 1 },
+    tempo: { cdH: 24, offChance: 0.4 } },
+  { key: "wes", username: "wes0161", name: "wes", avatar: "/avatars/fan-10.webp",
+    day: 4, cats: { banter: 4, take: 3, poll: 1, casual: 2 },
+    tempo: { cdH: 20, offChance: 0.45 } },
+  { key: "ces", username: "ces_10", name: "ces", avatar: "/avatars/fan-13.webp",
+    day: 4, cats: { quiz: 5, take: 2, poll: 1, banter: 1, casual: 1 },
+    tempo: { cdH: 18, offChance: 0.35 } },
+  { key: "mo", username: "mo_hz", name: "mo", avatar: "/avatars/fan-16.webp",
+    day: 4, cats: { player: 4, take: 4, poll: 1, banter: 1, casual: 2 },
+    style: { caps: "never" }, tempo: { cdH: 15, offChance: 0.3 } },
 ];
 
 // ── Random helpers (caller may inject a PRNG for deterministic backfills) ─────
@@ -199,6 +254,29 @@ const BANTER: Tpl[] = [
   { k: "2am-bench", cat: "banter", make: () => ({ text: "We've reached the \"waking up at 2am to swap two bench players\" stage of pre season. No regrets. Some regrets." }) },
 ];
 
+/** Getting-started chatter — the dominant voice until the weekend (founder,
+ *  5 Aug): short, ordinary, half-formed. People are joining, poking at the
+ *  app and thinking out loud. Some posts should be good; most should be
+ *  ordinary; questions are allowed to get no answer. */
+const CASUAL: Tpl[] = [
+  { k: "cas-ripup", cat: "casual", make: () => ({ text: "nah I'm ripping this up again" }) },
+  { k: "cas-no-prem", cat: "casual", make: (c) => { const p = c.prem(); return { text: `anyone actually going without ${p.name}?` }; } },
+  { k: "cas-min62", cat: "casual", make: (c) => { const p = c.premAtt(); return { text: `${p.name} captain feels clever until minute 62` }; } },
+  { k: "cas-rate-mid", cat: "casual", make: () => ({ text: "rate this midfield pls" }) },
+  { k: "cas-05-left", cat: "casual", make: () => ({ text: "I have £0.5m left and no idea where to use it" }) },
+  { k: "cas-suddenly", cat: "casual", make: (c) => { const p = c.mid(); return { text: `why is everyone suddenly on ${p.name}?` }; } },
+  { k: "cas-bench-spot", cat: "casual", make: () => ({ text: "still can't decide my last bench spot. it doesn't matter. I know it doesn't matter" }) },
+  { k: "cas-see-squads", cat: "casual", make: () => ({ text: "just realised you can see everyone's squads on here. dangerous" }) },
+  { k: "cas-quiz-rated", cat: "casual", make: () => ({ text: "the quiz on here is rated btw" }) },
+  { k: "cas-who-follow", cat: "casual", make: () => ({ text: "who do I follow on here for actual good takes" }) },
+  { k: "cas-two-names", cat: "casual", make: (c) => { const a = c.enabler(), b = c.cheap(); return { text: `down to ${a.name} or ${b.name} for the last slot and I've been staring at it for 20 minutes` }; } },
+  { k: "cas-lunch", cat: "casual", make: () => ({ text: "first proper look at the app on my lunch break. already made two changes" }) },
+  { k: "cas-league-check", cat: "casual", make: () => ({ text: "is there a way to see who's already in my league or am I being slow" }) },
+  { k: "cas-morning", cat: "casual", make: () => ({ text: "morning. changed my captain again. don't ask" }) },
+  { k: "cas-overthink", cat: "casual", make: (c) => { const p = c.def(); return { text: `talked myself out of ${p.name} twice today. he's probably back in by tonight` }; } },
+  { k: "cas-price-shock", cat: "casual", make: (c) => { const p = c.prem(); return { text: `${money(p)} for ${p.name}. actually laughed out loud` }; } },
+];
+
 /** The early-community voice — a NEW platform's opening week, used sparingly
  *  (low weights, day-0 personas only). Honest asks and mild criticism beat
  *  praise; nobody trusts a feed that loves its own app. */
@@ -215,7 +293,7 @@ const META: Tpl[] = [
  *  points at something you can actually go and play. */
 const QUIZ_SCORES: [number, number][] = [[8, 10], [9, 10], [10, 10], [7, 10], [9, 11], [10, 11], [11, 11], [8, 11]];
 
-const ALL_TPLS: Tpl[] = [...TAKES, ...POLLS, ...PLAYERS, ...BANTER, ...META];
+const ALL_TPLS: Tpl[] = [...TAKES, ...POLLS, ...PLAYERS, ...BANTER, ...META, ...CASUAL];
 
 /** Template-key prefix → category, so the tick can pick a fitting reply for a
  *  post it only knows by its dedupe key. */
@@ -223,27 +301,37 @@ const CAT_BY_KEY = new Map<string, BotCat>(ALL_TPLS.map((t) => [t.k, t.cat]));
 export const catOfTemplateKey = (k: string | undefined): BotCat | null =>
   k ? (CAT_BY_KEY.get(k.split(":")[0]) ?? (k.startsWith("quiz:") ? "quiz" : null)) : null;
 
-/** Light grammar variance so sixteen accounts don't share one copy editor:
- *  sometimes a lowercase start, a dropped full stop, or a missing apostrophe.
- *  Never touches player names (only the first character, apostrophes and the
- *  final character are in play). */
-export function roughen(text: string, rnd: Rnd): string {
+/** Grammar variance so sixteen accounts don't share one copy editor — driven
+ *  by the persona's style. caps "never": always drops the opening capital and
+ *  usually the final full stop. caps "proper": text left alone. Default: the
+ *  light random pass. Never touches player names (only the first character,
+ *  apostrophes and the final character are in play). */
+export function roughen(text: string, rnd: Rnd, style?: BotPersona["style"]): string {
   let t = text;
-  if (rnd() < 0.18 && /^[A-Z][a-z]/.test(t)) t = t[0].toLowerCase() + t.slice(1);
-  if (rnd() < 0.12 && t.endsWith(".")) t = t.slice(0, -1);
+  if (style?.caps === "proper") return t;
+  const never = style?.caps === "never";
+  if ((never || rnd() < 0.18) && /^[A-Z][a-z]/.test(t)) t = t[0].toLowerCase() + t.slice(1);
+  if ((never ? rnd() < 0.7 : rnd() < 0.12) && t.endsWith(".")) t = t.slice(0, -1);
   if (rnd() < 0.08 && /\b(\w+)'(\w+)\b/.test(t)) t = t.replace(/\b(\w+)'(\w+)\b/, "$1$2");
   return t;
 }
 
 // ── Generation ────────────────────────────────────────────────────────────────
 
-function pickCat(persona: BotPersona, rnd: Rnd, allowQuiz: boolean): BotCat {
+function pickCat(persona: BotPersona, rnd: Rnd, allowQuiz: boolean, nowMs: number): BotCat {
   const entries = (Object.entries(persona.cats) as [BotCat, number][])
     .filter(([cat]) => allowQuiz || cat !== "quiz");
   const total = entries.reduce((s, [, w]) => s + w, 0);
   let roll = rnd() * total;
-  for (const [cat, w] of entries) { roll -= w; if (roll <= 0) return cat; }
-  return entries[entries.length - 1][0];
+  let cat = entries[entries.length - 1][0];
+  for (const [c, w] of entries) { roll -= w; if (roll <= 0) { cat = c; break; } }
+  // Getting-started phase: mostly short ordinary chatter, and a feed of
+  // brand-new users doesn't open with a wall of tidy discussion polls.
+  if (nowMs < CHATTER_PHASE_UNTIL_MS) {
+    if (rnd() < 0.45) return "casual";
+    if (cat === "poll" && rnd() < 0.7) return "casual";
+  }
+  return cat;
 }
 
 /**
@@ -258,9 +346,10 @@ export function generateBotMove(
   quizTitles: string[],
   rnd: Rnd = Math.random,
   allowQuiz = true,
+  nowMs: number = Date.now(),
 ): BotMove | null {
   for (let attempt = 0; attempt < 12; attempt++) {
-    const cat = pickCat(persona, rnd, allowQuiz && quizTitles.length > 0);
+    const cat = pickCat(persona, rnd, allowQuiz && quizTitles.length > 0, nowMs);
 
     if (cat === "quiz") {
       const [correct, total] = pickFrom(rnd, QUIZ_SCORES);
@@ -280,9 +369,10 @@ export function generateBotMove(
     if (usedKeys.has(k)) continue;
 
     const payload: Record<string, unknown> = { k };
-    // Takes/banter/meta get the human-roughness pass; player spotlights and
-    // poll questions stay clean (they sit next to structured UI).
-    if (made.text) payload.text = (cat === "take" || cat === "banter" || cat === "meta") ? roughen(made.text, rnd) : made.text;
+    // Takes/banter/meta/casual get the persona's roughness pass; player
+    // spotlights and poll questions stay clean (they sit next to structured UI).
+    const roughCats: BotCat[] = ["take", "banter", "meta", "casual"];
+    if (made.text) payload.text = roughCats.includes(cat) ? roughen(made.text, rnd, persona.style) : made.text;
     if (made.poll) payload.poll = made.poll;
     if (made.player != null) payload.player = made.player;
     return { personaKey: persona.key, type: "post", payload };

@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { fantasyPool } from "./pool";
 import {
   BOT_PERSONAS, activeBotPersonas, generateBotMove, generateBotReply,
+  londonHour, personaDayOff,
   type BotMove, type BotPoolPlayer, type ReplyTarget,
 } from "./botContent";
 import { FEED_REACTIONS } from "./feed";
@@ -20,9 +21,13 @@ import { FEED_REACTIONS } from "./feed";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
 
-/** How long a persona stays quiet after posting. Real accounts don't tweet
- *  every hour on the hour. */
-const PERSONA_COOLDOWN_MS = 3 * 60 * 60 * 1000;
+/** How busy the timeline is per London hour — commute, lunch and evening are
+ *  the peaks; nothing at all overnight (the hard gate below). Scales the
+ *  chance of posting in a given tick. */
+const HOUR_ACTIVITY: Record<number, number> = {
+  7: 0.6, 8: 0.9, 9: 0.7, 10: 0.5, 11: 0.5, 12: 1.0, 13: 1.0, 14: 0.6,
+  15: 0.5, 16: 0.6, 17: 0.8, 18: 0.9, 19: 1.1, 20: 1.2, 21: 1.2, 22: 0.8,
+};
 
 export interface BotTickReport {
   bots: number;
@@ -44,7 +49,10 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
 
   // The ramp gate: accounts all exist, but the CAST grows over launch week
   // (7 personas on day 0 → 11 → 16), so the community reads as filling up.
-  const activePersonas = activeBotPersonas(Date.now());
+  // On top of that, each persona can be on a deterministic DAY OFF — some
+  // accounts post twice a day, others vanish for days.
+  const nowMs = Date.now();
+  const activePersonas = activeBotPersonas(nowMs).filter((p) => !personaDayOff(p, nowMs));
   const activeUsernames = new Set(activePersonas.map((p) => p.username));
   const activeBots = bots.filter((b) => activeUsernames.has(b.username ?? ""));
 
@@ -52,6 +60,10 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
     bots: bots.length, active: activeBots.length,
     posted: 0, reactions: 0, pollVotes: 0, replies: 0, reveals: 0,
   };
+  // The cast lives on London time and none of them post at 4am. Everything —
+  // posts, reactions, replies, reveals — sleeps outside 07:00–23:00.
+  const hour = londonHour(nowMs);
+  if (hour < 7 || hour >= 23) return report;
   if (!activeBots.length) return report;
 
   const byUsername = new Map(bots.map((b) => [b.username ?? "", b.id]));
@@ -81,21 +93,26 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
   const quizTitles = ((packRows ?? []) as { title: string | null; name: string | null }[])
     .map((p) => p.title ?? p.name).filter((t): t is string => !!t);
 
-  // ── 0–2 posts from rested personas ─────────────────────────────────────────
-  const roll = Math.random();
-  const wantPosts = roll < 0.3 ? 0 : roll < 0.78 ? 1 : 2;
-  const now = Date.now();
+  // ── 0–2 posts from rested personas, paced by the London clock ──────────────
+  const activity = HOUR_ACTIVITY[hour] ?? 0.6;
+  const roll = Math.random() / activity; // busy hours make 1–2 posts likelier
+  const wantPosts = roll < 0.42 ? 1 : roll < 0.55 ? 2 : 0;
+  const now = nowMs;
   const rested = activePersonas
     .filter((p) => {
       const id = byUsername.get(p.username);
-      return id && now - (lastPostAt.get(id) ?? 0) > PERSONA_COOLDOWN_MS;
+      if (!id) return false;
+      // Each persona has its own rhythm: cdH hours between posts, jittered
+      // ±30% so nobody posts on a metronome.
+      const cooldown = p.tempo.cdH * 3600e3 * (0.7 + Math.random() * 0.6);
+      return now - (lastPostAt.get(id) ?? 0) > cooldown;
     })
     .sort(() => Math.random() - 0.5);
 
   const pool = botPool();
   const moves: (BotMove & { actorId: string })[] = [];
   for (const persona of rested.slice(0, wantPosts)) {
-    const move = generateBotMove(persona, pool, usedKeys, quizTitles);
+    const move = generateBotMove(persona, pool, usedKeys, quizTitles, Math.random, true, now);
     const actorId = move && idOf(move.personaKey);
     if (move && actorId) {
       usedKeys.add(String(move.payload.k));
@@ -118,18 +135,40 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
     payload: { k?: string; poll?: { options?: unknown[] } } | null;
   }[];
 
+  // Engagement is LOPSIDED on purpose: a third of ticks add nothing, most
+  // ticks drop a stray reaction or two, and now and then one post becomes the
+  // magnet and collects a cluster. Even one-of-each-emoji rows are the batch
+  // tell (founder, 5 Aug) — clusters sit on one or two emojis instead.
   const reactionRows: { event_id: string; user_id: string; emoji: string }[] = [];
-  const nReactions = 2 + Math.floor(Math.random() * 5); // 2–6 per tick
-  // Real-user content gets first claim on bot engagement — it should never feel
-  // like shouting into the void.
-  const targets = [...recent].sort((a, b) => Number(botIdSet.has(a.actor_id)) - Number(botIdSet.has(b.actor_id)));
-  for (const ev of targets.slice(0, nReactions * 2)) {
-    if (reactionRows.length >= nReactions) break;
-    const eligible = activeBotIds.filter((id) => id !== ev.actor_id);
-    if (!eligible.length) continue;
-    const who = eligible[Math.floor(Math.random() * eligible.length)];
-    const emoji = FEED_REACTIONS[Math.floor(Math.random() * FEED_REACTIONS.length)];
-    reactionRows.push({ event_id: ev.id, user_id: who, emoji });
+  const eRoll = Math.random();
+  if (eRoll > 0.35 && recent.length) {
+    // Real-user content gets first claim on bot engagement — it should never
+    // feel like shouting into the void.
+    const targets = [...recent].sort((a, b) => Number(botIdSet.has(a.actor_id)) - Number(botIdSet.has(b.actor_id)));
+    const pushReaction = (ev: { id: string; actor_id: string }, emojiPool: string[]) => {
+      const already = new Set(reactionRows.filter((r) => r.event_id === ev.id).map((r) => r.user_id));
+      const eligible = activeBotIds.filter((id) => id !== ev.actor_id && !already.has(id));
+      if (!eligible.length) return;
+      reactionRows.push({
+        event_id: ev.id,
+        user_id: eligible[Math.floor(Math.random() * eligible.length)],
+        emoji: emojiPool[Math.floor(Math.random() * emojiPool.length)],
+      });
+    };
+    if (eRoll > 0.88) {
+      // Magnet: one post collects a cluster, concentrated on 1–2 emojis.
+      const magnet = targets[Math.floor(Math.random() * Math.min(4, targets.length))];
+      const cluster = [...FEED_REACTIONS].sort(() => Math.random() - 0.5).slice(0, 2);
+      const n = 2 + Math.floor(Math.random() * 4); // 2–5 in one tick
+      for (let i = 0; i < n; i++) pushReaction(magnet, cluster);
+    } else {
+      // Strays: 1–2 single reactions somewhere near the top of the feed.
+      const n = 1 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < n; i++) {
+        const ev = targets[Math.floor(Math.random() * Math.min(8, targets.length))];
+        pushReaction(ev, [...FEED_REACTIONS]);
+      }
+    }
   }
   if (reactionRows.length) {
     // ignoreDuplicates: a bot that already reacted keeps its original reaction.
@@ -139,13 +178,21 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
   }
 
   // ── Votes on open polls ────────────────────────────────────────────────────
+  // Every poll has a FAVOURED option (seeded off the event id, so it never
+  // changes between ticks) that draws ~65% of votes — real poll results are
+  // never uniform. Most ticks add 0–2 votes; rarely a poll catches a surge.
   const polls = recent.filter((e) => e.type === "post" && Array.isArray(e.payload?.poll?.options)).slice(0, 5);
   const voteRows: { event_id: string; user_id: string; option_index: number }[] = [];
   for (const p of polls) {
     const options = (p.payload!.poll!.options as unknown[]).length;
-    const nVoters = Math.floor(Math.random() * 3); // 0–2 new bot votes per poll per tick
+    const favoured = p.id.split("").reduce((s, ch) => s + ch.charCodeAt(0), 0) % options;
+    const surge = Math.random() < 0.06;
+    const nVoters = surge ? 4 + Math.floor(Math.random() * 5) : Math.floor(Math.random() * 3);
     const voters = activeBotIds.filter((id) => id !== p.actor_id).sort(() => Math.random() - 0.5).slice(0, nVoters);
-    for (const v of voters) voteRows.push({ event_id: p.id, user_id: v, option_index: Math.floor(Math.random() * options) });
+    for (const v of voters) {
+      const optionIndex = Math.random() < 0.65 ? favoured : Math.floor(Math.random() * options);
+      voteRows.push({ event_id: p.id, user_id: v, option_index: optionIndex });
+    }
   }
   if (voteRows.length) {
     const { error } = await db.from("fantasy_feed_poll_votes")
