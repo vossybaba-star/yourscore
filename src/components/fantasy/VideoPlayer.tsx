@@ -338,7 +338,8 @@ export function InlineVideoPlayer({ video, context }: {
       )}
 
       {fsOpen && (
-        <FullscreenVideoPlayer video={video} startTime={currentTime} muted={muted} onMutedChange={setMuted} onClose={closeFullscreen} />
+        <FullscreenVideoPlayer video={video} startTime={currentTime} muted={muted}
+          onMutedChange={(m) => { setMuted(m); setSessionSound(!m); }} onClose={closeFullscreen} />
       )}
     </div>
   );

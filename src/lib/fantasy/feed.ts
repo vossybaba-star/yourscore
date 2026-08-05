@@ -515,7 +515,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) throw new HttpError(400, "bad video");
     video = { url: url.slice(0, 500), posterUrl, width, height, durationMs: Math.round(durationMs) };
   }
-  if (video && (gif || images.length)) throw new HttpError(400, "A post can carry only one type of media");
+  if (video && (gif || images.length || image)) throw new HttpError(400, "A post can carry only one type of media");
 
   // A link preview (Phase 2b) — the composer already unfurled it via
   // /api/unfurl; re-sanitised here rather than trusted, since the client sent
