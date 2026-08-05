@@ -29,6 +29,7 @@ import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import { ImageGrid } from "@/components/fantasy/ImageGrid";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
+import { InlineVideoPlayer, VideoPosterPreview, type PostVideo } from "@/components/fantasy/VideoPlayer";
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
 import { useUser } from "@/hooks/useUser";
 import { ReportSheet } from "@/components/social/ReportSheet";
@@ -63,6 +64,9 @@ export interface EmbeddedPost {
   id: string; available: boolean;
   actorId?: string; actorName?: string; actorAvatar?: string | null; createdAt?: string;
   text?: string | null; image?: string | null; isQuoteOfQuote?: boolean;
+  /** True when the embedded target carries a video — the compact embed shows
+   *  its poster (as `image`) with a play glyph, never inline-plays it. */
+  hasVideo?: boolean;
 }
 export interface FeedEvent {
   id: string;
@@ -74,6 +78,9 @@ export interface FeedEvent {
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
   text?: string | null; poll?: FeedPoll | null; image?: string | null; images?: string[] | null; gif?: FeedGif | null;
+  /** An optional video attached to a post (native video upload, 5 Aug).
+   *  Mutually exclusive with image/images/gif. */
+  video?: PostVideo | null;
   link?: FeedLink | null; fixture?: FeedFixture | null; quiz?: FeedQuiz | null;
   /** Set when this row is a repost: who reposted it. */
   repostedBy?: { id: string; name: string } | null;
@@ -577,9 +584,15 @@ function QuoteEmbedCard({ embed }: { embed: EmbeddedPost }) {
           {embed.text}
         </div>
       )}
-      {embed.image && (
+      {embed.image && !embed.hasVideo && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={embed.image} alt="" loading="lazy" style={{ display: "block", width: "100%", maxHeight: 120, objectFit: "cover", borderRadius: 8, marginTop: 6 }} />
+      )}
+      {/* A quoted post's video never inline-plays in the compact embed — just
+          its poster + a play glyph, same as X. Tapping the embed (the whole
+          card's onClick, above) is what actually opens it. */}
+      {embed.hasVideo && (
+        <VideoPosterPreview video={{ url: "", posterUrl: embed.image ?? null, width: 16, height: 9, durationMs: 0 }} />
       )}
     </div>
   );
@@ -625,7 +638,7 @@ function RepostControl({ ev, signInNext }: { ev: FeedEvent; signInNext: string }
     setChooserOpen((o) => !o);
   };
 
-  const quoted = { id: ev.id, actorName: ev.actorName, actorAvatar: ev.actorAvatar, text: ev.text ?? null, image: (ev.images?.[0] ?? ev.image ?? null), createdAt: ev.createdAt };
+  const quoted = { id: ev.id, actorName: ev.actorName, actorAvatar: ev.actorAvatar, text: ev.text ?? null, image: (ev.images?.[0] ?? ev.image ?? ev.video?.posterUrl ?? null), createdAt: ev.createdAt };
 
   return (
     <div style={{ position: "relative" }}>
@@ -776,6 +789,7 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
         <ImageGrid images={images} onOpen={(i) => setGalleryIndex(i)} />
       )}
       {ev.type === "post" && ev.gif && <GifTile gif={ev.gif} />}
+      {ev.type === "post" && ev.video && <InlineVideoPlayer video={ev.video} context={{ postId: ev.id }} />}
       {galleryIndex !== null && (
         <MediaGallery images={images} index={galleryIndex} onClose={() => setGalleryIndex(null)} />
       )}

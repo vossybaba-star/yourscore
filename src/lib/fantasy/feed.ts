@@ -146,6 +146,10 @@ export interface EmbeddedPost {
   text?: string | null;
   image?: string | null;
   isQuoteOfQuote?: boolean;
+  /** True when the embedded target carries a video — the compact embed shows
+   *  the video's poster (as `image`) with a play glyph, and never inline-plays
+   *  it; tap goes to the post's own detail page instead. */
+  hasVideo?: boolean;
 }
 const EMBED_TEXT_MAX = 280;
 
@@ -156,6 +160,31 @@ export function isPostMediaUrl(u: string): boolean {
   const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
   return !!base && !!u && u.startsWith(`${base}/storage/v1/object/public/post-media/`);
 }
+
+/** Same shape as isPostMediaUrl, but for the `post-videos` bucket (native
+ *  video upload, 5 Aug) — a post's video URL must live there, never an
+ *  arbitrary external host. */
+export function isPostVideoUrl(u: string): boolean {
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  return !!base && !!u && u.startsWith(`${base}/storage/v1/object/public/post-videos/`);
+}
+
+/** A video attached to a post (native video upload, 5 Aug). Direct-to-storage,
+ *  no transcoding — the URL is playable as soon as the upload finishes.
+ *  `posterUrl` is best-effort (client-captured frame, post-media bucket) and
+ *  may be null; the player falls back to a dark placeholder. Mutually
+ *  exclusive with gif/images at both the composer and this server's level. */
+export interface FeedVideo {
+  url: string;
+  posterUrl: string | null;
+  width: number;
+  height: number;
+  durationMs: number;
+}
+/** Kept in sync with MAX_POST_VIDEO_MS in lib/postVideo.ts (that module is
+ *  client-side); a little slack for rounding between the client's probed
+ *  duration and what actually lands here. */
+const MAX_POST_VIDEO_MS_SERVER = 60_000 + 2_000;
 
 export interface FeedEvent {
   id: string;
@@ -203,6 +232,10 @@ export interface FeedEvent {
   /** An optional GIF attached to a post (Phase 2a). Mutually exclusive with
    *  image/images at the composer level, but the server doesn't enforce that. */
   gif?: FeedGif | null;
+  /** An optional video attached to a post (native video upload, 5 Aug).
+   *  Mutually exclusive with image/images/gif — enforced server-side in
+   *  postToFeed, unlike the gif/image pairing above. */
+  video?: FeedVideo | null;
   /** An optional link preview attached to a post (Phase 2b) — unfurled from
    *  the first URL in the text. */
   link?: FeedLink | null;
@@ -385,7 +418,7 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
  *  reactions + comments for free (they key off the event id). */
 export async function postToFeed(db: Db, userId: string, body: unknown): Promise<{ id: string }> {
   const b = (body ?? {}) as {
-    text?: unknown; poll?: unknown; image?: unknown; images?: unknown; gif?: unknown; playerId?: unknown;
+    text?: unknown; poll?: unknown; image?: unknown; images?: unknown; gif?: unknown; video?: unknown; playerId?: unknown;
     link?: unknown; fixture?: unknown; quoteOf?: unknown;
     /** Mentions picked from the composer's autocomplete (Phase 1A) — untrusted
      *  client shape, validated below via resolveMentionEntities before it
@@ -458,6 +491,32 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     gif = { mp4, webp, gifUrl, width: Number(rawGif.width) || 0, height: Number(rawGif.height) || 0 };
   }
 
+  // A video (native video upload, 5 Aug) — url must live in OUR post-videos
+  // bucket, posterUrl (if present) in OUR post-media bucket. One video per
+  // post; mutually exclusive with gif/images (checked just below, once both
+  // are parsed).
+  let video: FeedVideo | null = null;
+  const rawVideo = b.video as { url?: unknown; posterUrl?: unknown; width?: unknown; height?: unknown; durationMs?: unknown } | undefined;
+  if (rawVideo && typeof rawVideo.url === "string" && rawVideo.url) {
+    const url = rawVideo.url.trim();
+    if (!isPostVideoUrl(url)) throw new HttpError(400, "bad video");
+    let posterUrl: string | null = null;
+    if (rawVideo.posterUrl != null) {
+      const p = typeof rawVideo.posterUrl === "string" ? rawVideo.posterUrl.trim() : "";
+      if (p) {
+        if (!isPostMediaUrl(p)) throw new HttpError(400, "bad video");
+        posterUrl = p.slice(0, 500);
+      }
+    }
+    const durationMs = Number(rawVideo.durationMs);
+    const width = Number(rawVideo.width);
+    const height = Number(rawVideo.height);
+    if (!Number.isFinite(durationMs) || durationMs <= 0 || durationMs > MAX_POST_VIDEO_MS_SERVER) throw new HttpError(400, "bad video");
+    if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) throw new HttpError(400, "bad video");
+    video = { url: url.slice(0, 500), posterUrl, width, height, durationMs: Math.round(durationMs) };
+  }
+  if (video && (gif || images.length || image)) throw new HttpError(400, "A post can carry only one type of media");
+
   // A link preview (Phase 2b) — the composer already unfurled it via
   // /api/unfurl; re-sanitised here rather than trusted, since the client sent
   // it. og:image must itself be http(s) — same rule the unfurler applies.
@@ -515,10 +574,10 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
       throw new HttpError(400, "That post is no longer available");
     quoteOf = qid;
   }
-  if (quoteOf && !text && !image && !images.length && !gif)
+  if (quoteOf && !text && !image && !images.length && !gif && !video)
     throw new HttpError(400, "Add a comment or some media to your quote");
 
-  if (!text && !poll && !image && !images.length && !gif && playerId == null && !link && !fixture && !quoteOf)
+  if (!text && !poll && !image && !images.length && !gif && !video && playerId == null && !link && !fixture && !quoteOf)
     throw new HttpError(400, "Write something, add a poll or some media");
   const why = commentRejection(
     [text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "),
@@ -537,6 +596,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   if (image) payload.image = image;
   if (images.length) payload.images = images;
   if (gif) payload.gif = gif;
+  if (video) payload.video = video;
   if (playerId != null) payload.player = playerId;
   if (link) payload.link = link;
   if (fixture) payload.fixture = fixture;
@@ -925,11 +985,14 @@ async function hydrateEvents(
     if (!targetRenderable(t)) return { id: targetId, available: false };
     const p = (t.payload ?? {}) as Record<string, unknown>;
     const rawText = typeof p.text === "string" ? p.text : null;
+    const rawVideo = p.video as { posterUrl?: unknown } | undefined;
+    const videoPoster = rawVideo && typeof rawVideo.posterUrl === "string" ? rawVideo.posterUrl : null;
     const thumb =
       (Array.isArray(p.images) && typeof p.images[0] === "string" ? (p.images[0] as string) : null) ??
       (typeof p.image === "string" ? p.image : null) ??
       (p.gif && typeof (p.gif as { webp?: unknown }).webp === "string" ? (p.gif as { webp: string }).webp : null) ??
-      (p.gif && typeof (p.gif as { gifUrl?: unknown }).gifUrl === "string" ? (p.gif as { gifUrl: string }).gifUrl : null);
+      (p.gif && typeof (p.gif as { gifUrl?: unknown }).gifUrl === "string" ? (p.gif as { gifUrl: string }).gifUrl : null) ??
+      videoPoster;
     return {
       id: targetId,
       available: true,
@@ -940,6 +1003,7 @@ async function hydrateEvents(
       text: rawText ? rawText.slice(0, EMBED_TEXT_MAX) : null,
       image: thumb,
       isQuoteOfQuote: typeof p.quoteOf === "string" && !!p.quoteOf,
+      hasVideo: !!rawVideo,
     };
   };
 
@@ -1061,6 +1125,7 @@ async function hydrateEvents(
     let image: string | null | undefined;
     let images: string[] | null | undefined;
     let gif: FeedGif | null | undefined;
+    let video: FeedVideo | null | undefined;
     let link: FeedLink | null | undefined;
     let fixture: FeedFixture | null | undefined;
     if (type === "post") {
@@ -1077,6 +1142,16 @@ async function hydrateEvents(
             gifUrl: typeof rawGif.gifUrl === "string" ? rawGif.gifUrl : null,
             width: Number(rawGif.width) || 0,
             height: Number(rawGif.height) || 0,
+          }
+        : null;
+      const rawVideo = payload.video as { url?: unknown; posterUrl?: unknown; width?: unknown; height?: unknown; durationMs?: unknown } | undefined;
+      video = rawVideo && typeof rawVideo.url === "string"
+        ? {
+            url: rawVideo.url,
+            posterUrl: typeof rawVideo.posterUrl === "string" ? rawVideo.posterUrl : null,
+            width: Number(rawVideo.width) || 0,
+            height: Number(rawVideo.height) || 0,
+            durationMs: Number(rawVideo.durationMs) || 0,
           }
         : null;
       const rawLink = payload.link as { url?: unknown; title?: unknown; description?: unknown; siteName?: unknown; image?: unknown; domain?: unknown } | undefined;
@@ -1156,6 +1231,7 @@ async function hydrateEvents(
       image,
       images,
       gif,
+      video,
       link,
       fixture,
       quiz,
