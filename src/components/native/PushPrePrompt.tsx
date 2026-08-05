@@ -5,7 +5,10 @@ import { isNative } from "@/lib/native";
 import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { registerForPush } from "@/lib/push";
-import { hasPromptedPush, markPushPrompted, snoozePushPrompt } from "@/lib/onboarding";
+import {
+  clearPushAsk, recordPushAsk, recordPushDecline, shouldAskPush,
+  type PushPermission,
+} from "@/lib/onboarding";
 
 // Apple Guideline 4.5.4 soft pre-prompt — our own UI; the OS permission dialog
 // only fires when the user taps Enable. Shown proactively the first time a real
@@ -15,13 +18,15 @@ import { hasPromptedPush, markPushPrompted, snoozePushPrompt } from "@/lib/onboa
 // taps "Maybe later". Gating on `user` means registerForPush() always has a
 // userId to store the device token against.
 
-function PushPrePromptInner() {
+function PushPrePromptInner({ permission }: { permission: PushPermission }) {
   const { user, loading } = useUser();
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** OS already refused. The button can only send them to Settings from here. */
+  const blocked = permission === "denied";
 
   useEffect(() => {
-    if (loading || !user || hasPromptedPush()) return;
+    if (loading || !user) return;
     let cancelled = false;
     (async () => {
       const { data } = await createClient()
@@ -30,44 +35,58 @@ function PushPrePromptInner() {
         .eq("id", user.id)
         .single();
       if (cancelled) return;
-      if (data?.notifications_opt_in === true) {
-        // Already opted in (e.g. via a contextual card) — make sure the OS grant
-        // + device token actually exist, silently, then never prompt again.
+      if (data?.notifications_opt_in === true && !blocked) {
+        // Opted in and the OS agrees — make sure the device token exists,
+        // silently, and stop asking.
         registerForPush(createClient(), user.id).catch(() => {});
-        markPushPrompted();
+        clearPushAsk();
         return;
       }
-      // Not opted in yet → make the ask, up front.
+      recordPushAsk();
       setShow(true);
     })();
     return () => { cancelled = true; };
-  }, [loading, user]);
+  }, [loading, user, blocked]);
 
   if (!show) return null;
 
   async function enable() {
     setBusy(true);
     try {
+      if (blocked) {
+        // iOS will not show its permission dialog a second time, so the only
+        // route back is the system Settings page for the app.
+        //
+        // Navigating the webview to the scheme rather than calling a plugin:
+        // @capacitor/app has no openUrl in v8, and Capacitor's navigation
+        // delegate hands any non-http(s) scheme to UIApplication.open, which is
+        // exactly what is needed here.
+        window.location.href = "app-settings:";
+        recordPushAsk();
+        setShow(false);
+        return;
+      }
       if (user) {
         const supabase = createClient();
         // Flip the consent flag first so the send pipeline counts them even if
         // the OS dialog is slow / dismissed.
         await supabase.from("profiles").update({ notifications_opt_in: true }).eq("id", user.id);
         await registerForPush(supabase, user.id);
+        clearPushAsk();
       }
     } catch (e) {
       console.warn("[push] pre-prompt enable failed", e);
     } finally {
-      markPushPrompted();
       setShow(false);
       setBusy(false);
     }
   }
 
   function later() {
-    // Snooze, don't kill: writing the permanent flag here silenced every future
-    // push ask on the device forever (the "backup" NotifyOptInCard included).
-    snoozePushPrompt();
+    // Counts the decline rather than silencing the ask. The cadence itself
+    // decides when to come back — and softens once someone has said no enough
+    // times that continuing to ask is just noise.
+    recordPushDecline();
     setShow(false);
   }
 
@@ -108,12 +127,17 @@ function PushPrePromptInner() {
             </svg>
           </div>
 
+          {/* Two asks, because the user is in two different situations. Someone
+              who has never been asked can be shown the OS dialog; someone who
+              already refused it can only be sent to Settings, and pretending
+              otherwise gives them a button that does nothing. */}
           <h2 className="font-display text-[2rem] leading-[0.95] uppercase text-white">
-            Be first
-            <br />on the board
+            {blocked ? (<>Turn news<br />back on</>) : (<>Your club,<br />the moment it breaks</>)}
           </h2>
           <p className="font-body text-sm text-text-muted mt-3">
-            There&apos;s a new board to top every day. We&apos;ll ping you the moment it goes live, so you can grab top spot before everyone else.
+            {blocked
+              ? "Notifications are switched off for YourScore in your iPhone settings. Turn them on there and we can bring you your club's news again."
+              : "Follow your club and we'll bring you the story the moment the big desks run it, plus the Daily Briefing at 6pm."}
           </p>
 
           <div className="mt-6 space-y-2">
@@ -122,14 +146,14 @@ function PushPrePromptInner() {
               disabled={busy}
               className="btn-ticket w-full justify-center py-3.5 text-base disabled:opacity-70"
             >
-              {busy ? "Enabling…" : "Enable notifications"}
+              {busy ? "Enabling…" : blocked ? "Open settings" : "Turn on notifications"}
             </button>
             <button
               onClick={later}
               disabled={busy}
               className="w-full py-2.5 font-body text-sm text-text-muted hover:text-white transition-colors"
             >
-              Maybe later
+              {blocked ? "Not now" : "Maybe later"}
             </button>
           </div>
         </div>
@@ -138,15 +162,49 @@ function PushPrePromptInner() {
   );
 }
 
-// Outer guard — never mount the inner (and its Supabase session read) on web or
-// once the prompt has already been shown.
+/**
+ * Outer guard. Never mounts the inner (and its Supabase read) on web, and asks
+ * the OS what it will actually do before deciding to show anything.
+ *
+ * Re-evaluated on every app open, not once per mount: the founder's ask is that
+ * a user who has not enabled notifications is asked essentially every time they
+ * open the app, and a cold mount only covers the first launch. `appStateChange`
+ * covers returning from background, which is how most opens actually happen.
+ */
 export function PushPrePrompt() {
-  const [engage, setEngage] = useState<boolean | null>(null);
+  const [permission, setPermission] = useState<PushPermission | null>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    setEngage(isNative() && !hasPromptedPush());
+    if (!isNative()) return;
+    let cancelled = false;
+
+    async function readPermission() {
+      try {
+        const { PushNotifications } = await import("@capacitor/push-notifications");
+        const p = await PushNotifications.checkPermissions();
+        if (!cancelled) setPermission(p.receive as PushPermission);
+      } catch {
+        if (!cancelled) setPermission(null);
+      }
+    }
+    readPermission();
+
+    let remove: (() => void) | undefined;
+    (async () => {
+      const { App } = await import("@capacitor/app");
+      const handle = await App.addListener("appStateChange", ({ isActive }) => {
+        // Coming back to the foreground IS an app open. Re-read the permission
+        // too: the user may have granted it in Settings while we were away.
+        if (isActive) { readPermission(); setTick((t) => t + 1); }
+      });
+      remove = () => handle.remove();
+    })();
+
+    return () => { cancelled = true; remove?.(); };
   }, []);
 
-  if (!engage) return null;
-  return <PushPrePromptInner />;
+  if (!permission) return null;
+  if (!shouldAskPush(permission)) return null;
+  return <PushPrePromptInner key={tick} permission={permission} />;
 }
