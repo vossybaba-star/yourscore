@@ -20,15 +20,35 @@
 import { useEffect, useRef, useState } from "react";
 import { Btn, INK, LINE, MUTED, PANEL, PANEL_2, Sheet, TEAL } from "@/components/fantasy/shared";
 import { uploadPostImage, PostImageError, MAX_POST_IMAGES } from "@/lib/postMedia";
+import { uploadPostVideo, validateAndProbeVideo, PostVideoError } from "@/lib/postVideo";
 import { GifPicker, type GifResult } from "@/components/fantasy/GifPicker";
 import { PlayerPickerSheet, type PickablePlayer } from "@/components/fantasy/PlayerPickerSheet";
 import { FixturePickerSheet, type PickableFixture } from "@/components/fantasy/FixturePickerSheet";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
-import { trackComposerOpened, trackPostAbandoned, trackPostCreated, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished } from "@/lib/analytics/trackSocial";
+import {
+  trackComposerOpened, trackPostAbandoned, trackPostCreated, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished,
+  trackVideoPickerOpened, trackVideoSelected, trackVideoUploadStarted, trackVideoUploadCompleted, trackVideoUploadFailed,
+  trackVideoUploadRetried, trackVideoRemoved, trackVideoPostPublished,
+} from "@/lib/analytics/trackSocial";
 
 interface ImageSlot { key: string; url: string | null; uploading: boolean; error: string | null }
+interface VideoAttachment {
+  file: File;
+  previewUrl: string;
+  durationMs: number; width: number; height: number;
+  state: "uploading" | "ready" | "failed" | "cancelled";
+  progress: number;
+  error: string | null;
+  result: { url: string; posterUrl: string | null } | null;
+}
+function fmtDuration(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
 interface LinkPreview { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
 /** The post being quoted (Phase 3a) — a compact, non-removable embed pinned
  *  under the composer. Passed in already-trimmed by the caller (FeedStream's
@@ -79,6 +99,12 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
   const [slots, setSlots] = useState<ImageSlot[]>([]);
   const [gif, setGif] = useState<GifResult | null>(null);
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
+  const [video, setVideo] = useState<VideoAttachment | null>(null);
+  const [videoErr, setVideoErr] = useState<string | null>(null);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const videoFileRef = useRef<HTMLInputElement>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+  const videoAbortRef = useRef<AbortController | null>(null);
   const [player, setPlayer] = useState<PickablePlayer | null>(null);
   const [playerPickerOpen, setPlayerPickerOpen] = useState(false);
   const [fixture, setFixture] = useState<PickableFixture | null>(null);
@@ -151,7 +177,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
 
   if (!open) return null;
 
-  const hasContent = () => text.trim().length > 0 || images.length > 0 || !!gif || !!player || !!fixture || pollOn;
+  const hasContent = () => text.trim().length > 0 || images.length > 0 || !!gif || !!video || !!player || !!fixture || pollOn;
 
   const reset = () => {
     setText(""); setPollOn(false); setQuestion(""); setOptions(["", ""]); setPollDuration(24);
@@ -159,6 +185,11 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
     setPlayer(null); setPlayerPickerOpen(false); setFixture(null); setFixturePickerOpen(false);
     setLinkPreview(null); setLinkLoading(false); setLinkDismissed(false); lastUrlRef.current = null;
     setCaret(0); setMentions([]);
+    // Abandoning mid-upload aborts the XHR — the abort is a no-op once the
+    // upload has already settled (resolved or already failed).
+    videoAbortRef.current?.abort(); videoAbortRef.current = null;
+    if (video) URL.revokeObjectURL(video.previewUrl);
+    setVideo(null); setVideoErr(null); setPreviewPlaying(false);
     setErr(null);
   };
   // Dismiss without posting (backdrop tap, Escape) — post_abandoned (AC4)
@@ -169,8 +200,71 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
   };
 
   const uploading = slots.some((s) => s.uploading);
+  const videoUploading = video?.state === "uploading";
+  const videoReady = !!(video && video.state === "ready" && video.result);
   const images = slots.filter((s) => s.url).map((s) => s.url as string);
   const showLink = !!linkPreview && !linkDismissed;
+
+  // Kick off (or retry) the actual upload for a picked/validated file — split
+  // out from onVideoFile so Replace-while-attached and the failed tile's
+  // retry can both reuse it without re-running validation.
+  const startVideoUpload = (file: File, previewUrl: string, durationMs: number, width: number, height: number) => {
+    const controller = new AbortController();
+    videoAbortRef.current = controller;
+    setVideo({ file, previewUrl, durationMs, width, height, state: "uploading", progress: 0, error: null, result: null });
+    trackVideoUploadStarted();
+    uploadPostVideo(file, {
+      onProgress: (p) => setVideo((v) => (v && v.file === file ? { ...v, progress: p } : v)),
+      signal: controller.signal,
+    }).then((res) => {
+      setVideo((v) => (v && v.file === file ? { ...v, state: "ready", progress: 1, result: { url: res.url, posterUrl: res.posterUrl } } : v));
+      trackVideoUploadCompleted();
+    }).catch((er) => {
+      const cancelled = er instanceof PostVideoError && !!er.cancelled;
+      setVideo((v) => {
+        if (!v || v.file !== file) return v;
+        if (cancelled) return { ...v, state: "cancelled", error: null };
+        return { ...v, state: "failed", error: er instanceof PostVideoError ? er.message : "Upload failed. Tap to retry." };
+      });
+      if (!cancelled) trackVideoUploadFailed();
+    });
+  };
+
+  const onVideoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    // Replace-while-attached: clean up whatever was there first.
+    videoAbortRef.current?.abort(); videoAbortRef.current = null;
+    if (video) URL.revokeObjectURL(video.previewUrl);
+    setVideo(null); setVideoErr(null); setPreviewPlaying(false);
+    trackVideoSelected();
+    const previewUrl = URL.createObjectURL(file);
+    // "selecting": validate + probe fast, BEFORE ever showing a tile or
+    // starting the (up to 100MB) upload — fail-early copy, exact strings.
+    validateAndProbeVideo(file)
+      .then(({ durationMs, width, height }) => startVideoUpload(file, previewUrl, durationMs, width, height))
+      .catch((er) => {
+        URL.revokeObjectURL(previewUrl);
+        setVideoErr(er instanceof PostVideoError ? er.message : "That video format isn't supported.");
+      });
+  };
+  const removeVideo = () => {
+    videoAbortRef.current?.abort(); videoAbortRef.current = null;
+    if (video) URL.revokeObjectURL(video.previewUrl);
+    setVideo(null); setPreviewPlaying(false);
+    trackVideoRemoved();
+  };
+  const retryVideo = () => {
+    if (!video) return;
+    trackVideoUploadRetried();
+    startVideoUpload(video.file, video.previewUrl, video.durationMs, video.width, video.height);
+  };
+  const togglePreviewPlay = () => {
+    const el = videoPreviewRef.current;
+    if (!el) return;
+    if (previewPlaying) { el.pause(); setPreviewPlaying(false); } else { el.play().catch(() => {}); setPreviewPlaying(true); }
+  };
 
   const onFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files ?? []);
@@ -212,19 +306,26 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
   // A quote always needs its own text or media — a poll/player/fixture alone
   // isn't enough (that's indistinguishable from a plain repost, which has its
   // own action). A plain post keeps the looser rule.
-  const canPost = !uploading && !busy && (
+  // Text/poll/player/fixture editing stays fully usable during a video
+  // upload — only the Post button itself gates on it (the tile carries its
+  // own progress).
+  const canPost = !uploading && !videoUploading && !busy && (
     quoting
-      ? (text.trim().length > 0 || images.length > 0 || !!gif)
-      : (text.trim().length > 0 || images.length > 0 || !!gif || !!player || !!fixture || (pollOn && pollValid))
+      ? (text.trim().length > 0 || images.length > 0 || !!gif || videoReady)
+      : (text.trim().length > 0 || images.length > 0 || !!gif || videoReady || !!player || !!fixture || (pollOn && pollValid))
   );
 
   const submit = async () => {
     if (!canPost) return;
     setBusy(true); setErr(null);
+    const videoBody = video && video.state === "ready" && video.result
+      ? { url: video.result.url, posterUrl: video.result.posterUrl, width: video.width, height: video.height, durationMs: video.durationMs }
+      : undefined;
     const body = {
       text: text.trim(),
       images: images.length ? images : undefined,
       gif: gif ? { mp4: gif.mp4, webp: gif.webp, gifUrl: gif.gifUrl, width: gif.width, height: gif.height } : undefined,
+      video: videoBody,
       poll: pollOn ? { question: question.trim(), options: options.map((o) => o.trim()).filter(Boolean), durationHours: pollDuration } : undefined,
       playerId: player ? player.id : undefined,
       fixture: fixture ? { homeClub: fixture.homeClub, awayClub: fixture.awayClub, kickoffIso: fixture.kickoffIso, gw: fixture.gw } : undefined,
@@ -246,6 +347,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
           hasImages: images.length > 0, hasGif: !!gif, hasPoll: pollOn, hasLink: !!(showLink && linkPreview),
           attachment: player ? "player" : fixture ? "fixture" : "none",
         });
+        if (videoReady) trackVideoPostPublished();
       }
       // mention_published (Phase 1A) — counts only, alongside post_created.
       if (mentions.length) trackMentionPublished("post", mentions.length);
@@ -270,8 +372,9 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
     cursor: "pointer", width: 40, height: 40, borderRadius: 999,
     background: "transparent", border: "none", color: TEAL,
   };
-  const showPhoto = !gif && slots.length < MAX_POST_IMAGES;
-  const showGif = slots.length === 0 && !player && !fixture;
+  const showPhoto = !gif && !video && slots.length < MAX_POST_IMAGES;
+  const showGif = slots.length === 0 && !player && !fixture && !video;
+  const showVideo = !gif && !video && slots.length === 0;
   const showPlayerBtn = !gif && !fixture && !player;
   const showFixtureBtn = !gif && !player && !fixture;
 
@@ -332,6 +435,8 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
       )}
 
       <input ref={fileRef} type="file" accept="image/*" multiple onChange={onFiles} style={{ display: "none" }} />
+      <input ref={videoFileRef} type="file" accept="video/mp4,video/quicktime" onChange={onVideoFile} style={{ display: "none" }} />
+      {videoErr && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "6px 0 0" }}>{videoErr}</p>}
 
       {slots.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
@@ -387,6 +492,37 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
         </div>
       )}
 
+      {video && (
+        <div style={{ position: "relative", marginTop: 10, borderRadius: 12, overflow: "hidden", border: `1px solid ${LINE}`, background: PANEL_2 }}>
+          <video ref={videoPreviewRef} src={video.previewUrl} muted playsInline loop onClick={togglePreviewPlay}
+            style={{ display: "block", width: "100%", maxHeight: 300, objectFit: "cover", cursor: "pointer" }} />
+          <span style={{ position: "absolute", left: 8, bottom: 8, padding: "2px 7px", borderRadius: 999, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 11, fontWeight: 700 }}>
+            {fmtDuration(video.durationMs)}
+          </span>
+          {video.state === "uploading" && (
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(0,0,0,0.5)" }}>
+              <span aria-hidden className="ys-post-spinner" style={{ width: 22, height: 22, borderRadius: 999, border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", display: "block" }} />
+              <div style={{ width: "70%", height: 4, borderRadius: 999, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.round(video.progress * 100)}%`, background: "#fff" }} />
+              </div>
+            </div>
+          )}
+          {(video.state === "failed" || video.state === "cancelled") && (
+            <button onClick={retryVideo} style={{
+              position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center",
+              background: "rgba(0,0,0,0.62)", border: "none", cursor: "pointer", color: "#E08A6B", fontSize: 12.5, fontWeight: 700, padding: 14,
+            }}>
+              {video.state === "failed" ? (video.error ?? "Upload failed. Tap to retry.") : "Upload cancelled. Tap to retry."}
+            </button>
+          )}
+          <button onClick={() => videoFileRef.current?.click()} style={{
+            position: "absolute", top: 8, left: 8, padding: "4px 10px", borderRadius: 999,
+            background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700,
+          }}>Replace</button>
+          <button onClick={removeVideo} aria-label="Remove video" style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: 999, background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
       {player && (
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, marginTop: 10, padding: "8px 34px 8px 10px", borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}` }}>
           <PlayerAvatar name={player.name} avatarUrl={player.avatarUrl} size={36} />
@@ -411,6 +547,11 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
       <div style={{ display: "flex", gap: 8, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
         {showPhoto && (
           <button onClick={() => fileRef.current?.click()} style={toolbarBtn} aria-label="Add photos"><ToolIcon d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z M21 15l-5-5L5 21" /></button>
+        )}
+        {showVideo && (
+          <button onClick={() => { trackVideoPickerOpened(); videoFileRef.current?.click(); }} style={toolbarBtn} aria-label="Add a video">
+            <ToolIcon d="M3 6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z M16 9.5l5-3v11l-5-3" />
+          </button>
         )}
         {showGif && (
           <button onClick={() => setGifPickerOpen(true)} style={toolbarBtn} aria-label="Add a GIF"><ToolIcon d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z M7.5 9.5v5 M7.5 9.5h2 M7.5 12h1.5 M12 9.5v5 M17 9.5h-2.5v5" /></button>
@@ -459,7 +600,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
       {err && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "10px 0 0" }}>{err}</p>}
 
       <div style={{ fontSize: 11.5, color: MUTED, margin: "12px 0 10px" }}>Posting to For You · everyone can see it.</div>
-      <Btn gold disabled={!canPost} onClick={submit}>{busy ? "Posting…" : uploading ? "Uploading…" : "Post"}</Btn>
+      <Btn gold disabled={!canPost} onClick={submit}>{busy ? "Posting…" : (uploading || videoUploading) ? "Uploading…" : "Post"}</Btn>
 
       <GifPicker open={gifPickerOpen} onClose={() => setGifPickerOpen(false)} onSelect={pickGif} />
       <PlayerPickerSheet open={playerPickerOpen} onClose={() => setPlayerPickerOpen(false)} onSelect={pickPlayer} />

@@ -69,3 +69,21 @@ export function trackChallengeFlowOpened(): void { fire("challenge_flow_opened")
 export function trackChallengeGameSelected(gameId: string): void { fire("challenge_game_selected", { gameId }); }
 export function trackChallengeSent(gameId: string): void { fire("challenge_sent", { gameId }); }
 export function trackChallengeAbandoned(): void { fire("challenge_abandoned"); }
+
+// ── native video (composer) ──────────────────────────────────────────────
+export function trackVideoPickerOpened(): void { fire("video_picker_opened"); }
+export function trackVideoSelected(): void { fire("video_selected"); }
+export function trackVideoUploadStarted(): void { fire("video_upload_started"); }
+export function trackVideoUploadCompleted(): void { fire("video_upload_completed"); }
+export function trackVideoUploadFailed(): void { fire("video_upload_failed"); }
+export function trackVideoUploadRetried(): void { fire("video_upload_retried"); }
+export function trackVideoRemoved(): void { fire("video_removed"); }
+export function trackVideoPostPublished(): void { fire("video_post_published"); }
+
+// ── native video (playback) ──────────────────────────────────────────────
+export function trackVideoImpression(): void { fire("video_impression"); }
+export function trackVideoPlay(mode: "auto" | "tap"): void { fire("video_play", { mode }); }
+export function trackVideoSoundOn(): void { fire("video_sound_on"); }
+export function trackVideoQuartile(milestone: "q25" | "q50" | "q75" | "completed"): void { fire(`video_${milestone}`); }
+export function trackVideoFullscreenOpened(): void { fire("video_fullscreen_opened"); }
+export function trackVideoError(): void { fire("video_error"); }
