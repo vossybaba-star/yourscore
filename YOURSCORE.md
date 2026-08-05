@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-05 (**Social Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-05 (**Social Phase 3b (bookmarks/mentions/notification tabs/profile tabs, mig 251 applied) + Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,6 +806,18 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05 (late, 2)** — **Social Phase 3b SHIPPED** (PR #65; **migration 251 APPLIED**:
+  `fantasy_feed_bookmarks` own-row RLS + `profiles.pinned_event_id`): bookmarks (overflow
+  menu, acts on the original for reposts; Saved list at /fantasy/social/saved, entry beside
+  Discover sub-tabs), @mention autocomplete in composer + comments (prefix search gated
+  behind `mode=mention` — Discover keeps its substring match, shared-surface rule; review
+  caught the builder silently changing it), server-resolved mention linkify (unknown handles
+  stay plain), mention + repost notifications via notifyFantasy (cap 5, never self/synthetic,
+  fantasy_feed comments only), notification centre All | Mentions | Leagues tabs (all-read-
+  on-open kept), profile Posts | Replies | Media tabs + pin-your-own-post (403 otherwise;
+  player card/ladder/medals untouched). Drilled live: bookmark toggle + hydrate, pin 403,
+  Discover substring regression. Mention-notify happy path code-reviewed only (a live drill
+  would push a REAL user).
 - **2026-08-05 (late)** — **Social Phase 3a conversation SHIPPED** (PR #64, zero migrations):
   post detail pages at `/fantasy/social/post/[id]` (guest-viewable, thread expanded; legacy
   `?e=` engagement-email deep links redirect there; post share links now target it; body tap
