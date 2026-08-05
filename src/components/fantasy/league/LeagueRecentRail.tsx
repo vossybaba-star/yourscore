@@ -30,7 +30,13 @@ const TYPE_ICON: Record<string, string> = {
   chip: "✨", haul: "🔥", rank_jump: "📈", shortlist_add: "⭐",
 };
 
-export function LeagueRecentRail({ code }: { code: string }) {
+export function LeagueRecentRail({ code, onSelect }: {
+  code: string;
+  /** Open the shared member action sheet instead of jumping straight to the
+   *  profile (Phase 1B) — omitted (falls back to the direct profile link)
+   *  when the caller has no member context to hand it (a non-member browse). */
+  onSelect?: (ev: FeedEvent) => void;
+}) {
   const router = useRouter();
   const [events, setEvents] = useState<FeedEvent[] | null>(null);
 
@@ -67,7 +73,7 @@ export function LeagueRecentRail({ code }: { code: string }) {
         // hinting there's more to swipe to.
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 -16px", padding: "0 16px 4px", scrollbarWidth: "none" }}>
           {events.map((ev) => (
-            <button key={ev.id} onClick={() => router.push(`/profile/${ev.actorId}`)} style={{
+            <button key={ev.id} onClick={() => (onSelect ? onSelect(ev) : router.push(`/profile/${ev.actorId}`))} style={{
               flex: "0 0 168px", textAlign: "left", cursor: "pointer",
               background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 11,
               display: "flex", flexDirection: "column", gap: 7,

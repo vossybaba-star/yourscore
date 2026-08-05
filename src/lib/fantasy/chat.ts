@@ -174,18 +174,24 @@ export async function leagueFeed(db: Db, userId: string, code: string, limit = 2
  *  the chat surface. */
 export async function leagueMembers(
   db: Db, userId: string, code: string,
-): Promise<{ userId: string; username: string | null; displayName: string | null; avatarUrl: string | null }[]> {
+): Promise<{
+  ownerId: string;
+  members: { userId: string; username: string | null; displayName: string | null; avatarUrl: string | null }[];
+}> {
   const league = await requireMemberLeague(db, code, userId);
   const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", league.id).range(0, 9999);
   const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== userId);
-  if (!memberIds.length) return [];
+  if (!memberIds.length) return { ownerId: league.owner_id, members: [] };
   const blocked = await blockedActorIds(db, userId);
   const visibleIds = memberIds.filter((id) => !blocked.has(id));
-  if (!visibleIds.length) return [];
+  if (!visibleIds.length) return { ownerId: league.owner_id, members: [] };
   const { data: profs } = await db.from("profiles")
     .select("id, username, display_name, avatar_url").in("id", visibleIds).not("username", "is", null);
-  return ((profs ?? []) as { id: string; username: string | null; display_name: string | null; avatar_url: string | null }[])
-    .map((p) => ({ userId: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url }));
+  return {
+    ownerId: league.owner_id,
+    members: ((profs ?? []) as { id: string; username: string | null; display_name: string | null; avatar_url: string | null }[])
+      .map((p) => ({ userId: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url })),
+  };
 }
 
 /** The latest gameweek any member has a scored entry for, or null. */

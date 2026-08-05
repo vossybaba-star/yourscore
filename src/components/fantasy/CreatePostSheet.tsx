@@ -59,12 +59,17 @@ function ToolIcon({ d }: { d: string }) {
   );
 }
 
-export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
+export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initialText }: {
   open: boolean; onClose: () => void; onPosted: () => void;
   /** Quote mode (Phase 3a): a compact, non-removable embed of the quoted post
    *  pinned under the composer. Requires text or media before it can post
    *  (unlike a plain post, which can also be just a poll/player/fixture). */
   quoting?: QuotingPost | null;
+  /** Prefills the body once, on open (Phase 1B — the member sheet's "Mention
+   *  in a post" destination arrives via ?compose=@username). Never clobbers
+   *  whatever's already typed on a later open, since reset() clears text on
+   *  every close. */
+  initialText?: string;
 }) {
   const [text, setText] = useState("");
   const [pollOn, setPollOn] = useState(false);
@@ -138,6 +143,11 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
   // Fires once each time the sheet opens (Phase 5b, AC4).
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => { if (open) trackComposerOpened(); }, [open]);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (open && initialText) { setText(initialText.slice(0, 500)); setCaret(initialText.length); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialText]);
 
   if (!open) return null;
 

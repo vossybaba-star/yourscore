@@ -18,5 +18,5 @@ export const fetchCache = "force-no-store";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest, { params }: { params: { code: string } }) {
-  return withFantasyUser("league-members", async (db, userId) => ({ members: await leagueMembers(db, userId, params.code) }));
+  return withFantasyUser("league-members", (db, userId) => leagueMembers(db, userId, params.code));
 }

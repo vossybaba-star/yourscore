@@ -7,6 +7,9 @@ import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/componen
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { LeagueTableRows } from "./LeagueTableRows";
 import { LeagueRecentRail } from "./LeagueRecentRail";
+import { LeagueMembersView } from "./LeagueMembersView";
+import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
+import { useUser } from "@/hooks/useUser";
 import type { ChatData, ChatMessage, LeagueDetail, LeagueRow } from "./types";
 import { nameOf } from "./types";
 
@@ -48,6 +51,19 @@ export function LeagueHub({ detail, chat, onTab }: {
   chat: ChatData | null;
   onTab: (t: "chat" | "table" | "history") => void;
 }) {
+  const { user } = useUser();
+  const viewerId = user?.id ?? null;
+  const [selected, setSelected] = useState<MemberActionMember | null>(null);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const openMember = (r: LeagueRow) => {
+    if (!detail.league.isMember) return;
+    setSelected({ userId: r.userId, username: r.username, displayName: r.displayName, avatarUrl: r.avatarUrl, rank: r.rank, points: r.played ? r.points : undefined });
+  };
+  const openActor = (a: { actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null }) => {
+    if (!detail.league.isMember) return;
+    setSelected({ userId: a.actorId, username: a.actorUsername, displayName: a.actorName, avatarUrl: a.actorAvatar });
+  };
+
   const { gw, season, month } = detail;
   const phase = PHASE[gw.phase];
   const you = season.find((r) => r.isMe) ?? null;
@@ -136,12 +152,19 @@ export function LeagueHub({ detail, chat, onTab }: {
             );
           })}
         </div>
-        <button onClick={() => onTab("table")} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, flexShrink: 0 }}>
-          Full table →
-        </button>
+        <span style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+          {detail.league.isMember && (
+            <button onClick={() => setMembersOpen(true)} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+              Members →
+            </button>
+          )}
+          <button onClick={() => onTab("table")} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+            Full table →
+          </button>
+        </span>
       </div>
       <div style={{ marginBottom: 14 }}>
-        <LeagueTableRows rows={miniRows}
+        <LeagueTableRows rows={miniRows} onPeek={detail.league.isMember ? openMember : undefined}
           emptyLabel={tableTab === "month" ? `No scores in ${month.label} yet.` : "No members yet."} />
       </div>
 
@@ -178,7 +201,7 @@ export function LeagueHub({ detail, chat, onTab }: {
       )}
 
       {/* RECENT ACTIVITY — the league's pulse, a swipeable rail into the feed. */}
-      <LeagueRecentRail code={detail.league.code} />
+      <LeagueRecentRail code={detail.league.code} onSelect={detail.league.isMember ? openActor : undefined} />
 
       {/* CHAT PREVIEW */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
@@ -202,6 +225,19 @@ export function LeagueHub({ detail, chat, onTab }: {
         )}
         <Btn onClick={() => onTab("chat")}>Open league chat</Btn>
       </Card>
+
+      {selected && (
+        <MemberActionSheet
+          member={selected}
+          context="league"
+          leagueCode={detail.league.code}
+          viewerId={viewerId}
+          onClose={() => setSelected(null)}
+        />
+      )}
+      {membersOpen && (
+        <LeagueMembersView code={detail.league.code} rows={season} viewerId={viewerId} onClose={() => setMembersOpen(false)} />
+      )}
     </div>
   );
 }

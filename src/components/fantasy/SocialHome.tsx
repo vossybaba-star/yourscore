@@ -145,6 +145,7 @@ export function SocialHome() {
   const [discoverKey, setDiscoverKey] = useState(0);
   // The composer + a key that reloads the For You feed after a new post lands.
   const [composeOpen, setComposeOpen] = useState(false);
+  const [composeInitialText, setComposeInitialText] = useState<string | undefined>(undefined);
   const [liveKey, setLiveKey] = useState(0);
   // The full-screen search overlay (Phase 5b, AC3).
   const [searchOpen, setSearchOpen] = useState(false);
@@ -184,6 +185,22 @@ export function SocialHome() {
       if (isSort(storedSort)) setFeedSort(storedSort);
     } catch { /* storage unavailable — default Top */ }
   }, []);
+
+  // ?compose=@username (Phase 1B) — the member sheet's "Mention in a post"
+  // destination. Read once (after the signed-in state settles), open the
+  // composer prefilled, then strip the param so a refresh doesn't repeat it.
+  useEffect(() => {
+    if (loading) return;
+    let compose: string | null = null;
+    try { compose = new URLSearchParams(window.location.search).get("compose"); } catch { /* no window */ }
+    if (!compose) return;
+    if (user) { setComposeInitialText(compose); setComposeOpen(true); }
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("compose");
+      window.history.replaceState(null, "", u);
+    } catch { /* history unavailable */ }
+  }, [loading, user]);
 
   const select = useCallback((t: SocialTab) => {
     if (t === tab) return;
@@ -297,7 +314,9 @@ export function SocialHome() {
         {visited.discover && <DiscoverTabs key={discoverKey} initialSub={discoverSub} />}
       </div>
 
-      <CreatePostSheet open={composeOpen} onClose={() => setComposeOpen(false)} onPosted={() => setLiveKey((k) => k + 1)} />
+      <CreatePostSheet open={composeOpen} initialText={composeInitialText}
+        onClose={() => { setComposeOpen(false); setComposeInitialText(undefined); }}
+        onPosted={() => setLiveKey((k) => k + 1)} />
       {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} />}
 
       {guestPromptShown && <GuestPrompt />}

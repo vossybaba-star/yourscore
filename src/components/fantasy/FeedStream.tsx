@@ -501,7 +501,8 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl, viewerId, onHid
             })}
             {item(bookmarked ? "Remove bookmark" : "Bookmark", "🔖", toggleBookmark)}
             {pinControl && item(pinControl.pinned ? "Unpin" : "Pin to profile", "📌", pinControl.onTogglePin)}
-            {item(`View ${ev.actorName}`, "👤", () => router.push(`/profile/${ev.actorId}`))}
+            {item("View profile", "👤", () => router.push(`/profile/${ev.actorId}`))}
+            {item("View squad", "👕", () => router.push(`/profile/${ev.actorId}#fantasy-xi`))}
             {item("Invite to a league", "＋", onInvite)}
             {/* Report/Block/Mute/Delete (Phase 5a) — signed-in only, hidden
                 outright for a guest rather than a sign-in redirect. */}

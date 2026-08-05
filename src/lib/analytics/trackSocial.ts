@@ -56,3 +56,10 @@ export function trackMuteUser(): void { fire("mute_user"); }
 export function trackMentionAutocompleteOpened(surface: string): void { fire("mention_autocomplete_opened", { surface }); }
 export function trackMentionSelected(surface: string): void { fire("mention_selected", { surface }); }
 export function trackMentionPublished(surface: string, count: number): void { fire("mention_published", { surface, count }); }
+
+// ── member action sheet (Phase 1B) ───────────────────────────────────────
+// Counts only, never the target's id/handle — same content-free shape as the
+// mention events above.
+export function trackMemberSheetOpened(context: string): void { fire("member_sheet_opened", { context }); }
+export function trackMemberActionSelected(action: string): void { fire("member_action_selected", { action }); }
+export function trackCompareSquadsOpened(): void { fire("compare_squads_opened"); }
