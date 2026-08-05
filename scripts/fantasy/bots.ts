@@ -170,11 +170,13 @@ async function main() {
     const { data: seedRows } = await db.from("profiles").select("id").eq("is_seed", true).eq("source", "seed");
     const seedIds = ((seedRows ?? []) as { id: string }[]).map((s) => s.id);
     const follows: { follower_id: string; followee_id: string }[] = [];
+    // Kept SMALL on purpose (founder, 5 Aug): a standard contributor has 3–4
+    // followers at most — brand-new communities don't come with audiences.
     for (const b of botIds) {
-      for (const o of shuffle(botIds.filter((x) => x !== b)).slice(0, 3 + Math.floor(rnd() * 5))) follows.push({ follower_id: b, followee_id: o });
-      for (const s of shuffle(seedIds).slice(0, 2 + Math.floor(rnd() * 6))) follows.push({ follower_id: b, followee_id: s });
-      // And some seeds follow the loud accounts back.
-      for (const s of shuffle(seedIds).slice(0, 4 + Math.floor(rnd() * 10))) follows.push({ follower_id: s, followee_id: b });
+      for (const o of shuffle(botIds.filter((x) => x !== b)).slice(0, 1 + Math.floor(rnd() * 2))) follows.push({ follower_id: b, followee_id: o });
+      for (const s of shuffle(seedIds).slice(0, 1 + Math.floor(rnd() * 2))) follows.push({ follower_id: b, followee_id: s });
+      // And a couple of seeds follow back.
+      for (const s of shuffle(seedIds).slice(0, 1 + Math.floor(rnd() * 3))) follows.push({ follower_id: s, followee_id: b });
     }
     const { error: fErr } = await db.from("user_follows").upsert(follows, { onConflict: "follower_id,followee_id" });
     console.log(fErr ? `  ! follows: ${fErr.message}` : `Follow edges: ${follows.length}`);
