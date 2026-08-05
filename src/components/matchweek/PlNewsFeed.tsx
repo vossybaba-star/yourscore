@@ -14,7 +14,7 @@
  * and the tapped index, so swiping up walks the stories the chip is showing.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import {
   ago,
@@ -76,6 +76,32 @@ export function PlNewsFeed({ items, now }: { items: PlNewsItem[]; now: number })
   // Index into `shown`, not `items` — the sheet walks what the chip is showing.
   const [open, setOpen] = useState<number | null>(null);
   const shown = useMemo(() => filterByCategory(items, cat, now), [items, cat, now]);
+  /**
+   * `?story=<id>` opens that story's sheet — where a club news push lands.
+   *
+   * Read from window.location rather than useSearchParams: that hook forces a
+   * Suspense boundary on any statically rendered ancestor and fails the build,
+   * and this only needs to run once on the client anyway.
+   *
+   * The ref makes it fire ONCE. Without it the effect reruns whenever the
+   * filtered list changes identity and yanks the sheet back open after the
+   * reader has deliberately closed it.
+   */
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current || items.length === 0) return;
+    const id = new URLSearchParams(window.location.search).get("story");
+    if (!id) { deepLinked.current = true; return; }
+    const i = items.findIndex((s) => s.id === id);
+    deepLinked.current = true;
+    // Only when the chip currently showing actually contains it — "all" always
+    // does, and that is the default the link lands on.
+    if (i >= 0) {
+      const inShown = filterByCategory(items, cat, now).findIndex((s) => s.id === id);
+      if (inShown >= 0) setOpen(inShown);
+    }
+  }, [items, cat, now]);
+
   const stories = useMemo<SheetStory[]>(
     () => shown.map((i) => ({
       id: i.id, title: i.title, url: i.url, source: i.source,

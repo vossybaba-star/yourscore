@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["fra1"],
+  "regions": [
+    "fra1"
+  ],
   "crons": [
     { "path": "/api/cron/comeback", "schedule": "0 17 * * *" },
     { "path": "/api/cron/cleanup-lobbies", "schedule": "0 * * * *" },
@@ -13,6 +15,7 @@
     { "path": "/api/cron/halftime-watchdog", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/club-gameweek", "schedule": "20 * * * *" },
     { "path": "/api/cron/pl-news", "schedule": "7,37 * * * *" },
+    { "path": "/api/cron/club-news?send=1", "schedule": "17,47 * * * *" },
     { "path": "/api/cron/pl-briefing?send=1", "schedule": "0 17 * * *" },
     { "path": "/api/cron/pl-briefing?send=1", "schedule": "0 18 * * *" },
     { "path": "/api/cron/gameday-publish", "schedule": "0 8,9 * * *" },
