@@ -9,6 +9,8 @@ import { dispatchEngagementEmail, displayNameOf } from "@/lib/engagement";
 import { extractMentions, resolveUsernames, resolveMentionEntities, type MentionEntity } from "@/lib/mentions";
 import { notifyMentions } from "@/lib/fantasy/mentions";
 import { hiddenActorIds } from "@/lib/social/safety";
+import { HttpError } from "@/lib/fantasy/server";
+import { parseVideoAttachment, isPostVideoUrl, type FeedVideo } from "@/lib/fantasy/feed";
 
 // comments.parent_id and club_supporters are additive/not yet in the
 // generated src/types/database.ts — same untyped-client cast used across the
@@ -40,6 +42,23 @@ function storedMentionsOf(payload: unknown): MentionEntity[] | null {
   return out.length ? out : null;
 }
 
+/** A comment row's own payload.video (Phase 2c, video replies) — re-validated
+ *  on the way OUT the same way postToFeed's video is checked on the way IN
+ *  (isPostVideoUrl), so a hand-crafted row can't smuggle an arbitrary
+ *  external video into a thread just because it once passed the POST check. */
+function videoOf(payload: unknown): FeedVideo | null {
+  const raw = (payload as { video?: unknown } | null)?.video;
+  if (!raw || typeof raw !== "object") return null;
+  const v = raw as { url?: unknown; posterUrl?: unknown; width?: unknown; height?: unknown; durationMs?: unknown };
+  const url = typeof v.url === "string" ? v.url : "";
+  if (!isPostVideoUrl(url)) return null;
+  const width = Number(v.width) || 0;
+  const height = Number(v.height) || 0;
+  const durationMs = Number(v.durationMs) || 0;
+  if (!width || !height || !durationMs) return null;
+  return { url, posterUrl: typeof v.posterUrl === "string" ? v.posterUrl : null, width, height, durationMs };
+}
+
 export interface CommentRow {
   id: string;
   parentId: string | null;
@@ -58,6 +77,10 @@ export interface CommentRow {
    *  no reply button, no crest — replies stay intact. Never true for a reply
    *  (a deleted reply is just dropped, same as before). */
   deleted?: boolean;
+  /** An optional video attached to this comment/reply (native video upload,
+   *  Phase 2c) — validated identically to a post's own video. Null for every
+   *  comment written before this phase, or one with no video. */
+  video?: FeedVideo | null;
 }
 
 /** GET /api/comments?type=pack|debate&id=<uuid> — newest 50 top-level + all
@@ -204,7 +227,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const liveRow = (r: { id: string; user_id: string; body: string; created_at: string }, parentId: string | null): CommentRow => ({
+  const liveRow = (r: { id: string; user_id: string; body: string; created_at: string; payload?: unknown }, parentId: string | null): CommentRow => ({
     id: r.id,
     parentId,
     userId: r.user_id,
@@ -215,6 +238,7 @@ export async function GET(req: NextRequest) {
     createdAt: r.created_at,
     likeCount: countById.get(r.id) ?? 0,
     likedByMe: likedIds.has(r.id),
+    video: videoOf(r.payload),
   });
 
   // Top-level emitted in query order (created_at desc), tombstones inline in
@@ -294,9 +318,21 @@ export async function POST(req: NextRequest) {
   const body = typeof payload?.body === "string" ? payload.body.trim() : "";
   const parentId = typeof payload?.parentId === "string" && payload.parentId ? payload.parentId : null;
   if (!SUBJECT_TYPES.has(type) || !id) return NextResponse.json({ error: "Missing subject" }, { status: 400 });
-  if (!body || body.length > 280) return NextResponse.json({ error: "Comments are 1–280 characters" }, { status: 400 });
+  if (body.length > 280) return NextResponse.json({ error: "Comments are 1–280 characters" }, { status: 400 });
 
-  const rejection = commentRejection(body);
+  // A video attachment (native video upload, Phase 2c) — validated EXACTLY
+  // like postToFeed's own video, via the same shared parseVideoAttachment. A
+  // comment/reply can carry text, a video, or both — but needs at least one.
+  let video: FeedVideo | null;
+  try {
+    video = parseVideoAttachment(payload?.video);
+  } catch (e) {
+    if (e instanceof HttpError) return NextResponse.json({ error: e.message }, { status: e.status });
+    throw e;
+  }
+  if (!body && !video) return NextResponse.json({ error: "Comments are 1–280 characters" }, { status: 400 });
+
+  const rejection = body ? commentRejection(body) : null;
   if (rejection) return NextResponse.json({ error: rejection }, { status: 400 });
 
   // Service role for the parent check AND mention validation below — one
@@ -330,17 +366,32 @@ export async function POST(req: NextRequest) {
   // stored on THIS comment's own payload.mentions regardless of subject type
   // (a debate/pack comment can carry a mention too — it just doesn't notify,
   // same rule the GET handler's own comment already documents).
-  const mentionEntities = await resolveMentionEntities(svc, body, payload?.mentions);
+  const mentionEntities = body ? await resolveMentionEntities(svc, body, payload?.mentions) : [];
+
+  // comments.body has a NOT NULL length-between-1-and-280 check (migration
+  // 70) — an empty-text video-only comment/reply stores a single space to
+  // satisfy it. The client trims before deciding whether to render a text
+  // line, so this placeholder is never shown; every notification/preview
+  // below is built from `body` (the real submitted text), never this.
+  const dbBody = body || " ";
+  const insertPayload: Record<string, unknown> = {};
+  if (mentionEntities.length) insertPayload.mentions = mentionEntities;
+  if (video) insertPayload.video = video;
 
   const { data, error } = await (supabase as unknown as SupabaseClient)
     .from("comments")
     .insert({
-      subject_type: type, subject_id: id, user_id: user.id, body, parent_id: parentId,
-      ...(mentionEntities.length ? { payload: { mentions: mentionEntities } } : {}),
+      subject_type: type, subject_id: id, user_id: user.id, body: dbBody, parent_id: parentId,
+      ...(Object.keys(insertPayload).length ? { payload: insertPayload } : {}),
     })
     .select("id, created_at")
     .single();
   if (error || !data) return NextResponse.json({ error: "Could not post — try again" }, { status: 500 });
+
+  // A notification/email preview built from empty text would read as blank
+  // (Phase 2c, AC6) — a video-only comment/reply previews as "a video"
+  // instead, same idea as chat's own "shared a video" summary.
+  const previewText = body || (video ? "a video" : "");
 
   // Notify the parent's author, never yourself. type is already restricted to
   // pack/debate by SUBJECT_TYPES above. A notification failure must never
@@ -360,7 +411,7 @@ export async function POST(req: NextRequest) {
     });
     await pushCommentReply({
       replyId: data.id,
-      replyBody: body,
+      replyBody: previewText,
       authorId: parentAuthorId,
       actorId: user.id,
       subjectType: type,
@@ -374,7 +425,7 @@ export async function POST(req: NextRequest) {
         notifId,
         kind: "reply",
         actorName,
-        snippet: body.length > 90 ? `${body.slice(0, 90)}…` : body,
+        snippet: previewText.length > 90 ? `${previewText.slice(0, 90)}…` : previewText,
         url: deepLink,
       });
     }

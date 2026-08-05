@@ -16,9 +16,11 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
 import { uploadPostImage } from "@/lib/postMedia";
+import { uploadPostVideo, validateAndProbeVideo, PostVideoError } from "@/lib/postVideo";
+import { InlineVideoPlayer } from "@/components/fantasy/VideoPlayer";
 import { ReportSheet } from "@/components/social/ReportSheet";
 import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type GifCard } from "./types";
-import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished } from "@/lib/analytics/trackSocial";
+import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished, trackVideoChatMessageSent } from "@/lib/analytics/trackSocial";
 import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
 import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
 import { useUser } from "@/hooks/useUser";
@@ -195,6 +197,58 @@ function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, is
   );
 }
 
+function fmtChatVideoDuration(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
+
+/** A video dropped straight into the chat (Phase 2c) — a compact poster tile
+ *  (play glyph + duration chip), same footprint as SharedImage's thumb. Tap
+ *  swaps in the real player IN PLACE — autoPlay={false} always, chat never
+ *  autoplays a video, single-active-player/session-sound still apply. */
+function SharedVideo({ msg }: { msg: ChatMessage }) {
+  const v = msg.video!;
+  const [open, setOpen] = useState(false);
+  if (open) {
+    return (
+      <div style={{ maxWidth: 240 }}>
+        {!msg.isMe && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 3 }}>{msg.name}</div>}
+        <InlineVideoPlayer video={v} autoPlay={false} />
+      </div>
+    );
+  }
+  return (
+    <div style={{ maxWidth: 220 }}>
+      {!msg.isMe && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 3 }}>{msg.name}</div>}
+      <button onClick={(e) => { e.stopPropagation(); setOpen(true); }} aria-label="Play video" style={{
+        position: "relative", display: "block", padding: 0, cursor: "pointer", borderRadius: 13, overflow: "hidden",
+        background: PANEL, border: `1px solid ${msg.isMe ? tint(TEAL, "44") : LINE}`, width: 180, height: 180,
+      }}>
+        {v.posterUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={v.posterUrl} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", background: PANEL_2 }} />
+        )}
+        <span aria-hidden style={{
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+          width: 38, height: 38, borderRadius: 999, background: "rgba(0,0,0,0.55)", color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7z" /></svg>
+        </span>
+        {v.durationMs > 0 && (
+          <span style={{ position: "absolute", right: 6, bottom: 6, padding: "2px 6px", borderRadius: 999, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 10.5, fontWeight: 700 }}>
+            {fmtChatVideoDuration(v.durationMs)}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
+
 /** A photo dropped straight into the chat (AC4) — a compact rounded thumb,
  *  never full bubble height, tapping opens the shared full-screen gallery. */
 function SharedImage({ msg, onView }: { msg: ChatMessage; onView: () => void }) {
@@ -233,10 +287,18 @@ function SharedFeedPost({ msg, onView }: { msg: ChatMessage; onView: () => void 
         <PlayerAvatar name={f.actorName ?? "Player"} avatarUrl={f.actorAvatarUrl} size={22} />
         <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>{f.actorName ?? "Player"}</span>
       </div>
-      <div style={{
-        fontSize: 13, color: INK, lineHeight: 1.4,
-        display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-      }}>{f.text ?? f.summary}</div>
+      <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <div style={{
+          flex: 1, minWidth: 0, fontSize: 13, color: INK, lineHeight: 1.4,
+          display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+        }}>{f.text ?? f.summary}</div>
+        {/* The shared post's own thumbnail (Phase 2c) — first image, GIF
+            still, or a video post's poster; never re-uploaded. */}
+        {f.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={f.image} alt="" loading="lazy" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+        )}
+      </div>
       <button onClick={(e) => { e.stopPropagation(); onView(); }} style={{ marginTop: 8, background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
         View post →
       </button>
@@ -485,6 +547,7 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, o
   if (m.kind === "compare" && m.compare) return <SharedCompare msg={m} onView={onView} />;
   if (m.kind === "gif" && m.gif) return <SharedGif msg={m} />;
   if (m.kind === "image" && m.image) return <SharedImage msg={m} onView={() => onViewImage(m.image!.url)} />;
+  if (m.kind === "video" && m.video) return <SharedVideo msg={m} />;
   if (m.kind === "feed" && m.feed) return <SharedFeedPost msg={m} onView={() => onViewFeed(m.feed!.eventId)} />;
   if (m.kind === "challenge" && m.challenge) return <ChallengeCardMsg msg={m} viewerId={viewerId} onDecline={onDeclineChallenge} busy={!!busy} />;
   if (m.kind === "poll" && m.poll) return <Poll msg={m} onVote={onVote} readOnly={readOnly} />;
@@ -580,6 +643,9 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   // AC4 — the image currently open full-screen.
   const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Phase 2c — the video file input; no staged preview tile (same immediate-
+  // send shape as the image flow above).
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
   // Phase 5a — the message currently being reported (opens the sheet).
   const [reportFor, setReportFor] = useState<ChatMessage | null>(null);
 
@@ -804,6 +870,30 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
     setBusy(false);
   };
 
+  // Phase 2c — pick + validate/probe + upload one video, then post it, the
+  // same immediate-send pattern pickImage/onImageChosen already use above
+  // (no staged preview tile — the image flow doesn't have one either).
+  // validateAndProbeVideo fails fast on a bad format BEFORE the (up to
+  // 100MB) upload starts, same idiom CreatePostSheet's composer uses.
+  const pickVideo = () => { setMenu(false); videoFileInputRef.current?.click(); };
+  const onVideoChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const { durationMs, width, height } = await validateAndProbeVideo(file);
+      const res = await uploadPostVideo(file);
+      await api(code, "chat", { kind: "video", video: { url: res.url, posterUrl: res.posterUrl, width, height, durationMs }, parentId });
+      trackVideoChatMessageSent();
+      setReplyTo(null);
+      await load(viewGw);
+    } catch (vidErr) {
+      setErr(vidErr instanceof PostVideoError ? vidErr.message : (vidErr as Error).message);
+    }
+    setBusy(false);
+  };
+
   // Tap anywhere on a message (but not on a control inside it) to react.
   const tapMessage = (id: string, e: React.MouseEvent) => {
     if (readOnly) return;
@@ -1007,6 +1097,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
             {menu && !poll && !gifOpen && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
                 <MenuChip onClick={pickImage} accent={TEAL} disabled={busy}>📷 Photo</MenuChip>
+                <MenuChip onClick={pickVideo} accent={TEAL} disabled={busy}>Video</MenuChip>
                 <MenuChip onClick={() => { setGifOpen(true); setMenu(false); }} accent={CORAL}>GIF</MenuChip>
                 <MenuChip onClick={() => { setPoll(true); setMenu(false); }} accent={LIME}>📊 Poll</MenuChip>
                 <MenuChip onClick={shareSquad} accent={TEAL} disabled={busy}>👕 Share my squad</MenuChip>
@@ -1014,6 +1105,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
               </div>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChosen} style={{ display: "none" }} />
+            <input ref={videoFileInputRef} type="file" accept="video/mp4,video/quicktime" onChange={onVideoChosen} style={{ display: "none" }} />
             <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
               <button onClick={() => setMenu((v) => !v)} aria-label="Share to the league" aria-expanded={menu} style={{
                 width: 44, height: 44, flexShrink: 0, borderRadius: 999, cursor: "pointer", fontSize: 18, lineHeight: 1,

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { withFantasyUser } from "../../../_lib";
-import { leagueChat, postChat, postGif, postImage, setStakes, pinChatMessage, unpinChatMessage } from "@/lib/fantasy/chat";
+import { leagueChat, postChat, postGif, postImage, postVideoMessage, setStakes, pinChatMessage, unpinChatMessage } from "@/lib/fantasy/chat";
 
 // League banter. Members only — the gate lives in chat.ts, and migration 85's
 // RLS guard holds the same line against raw REST. GET = messages + the week's
@@ -23,6 +23,9 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   }
   if (body?.kind === "image") {
     return withFantasyUser("league-chat-image", (db, userId) => postImage(db, userId, params.code, body.image, body.parentId));
+  }
+  if (body?.kind === "video") {
+    return withFantasyUser("league-chat-video", (db, userId) => postVideoMessage(db, userId, params.code, body.video, body.parentId));
   }
   return withFantasyUser("league-chat-post", (db, userId) => postChat(db, userId, params.code, body.body, body.parentId, body.mentions));
 }

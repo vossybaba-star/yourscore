@@ -17,7 +17,7 @@ import { commentRejection } from "@/lib/moderation";
 import { HttpError } from "./server";
 import { enginePool, clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
-import { loadLeagueFeed, loadFeedEvent, isPostMediaUrl, type FeedEvent } from "./feed";
+import { loadLeagueFeed, loadFeedEvent, isPostMediaUrl, isPostVideoUrl, MAX_POST_VIDEO_MS_SERVER, type FeedEvent } from "./feed";
 import { notifyFantasy } from "./notify";
 import { hiddenActorIds, blockedActorIds } from "@/lib/social/safety";
 import { extractMentions, resolveUsernames, resolveMentionEntities, type MentionEntity } from "@/lib/mentions";
@@ -69,6 +69,10 @@ export interface GifCard { url: string; preview: string; width: number; height: 
 /** One photo dropped straight into the chat (Phase 4a, AC4) — uploaded via the
  *  same post-media pipeline the feed composer uses, one per message. */
 export interface ImageCard { url: string; width: number; height: number }
+/** One video dropped straight into the chat (Phase 2c) — uploaded via the
+ *  same lib/postVideo.ts pipeline the feed composer uses, one per message.
+ *  Never autoplays in chat — the client always renders it tap-to-play. */
+export interface VideoCard { url: string; posterUrl: string | null; width: number; height: number; durationMs: number }
 /** A feed post shared into the chat (Phase 4a, AC5) — a compact pointer card,
  *  resolved server-side each read so it always reflects the post's current
  *  state (edited/deleted/still there). `available: false` renders the muted
@@ -81,12 +85,17 @@ export interface FeedShareCard {
   /** A one-line kind marker ("shared a photo"/"a GIF"/"a poll") when the post
    *  has no text of its own to show. */
   summary: string | null;
+  /** A thumbnail for the shared post (Phase 2c) — the first image, the GIF's
+   *  still, or a video post's poster, in that order. Null for a text/poll-
+   *  only post, or when the target's unavailable. Never re-uploaded — this
+   *  is always a reference to the post's own existing asset. */
+  image: string | null;
 }
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change). Never authored by a member; user_id is just whoever the FK
  *  needs (the joiner for a join line, the league owner otherwise) — the UI
  *  never shows a system row's author. */
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system" | "challenge";
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge";
 
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
@@ -101,6 +110,7 @@ export interface ChatMessage {
   compare?: CompareCard | null;
   gif?: GifCard | null;
   image?: ImageCard | null;
+  video?: VideoCard | null;
   feed?: FeedShareCard | null;
   /** A league-mate challenge card (Phase 1C) — hydrated fresh on every read
    *  (challenges.ts's challengeCardsFor), same "never trust the payload
@@ -141,6 +151,7 @@ export function summariseLeagueMessage(kind: string | null, body: string, payloa
     case "compare": return "shared a comparison";
     case "gif": return "sent a GIF";
     case "image": return "sent a photo";
+    case "video": return "shared a video";
     case "feed": return "shared a post";
     case "poll": return typeof p.question === "string" ? p.question : "started a poll";
     case "challenge": return "sent a challenge";
@@ -484,15 +495,21 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
       catch { return [id, null] as const; }
     }));
     for (const [id, ev] of resolved) {
-      if (!ev || ev.unavailable) { feedCardById.set(id, { eventId: id, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null }); continue; }
+      if (!ev || ev.unavailable) { feedCardById.set(id, { eventId: id, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null, image: null }); continue; }
       const summary = ev.text ? null
         : ev.poll ? "shared a poll"
         : ev.gif ? "shared a GIF"
         : (ev.images?.length || ev.image) ? "shared a photo"
+        : ev.video ? "shared a video"
         : "shared a post";
+      // Thumbnail fallback chain (Phase 2c): first image, then the legacy
+      // single-image field, then the GIF's still, then — new — a video
+      // post's own poster. Never re-uploads anything; always a reference to
+      // an asset the post already has.
+      const image = (ev.images && ev.images[0]) ?? ev.image ?? ev.gif?.webp ?? ev.gif?.gifUrl ?? ev.video?.posterUrl ?? null;
       feedCardById.set(id, {
         eventId: id, available: true, actorName: ev.actorName, actorAvatarUrl: ev.actorAvatar,
-        text: ev.text ? ev.text.slice(0, 300) : null, summary,
+        text: ev.text ? ev.text.slice(0, 300) : null, summary, image,
       });
     }
   }
@@ -506,7 +523,7 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   ));
   const challengeCardById = challengeIds.length ? await challengeCardsFor(db, challengeIds) : new Map<string, ChallengeCardData>();
 
-  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null; image?: ImageCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCardData | null } => {
+  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null; image?: ImageCard | null; video?: VideoCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCardData | null } => {
     // System rows (Phase 4b, AC3) carry no card — just the kind, so the client
     // renders the plain centred/muted line instead of falling through to "text".
     if (m.kind === "system") return { kind: "system" };
@@ -516,11 +533,21 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
       if (!isPostMediaUrl(url)) return { kind: "text" };
       return { kind: "image", image: { url, width: Number(pl.width) || 0, height: Number(pl.height) || 0 } };
     }
+    if (m.kind === "video" && m.payload && typeof m.payload === "object") {
+      const pl = m.payload as { url?: unknown; posterUrl?: unknown; width?: unknown; height?: unknown; durationMs?: unknown };
+      const url = typeof pl.url === "string" ? pl.url : "";
+      if (!isPostVideoUrl(url)) return { kind: "text" };
+      const posterUrl = typeof pl.posterUrl === "string" && isPostMediaUrl(pl.posterUrl) ? pl.posterUrl : null;
+      return {
+        kind: "video",
+        video: { url, posterUrl, width: Number(pl.width) || 0, height: Number(pl.height) || 0, durationMs: Number(pl.durationMs) || 0 },
+      };
+    }
     if (m.kind === "feed" && m.payload && typeof m.payload === "object") {
       const id = (m.payload as { eventId?: unknown }).eventId;
       const eventId = typeof id === "string" ? id : "";
       if (!eventId) return { kind: "text" };
-      return { kind: "feed", feed: feedCardById.get(eventId) ?? { eventId, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null } };
+      return { kind: "feed", feed: feedCardById.get(eventId) ?? { eventId, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null, image: null } };
     }
     if (m.kind === "challenge" && m.payload && typeof m.payload === "object") {
       const id = (m.payload as { challengeId?: unknown }).challengeId;
@@ -666,7 +693,7 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
         reactions: reactionsFor(m.id),
         kind: card.kind, player: card.player ?? null, poll: card.poll ?? null, squad: card.squad ?? null,
         news: card.news ?? null, compare: card.compare ?? null, gif: card.gif ?? null,
-        image: card.image ?? null, feed: card.feed ?? null, challenge: card.challenge ?? null,
+        image: card.image ?? null, video: card.video ?? null, feed: card.feed ?? null, challenge: card.challenge ?? null,
         parentId, replyTo: replyToFor(parentId ?? undefined),
         mentionedUsers: mentionedUsersFor(m),
       };
@@ -926,6 +953,41 @@ export async function postImage(db: Db, userId: string, code: string, image: unk
   const width = Math.min(4000, Math.max(0, Math.round(Number(im.width) || 0)));
   const height = Math.min(4000, Math.max(0, Math.round(Number(im.height) || 0)));
   await insertChatMessage(db, league, userId, { body: "Photo", kind: "image", payload: { url: url.slice(0, 500), width, height } }, parentId);
+  return { ok: true };
+}
+
+/** Post one video straight into the league chat (Phase 2c) — uploaded
+ *  client-side via lib/postVideo.ts's uploadPostVideo (the same pipeline the
+ *  feed composer's video attach uses); re-validated here EXACTLY like a
+ *  post's own video (isPostVideoUrl for the clip, isPostMediaUrl for the
+ *  poster, MAX_POST_VIDEO_MS_SERVER for the duration cap) so a hand-crafted
+ *  insert can't smuggle an arbitrary external video into the thread. One per
+ *  message; the client never autoplays it — chat is always tap-to-play. */
+export async function postVideoMessage(db: Db, userId: string, code: string, video: unknown, parentId?: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const v = (video ?? {}) as { url?: unknown; posterUrl?: unknown; width?: unknown; height?: unknown; durationMs?: unknown };
+  const url = typeof v.url === "string" ? v.url.trim() : "";
+  if (!isPostVideoUrl(url)) throw new HttpError(400, "bad video");
+  let posterUrl: string | null = null;
+  if (v.posterUrl != null) {
+    const p = typeof v.posterUrl === "string" ? v.posterUrl.trim() : "";
+    if (p) {
+      if (!isPostMediaUrl(p)) throw new HttpError(400, "bad video");
+      posterUrl = p.slice(0, 500);
+    }
+  }
+  const width = Math.min(4000, Math.max(0, Math.round(Number(v.width) || 0)));
+  const height = Math.min(4000, Math.max(0, Math.round(Number(v.height) || 0)));
+  const durationMs = Number(v.durationMs);
+  if (!Number.isFinite(durationMs) || durationMs <= 0 || durationMs > MAX_POST_VIDEO_MS_SERVER) throw new HttpError(400, "bad video");
+  // Non-empty body: the comments table's body check rejects "" (same
+  // graceful fallback the GIF/Photo kinds already rely on). The UI shows the
+  // media, not this.
+  await insertChatMessage(
+    db, league, userId,
+    { body: "Video", kind: "video", payload: { url: url.slice(0, 500), posterUrl, width, height, durationMs: Math.round(durationMs) } },
+    parentId,
+  );
   return { ok: true };
 }
 

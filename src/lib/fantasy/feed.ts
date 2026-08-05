@@ -183,8 +183,39 @@ export interface FeedVideo {
 }
 /** Kept in sync with MAX_POST_VIDEO_MS in lib/postVideo.ts (that module is
  *  client-side); a little slack for rounding between the client's probed
- *  duration and what actually lands here. */
-const MAX_POST_VIDEO_MS_SERVER = 60_000 + 2_000;
+ *  duration and what actually lands here. Exported so every other server-side
+ *  video attachment point (comments' video replies, league chat's video
+ *  messages, Phase 2c) validates against the SAME cap rather than each
+ *  hand-rolling its own. */
+export const MAX_POST_VIDEO_MS_SERVER = 60_000 + 2_000;
+
+/** Validate a client-submitted video attachment (native video upload, 5 Aug) —
+ *  the ONE place this shape is checked, shared by postToFeed below and the
+ *  comments POST route's video replies (Phase 2c), so the two paths can never
+ *  drift into validating a video differently. `url` must live in OUR
+ *  post-videos bucket, `posterUrl` (if present) in OUR post-media bucket.
+ *  Returns null when no video was submitted at all; throws HttpError(400) for
+ *  anything present but malformed. */
+export function parseVideoAttachment(rawVideo: unknown): FeedVideo | null {
+  const v = rawVideo as { url?: unknown; posterUrl?: unknown; width?: unknown; height?: unknown; durationMs?: unknown } | undefined;
+  if (!v || typeof v.url !== "string" || !v.url) return null;
+  const url = v.url.trim();
+  if (!isPostVideoUrl(url)) throw new HttpError(400, "bad video");
+  let posterUrl: string | null = null;
+  if (v.posterUrl != null) {
+    const p = typeof v.posterUrl === "string" ? v.posterUrl.trim() : "";
+    if (p) {
+      if (!isPostMediaUrl(p)) throw new HttpError(400, "bad video");
+      posterUrl = p.slice(0, 500);
+    }
+  }
+  const durationMs = Number(v.durationMs);
+  const width = Number(v.width);
+  const height = Number(v.height);
+  if (!Number.isFinite(durationMs) || durationMs <= 0 || durationMs > MAX_POST_VIDEO_MS_SERVER) throw new HttpError(400, "bad video");
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) throw new HttpError(400, "bad video");
+  return { url: url.slice(0, 500), posterUrl, width, height, durationMs: Math.round(durationMs) };
+}
 
 export interface FeedEvent {
   id: string;
@@ -491,30 +522,11 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     gif = { mp4, webp, gifUrl, width: Number(rawGif.width) || 0, height: Number(rawGif.height) || 0 };
   }
 
-  // A video (native video upload, 5 Aug) — url must live in OUR post-videos
-  // bucket, posterUrl (if present) in OUR post-media bucket. One video per
-  // post; mutually exclusive with gif/images (checked just below, once both
-  // are parsed).
-  let video: FeedVideo | null = null;
-  const rawVideo = b.video as { url?: unknown; posterUrl?: unknown; width?: unknown; height?: unknown; durationMs?: unknown } | undefined;
-  if (rawVideo && typeof rawVideo.url === "string" && rawVideo.url) {
-    const url = rawVideo.url.trim();
-    if (!isPostVideoUrl(url)) throw new HttpError(400, "bad video");
-    let posterUrl: string | null = null;
-    if (rawVideo.posterUrl != null) {
-      const p = typeof rawVideo.posterUrl === "string" ? rawVideo.posterUrl.trim() : "";
-      if (p) {
-        if (!isPostMediaUrl(p)) throw new HttpError(400, "bad video");
-        posterUrl = p.slice(0, 500);
-      }
-    }
-    const durationMs = Number(rawVideo.durationMs);
-    const width = Number(rawVideo.width);
-    const height = Number(rawVideo.height);
-    if (!Number.isFinite(durationMs) || durationMs <= 0 || durationMs > MAX_POST_VIDEO_MS_SERVER) throw new HttpError(400, "bad video");
-    if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) throw new HttpError(400, "bad video");
-    video = { url: url.slice(0, 500), posterUrl, width, height, durationMs: Math.round(durationMs) };
-  }
+  // A video (native video upload, 5 Aug) — one per post, mutually exclusive
+  // with gif/images (checked just below, once both are parsed). Shared
+  // validator (parseVideoAttachment, above) — comments' video replies
+  // (Phase 2c) validate against this exact same function.
+  const video = parseVideoAttachment(b.video);
   if (video && (gif || images.length || image)) throw new HttpError(400, "A post can carry only one type of media");
 
   // A link preview (Phase 2b) — the composer already unfurled it via
@@ -1415,11 +1427,24 @@ export async function loadUserReplies(db: Db, userId: string, limit = 30): Promi
   });
 }
 
-export interface UserMediaItem { postId: string; thumbUrl: string }
+export interface UserMediaItem {
+  postId: string;
+  /** Null only for a video post whose poster capture failed client-side —
+   *  the grid falls back to a dark placeholder tile rather than skipping the
+   *  post outright (Phase 2c, AC5). Always a real URL for an image/GIF post. */
+  thumbUrl: string | null;
+  /** Present (and "video") only for a video post — the grid renders a play
+   *  glyph + duration chip instead of treating this as a plain photo/GIF
+   *  tile. Absent for image/GIF posts (unchanged from before). */
+  kind?: "video";
+  /** Only set alongside kind: "video". */
+  durationMs?: number;
+}
 
-/** A user's own posts that carry an image or GIF, for their profile's Media
- *  tab — newest first, one thumbnail per post (the first image, or the GIF's
- *  still). Pure reposts carry no media of their own and are skipped. */
+/** A user's own posts that carry an image, GIF, or video, for their profile's
+ *  Media tab — newest first, one tile per post (the first image, the GIF's
+ *  still, or the video's poster). Pure reposts carry no media of their own
+ *  and are skipped. */
 export async function loadUserMedia(db: Db, userId: string, limit = 30): Promise<UserMediaItem[]> {
   // Headroom: not every post carries media, so a plain `limit` rows fetch
   // could come back thin even when the user has plenty of media posts further back.
@@ -1433,6 +1458,16 @@ export async function loadUserMedia(db: Db, userId: string, limit = 30): Promise
   for (const r of (rows ?? []) as any[]) {
     if (r.payload?.repostOf) continue;
     const p = r.payload ?? {};
+    // A video post always earns a tile — even with no poster (dark
+    // placeholder) — since it's the post's ONLY media, unlike an image/GIF
+    // post where a missing thumb just means "skip it".
+    if (p.video && typeof p.video === "object") {
+      const posterUrl = typeof p.video.posterUrl === "string" ? p.video.posterUrl : null;
+      const durationMs = Number(p.video.durationMs) || 0;
+      items.push({ postId: r.id, thumbUrl: posterUrl, kind: "video", durationMs });
+      if (items.length >= limit) break;
+      continue;
+    }
     const thumb: string | null =
       (Array.isArray(p.images) && typeof p.images[0] === "string" ? p.images[0] : null) ??
       (typeof p.image === "string" ? p.image : null) ??

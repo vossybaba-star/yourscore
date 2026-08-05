@@ -26,7 +26,22 @@ interface UserReply {
   id: string; body: string; createdAt: string;
   postId: string; postText: string | null; postActorName: string;
 }
-interface UserMediaItem { postId: string; thumbUrl: string }
+interface UserMediaItem {
+  postId: string;
+  /** Null only for a video post whose poster capture failed — the tile falls
+   *  back to a dark placeholder rather than being skipped. */
+  thumbUrl: string | null;
+  /** Present (and "video") only for a video post (Phase 2c). */
+  kind?: "video";
+  durationMs?: number;
+}
+
+function fmtMediaDuration(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
 
 function timeAgo(iso: string): string {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -160,15 +175,36 @@ export function ProfileSocialTabs({ userId, isOwner, signInNext }: {
 
       {tab === "media" && loaded.media && (
         media.length === 0 ? (
-          <Empty>No photos or GIFs yet.</Empty>
+          <Empty>No photos, GIFs, or videos yet.</Empty>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 4 }}>
             {media.map((m) => (
               <Link key={m.postId} href={`/fantasy/social/post/${m.postId}`} style={{
-                display: "block", aspectRatio: "1 / 1", overflow: "hidden", borderRadius: 6, background: PANEL_2,
+                display: "block", position: "relative", aspectRatio: "1 / 1", overflow: "hidden", borderRadius: 6, background: PANEL_2,
               }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={m.thumbUrl} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                {m.thumbUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.thumbUrl} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+                )}
+                {/* A video tile (Phase 2c) never autoplays in the grid — just a
+                    play glyph + duration chip over the poster (or a dark
+                    placeholder when the poster capture failed). */}
+                {m.kind === "video" && (
+                  <>
+                    <span aria-hidden style={{
+                      position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+                      width: 26, height: 26, borderRadius: 999, background: "rgba(0,0,0,0.55)", color: "#fff",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7z" /></svg>
+                    </span>
+                    {!!m.durationMs && (
+                      <span style={{ position: "absolute", right: 4, bottom: 4, padding: "1px 5px", borderRadius: 999, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 9.5, fontWeight: 700 }}>
+                        {fmtMediaDuration(m.durationMs)}
+                      </span>
+                    )}
+                  </>
+                )}
               </Link>
             ))}
           </div>

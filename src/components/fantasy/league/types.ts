@@ -68,12 +68,17 @@ export interface CompareCard { a: PlayerCard; b: PlayerCard }
 export interface GifCard { url: string; preview: string; width: number; height: number }
 /** One photo dropped straight into the chat (Phase 4a, AC4). */
 export interface ImageCard { url: string; width: number; height: number }
+/** One video dropped straight into the chat (Phase 2c) — never autoplays;
+ *  the client always renders it tap-to-play. */
+export interface VideoCard { url: string; posterUrl: string | null; width: number; height: number; durationMs: number }
 /** A feed post shared into the chat (Phase 4a, AC5) — resolved fresh server-side
- *  on every read; `available: false` renders the muted stub. */
+ *  on every read; `available: false` renders the muted stub. `image` (Phase 2c)
+ *  is a thumbnail fallback — first image, GIF still, or a video post's poster. */
 export interface FeedShareCard {
   eventId: string; available: boolean;
   actorName: string | null; actorAvatarUrl: string | null;
   text: string | null; summary: string | null;
+  image: string | null;
 }
 /** A league-mate challenge card (Phase 1C) — mirrors challenges.ts's
  *  ChallengeCardData. Hydrated fresh on every read; the viewer compares their
@@ -92,13 +97,13 @@ export interface ChallengeCard {
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no
  *  avatar or bubble, and excluded from unread badges (see leagues.ts/home.ts). */
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system" | "challenge";
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
   kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null;
   news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null;
-  image?: ImageCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCard | null;
+  image?: ImageCard | null; video?: VideoCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCard | null;
   /** Replies (Phase 4a, AC2) — the parent message's id and a resolved
    *  {name, summary} for the quoted-context strip. Both null/undefined when
    *  this isn't a reply, or when the schema doesn't support replies yet. */
@@ -148,6 +153,7 @@ export function summariseChatMessage(m: Pick<ChatMessage, "kind" | "body" | "new
     case "compare": return "shared a comparison";
     case "gif": return "sent a GIF";
     case "image": return "sent a photo";
+    case "video": return "shared a video";
     case "feed": return "shared a post";
     case "poll": return m.poll?.question || "started a poll";
     case "challenge": return "sent a challenge";
