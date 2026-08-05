@@ -26,14 +26,16 @@ export interface MentionEntity { userId: string; usernameSnapshot: string }
 
 /** The @token immediately before the caret, if any — text back from the
  *  caret to the nearest "@" with no whitespace in between. Null when the
- *  caret isn't inside a mention-shaped token, or the token is under 2
- *  characters (AC3: "after '@' + 2+ chars"). */
-export function mentionQueryAt(text: string, caret: number): string | null {
+ *  caret isn't inside a mention-shaped token, or the token is under `min`
+ *  characters — 2 by default (AC3: "after '@' + 2+ chars"); league chat
+ *  passes 1, because its member roster is local and instant, so a single
+ *  character is already worth matching (Phase 1A). */
+export function mentionQueryAt(text: string, caret: number, min = 2): string | null {
   const upTo = text.slice(0, Math.max(0, caret));
   const at = upTo.lastIndexOf("@");
   if (at === -1) return null;
   const token = upTo.slice(at + 1);
-  if (!token || /\s/.test(token) || token.length < 2) return null;
+  if (!token || /\s/.test(token) || token.length < min) return null;
   return token;
 }
 

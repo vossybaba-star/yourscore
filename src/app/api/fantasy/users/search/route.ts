@@ -53,7 +53,11 @@ export async function GET(req: NextRequest) {
         ? query.ilike("username", uPat)
         : query.ilike("display_name", dPat);
 
-    const { data } = await query.order("username", { ascending: true }).limit(limit + 5); // headroom for the bot/block filters below
+    // Headroom for the bot/block filters below — and in mention mode, enough
+    // window for the followed-first partition to actually SEE a followed
+    // account whose username sorts late (a `limit + 5` window would rank
+    // followed-first only among the alphabetically earliest matches).
+    const { data } = await query.order("username", { ascending: true }).limit(prefix ? limit + 40 : limit + 5);
 
     const bots = syntheticActors();
     const blocked = await blockedActorIds(db, userId);
