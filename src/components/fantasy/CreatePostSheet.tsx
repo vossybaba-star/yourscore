@@ -25,8 +25,8 @@ import { PlayerPickerSheet, type PickablePlayer } from "@/components/fantasy/Pla
 import { FixturePickerSheet, type PickableFixture } from "@/components/fantasy/FixturePickerSheet";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
-import { mentionQueryAt, applyMention, MentionDropdown } from "@/components/fantasy/MentionAutocomplete";
-import { trackComposerOpened, trackPostAbandoned, trackPostCreated } from "@/lib/analytics/trackSocial";
+import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
+import { trackComposerOpened, trackPostAbandoned, trackPostCreated, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished } from "@/lib/analytics/trackSocial";
 
 interface ImageSlot { key: string; url: string | null; uploading: boolean; error: string | null }
 interface LinkPreview { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
@@ -92,10 +92,25 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
   const [caret, setCaret] = useState(0);
   const mentionQuery = mentionQueryAt(text, caret);
   const trackCaret = (e: React.SyntheticEvent<HTMLTextAreaElement>) => setCaret(e.currentTarget.selectionStart ?? 0);
-  const pickMention = (username: string) => {
-    const next = applyMention(text, caret, username);
+  // Structured mention entities (Phase 1A) — every autocomplete pick is
+  // recorded {userId, usernameSnapshot} alongside the plain text; the server
+  // validates this against the final text before trusting any of it (a
+  // hand-typed handle with no pick still resolves server-side, same as
+  // always — this list is a hint, not the source of truth).
+  const [mentions, setMentions] = useState<MentionEntity[]>([]);
+  // mention_autocomplete_opened (Phase 1A) — fires once per open, not once
+  // per keystroke while it stays open.
+  const mentionQueryOpenRef = useRef(false);
+  useEffect(() => {
+    if (mentionQuery && !mentionQueryOpenRef.current) { mentionQueryOpenRef.current = true; trackMentionAutocompleteOpened("post"); }
+    if (!mentionQuery) mentionQueryOpenRef.current = false;
+  }, [mentionQuery]);
+  const pickMention = (user: MentionUser) => {
+    const next = applyMention(text, caret, user.username);
     setText(next.text.slice(0, 500));
     setCaret(next.caret);
+    setMentions((prev) => [...prev, { userId: user.userId, usernameSnapshot: user.username }]);
+    trackMentionSelected("post");
     requestAnimationFrame(() => { textareaRef.current?.focus(); textareaRef.current?.setSelectionRange(next.caret, next.caret); });
   };
 
@@ -133,7 +148,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
     setSlots([]); setGif(null); setGifPickerOpen(false);
     setPlayer(null); setPlayerPickerOpen(false); setFixture(null); setFixturePickerOpen(false);
     setLinkPreview(null); setLinkLoading(false); setLinkDismissed(false); lastUrlRef.current = null;
-    setCaret(0);
+    setCaret(0); setMentions([]);
     setErr(null);
   };
   // Dismiss without posting (backdrop tap, Escape) — post_abandoned (AC4)
@@ -207,6 +222,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
         ? { url: linkPreview.url, title: linkPreview.title, description: linkPreview.description, siteName: linkPreview.siteName, image: linkPreview.image }
         : undefined,
       quoteOf: quoting ? quoting.id : undefined,
+      mentions: mentions.length ? mentions : undefined,
     };
     try {
       const r = await fetch("/api/fantasy/feed/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -221,6 +237,8 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
           attachment: player ? "player" : fixture ? "fixture" : "none",
         });
       }
+      // mention_published (Phase 1A) — counts only, alongside post_created.
+      if (mentions.length) trackMentionPublished("post", mentions.length);
       reset(); onPosted(); onClose();
     } catch (e) { setErr((e as Error).message); }
     setBusy(false);

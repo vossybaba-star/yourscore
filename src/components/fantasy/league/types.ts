@@ -90,6 +90,11 @@ export interface ChatMessage {
    *  this isn't a reply, or when the schema doesn't support replies yet. */
   parentId?: string | null;
   replyTo?: { name: string; summary: string } | null;
+  /** Real, resolved @username mentions in a "text"-kind message (Phase 1A) —
+   *  server-preferred from stored payload.mentions, regex+resolve fallback
+   *  for a legacy message with none. Null for every other kind, or a
+   *  message with no mentions. */
+  mentionedUsers?: { username: string; userId: string }[] | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
 /** What this environment's schema currently supports (Phase 4a, AC1) — false

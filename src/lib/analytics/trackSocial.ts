@@ -49,3 +49,10 @@ export function trackSearchPerformed(resultCounts: Record<string, number>): void
 export function trackReportSubmitted(subjectType: string): void { fire("report_submitted", { subjectType }); }
 export function trackBlockUser(): void { fire("block_user"); }
 export function trackMuteUser(): void { fire("mute_user"); }
+
+// ── @mention autocomplete (Phase 1A) ─────────────────────────────────────
+// Content-free by design — a `surface` label ("post" | "reply" | "chat") and
+// counts only, never the handle/text itself.
+export function trackMentionAutocompleteOpened(surface: string): void { fire("mention_autocomplete_opened", { surface }); }
+export function trackMentionSelected(surface: string): void { fire("mention_selected", { surface }); }
+export function trackMentionPublished(surface: string, count: number): void { fire("mention_published", { surface, count }); }

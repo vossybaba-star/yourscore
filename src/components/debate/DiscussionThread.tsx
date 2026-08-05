@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
-import { mentionQueryAt, applyMention, MentionDropdown } from "@/components/fantasy/MentionAutocomplete";
-import { trackReplyCreated } from "@/lib/analytics/trackSocial";
+import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
+import { trackReplyCreated, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished } from "@/lib/analytics/trackSocial";
 
 // Two-level (IG-style) discussion thread per subject (quiz pack or debate).
 // Top-level: newest first. Replies: oldest first within a parent, collapsed
@@ -91,6 +91,16 @@ export function DiscussionThread({
   const [draftCaret, setDraftCaret] = useState(0);
   const replyRef = useRef<HTMLInputElement>(null);
   const [replyCaret, setReplyCaret] = useState(0);
+  // Structured mention entities picked from either composer (Phase 1A) —
+  // sent alongside the plain text; the server validates against the final
+  // body before trusting any of it. Two separate lists, same reason there
+  // are two carets — the top-level and reply composers are independent.
+  const [draftMentions, setDraftMentions] = useState<MentionEntity[]>([]);
+  const [replyMentions, setReplyMentions] = useState<MentionEntity[]>([]);
+  // mention_autocomplete_opened (Phase 1A) fires once per open, not once per
+  // keystroke while a query stays active — one open-guard ref per composer.
+  const draftMentionOpenRef = useRef(false);
+  const replyMentionOpenRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [threadLoaded, setThreadLoaded] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -105,6 +115,20 @@ export function DiscussionThread({
   const [replyDraft, setReplyDraft] = useState("");
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
+
+  // mention_autocomplete_opened (Phase 1A) — fires once per open (transition
+  // from no active query to one), not once per keystroke while it stays
+  // open. One query/effect pair per composer, mirrored below.
+  const draftMentionQuery = mentionQueryAt(draft, draftCaret);
+  useEffect(() => {
+    if (draftMentionQuery && !draftMentionOpenRef.current) { draftMentionOpenRef.current = true; trackMentionAutocompleteOpened("comment"); }
+    if (!draftMentionQuery) draftMentionOpenRef.current = false;
+  }, [draftMentionQuery]);
+  const replyMentionQuery = mentionQueryAt(replyDraft, replyCaret);
+  useEffect(() => {
+    if (replyMentionQuery && !replyMentionOpenRef.current) { replyMentionOpenRef.current = true; trackMentionAutocompleteOpened("reply"); }
+    if (!replyMentionQuery) replyMentionOpenRef.current = false;
+  }, [replyMentionQuery]);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/comments?type=${subjectType}&id=${subjectId}`).catch(() => null);
@@ -180,7 +204,7 @@ export function DiscussionThread({
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ subjectType, subjectId, body }),
+        body: JSON.stringify({ subjectType, subjectId, body, mentions: draftMentions.length ? draftMentions : undefined }),
       });
       const out = await res.json();
       if (!res.ok) { setError(out.error ?? "Could not post"); return; }
@@ -188,7 +212,8 @@ export function DiscussionThread({
       // this component also backs pack/debate discussions, which aren't
       // in scope for the Social event set.
       if (subjectType === "fantasy_feed") trackReplyCreated();
-      setDraft("");
+      if (draftMentions.length) trackMentionPublished("comment", draftMentions.length);
+      setDraft(""); setDraftMentions([]);
       setComments((prev) => [
         { id: out.id, parentId: null, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
         ...prev,
@@ -205,7 +230,7 @@ export function DiscussionThread({
   function startReply(parentId: string) {
     if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(signInNext)}`); return; }
     setReplyingTo((cur) => (cur === parentId ? null : parentId));
-    setReplyDraft("");
+    setReplyDraft(""); setReplyMentions([]);
     setReplyError(null);
   }
 
@@ -218,11 +243,12 @@ export function DiscussionThread({
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ subjectType, subjectId, body, parentId }),
+        body: JSON.stringify({ subjectType, subjectId, body, parentId, mentions: replyMentions.length ? replyMentions : undefined }),
       });
       const out = await res.json();
       if (!res.ok) { setReplyError(out.error ?? "Could not post"); return; }
       if (subjectType === "fantasy_feed") trackReplyCreated();
+      if (replyMentions.length) trackMentionPublished("reply", replyMentions.length);
       setComments((prev) => [
         ...prev,
         { id: out.id, parentId, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
@@ -231,7 +257,7 @@ export function DiscussionThread({
       // Your own reply is always visible, even if the parent already had 2+
       // collapsed replies.
       setExpanded((prev) => new Set(prev).add(parentId));
-      setReplyDraft("");
+      setReplyDraft(""); setReplyMentions([]);
       setReplyingTo(null);
     } finally {
       setReplyPosting(false);
@@ -374,12 +400,13 @@ export function DiscussionThread({
   }
 
   function renderReplyComposer(parentId: string) {
-    const replyMentionQuery = mentionQueryAt(replyDraft, replyCaret);
     const trackReplyCaret = (e: React.SyntheticEvent<HTMLInputElement>) => setReplyCaret(e.currentTarget.selectionStart ?? 0);
-    const pickReplyMention = (username: string) => {
-      const next = applyMention(replyDraft, replyCaret, username);
+    const pickReplyMention = (user: MentionUser) => {
+      const next = applyMention(replyDraft, replyCaret, user.username);
       setReplyDraft(next.text.slice(0, 280));
       setReplyCaret(next.caret);
+      setReplyMentions((prev) => [...prev, { userId: user.userId, usernameSnapshot: user.username }]);
+      trackMentionSelected("reply");
       requestAnimationFrame(() => { replyRef.current?.focus(); replyRef.current?.setSelectionRange(next.caret, next.caret); });
     };
     return (
@@ -499,10 +526,12 @@ export function DiscussionThread({
           </button>
         </div>
         {canPost && (
-          <MentionDropdown query={mentionQueryAt(draft, draftCaret)} onSelect={(username) => {
-            const next = applyMention(draft, draftCaret, username);
+          <MentionDropdown query={draftMentionQuery} onSelect={(u) => {
+            const next = applyMention(draft, draftCaret, u.username);
             setDraft(next.text.slice(0, 280));
             setDraftCaret(next.caret);
+            setDraftMentions((prev) => [...prev, { userId: u.userId, usernameSnapshot: u.username }]);
+            trackMentionSelected("comment");
             requestAnimationFrame(() => { draftRef.current?.focus(); draftRef.current?.setSelectionRange(next.caret, next.caret); });
           }} />
         )}

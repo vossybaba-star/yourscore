@@ -19,7 +19,8 @@ import { enginePool, clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
 import { loadLeagueFeed, loadFeedEvent, isPostMediaUrl, type FeedEvent } from "./feed";
 import { notifyFantasy } from "./notify";
-import { hiddenActorIds } from "@/lib/social/safety";
+import { hiddenActorIds, blockedActorIds } from "@/lib/social/safety";
+import { extractMentions, resolveUsernames, resolveMentionEntities, type MentionEntity } from "@/lib/mentions";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -106,6 +107,12 @@ export interface ChatMessage {
    *  parent_id column isn't migrated yet (ChatData.capabilities.replies). */
   parentId?: string | null;
   replyTo?: { name: string; summary: string } | null;
+  /** Real, resolved @username mentions in a "text"-kind message (Phase 1A) —
+   *  prefers this message's own stored payload.mentions, falls back to the
+   *  legacy regex+resolve for a message with none. Null for every other
+   *  kind (system/poll/player/etc. don't carry user-authored free text worth
+   *  linkifying here) or a message with no mentions at all. */
+  mentionedUsers?: { username: string; userId: string }[] | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
 /** What this environment's schema currently supports (Phase 4a, AC1) — false
@@ -154,6 +161,31 @@ export async function leagueFeed(db: Db, userId: string, code: string, limit = 2
   const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", league.id);
   const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id);
   return { events: await loadLeagueFeed(db, userId, memberIds, limit) };
+}
+
+/** The league's member roster — id/username/display_name/avatar_url only, no
+ *  points/tables/anything leagueDetail() computes (Phase 1A). Powers the
+ *  league chat's @mention autocomplete: fetched ONCE on mount so members can
+ *  be matched instantly, client-side, on every keystroke, rather than paying
+ *  a network round trip (let alone leagueDetail's season/month table cost)
+ *  just to populate a dropdown. Blocked accounts (bidirectional) never
+ *  appear — same "never appears, anywhere" rule the global mention search
+ *  applies (users/search route.ts). Member-only, same gate as the rest of
+ *  the chat surface. */
+export async function leagueMembers(
+  db: Db, userId: string, code: string,
+): Promise<{ userId: string; username: string | null; displayName: string | null; avatarUrl: string | null }[]> {
+  const league = await requireMemberLeague(db, code, userId);
+  const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", league.id).range(0, 9999);
+  const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== userId);
+  if (!memberIds.length) return [];
+  const blocked = await blockedActorIds(db, userId);
+  const visibleIds = memberIds.filter((id) => !blocked.has(id));
+  if (!visibleIds.length) return [];
+  const { data: profs } = await db.from("profiles")
+    .select("id, username, display_name, avatar_url").in("id", visibleIds).not("username", "is", null);
+  return ((profs ?? []) as { id: string; username: string | null; display_name: string | null; avatar_url: string | null }[])
+    .map((p) => ({ userId: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url }));
 }
 
 /** The latest gameweek any member has a scored entry for, or null. */
@@ -552,6 +584,43 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   // view of the thread, but they're still a member you can see in rosters).
   const hidden = await hiddenActorIds(db, userId);
 
+  // Mentions (Phase 1A) — prefer each "text"-kind message's own stored
+  // payload.mentions (no resolve needed); only a LEGACY row (no stored
+  // entities) falls back to the batch regex+resolve. Structured kinds
+  // (poll/player/squad/etc.) never carry user-authored free text worth
+  // linkifying here, so they're skipped entirely.
+  const storedChatMentionsOf = (payload: unknown): MentionEntity[] | null => {
+    const raw = (payload as { mentions?: unknown } | null)?.mentions;
+    if (!Array.isArray(raw) || !raw.length) return null;
+    const out: MentionEntity[] = [];
+    for (const r of raw as unknown[]) {
+      const e = r as { userId?: unknown; usernameSnapshot?: unknown };
+      if (typeof e?.userId === "string" && typeof e?.usernameSnapshot === "string") {
+        out.push({ userId: e.userId, usernameSnapshot: e.usernameSnapshot });
+      }
+    }
+    return out.length ? out : null;
+  };
+  const legacyMentionHandles = Array.from(new Set(
+    msgs.filter((m) => (m.kind ?? "text") === "text" && !storedChatMentionsOf(m.payload))
+      .flatMap((m) => extractMentions(m.body)),
+  ));
+  const legacyChatMentionMap = legacyMentionHandles.length
+    ? await resolveUsernames(db, legacyMentionHandles)
+    : new Map<string, { id: string; username: string }>();
+  const mentionedUsersFor = (m: { kind: string | null; body: string; payload: unknown }): { username: string; userId: string }[] | null => {
+    if ((m.kind ?? "text") !== "text") return null;
+    const stored = storedChatMentionsOf(m.payload);
+    if (stored) return stored.map((e) => ({ username: e.usernameSnapshot, userId: e.userId }));
+    const handles = extractMentions(m.body);
+    if (!handles.length) return null;
+    const out = handles
+      .map((h) => legacyChatMentionMap.get(h))
+      .filter((u): u is { id: string; username: string } => !!u)
+      .map((u) => ({ username: u.username, userId: u.id }));
+    return out.length ? out : null;
+  };
+
   return {
     league: { name: league.name, stakes: league.stakes, isOwner: league.owner_id === userId },
     gw: viewGw, currentGw, readOnly, notice, gameweeks,
@@ -572,6 +641,7 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
         news: card.news ?? null, compare: card.compare ?? null, gif: card.gif ?? null,
         image: card.image ?? null, feed: card.feed ?? null,
         parentId, replyTo: replyToFor(parentId ?? undefined),
+        mentionedUsers: mentionedUsersFor(m),
       };
     }).filter((m) => m.kind === "system" || !hidden.has(m.userId)),
     moments: momentGw != null ? await momentsForGw(db, memberIds, momentGw) : [],
@@ -686,30 +756,54 @@ export async function postSystemMessage(
   });
 }
 
-export async function postChat(db: Db, userId: string, code: string, body: unknown, parentId?: unknown) {
+export async function postChat(db: Db, userId: string, code: string, body: unknown, parentId?: unknown, mentions?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const text = typeof body === "string" ? body.trim() : "";
   if (!text || text.length > 280) throw new HttpError(400, "1-280 characters");
   const why = commentRejection(text);
   if (why) throw new HttpError(400, why);
-  const inserted = await insertChatMessage(db, league, userId, { body: text }, parentId);
+  // Structured mentions (Phase 1A) — validate whatever the composer tagged
+  // against the text + current DB ownership, merged with any hand-typed
+  // handle. One batch query.
+  const entities = await resolveMentionEntities(db, text, mentions);
+  const inserted = await insertChatMessage(
+    db, league, userId, { body: text, ...(entities.length ? { payload: { mentions: entities } } : {}) }, parentId,
+  );
   // @mentions only — never a push for every message (the spam trap). Fire-and-forget.
-  void notifyChatMentions(db, league.id, code, league.name, userId, text, inserted.id);
+  void notifyChatMentions(db, league.id, code, league.name, userId, text, inserted.id, entities);
   return { ok: true };
 }
 
-/** Parse @handles in a chat message and notify the mentioned league members. */
-async function notifyChatMentions(db: Db, leagueId: string, code: string, leagueName: string, actorId: string, text: string, commentId: string | null) {
+/** Parse (or, when `entities` is already known, DRIVE OFF) the @handles in a
+ *  chat message and notify the mentioned league members — league-scoped, so
+ *  a mention only ever reaches someone actually IN this league, even if the
+ *  validated entity list carries a handle that resolves outside it. */
+async function notifyChatMentions(
+  db: Db, leagueId: string, code: string, leagueName: string, actorId: string, text: string, commentId: string | null,
+  entities?: MentionEntity[],
+) {
   try {
     if (!commentId) return;
-    const handles = Array.from(new Set((text.match(/@([a-zA-Z0-9_]{2,30})/g) ?? []).map((h) => h.slice(1).toLowerCase())));
-    if (!handles.length) return;
     const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", leagueId);
     const memberIds = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== actorId);
     if (!memberIds.length) return;
-    const { data: profs } = await db.from("profiles").select("id, username, display_name").in("id", memberIds);
-    const mentioned = ((profs ?? []) as { id: string; username: string | null; display_name: string | null }[])
-      .filter((p) => p.username && handles.includes(p.username.toLowerCase()));
+
+    let mentioned: { id: string; username: string | null; display_name: string | null }[];
+    if (entities && entities.length) {
+      // Drive off the already-validated entities — scope down to league
+      // members only (a chat mention never notifies someone outside it).
+      const memberSet = new Set(memberIds);
+      const ids = Array.from(new Set(entities.map((e) => e.userId))).filter((uid) => memberSet.has(uid));
+      if (!ids.length) return;
+      const { data: profs } = await db.from("profiles").select("id, username, display_name").in("id", ids);
+      mentioned = (profs ?? []) as typeof mentioned;
+    } else {
+      const handles = Array.from(new Set((text.match(/@([a-zA-Z0-9_]{2,30})/g) ?? []).map((h) => h.slice(1).toLowerCase())));
+      if (!handles.length) return;
+      const { data: profs } = await db.from("profiles").select("id, username, display_name").in("id", memberIds);
+      mentioned = ((profs ?? []) as { id: string; username: string | null; display_name: string | null }[])
+        .filter((p) => p.username && handles.includes(p.username.toLowerCase()));
+    }
     if (!mentioned.length) return;
     const { data: actor } = await db.from("profiles").select("display_name, username").eq("id", actorId).maybeSingle();
     const who = actor?.display_name ?? (actor?.username ? `@${actor.username}` : "A manager");

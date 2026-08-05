@@ -1,35 +1,14 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { extractMentions, buildMentionEntities, type MentionEntity } from "./mentionEntities";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
 
-/**
- * @username parsing + resolution — shared by the Social feed (posts) and the
- * comment thread (fantasy_feed comments), Phase 3b. A real, resolvable
- * handle is lowercase letters/digits/underscore, 3-24 chars — the same shape
- * lib/fantasy/chat.ts's league-chat mentions already assume at lookup time,
- * just made explicit here as one pattern both callers share.
- */
-export const USERNAME_RE = /^[a-z0-9_]{3,24}$/;
-
-/** Every @handle in a body of text, deduped, lowercased, first-appearance
- *  order. This does NOT check they're real usernames — a typo'd or made-up
- *  handle simply never appears in resolveUsernames' returned map, and the
- *  caller (render or notify) treats it as plain text. The capture group is
- *  looser than USERNAME_RE (2-30, any case) so "@Bob" or a 2-char handle
- *  still gets a lookup attempt; USERNAME_RE narrows it before it's kept. */
-export function extractMentions(text: string): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const m of Array.from(text.matchAll(/@([a-zA-Z0-9_]{2,30})/g))) {
-    const handle = m[1].toLowerCase();
-    if (!USERNAME_RE.test(handle) || seen.has(handle)) continue;
-    seen.add(handle);
-    out.push(handle);
-  }
-  return out;
-}
+// Pure text parsing + structured-entity validation lives in mentionEntities.ts
+// (no `server-only`, so it's unit-testable standalone) — re-exported here so
+// every existing caller of "@/lib/mentions" keeps working unchanged.
+export { USERNAME_RE, extractMentions, MAX_MENTION_ENTITIES, buildMentionEntities, type MentionEntity } from "./mentionEntities";
 
 /** Resolve a batch of lowercased handles to real profiles in ONE query — an
  *  exact case-insensitive match per handle (usernames are unique only
@@ -52,4 +31,17 @@ export async function resolveUsernames(
     }
   }
   return map;
+}
+
+/** Server-side wrapper around buildMentionEntities (Phase 1A) — the one batch
+ *  profiles query (every @handle actually in `text`, submitted-tagged or
+ *  not) plus the pure validate+merge. This is what postToFeed, the comments
+ *  POST route, and postChat actually call. */
+export async function resolveMentionEntities(
+  db: Db, text: string, submitted: unknown,
+): Promise<MentionEntity[]> {
+  const handles = extractMentions(text);
+  if (!handles.length) return [];
+  const ownerOf = await resolveUsernames(db, handles);
+  return buildMentionEntities(text, submitted, ownerOf);
 }

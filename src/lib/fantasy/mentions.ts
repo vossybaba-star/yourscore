@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { extractMentions, resolveUsernames } from "@/lib/mentions";
+import { extractMentions, resolveUsernames, type MentionEntity } from "@/lib/mentions";
 import { notifyFantasy } from "./notify";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,13 +43,25 @@ export async function notifyMentions(opts: {
   dedupeSubjectId: string;
   /** Where the notification's tap lands — the post's detail page. */
   url: string;
+  /** Validated structured entities (Phase 1A) — when the caller already has
+   *  these (postToFeed, the comments POST route), pass them through so this
+   *  function drives off them directly instead of re-running its own
+   *  regex+resolve. Absent/empty falls back to the legacy path unchanged —
+   *  a caller that hasn't been touched still works exactly as before. */
+  entities?: MentionEntity[];
 }): Promise<void> {
   try {
-    const handles = extractMentions(opts.text);
-    if (!handles.length) return;
-    const resolved = await resolveUsernames(opts.db, handles);
+    let resolvedUsers: { id: string; username: string }[];
+    if (opts.entities && opts.entities.length) {
+      resolvedUsers = opts.entities.map((e) => ({ id: e.userId, username: e.usernameSnapshot }));
+    } else {
+      const handles = extractMentions(opts.text);
+      if (!handles.length) return;
+      const resolved = await resolveUsernames(opts.db, handles);
+      resolvedUsers = Array.from(resolved.values());
+    }
     const bots = syntheticIds();
-    const mentioned = Array.from(resolved.values())
+    const mentioned = resolvedUsers
       .filter((u) => u.id !== opts.actorId && !bots.has(u.id))
       .slice(0, MAX_MENTION_NOTIFY);
     if (!mentioned.length) return;
