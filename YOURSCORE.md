@@ -825,6 +825,18 @@ Confirmed preamble above and the referenced section.
   Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
   surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
   `FantasyPromoCard.tsx`.
+- **2026-08-06 (am)** — **Social polish batch SHIPPED** (PR #73, no migrations) after a
+  founder /ux-walk + hands-on pass: caught-up terminal now doors into Discover (walk A4);
+  floating Sign In/Up pill hidden on /fantasy/social — the join bar owns the one ask, nav
+  door stays (walk B5, master prompt §21); **player picker default fixed** (no-query list
+  was the first 20 of a club-ordered pool = a wall of Arsenal reading as club-locked; now
+  price-desc big names across clubs); sheets lock html+body scroll (jumpy background);
+  **composer modernised to X grade**: glassy translucent sheet (24px backdrop blur, inset
+  highlight, layered shadow), bare 20px teal SVG icon toolbar (image/GIF/poll/shirt/
+  calendar; 40px hit areas, aria-labels), placeholder + entry pill now "What's happening?"
+  (quote mode keeps "Add a comment"), every emoji icon + dashed outline gone, feed React/
+  Share controls matched. LOCKED STYLE RULE (founder, 6 Aug): social surfaces use glassy/
+  glossy elements + bare SVG icon rows, never emoji icons, never dashed outlines.
 - **2026-08-06** — **Social Phase 5b SHIPPED (PR #72) — THE SOCIAL MASTER BUILD PROMPT IS
   COMPLETE (all 5 phases, PRs #61 #62 #63 #64 #65 #67 #69 #71 #72, migs 250-253 applied).**
   5b: For You Top ranking (`src/lib/fantasy/feedRank.ts`, pure fns, 12 unit tests: score =
