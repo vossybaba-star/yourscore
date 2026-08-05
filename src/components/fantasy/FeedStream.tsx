@@ -39,15 +39,18 @@ type FeedSort = "recent" | "top";
 interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
 interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number; vice?: number }
 interface FeedReaction { emoji: string; count: number }
-interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number }
+interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number; endsAt: string | null }
 interface FeedQuiz { correct: number; total: number; title: string | null; game: "quiz" | "round" }
 interface FeedGif { mp4: string | null; webp: string | null; gifUrl: string | null; width: number; height: number }
+interface FeedLink { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
+interface FeedFixture { homeClub: string; awayClub: string; kickoffIso: string; gw: number }
 interface FeedEvent {
   id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
-  text?: string | null; poll?: FeedPoll | null; image?: string | null; images?: string[] | null; gif?: FeedGif | null; quiz?: FeedQuiz | null;
+  text?: string | null; poll?: FeedPoll | null; image?: string | null; images?: string[] | null; gif?: FeedGif | null;
+  link?: FeedLink | null; fixture?: FeedFixture | null; quiz?: FeedQuiz | null;
 }
 
 /** A post's GIF: mp4 renders as a looping muted autoplay video; otherwise the
@@ -75,6 +78,64 @@ function GifTile({ gif }: { gif: FeedGif }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={imgSrc} alt="" loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover" }} />
       ) : null}
+    </div>
+  );
+}
+
+/** A post's unfurled link — image (16:9, only if present), title (2-line
+ *  clamp), domain. The whole card opens the link in a new tab; nofollow
+ *  because it's user-submitted, not an endorsement. */
+function LinkCard({ link }: { link: FeedLink }) {
+  return (
+    <a href={link.url} target="_blank" rel="noopener noreferrer nofollow" onClick={(e) => e.stopPropagation()}
+      style={{ display: "block", marginTop: 10, borderRadius: 12, overflow: "hidden", border: `1px solid ${LINE}`, background: PANEL_2, textDecoration: "none" }}>
+      {link.image && (
+        <div style={{ width: "100%", aspectRatio: "16/9", background: PANEL, overflow: "hidden" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={link.image} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+        </div>
+      )}
+      <div style={{ padding: "10px 12px" }}>
+        {link.title && (
+          <div style={{
+            fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.35,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>{link.title}</div>
+        )}
+        <div style={{ fontSize: 11.5, color: MUTED, marginTop: link.title ? 4 : 0 }}>{link.domain}</div>
+      </div>
+    </a>
+  );
+}
+
+/** A post's attached fixture — crests + names, kickoff in UK time, GW label. */
+function FixtureCard({ fixture }: { fixture: FeedFixture }) {
+  const homeCrest = getTeamBadgeUrlSync(fixture.homeClub);
+  const awayCrest = getTeamBadgeUrlSync(fixture.awayClub);
+  const kickoff = new Date(fixture.kickoffIso);
+  const kickoffLabel = Number.isNaN(kickoff.getTime()) ? "" : kickoff.toLocaleString("en-GB", {
+    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London",
+  });
+  const Side = ({ crest, name }: { crest: string | null; name: string }) => (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, minWidth: 0 }}>
+      {crest ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={crest} alt="" width={32} height={32} style={{ width: 32, height: 32, objectFit: "contain" }} />
+      ) : <div style={{ width: 32, height: 32, borderRadius: 999, background: PANEL }} />}
+      <span style={{ fontSize: 12, fontWeight: 700, color: INK, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{name}</span>
+    </div>
+  );
+  return (
+    <div style={{ marginTop: 10, padding: "12px 10px", borderRadius: 12, border: `1px solid ${LINE}`, background: PANEL_2 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Side crest={homeCrest} name={fixture.homeClub} />
+        <span style={{ fontSize: 11.5, color: MUTED, fontWeight: 700, flexShrink: 0 }}>VS</span>
+        <Side crest={awayCrest} name={fixture.awayClub} />
+      </div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10, fontSize: 11.5, color: MUTED }}>
+        {kickoffLabel && <span>{kickoffLabel}</span>}
+        <span>GW{fixture.gw}</span>
+      </div>
     </div>
   );
 }
@@ -187,13 +248,30 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
   );
 }
 
-/** A post's poll — tap an option to vote; bars fill once you've voted. */
+/** Coarse "Ends in Xh" label for an open poll. Null once it's past endsAt
+ *  (the caller treats that as closed). */
+function timeRemaining(endsAt: string): string | null {
+  const ms = Date.parse(endsAt) - Date.now();
+  if (Number.isNaN(ms) || ms <= 0) return null;
+  const hours = ms / 3_600_000;
+  if (hours < 1) return `Ends in ${Math.max(1, Math.ceil(ms / 60_000))}m`;
+  if (hours < 24) return `Ends in ${Math.ceil(hours)}h`;
+  return `Ends in ${Math.ceil(hours / 24)}d`;
+}
+
+/** A post's poll — tap an option to vote; bars fill once you've voted. Once
+ *  endsAt has passed the poll is CLOSED: bars are always visible (no need to
+ *  vote to see the result), options stop being tappable, and the footer reads
+ *  "Final result" instead of the vote count. Legacy polls (no endsAt) never
+ *  close. */
 function PollBlock({ ev }: { ev: FeedEvent }) {
   const [poll, setPoll] = useState<FeedPoll>(ev.poll!);
+  const closed = !!poll.endsAt && Date.now() > Date.parse(poll.endsAt);
   const voted = poll.myChoice != null;
+  const showBars = voted || closed;
 
   const vote = useCallback(async (idx: number) => {
-    if (poll.myChoice === idx) return;
+    if (closed || poll.myChoice === idx) return;
     const prev = poll;
     const options = poll.options.map((o, i) => {
       let v = o.votes;
@@ -208,30 +286,42 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
       if (r.status === 401) { window.location.href = "/auth/sign-in?next=/fantasy/social"; return; }
       if (!r.ok) setPoll(prev);
     } catch { setPoll(prev); }
-  }, [poll, ev.id]);
+  }, [poll, ev.id, closed]);
+
+  const remaining = !closed && poll.endsAt ? timeRemaining(poll.endsAt) : null;
 
   return (
     <div style={{ marginTop: 12 }}>
-      {poll.question && <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 8 }}>{poll.question}</div>}
+      {poll.question && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: INK }}>{poll.question}</span>
+          {remaining && <span style={{ fontSize: 11, color: MUTED, whiteSpace: "nowrap", flexShrink: 0 }}>{remaining}</span>}
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {poll.options.map((o, i) => {
           const pct = poll.total > 0 ? Math.round((o.votes / poll.total) * 100) : 0;
           const mine = poll.myChoice === i;
           return (
-            <button key={i} onClick={() => vote(i)} style={{
-              position: "relative", overflow: "hidden", textAlign: "left", cursor: voted ? "default" : "pointer", width: "100%",
+            <button key={i} onClick={() => vote(i)} disabled={closed} style={{
+              position: "relative", overflow: "hidden", textAlign: "left", cursor: closed ? "default" : voted ? "default" : "pointer", width: "100%",
               padding: "9px 12px", borderRadius: 10, background: PANEL_2, border: `1px solid ${mine ? tint(TEAL, "66") : LINE}`,
+              opacity: closed && !mine ? 0.8 : 1,
             }}>
-              {voted && <div aria-hidden style={{ position: "absolute", inset: 0, width: `${pct}%`, background: mine ? tint(TEAL, "2a") : "rgba(255,255,255,0.05)" }} />}
+              {showBars && <div aria-hidden style={{ position: "absolute", inset: 0, width: `${pct}%`, background: mine ? tint(TEAL, "2a") : "rgba(255,255,255,0.05)" }} />}
               <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: mine ? TEAL : INK }}>{o.text}</span>
-                {voted && <span style={{ fontSize: 13, fontWeight: 700, color: mine ? TEAL : MUTED }}>{pct}%</span>}
+                {showBars && <span style={{ fontSize: 13, fontWeight: 700, color: mine ? TEAL : MUTED }}>{pct}%</span>}
               </div>
             </button>
           );
         })}
       </div>
-      <div style={{ fontSize: 11.5, color: MUTED, marginTop: 6 }}>{poll.total} vote{poll.total === 1 ? "" : "s"}{voted ? "" : " · tap to vote"}</div>
+      <div style={{ fontSize: 11.5, color: MUTED, marginTop: 6 }}>
+        {closed
+          ? `Final result · ${poll.total} vote${poll.total === 1 ? "" : "s"}`
+          : `${poll.total} vote${poll.total === 1 ? "" : "s"}${voted ? "" : " · tap to vote"}`}
+      </div>
     </div>
   );
 }
@@ -350,6 +440,8 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
       {galleryIndex !== null && (
         <MediaGallery images={images} index={galleryIndex} onClose={() => setGalleryIndex(null)} />
       )}
+      {ev.type === "post" && ev.link && <LinkCard link={ev.link} />}
+      {ev.type === "post" && ev.fixture && <FixtureCard fixture={ev.fixture} />}
       {ev.poll && <PollBlock ev={ev} />}
 
       {/* A quiz result: the score line as a card, with a door to the same game. */}

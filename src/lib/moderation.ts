@@ -11,10 +11,13 @@ const BLOCKED = [
 
 const LINK = /https?:\/\/|www\./i;
 
-/** Null when the body is fine; a user-facing reason otherwise. */
-export function commentRejection(body: string): string | null {
+/** Null when the body is fine; a user-facing reason otherwise.
+ *  `allowLinks` — Social posts carry deliberate link previews (Phase 2b), so
+ *  postToFeed opts out of the no-links rule; comments, chat and league
+ *  messages keep it as their spam guard (default false, unchanged). */
+export function commentRejection(body: string, opts?: { allowLinks?: boolean }): string | null {
   const text = body.toLowerCase();
   if (BLOCKED.some((w) => text.includes(w))) return "Keep it football — that language isn't welcome here.";
-  if (LINK.test(body)) return "No links in comments.";
+  if (!opts?.allowLinks && LINK.test(body)) return "No links in comments.";
   return null;
 }
