@@ -3,8 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyUsers } from "@/lib/notify";
 import { createNotification } from "@/lib/notifications";
-import { selectStories } from "@/lib/pl/briefing";
-import { clubNewsKey, clubPushCopy, clubsInHeadline } from "@/lib/pl/clubNews";
+import { entitiesOf, selectStories } from "@/lib/pl/briefing";
+import { clubDisplay, clubNewsKey, clubPushCopy, clubsInHeadline, isSameSaga } from "@/lib/pl/clubNews";
 import type { PlNewsFeed, PlNewsItem } from "@/lib/pl/news";
 
 /**
@@ -31,10 +31,37 @@ export const fetchCache = "force-no-store";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-/** Desks that must independently be running a story before it is worth a push. */
-const MIN_DESKS = 2;
+/**
+ * Desks that must independently be running a story before it is worth a push.
+ *
+ * Raised from 2 to 3 after the first live day. At 2 the league produced 23
+ * qualifying stories; at 3 it produces about 10, and a quiet day produces none —
+ * which is the point. There is no obligation to send anything.
+ */
+const MIN_DESKS = 3;
 /** Per fanbase, per day. */
 const MAX_PER_CLUB_PER_DAY = 2;
+/**
+ * The fix for the actual incident: ONE story per run.
+ *
+ * The daily cap was per DAY with nothing spacing it, so a single run walked the
+ * ranked list and fired everything that qualified — seven pushes in 22 seconds
+ * on 5 Aug, two of them to the same Arsenal fan seventeen seconds apart. The cap
+ * was never the constraint that mattered; the burst was.
+ *
+ * One per run means the 30 minute cron schedule becomes the floor between
+ * stories, and the run picks the BEST one rather than the first it trips over.
+ */
+const MAX_STORIES_PER_RUN = 1;
+/** Minimum spacing between two pushes to the same fanbase. */
+const CLUB_GAP_MS = 6 * 3_600_000;
+/** No user hears from ANY part of the app within this window of a club push. */
+const USER_GAP_MINUTES = 4 * 60;
+/** A story sharing this many entities with something already pushed to a club is
+ *  the same saga wearing a new headline. */
+const SAGA_OVERLAP = 2;
+/** How far back saga dedupe looks. */
+const SAGA_WINDOW_DAYS = 3;
 /** Older than this and it is not breaking, it is just news. */
 const FRESH_MS = 8 * 3_600_000;
 /** London hours during which a push may land. */
@@ -100,37 +127,75 @@ export async function GET(req: NextRequest) {
     .filter((s) => s.desks >= MIN_DESKS)
     .filter((s) => now.getTime() - new Date(s.item.publishedAt).getTime() <= FRESH_MS);
 
-  // How many stories each club has already had today, so the cap survives across
-  // the 48 runs in a day. Distinct keys, because one key covers many users.
+  // What each club has already had today, and when. Two jobs: the daily cap,
+  // and the spacing — a club that heard from us an hour ago waits.
   const dayStart = londonDayStart(now);
   const { data: sentToday } = await db
-    .from("notification_log").select("key")
+    .from("notification_log").select("key, sent_at")
     .like("key", "club-news:%").gte("sent_at", dayStart);
   const usedByClub = new Map<string, Set<string>>();
-  for (const row of (sentToday ?? []) as { key: string }[]) {
+  const lastByClub = new Map<string, number>();
+  for (const row of (sentToday ?? []) as { key: string; sent_at: string }[]) {
     const club = row.key.split(":")[1];
     if (!club) continue;
     if (!usedByClub.has(club)) usedByClub.set(club, new Set());
     usedByClub.get(club)!.add(row.key);
+    const t = new Date(row.sent_at).getTime();
+    if (t > (lastByClub.get(club) ?? 0)) lastByClub.set(club, t);
+  }
+
+  // Headlines already pushed to each club recently, for saga dedupe. The inbox
+  // row carries the headline as its body and the club in its title, so no extra
+  // storage is needed to answer "have we already covered this saga".
+  const sagaSince = new Date(now.getTime() - SAGA_WINDOW_DAYS * 86_400_000).toISOString();
+  const { data: covered } = await db
+    .from("notifications").select("title, body")
+    .eq("type", "club_news").gte("created_at", sagaSince);
+  const coveredByClub = new Map<string, Set<string>[]>();
+  for (const row of (covered ?? []) as { title: string | null; body: string | null }[]) {
+    const club = (row.title ?? "").replace(/ news$/, "");
+    if (!club || !row.body) continue;
+    if (!coveredByClub.has(club)) coveredByClub.set(club, []);
+    coveredByClub.get(club)!.push(entitiesOf(row.body));
+  }
+
+  /** Same saga, new headline? */
+  function alreadyCovered(clubDisplayName: string, title: string): boolean {
+    const ents = entitiesOf(title);
+    return (coveredByClub.get(clubDisplayName) ?? [])
+      .some((prev) => isSameSaga(ents, prev, SAGA_OVERLAP));
   }
 
   const sent: { club: string; targeted: number; headline: string; desks: number }[] = [];
-  const skipped: { club: string; reason: string }[] = [];
+  const skipped: { club: string; headline: string; reason: string }[] = [];
+  let storiesSent = 0;
 
+  // Ranked best-first, so the one story this run sends is the biggest one
+  // available rather than whichever happened to come first in the feed.
   for (const { item, desks } of ranked) {
-    for (const club of clubsInHeadline(item.title)) {
+    if (storiesSent >= MAX_STORIES_PER_RUN) break;
+    const clubs = clubsInHeadline(item.title);
+    let sentForThisStory = false;
+
+    for (const club of clubs) {
       const used = usedByClub.get(club) ?? new Set<string>();
       const key = clubNewsKey(club, item.id);
-      if (used.has(key)) continue; // already pushed this exact story
+      if (used.has(key)) continue;
       if (used.size >= MAX_PER_CLUB_PER_DAY) {
-        skipped.push({ club, reason: "daily cap" });
+        skipped.push({ club, headline: item.title, reason: "daily cap" });
+        continue;
+      }
+      const since = now.getTime() - (lastByClub.get(club) ?? 0);
+      if (since < CLUB_GAP_MS) {
+        skipped.push({ club, headline: item.title, reason: `club gap (${Math.round(since / 60000)}m ago)` });
+        continue;
+      }
+      const display = clubDisplay(club);
+      if (alreadyCovered(display, item.title)) {
+        skipped.push({ club, headline: item.title, reason: "saga already covered" });
         continue;
       }
 
-      // This club's fans, opted in. Two reads rather than a join because
-      // club_supporters and profiles are separate tables and PostgREST caps a
-      // response at 1000 rows — the largest fanbase is well inside that today,
-      // but the opt-in filter is applied again inside notifyUsers regardless.
       const { data: fans } = await db
         .from("club_supporters").select("user_id").eq("club", club);
       const userIds = (fans ?? []).map((f) => f.user_id as string);
@@ -140,19 +205,16 @@ export async function GET(req: NextRequest) {
       const url = `/matchweek?story=${item.id}`;
 
       if (dry) {
-        // Report the reachable count so a dry run is worth reading. notifyUsers
-        // would narrow this again by opt-in; this is the upper bound.
         sent.push({ club, targeted: userIds.length, headline: item.title, desks });
-        used.add(key);
-        usedByClub.set(club, used);
+        sentForThisStory = true;
         continue;
       }
 
-      const { targeted } = await notifyUsers({ userIds, title, body, url, dedupeKey: key });
-      // An inbox row per fan who was actually pushed, so the story is still
-      // there when they open the app later. Only for those targeted: writing a
-      // row for someone who never got the push would put an item in their inbox
-      // they have no memory of receiving.
+      const { targeted } = await notifyUsers({
+        userIds, title, body, url, dedupeKey: key,
+        // Nobody hears from us twice in four hours, whatever sent the first one.
+        minGapMinutes: USER_GAP_MINUTES,
+      });
       if (targeted > 0) {
         const { data: reached } = await db
           .from("notification_log").select("user_id").eq("key", key);
@@ -166,7 +228,11 @@ export async function GET(req: NextRequest) {
       sent.push({ club, targeted, headline: item.title, desks });
       used.add(key);
       usedByClub.set(club, used);
+      lastByClub.set(club, now.getTime());
+      sentForThisStory = true;
     }
+
+    if (sentForThisStory) storiesSent++;
   }
 
   return NextResponse.json({
@@ -175,6 +241,13 @@ export async function GET(req: NextRequest) {
     dry,
     candidates: ranked.length,
     minDesks: MIN_DESKS,
+    storiesSent,
+    // Every story that cleared the desk bar, with the clubs it maps to. Without
+    // this a run that sends nothing is indistinguishable from a run that found
+    // nothing, and those need different fixes.
+    considered: ranked.map(({ item, desks }) => ({
+      desks, headline: item.title, clubs: clubsInHeadline(item.title), id: item.id,
+    })),
     sent,
     skipped,
   });

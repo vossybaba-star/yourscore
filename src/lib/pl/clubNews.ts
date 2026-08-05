@@ -92,6 +92,25 @@ export function clubPushCopy(club: string, headline: string): { title: string; b
   return { title: `${clubDisplay(club)} news`, body: headline };
 }
 
+/**
+ * Is this the same running story as one we already pushed, wearing a new
+ * headline?
+ *
+ * A transfer saga generates a fresh article every few hours with a different id,
+ * so id-based dedupe alone would push "Arsenal agree fee for Guimaraes", then
+ * "Why are Arsenal signing Guimaraes?", then "Guimaraes to Arsenal: what it
+ * means" as three separate stories. Shared entities catch what shared ids
+ * cannot.
+ *
+ * Two is the threshold because one shared name is just the club: every Arsenal
+ * story shares "Arsenal" with every other Arsenal story.
+ */
+export function isSameSaga(a: Set<string>, b: Set<string>, minOverlap = 2): boolean {
+  let shared = 0;
+  a.forEach((e) => { if (b.has(e)) shared++; });
+  return shared >= minOverlap;
+}
+
 /** Per (club, story). One key does both jobs: notifyUsers dedupes a user against
  *  it, and counting distinct keys for a club today gives the daily cap. */
 export const clubNewsKey = (club: string, storyId: string): string =>

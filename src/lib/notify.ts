@@ -19,7 +19,22 @@ export async function notifyUsers(opts: {
   dedupeKey: string;
   /** Default true — only send to profiles with notifications_opt_in = true. */
   requireOptIn?: boolean;
-}): Promise<{ targeted: number }> {
+  /**
+   * Skip anyone who has received ANY notification in the last this-many minutes.
+   *
+   * A per-user floor across every notification type, because each cron only
+   * knows its own limits and the user experiences the sum. On 5 Aug one person
+   * had the debate push at 07:30, the daily game at 11:30, a debate reminder at
+   * 11:43, then two club stories seventeen seconds apart at 12:17 — five things
+   * before lunch, none of which broke its own rules.
+   *
+   * Off by default so nothing changes for callers that have not opted in;
+   * a caller that sets it accepts that some recipients are dropped rather than
+   * queued, which is correct for news (it will be stale by the time they are
+   * free) and would be wrong for something that must arrive.
+   */
+  minGapMinutes?: number;
+}): Promise<{ targeted: number; skippedRecent?: number }> {
   try {
     const svc = createServiceClient();
     // notification_log isn't in the generated Database types until migration 56
@@ -41,7 +56,23 @@ export async function notifyUsers(opts: {
       if (!ids.length) return { targeted: 0 };
     }
 
-    // 2. Dedup against notification_log for this key.
+    // 2. Global per-user floor — anything at all sent recently.
+    let skippedRecent = 0;
+    if (opts.minGapMinutes && opts.minGapMinutes > 0) {
+      const since = new Date(Date.now() - opts.minGapMinutes * 60_000).toISOString();
+      const { data: recent } = await raw
+        .from("notification_log")
+        .select("user_id")
+        .in("user_id", ids)
+        .gte("sent_at", since);
+      const busy = new Set((recent ?? []).map((r: { user_id: string }) => r.user_id));
+      const before = ids.length;
+      ids = ids.filter((i) => !busy.has(i));
+      skippedRecent = before - ids.length;
+      if (!ids.length) return { targeted: 0, skippedRecent };
+    }
+
+    // 3. Dedup against notification_log for this key.
     const { data: sentRows } = await raw
       .from("notification_log")
       .select("user_id")
@@ -74,7 +105,7 @@ export async function notifyUsers(opts: {
       console.error("[notify] send-push function returned", res.status, await res.text().catch(() => ""));
     }
 
-    return { targeted: fresh.length };
+    return { targeted: fresh.length, skippedRecent };
   } catch (err) {
     console.error("[notify] notifyUsers failed:", err);
     return { targeted: 0 };
