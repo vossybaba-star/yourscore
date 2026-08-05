@@ -98,13 +98,13 @@ export const BOT_PERSONAS: BotPersona[] = [
   // ── Day 0: the opening seven — the "day one" crowd, so they also carry the
   //    light early-community voice (meta: testing things, feature asks, 🫡).
   { key: "templetim", username: "marcr", name: "marcr", avatar: "/avatars/fan-01.webp",
-    day: 0, cats: { take: 5, poll: 2, banter: 1, player: 1, casual: 2 },
+    day: 0, cats: { take: 5, poll: 1, banter: 1, player: 1, casual: 2 },
     style: { caps: "proper" }, tempo: { cdH: 20, offChance: 0.25 } },
   { key: "kev", username: "jordo88", name: "Jordan", avatar: "/avatars/fan-04.webp",
     day: 0, cats: { take: 5, banter: 3, poll: 1, meta: 1, casual: 4 },
     tempo: { cdH: 5, offChance: 0.12 } },
   { key: "ellie", username: "ellieb14", name: "Ellie", avatar: "/avatars/fan-09.webp",
-    day: 0, cats: { take: 5, poll: 2, casual: 3 },
+    day: 0, cats: { take: 5, poll: 1, casual: 3 },
     tempo: { cdH: 10, offChance: 0.2 } },
   { key: "nan", username: "suecarter", name: "suecarter", avatar: "/avatars/fan-11.webp",
     day: 0, cats: { banter: 4, take: 2, poll: 1, quiz: 1, meta: 1, casual: 2 },
@@ -116,7 +116,7 @@ export const BOT_PERSONAS: BotPersona[] = [
     day: 0, cats: { player: 5, take: 3, poll: 1, casual: 2 },
     tempo: { cdH: 16, offChance: 0.3 } },
   { key: "cal", username: "cal_afc", name: "cally", avatar: "/avatars/fan-15.webp",
-    day: 0, cats: { poll: 5, take: 3, banter: 1, meta: 1, casual: 2 },
+    day: 0, cats: { poll: 2, take: 4, banter: 1, meta: 1, casual: 2 },
     tempo: { cdH: 14, offChance: 0.3 } },
   // ── Day 2: four more voices join.
   { key: "dre", username: "dree_7", name: "dre", avatar: "/avatars/fan-02.webp",
@@ -328,6 +328,10 @@ function pickCat(persona: BotPersona, rnd: Rnd, allowQuiz: boolean, nowMs: numbe
   let roll = rnd() * total;
   let cat = entries[entries.length - 1][0];
   for (const [c, w] of entries) { roll -= w; if (roll <= 0) { cat = c; break; } }
+  // Real users hardly ever post polls (founder, 5 Aug — "no user constantly
+  // posts polls"). Most poll draws become an ordinary post; a poll is an
+  // occasional event, not anyone's personality.
+  if (cat === "poll" && rnd() < 0.75) cat = nowMs < CHATTER_PHASE_UNTIL_MS ? "casual" : "take";
   // Getting-started phase: mostly short ordinary chatter, and a feed of
   // brand-new users doesn't open with a wall of tidy discussion polls.
   if (nowMs < CHATTER_PHASE_UNTIL_MS) {
