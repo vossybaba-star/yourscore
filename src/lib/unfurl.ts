@@ -302,22 +302,13 @@ function urlHash(url: string): string {
 interface CacheRow {
   url: string; title: string | null; description: string | null;
   site_name: string | null; image: string | null; fetched_at: string;
+  /** Video classification (migration 257) — nullable, so a pre-257 row or
+   *  pre-2D cache entry reads as a plain link, exactly what it was. youtube
+   *  is URL-derived and overlaid on every read regardless; "rich" is
+   *  page-derived, and THIS is what makes it survive a cache hit. */
+  video_kind?: string | null; youtube_id?: string | null;
 }
 
-/** Note (video build 2D): migration 250's `link_previews` table has no
- *  column for videoKind/youtubeId, and this build deliberately does NOT add
- *  one (see the build brief — no migration; extend the existing payload
- *  instead). Writing those fields into the upsert below would risk the
- *  WHOLE row failing to write against a table that doesn't have the columns
- *  (a single Postgres statement, all-or-nothing) — worse than just not
- *  caching them. So this row shape is untouched, and videoKind/youtubeId are
- *  recomputed on every read instead: youtube is 100% derivable from the URL
- *  alone (see withYouTubeOverlay, applied to both cache hits and fresh
- *  fetches), so caching never affects it. A "rich" (og:video-declared,
- *  non-YouTube) page's videoKind, however, IS page-derived and is genuinely
- *  lost on a cache hit — that link renders as a standard card until the
- *  7-day cache entry expires and a fresh fetch re-derives it. Known,
- *  accepted gap; flagged rather than worked around with a schema change. */
 async function readCache(db: Db, hash: string): Promise<LinkPreview | null> {
   try {
     const { data, error } = await db.from("link_previews").select("*").eq("url_hash", hash).maybeSingle();
@@ -330,7 +321,10 @@ async function readCache(db: Db, hash: string): Promise<LinkPreview | null> {
     return {
       url: row.url, title: row.title, description: row.description,
       siteName: row.site_name, image: row.image, domain,
-      videoKind: null, youtubeId: null, // overlaid by withYouTubeOverlay in unfurlUrl
+      // youtube is overlaid from the URL by withYouTubeOverlay in unfurlUrl
+      // either way; "rich" comes back from the cached row (mig 257).
+      videoKind: row.video_kind === "rich" ? "rich" : null,
+      youtubeId: null,
     };
   } catch {
     return null; // table absent / RLS surprise / transient — fall through to a live fetch
@@ -339,10 +333,14 @@ async function readCache(db: Db, hash: string): Promise<LinkPreview | null> {
 
 async function writeCache(db: Db, hash: string, preview: LinkPreview): Promise<void> {
   try {
-    // Deliberately only the original 6 columns — see the readCache note above.
+    // video_kind persists the page-derived "rich" classification (mig 257);
+    // youtube_id is stored for completeness but reads recompute it from the
+    // URL anyway. If 257 isn't applied yet the whole upsert fails — cache is
+    // best-effort, the preview itself already succeeded.
     await db.from("link_previews").upsert({
       url_hash: hash, url: preview.url, title: preview.title, description: preview.description,
       site_name: preview.siteName, image: preview.image, fetched_at: new Date().toISOString(),
+      video_kind: preview.videoKind, youtube_id: preview.youtubeId,
     });
   } catch { /* cache is best-effort — the preview itself already succeeded */ }
 }
