@@ -825,6 +825,15 @@ Confirmed preamble above and the referenced section.
   Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
   surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
   `FantasyPromoCard.tsx`.
+- **2026-08-05 (late, 3)** — **Social Phase 4a league chat upgrade SHIPPED** (PR #67; **mig 252
+  APPLIED** — adds only `fantasy_leagues.pinned_message_id`; replies reuse `comments.parent_id`
+  live since mig 221): replies with quoted context on every chat kind (one level deep, reply-to-
+  reply flattens to the top-level parent), 5-minute sender grouping, images in chat (post-media
+  pipeline, bucket-validated, MediaGallery on tap), share-a-feed-post-into-chat (new `feed`
+  ChatKind, id-only payload resolved fresh each read, unavailable stub), owner-pinned message
+  banner (403 for non-owners; degrades hidden pre-migration). Chat payload reports
+  `capabilities {replies, pin}`. Bot-drilled in an ephemeral league (created, drilled, purged).
+  Typing indicators DEFERRED by founder (polling chat, no presence infra).
 - **2026-08-05 (late, 2)** — **Social Phase 3b SHIPPED** (PR #65; **migration 251 APPLIED**:
   `fantasy_feed_bookmarks` own-row RLS + `profiles.pinned_event_id`): bookmarks (overflow
   menu, acts on the original for reposts; Saved list at /fantasy/social/saved, entry beside
