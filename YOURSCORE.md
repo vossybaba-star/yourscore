@@ -6,7 +6,11 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-05 (**Penalties feature RETIRED + La Liga competition RETIRED — both removed completely, see Recently Shipped top entry.** Earlier same day: **Postgame fantasy promo shipped — interstitial pop-up + inline card at every game end, see Recently Shipped top entry.** Same day: **Social Phase 3b (bookmarks/mentions/notification tabs/profile tabs, mig 251 applied) + Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-06 (**People layer shipped, all 3 phases: structured @mentions
+> with member-first chat autocomplete, the shared member action sheet + members list +
+> squad compare, and the challenge foundation (member_challenges, mig 255 applied; Quiz
+> Battle invitations live end to end) — see Recently Shipped top entry.** Prior confirm
+> 2026-08-05: **Penalties feature RETIRED + La Liga competition RETIRED — both removed completely, see Recently Shipped top entry.** Earlier same day: **Postgame fantasy promo shipped — interstitial pop-up + inline card at every game end, see Recently Shipped top entry.** Same day: **Social Phase 3b (bookmarks/mentions/notification tabs/profile tabs, mig 251 applied) + Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,6 +810,23 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-06** — **People layer SHIPPED, all 3 phases** (PRs #74/#75/#76; mig 255
+  applied): **1A structured @mentions** — composers store validated
+  `{userId, usernameSnapshot}` entities in `payload.mentions` (posts, replies, league
+  chat; legacy rows keep the regex fallback); league chat gets member-first @autocomplete
+  off a new roster endpoint (instant from 1 char); people search now excludes blocked
+  accounts everywhere and ranks followed users first in mention mode. **1B member
+  actions** — one shared MemberActionSheet from league table (row tap; round chart moved
+  inside), chat avatars/names, hub, and a new searchable members list (position/A-Z sort,
+  OWNER badge); Compare squads sheet (facts only: points, captain/vice, shared vs
+  differential) off a new shared-league-gated `/leagues/[code]/squad` endpoint; Mention
+  routes into chat (`?mention=`) or the post composer (`?compose=`). **1C challenge
+  foundation** — `member_challenges` table (participant-read RLS, service-role writes,
+  one open pending challenge per pair+game), Quiz Battle only (rides the real
+  h2h_challenges backend end to end: create → chat invitation card with Accept/Decline →
+  opponent plays at /h2h/[id] → reconcile flips to completed/expired with winner),
+  Challenge/Pending chip on the member sheet, ChallengePrepSheet with quiz picker;
+  gameday_quiz + 38-0 documented as future adapters, never rendered.
 - **2026-08-06 (am)** — **Social polish batch SHIPPED** (PR #73, no migrations) after a
   founder /ux-walk + hands-on pass: caught-up terminal now doors into Discover (walk A4);
   floating Sign In/Up pill hidden on /fantasy/social — the join bar owns the one ask, nav
