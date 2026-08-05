@@ -1,4 +1,5 @@
 import { track } from "@vercel/analytics";
+import { metaTrack } from "@/lib/analytics/metaCapi";
 import { isNative } from "@/lib/native";
 import { afLogEvent } from "@/lib/native/appsflyer";
 import { afGameComplete, afInviteSent, afReturnPlay, type InviteSurface } from "@/lib/analytics/appsflyerEvents";
@@ -114,7 +115,7 @@ const FIRST_PLAY_AT_KEY = "ys:firstplayat";
 function fireReturnPlay(game: GameId, daysSinceFirst: number): void {
   const payload: Props = { game, days_since_first: daysSinceFirst, client: clientTag() };
   if (X_RETURNPLAY_EVENT_ID) window.twq?.("event", X_RETURNPLAY_EVENT_ID, payload); // X (Twitter)
-  window.fbq?.("trackCustom", "ReturnPlay", payload);   // Meta
+  metaTrack("trackCustom", "ReturnPlay", payload);   // Meta
   window.ttq?.track?.("ReturnPlay", payload);            // TikTok (custom, audience-eligible)
   window.snaptr?.("track", "CUSTOM_EVENT_5", payload);  // Snapchat (1=play·2=complete·3=download·4=share·5=return)
   window.gtag?.("event", "return_play", payload);        // Google Analytics 4 → audience + Google Ads import
@@ -179,7 +180,7 @@ function maybeTrackHabitFormed(game: GameId, today: string): void {
 
   const payload: Props = { game, client: clientTag() };
   if (X_HABIT_EVENT_ID) window.twq?.("event", X_HABIT_EVENT_ID, payload); // X (Twitter)
-  window.fbq?.("trackCustom", "HabitFormed", payload); // Meta
+  metaTrack("trackCustom", "HabitFormed", payload); // Meta
   window.ttq?.track?.("HabitFormed", payload);          // TikTok
   window.gtag?.("event", "habit_formed", payload);      // Google Analytics 4
   track("habit_formed", payload);                       // Vercel Analytics
@@ -204,7 +205,7 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
   if (xId) window.twq?.("event", xId, payload);
 
   // Meta — custom event, distinct name per game.
-  window.fbq?.("trackCustom", name, payload);
+  metaTrack("trackCustom", name, payload);
 
   // TikTok — custom event, distinct name per game.
   window.ttq?.track?.(name, payload);
@@ -213,7 +214,7 @@ function trackGameEvent(game: GameId, event: GameEvent, props: Props = {}): void
   // single bid event that matches app-level creative. `game` stays in the payload, so
   // this adds a dimension rather than losing one.
   const anyName = anyEventName(event);
-  window.fbq?.("trackCustom", anyName, payload);
+  metaTrack("trackCustom", anyName, payload);
   window.ttq?.track?.(anyName, payload);
   const xAnyId = X_ANY_EVENT_IDS[event];
   if (xAnyId) window.twq?.("event", xAnyId, payload);
@@ -280,7 +281,7 @@ export function trackDownload(props: Props = {}): void {
   const payload: Props = { platform: "ios", client: clientTag(), ...props };
 
   if (X_DOWNLOAD_EVENT_ID) window.twq?.("event", X_DOWNLOAD_EVENT_ID, payload); // X (Twitter)
-  window.fbq?.("trackCustom", "Download", payload);    // Meta
+  metaTrack("trackCustom", "Download", payload);    // Meta
   window.ttq?.track?.("Download", payload);             // TikTok (standard Download event)
   window.snaptr?.("track", "CUSTOM_EVENT_3", payload); // Snapchat (1=play · 2=complete · 3=download)
   window.gtag?.("event", "download_app", payload);      // Google Analytics 4
@@ -299,7 +300,7 @@ export function trackShare(content: string, props: Props = {}): void {
   const payload: Props = { content, client: clientTag(), ...props };
 
   if (X_SHARE_EVENT_ID) window.twq?.("event", X_SHARE_EVENT_ID, payload); // X (Twitter)
-  window.fbq?.("trackCustom", "Share", payload);        // Meta
+  metaTrack("trackCustom", "Share", payload);        // Meta
   window.ttq?.track?.("Share", payload);                // TikTok (custom Share event)
   window.snaptr?.("track", "CUSTOM_EVENT_4", payload);  // Snapchat (1=play · 2=complete · 3=download · 4=share)
   window.gtag?.("event", "share", payload);             // Google Analytics 4
@@ -360,7 +361,7 @@ export function trackFantasyWaitlist(props: Props = {}): void {
   const payload: Props = { client: clientTag(), ...props };
 
   if (X_FANTASY_WAITLIST_EVENT_ID) window.twq?.("event", X_FANTASY_WAITLIST_EVENT_ID, payload); // X
-  window.fbq?.("track", "Lead", payload);              // Meta (standard, optimisable)
+  metaTrack("track", "Lead", payload);              // Meta (standard, optimisable)
   window.ttq?.track?.("SubmitForm", payload);           // TikTok (standard, optimisable)
   window.snaptr?.("track", "SUBSCRIBE", payload);       // Snapchat (standard; custom slots 1-5 are taken)
   window.gtag?.("event", "generate_lead", payload);     // Google Analytics 4
@@ -378,7 +379,7 @@ export function trackClubPick(club: string, props: Props = {}): void {
   const payload: Props = { club, client: clientTag(), ...props };
 
   if (X_CLUBPICK_EVENT_ID) window.twq?.("event", X_CLUBPICK_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "ClubPick", payload); // Meta
+  metaTrack("trackCustom", "ClubPick", payload); // Meta
   window.ttq?.track?.("ClubPick", payload);          // TikTok
   window.gtag?.("event", "club_pick", payload);      // Google Analytics 4
   track("club_pick", payload);                       // Vercel Analytics
@@ -397,7 +398,7 @@ export function trackInviteAccepted(surface: string, props: Props = {}): void {
   const payload: Props = { surface, client: clientTag(), ...props };
 
   if (X_INVITE_ACCEPTED_EVENT_ID) window.twq?.("event", X_INVITE_ACCEPTED_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "InviteAccepted", payload); // Meta
+  metaTrack("trackCustom", "InviteAccepted", payload); // Meta
   window.ttq?.track?.("InviteAccepted", payload);          // TikTok
   window.gtag?.("event", "invite_accepted", payload);      // Google Analytics 4
   track("invite_accepted", payload);                       // Vercel Analytics
@@ -411,7 +412,7 @@ export function trackInviteAccepted(surface: string, props: Props = {}): void {
 export function trackPushOptIn(): void {
   if (typeof window === "undefined") return;
   const payload: Props = { client: clientTag() };
-  window.fbq?.("trackCustom", "PushOptIn", payload); // Meta
+  metaTrack("trackCustom", "PushOptIn", payload); // Meta
   window.ttq?.track?.("PushOptIn", payload);          // TikTok
   window.gtag?.("event", "push_opt_in", payload);     // Google Analytics 4
   track("push_opt_in", payload);                      // Vercel Analytics
@@ -431,7 +432,7 @@ export function trackReminderSet(fixtureId: number, props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { fixtureId, client: clientTag(), ...props };
   if (X_GAMEDAY_REMINDER_EVENT_ID) window.twq?.("event", X_GAMEDAY_REMINDER_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "ReminderSet", payload); // Meta
+  metaTrack("trackCustom", "ReminderSet", payload); // Meta
   window.ttq?.track?.("ReminderSet", payload);          // TikTok
   window.gtag?.("event", "reminder_set", payload);      // Google Analytics 4
   track("reminder_set", payload);                       // Vercel Analytics
@@ -446,7 +447,7 @@ export function trackReminderSet(fixtureId: number, props: Props = {}): void {
 export function trackTeamDrafted(props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { client: clientTag(), ...props };
-  window.fbq?.("trackCustom", "TeamDrafted", payload); // Meta
+  metaTrack("trackCustom", "TeamDrafted", payload); // Meta
   window.ttq?.track?.("TeamDrafted", payload);          // TikTok
   window.gtag?.("event", "team_drafted", payload);      // Google Analytics 4
   track("team_drafted", payload);                       // Vercel Analytics
@@ -466,7 +467,7 @@ export function trackFantasySquad(props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { client: clientTag(), ...props };
   if (X_FANTASY_SQUAD_EVENT_ID) window.twq?.("event", X_FANTASY_SQUAD_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "FantasySquadSelected", payload); // Meta
+  metaTrack("trackCustom", "FantasySquadSelected", payload); // Meta
   window.ttq?.track?.("FantasySquadSelected", payload);          // TikTok
   window.gtag?.("event", "fantasy_squad_selected", payload);     // Google Analytics 4
   track("fantasy_squad_selected", payload);                      // Vercel Analytics
@@ -479,7 +480,7 @@ export function trackFantasyLeagueCreated(props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { client: clientTag(), ...props };
   if (X_FANTASY_LEAGUE_EVENT_ID) window.twq?.("event", X_FANTASY_LEAGUE_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "FantasyLeagueCreated", payload); // Meta
+  metaTrack("trackCustom", "FantasyLeagueCreated", payload); // Meta
   window.ttq?.track?.("FantasyLeagueCreated", payload);          // TikTok
   window.gtag?.("event", "fantasy_league_created", payload);     // Google Analytics 4
   track("fantasy_league_created", payload);                      // Vercel Analytics
@@ -494,7 +495,7 @@ export function trackFantasyInvite(channel: string, props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { channel, client: clientTag(), ...props };
   if (X_FANTASY_INVITE_EVENT_ID) window.twq?.("event", X_FANTASY_INVITE_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "FantasyInviteSent", payload); // Meta
+  metaTrack("trackCustom", "FantasyInviteSent", payload); // Meta
   window.ttq?.track?.("FantasyInviteSent", payload);          // TikTok
   window.gtag?.("event", "fantasy_invite_sent", payload);     // Google Analytics 4
   track("fantasy_invite_sent", payload);                      // Vercel Analytics
@@ -526,7 +527,7 @@ export function trackRatePhotoStarted(props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { client: clientTag(), ...props };
   if (X_RATE_STARTED_EVENT_ID) window.twq?.("event", X_RATE_STARTED_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "RatePhotoStarted", payload); // Meta
+  metaTrack("trackCustom", "RatePhotoStarted", payload); // Meta
   window.ttq?.track?.("RatePhotoStarted", payload);          // TikTok
   window.gtag?.("event", "rate_photo_started", payload);     // Google Analytics 4
   track("rate_photo_started", payload);                      // Vercel Analytics
@@ -536,7 +537,7 @@ export function trackRatePhotoStarted(props: Props = {}): void {
 export function trackSquadExtracted(props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { client: clientTag(), ...props };
-  window.fbq?.("trackCustom", "SquadExtracted", payload); // Meta
+  metaTrack("trackCustom", "SquadExtracted", payload); // Meta
   window.ttq?.track?.("SquadExtracted", payload);          // TikTok
   window.gtag?.("event", "squad_extracted", payload);      // Google Analytics 4
   track("squad_extracted", payload);                       // Vercel Analytics
@@ -546,7 +547,7 @@ export function trackSquadRated(props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload: Props = { client: clientTag(), ...props };
   if (X_SQUAD_RATED_EVENT_ID) window.twq?.("event", X_SQUAD_RATED_EVENT_ID, payload); // X
-  window.fbq?.("trackCustom", "SquadRated", payload); // Meta (custom; Meta optimises customs)
+  metaTrack("trackCustom", "SquadRated", payload); // Meta (custom; Meta optimises customs)
   window.ttq?.track?.("SquadRated", payload);          // TikTok (custom, audience-eligible)
   // TikTok optimises ONLY toward standard events, so the payoff also fires
   // ViewContent as its optimisable proxy (same reasoning as game plays above).
@@ -564,10 +565,10 @@ export function trackRateOutcome(action: string, signedOut: boolean, props: Prop
   // reporting only, never a bid event that would dilute the acquisition signal.
   if (signedOut) {
     if (X_RATE_OUTCOME_EVENT_ID) window.twq?.("event", X_RATE_OUTCOME_EVENT_ID, payload); // X
-    window.fbq?.("track", "Lead", payload);       // Meta (standard, optimisable)
+    metaTrack("track", "Lead", payload);       // Meta (standard, optimisable)
     window.ttq?.track?.("SubmitForm", payload);    // TikTok (standard, optimisable)
   }
-  window.fbq?.("trackCustom", "RateOutcome", payload); // Meta (custom, both states)
+  metaTrack("trackCustom", "RateOutcome", payload); // Meta (custom, both states)
   window.ttq?.track?.("RateOutcome", payload);          // TikTok (custom, both states)
   window.gtag?.("event", "rate_outcome", payload);      // Google Analytics 4
   track("rate_outcome", payload);                       // Vercel Analytics

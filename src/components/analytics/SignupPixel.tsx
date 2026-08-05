@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { useEffect } from "react";
+import { metaTrack } from "@/lib/analytics/metaCapi";
 import { afRegistration } from "@/lib/analytics/appsflyerEvents";
 import { getDeviceId } from "@/lib/analytics/deviceId";
 import { isNative } from "@/lib/native";
@@ -32,7 +33,7 @@ function fireSignupConversions() {
   // signups — the same web pixels fire in both (see clientTag in trackGame).
   const payload = { client: isNative() ? "native" : "web" };
   window.twq?.("event", X_SIGNUP_EVENT_ID, payload); // X (Twitter) — Lead / Sign-up
-  window.fbq?.("track", "CompleteRegistration", payload); // Meta
+  metaTrack("track", "CompleteRegistration", payload); // Meta (Pixel + CAPI, deduped)
   window.ttq?.track?.("CompleteRegistration", payload); // TikTok
   window.snaptr?.("track", "SIGN_UP", payload); // Snapchat
   window.gtag?.("event", "sign_up", payload); // Google Analytics 4
