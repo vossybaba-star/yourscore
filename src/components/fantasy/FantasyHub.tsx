@@ -21,7 +21,7 @@ import { GameweekBreakdown } from "@/components/fantasy/GameweekBreakdown";
 import { FinalStory } from "@/components/fantasy/FinalStory";
 import CaptainAssistCard from "@/components/fantasy/CaptainAssistCard";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
-import { pitchName, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
+import { pitchName, DEPARTED_NAME, DEPARTED_PITCH, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BUDGET_TENTHS, CREDIT_CAP, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
@@ -143,7 +143,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   }, [livePolling, refresh]);
 
   const squad = state?.squad;
-  const nameOf = useCallback((id: number) => pool.get(id)?.name ?? `#${id}`, [pool]);
+  const nameOf = useCallback((id: number) => pool.get(id)?.name ?? DEPARTED_NAME, [pool]);
 
   // Anchor picks for the intro's "where to start" — the priciest name in each
   // line. "Most expensive" is a fact we can read straight off the pool (no form
@@ -633,7 +633,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
   const boardPlayers: BoardPlayer[] = squad.picks.map((pk) => {
     const p = pool.get(pk.id);
     return {
-      id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
+      id: pk.id, name: p?.name ?? DEPARTED_NAME, label: p ? pitchName(p.name) : DEPARTED_PITCH,
       pos: pk.pos, club: p?.club, avatarUrl: p ? (p.avatarUrl ?? faceFor(p.name)) : undefined, price: p?.price,
     };
   });

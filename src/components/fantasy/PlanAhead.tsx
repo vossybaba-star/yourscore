@@ -26,7 +26,7 @@ import {
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
-import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
+import { pitchName, DEPARTED_NAME, DEPARTED_PITCH, type BoardPlayer } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -161,7 +161,7 @@ export function PlanAhead({ embedded = false }: { embedded?: boolean }) {
 
   const credits = state.squad.credits;
   const squad = state.squad;
-  const nameOf = (id: number) => byId.get(id)?.name ?? `#${id}`;
+  const nameOf = (id: number) => byId.get(id)?.name ?? DEPARTED_NAME;
   const paidMoves = Math.max(0, planned.applied.length - credits);
   const hitCost = paidMoves * HIT_POINTS;
 
@@ -177,7 +177,7 @@ export function PlanAhead({ embedded = false }: { embedded?: boolean }) {
   const boardPlayers: BoardPlayer[] = planned.squad.picks.map((pk) => {
     const p = byId.get(pk.id);
     return {
-      id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
+      id: pk.id, name: p?.name ?? DEPARTED_NAME, label: p ? pitchName(p.name) : DEPARTED_PITCH,
       pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? (p.avatarUrl ?? faceFor(p.name)) : undefined, price: p?.price,
     };
   });
@@ -199,7 +199,7 @@ export function PlanAhead({ embedded = false }: { embedded?: boolean }) {
     // back to a stand-in from the stored pick so he can still be planned out.
     const outP = byId.get(picking) ?? (() => {
       const pk = planned.squad.picks.find((x) => x.id === picking);
-      return pk ? ({ id: pk.id, name: `#${pk.id}`, club: "", clubId: pk.clubId, pos: pk.pos, price: pk.buyTenths / 10 } as ClientPoolPlayer) : undefined;
+      return pk ? ({ id: pk.id, name: DEPARTED_NAME, club: "", clubId: pk.clubId, pos: pk.pos, price: pk.buyTenths / 10 } as ClientPoolPlayer) : undefined;
     })();
     if (!outP) return [];
     const ownedNow = new Set(planned.squad.picks.map((p) => p.id));

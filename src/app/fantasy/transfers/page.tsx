@@ -11,7 +11,7 @@ import {
   type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
-import { pitchName, type BoardPlayer } from "@/lib/fantasy/board";
+import { pitchName, DEPARTED_NAME, DEPARTED_PITCH, type BoardPlayer } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 
@@ -62,7 +62,7 @@ export default function TransfersPage() {
   const boardPlayers: BoardPlayer[] = useMemo(() => (squad?.picks ?? []).map((pk) => {
     const p = byId.get(pk.id);
     return {
-      id: pk.id, name: p?.name ?? `#${pk.id}`, label: pitchName(p?.name ?? `#${pk.id}`),
+      id: pk.id, name: p?.name ?? DEPARTED_NAME, label: p ? pitchName(p.name) : DEPARTED_PITCH,
       pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? (p.avatarUrl ?? faceFor(p.name)) : undefined, price: p?.price,
     };
   }), [squad, byId]);
@@ -76,7 +76,7 @@ export default function TransfersPage() {
     const inPool = byId.get(selling);
     if (inPool) return inPool;
     const pk = squad?.picks.find((x) => x.id === selling);
-    return pk ? { id: pk.id, name: `#${pk.id}`, club: "", clubId: pk.clubId, pos: pk.pos, price: pk.buyTenths / 10 } : null;
+    return pk ? { id: pk.id, name: DEPARTED_NAME, club: "", clubId: pk.clubId, pos: pk.pos, price: pk.buyTenths / 10 } : null;
   }, [selling, byId, squad]);
   const hits = state?.entry?.hits ?? 0;
   const made = state?.entry?.transfers ?? 0;

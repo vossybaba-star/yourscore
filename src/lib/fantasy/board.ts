@@ -46,6 +46,13 @@ export function pitchName(full: string): string {
   return last;
 }
 
+/** Stand-in for a squad pick whose player has left the pool (transferred out of
+ *  the PL, so no longer scorable). Shown in his place until the manager swaps him.
+ *  DEPARTED_NAME reads in full in panels; DEPARTED_PITCH is the short form for the
+ *  pitch shirt (pitchName would reduce "Departed player" to "player"). */
+export const DEPARTED_NAME = "Departed player";
+export const DEPARTED_PITCH = "Departed";
+
 /** The starting XI grouped into formation rows, top-down FWD→GK. Empty rows are
  *  dropped so a lopsided formation doesn't leave a blank band. */
 export function xiRows(
