@@ -52,7 +52,7 @@ export function MentionDropdown({ query, onSelect }: { query: string | null; onS
     if (!query) { setUsers(null); return; }
     let live = true;
     const t = setTimeout(() => {
-      fetch(`/api/fantasy/users/search?q=${encodeURIComponent(query)}&limit=8`)
+      fetch(`/api/fantasy/users/search?q=${encodeURIComponent(query)}&limit=8&mode=mention`)
         .then((r) => (r.ok ? r.json() : { users: [] }))
         .then((d) => { if (live) setUsers(d.users ?? []); })
         .catch(() => { if (live) setUsers([]); });

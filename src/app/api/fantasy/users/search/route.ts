@@ -9,9 +9,10 @@ import { syntheticActors } from "@/lib/fantasy/feed";
  * needs a real @handle to insert), synthetic/health-check accounts excluded.
  * Signed-in + rate-limited via withFantasyUser.
  *
- * Prefix match (not substring) and an optional `limit` — the mention
- * composer calls `?limit=8` (AC3's cap); Discover's own search leaves it off
- * and gets the pre-existing 20.
+ * Match mode is caller-gated (shared-surface rule): Discover keeps its
+ * pre-existing SUBSTRING match untouched; the mention composer passes
+ * `mode=mention` for prefix matching (an @handle is typed left to right).
+ * Optional `limit` — mentions pass 8, Discover keeps the pre-existing 20.
  */
 export const fetchCache = "force-no-store";
 export const dynamic = "force-dynamic";
@@ -34,11 +35,15 @@ export async function GET(req: NextRequest) {
       .select("id, username, display_name, avatar_url")
       .neq("id", userId)
       .not("username", "is", null);
+    // Prefix for mentions, substring for Discover (its long-standing behaviour).
+    const prefix = req.nextUrl.searchParams.get("mode") === "mention";
+    const uPat = prefix ? `${cleanUsername}%` : `%${cleanUsername}%`;
+    const dPat = prefix ? `${cleanDisplay}%` : `%${cleanDisplay}%`;
     query = cleanUsername.length >= 2 && cleanDisplay.length >= 2
-      ? query.or(`username.ilike.${cleanUsername}%,display_name.ilike.${cleanDisplay}%`)
+      ? query.or(`username.ilike.${uPat},display_name.ilike.${dPat}`)
       : cleanUsername.length >= 2
-        ? query.ilike("username", `${cleanUsername}%`)
-        : query.ilike("display_name", `${cleanDisplay}%`);
+        ? query.ilike("username", uPat)
+        : query.ilike("display_name", dPat);
 
     const { data } = await query.order("username", { ascending: true }).limit(limit + 5); // headroom for the bot filter below
 
