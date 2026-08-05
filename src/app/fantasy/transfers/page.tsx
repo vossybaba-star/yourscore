@@ -66,7 +66,18 @@ export default function TransfersPage() {
       pos: p?.pos ?? pk.pos, club: p?.club, avatarUrl: p ? (p.avatarUrl ?? faceFor(p.name)) : undefined, price: p?.price,
     };
   }), [squad, byId]);
-  const out = selling !== null ? byId.get(selling) : null;
+  // A departed player (left his club, so dropped from the refreshed pool) is
+  // still in your squad and must stay sellable. When the pool no longer has him,
+  // synthesize a stand-in from the stored pick — it keeps his position and what
+  // you paid — so the sell panel and the replacement list still work. sellValue()
+  // already falls back to buyTenths when the live price is gone.
+  const out: ClientPoolPlayer | null = useMemo(() => {
+    if (selling === null) return null;
+    const inPool = byId.get(selling);
+    if (inPool) return inPool;
+    const pk = squad?.picks.find((x) => x.id === selling);
+    return pk ? { id: pk.id, name: `#${pk.id}`, club: "", clubId: pk.clubId, pos: pk.pos, price: pk.buyTenths / 10 } : null;
+  }, [selling, byId, squad]);
   const hits = state?.entry?.hits ?? 0;
   const made = state?.entry?.transfers ?? 0;
   /** Past the deadline: everything reads, nothing writes. */

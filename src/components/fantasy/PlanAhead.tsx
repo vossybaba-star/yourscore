@@ -195,7 +195,12 @@ export function PlanAhead({ embedded = false }: { embedded?: boolean }) {
   const needle = q.trim().toLowerCase();
   const candidates = (() => {
     if (picking === null) return [];
-    const outP = byId.get(picking);
+    // Keep a departed player (dropped from the refreshed pool) sellable: fall
+    // back to a stand-in from the stored pick so he can still be planned out.
+    const outP = byId.get(picking) ?? (() => {
+      const pk = planned.squad.picks.find((x) => x.id === picking);
+      return pk ? ({ id: pk.id, name: `#${pk.id}`, club: "", clubId: pk.clubId, pos: pk.pos, price: pk.buyTenths / 10 } as ClientPoolPlayer) : undefined;
+    })();
     if (!outP) return [];
     const ownedNow = new Set(planned.squad.picks.map((p) => p.id));
     const clubCount = new Map<number, number>();
@@ -333,7 +338,7 @@ export function PlanAhead({ embedded = false }: { embedded?: boolean }) {
         <Card style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <span style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 7 }}>
-              <PlayerAvatar name={byId.get(picking)!.name} avatarUrl={byId.get(picking)!.avatarUrl ?? faceFor(byId.get(picking)!.name)} size={26} /> Swap out <b>{nameOf(picking)}</b>
+              <PlayerAvatar name={nameOf(picking)} avatarUrl={byId.get(picking)?.avatarUrl ?? faceFor(nameOf(picking))} size={26} /> Swap out <b>{nameOf(picking)}</b>
             </span>
             <Btn small onClick={() => { setPicking(null); setQ(""); }}>Cancel</Btn>
           </div>
