@@ -23,6 +23,9 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..", "..");
 const OUT = join(ROOT, "src", "data", "draft", "player-seasons.json");
+// The client fetches a deploy-invariant PUBLIC copy (pool.ts fetches
+// /data/draft/player-seasons.json) — keep it byte-identical to the bundled one.
+const OUT_PUBLIC = join(ROOT, "public", "data", "draft", "player-seasons.json");
 
 // The PL source CSV (the only competition since La Liga was retired).
 const SOURCES = [
@@ -184,6 +187,8 @@ writeFileSync(OUT, JSON.stringify({
   clubs,
   nations,
 }, null, 0) + "\n");
+mkdirSync(dirname(OUT_PUBLIC), { recursive: true });
+writeFileSync(OUT_PUBLIC, readFileSync(OUT));
 
 console.log(`\n38-0 dataset: ${players.length} player-seasons, ${buckets.length} spinnable buckets (FIFA only).`);
 for (const [lg, c] of Object.entries(leagues)) console.log(`  ${lg.padEnd(7)} ${c.players} player-seasons · ${c.buckets} squads`);
