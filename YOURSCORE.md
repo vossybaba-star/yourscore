@@ -6,7 +6,10 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-06 (**People layer shipped, all 3 phases: structured @mentions
+> **Confirmed:** 2026-08-06 (**Native video shipped across Social: uploads, inline +
+> fullscreen playback, video in replies and league chat, YouTube embeds and rich video
+> previews, football-context combos — see Recently Shipped top entry.** Same day:
+> **People layer shipped, all 3 phases: structured @mentions
 > with member-first chat autocomplete, the shared member action sheet + members list +
 > squad compare, and the challenge foundation (member_challenges, mig 255 applied; Quiz
 > Battle invitations live end to end) — see Recently Shipped top entry.** Prior confirm
@@ -809,6 +812,21 @@
 
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
+
+- **2026-08-06** — **Native video SHIPPED across Social** (PRs #77/#78/#79; migs 256+257
+  applied; `post-videos` bucket + project upload cap 100MB): direct upload from iPhone
+  (60s / 100MB / one per post, MIME-sniffed, progress + retry + cancel, client-captured
+  poster), one shared inline player (poster first, muted hysteresis autoplay, one active
+  player at a time, session sound memory, reduced-motion and data-saver respected, honest
+  "Video unavailable." fallback), fullscreen with scrub + position handoff. Video in
+  replies (tap to play) and league chat (compact card, never autoplays), share-to-league
+  cards carry the poster, profile Media tab shows video tiles with duration. External
+  links: YouTube gets a lazy tap-to-load nocookie embed; any og:video page gets a rich
+  "Watch on <publisher>" preview; everything else keeps the plain card — never a dead
+  player, nothing rehosted. Video combines with player cards, fixtures and polls in one
+  post. Architecture is Supabase storage direct (founder call: no transcoding service);
+  accepted risk: an HEVC-only .mov may not decode on Android/Chrome and falls back
+  honestly.
 
 - **2026-08-06** — **People layer SHIPPED, all 3 phases** (PRs #74/#75/#76; mig 255
   applied): **1A structured @mentions** — composers store validated
