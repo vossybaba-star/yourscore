@@ -166,10 +166,18 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
       return age > 20 * 60 * 1000 && age < 36 * 60 * 60 * 1000;
     });
     const targetIds = replyable.map((e) => e.id);
-    const { data: existingComments } = targetIds.length
-      ? await db.from("comments").select("subject_id, user_id")
-          .eq("subject_type", "fantasy_feed").in("subject_id", targetIds).is("deleted_at", null)
-      : { data: [] };
+    const [{ data: existingComments }, { data: recentReplyBodies }] = await Promise.all([
+      targetIds.length
+        ? db.from("comments").select("subject_id, user_id")
+            .eq("subject_type", "fantasy_feed").in("subject_id", targetIds).is("deleted_at", null)
+        : Promise.resolve({ data: [] }),
+      // A canned line the feed has seen this week doesn't get said again — two
+      // cards apart with the same comment is the fastest tell there is.
+      db.from("comments").select("body").in("user_id", botIds)
+        .eq("subject_type", "fantasy_feed")
+        .gte("created_at", new Date(now - 7 * 864e5).toISOString()),
+    ]);
+    const usedBodies = new Set(((recentReplyBodies ?? []) as { body: string }[]).map((r) => r.body));
     const commentsByEvent = new Map<string, string[]>();
     for (const c of (existingComments ?? []) as { subject_id: string; user_id: string }[]) {
       commentsByEvent.set(c.subject_id, [...(commentsByEvent.get(c.subject_id) ?? []), c.user_id]);
@@ -192,10 +200,16 @@ export async function runBotTick(db: Db): Promise<BotTickReport> {
           ? (ev.payload!.poll!.options as unknown[]).filter((o): o is string => typeof o === "string")
           : undefined,
       };
-      const body = generateBotReply(target);
+      let body: string | null = null;
+      for (let i = 0; i < 4 && !body; i++) {
+        const candidate = generateBotReply(target);
+        if (!candidate) break;
+        if (!usedBodies.has(candidate)) body = candidate;
+      }
       if (!body) continue;
       const eligible = activeBotIds.filter((id) => id !== ev.actor_id && !already.includes(id));
       if (!eligible.length) continue;
+      usedBodies.add(body);
       replyRows.push({
         subject_type: "fantasy_feed", subject_id: ev.id,
         user_id: eligible[Math.floor(Math.random() * eligible.length)], body,

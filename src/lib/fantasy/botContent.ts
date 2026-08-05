@@ -304,6 +304,8 @@ const REPLY_AGREE = [
   "been saying this for weeks 🫡",
   "so true it hurts",
   "the only sensible post on this feed today",
+  "hate that you're right",
+  "sensible. suspiciously sensible",
 ];
 const REPLY_DISAGREE = [
   "wild take. screenshotted for October 💀",
@@ -311,6 +313,8 @@ const REPLY_DISAGREE = [
   "this will age like milk and I'm here for it",
   "the eye test says otherwise but go off",
   "bookmarking this so we can revisit in a month",
+  "strong words from someone whose keeper costs £4.0m",
+  "brave post. wrong, but brave",
 ];
 const REPLY_BANTER = [
   "😭 too real",
@@ -330,12 +334,20 @@ const REPLY_QUIZ = [
   "decent. the last one's a trap and you know it",
   "rematch when",
   "ok that's actually a good score and I hate it",
+  "posting your scores now are we. bold",
+  "fine I'll go beat it, give me ten minutes",
+  "the speed bonus is doing some lifting there I reckon",
 ];
 const REPLY_SQUAD = [
   "bench is brave",
   "solid spine, the budget end scares me",
   "no notes on the front line. some notes on the back",
   "who gets the armband in this though",
+  "seen worse. owned worse",
+  "that defence is a leap of faith and I respect it",
+  "midfield is doing all the heavy lifting here",
+  "the template creeps in everywhere I look 👀",
+  "premium heavy. brave or broke by October",
 ];
 const REPLY_META = [
   "🫡",
