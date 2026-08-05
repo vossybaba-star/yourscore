@@ -30,6 +30,7 @@ import { positionColor } from "@/lib/rank";
 import { trackGamePlay, trackGameComplete, trackShare, firedOnce } from "@/lib/analytics/trackGame";
 import { asCompetition, type Competition, type Formation, type PlacedPlayer, type PlayerSeason } from "@/lib/draft/types";
 import type { DraftLiveMatchRow } from "@/types/draft-db";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 
 const BG = "#0a0a0f";
 
@@ -567,6 +568,9 @@ function ResultPanel({ view, sim, m }: { view: View; sim: MatchSim | null; m: Dr
         </Button>
 
         <Button variant="ghost" size="md" fullWidth className="mt-3" href="/38-0/live">Play again</Button>
+
+        <div className="mt-3"><FantasyPromoCard surface="live-h2h" /></div>
+
         <Link href="/38-0/leaderboard" className="mt-3 block text-center underline text-sm" style={{ color: "#8a948f" }}>View leaderboard</Link>
       </Panel>
 

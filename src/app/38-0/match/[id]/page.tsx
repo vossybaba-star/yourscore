@@ -17,6 +17,7 @@ import { tierColor } from "@/lib/draft/ui";
 import { liveOgQuery } from "@/lib/draft/share";
 import { asLeague, LEAGUE_META } from "@/lib/draft/types";
 import type { MatchReport } from "@/lib/draft/live-score";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yourscore.app";
 
@@ -144,6 +145,9 @@ export default async function MatchPage({ params }: { params: { id: string } }) 
       <p className="text-center font-body mt-2" style={{ fontSize: 12, color: "#8a948f" }}>
         Build your all-time Premier League XI and go live, head-to-head. No sign-up to play.
       </p>
+      <div className="mt-3">
+        <FantasyPromoCard surface="38-0-h2h" />
+      </div>
     </div>
   );
 

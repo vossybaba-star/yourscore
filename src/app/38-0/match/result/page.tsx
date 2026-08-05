@@ -17,6 +17,7 @@ import { loadLastMatch, type LocalMatch } from "@/lib/draft/local";
 import { liveOgQuery } from "@/lib/draft/share";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { trackGameComplete, trackShare, firedOnce } from "@/lib/analytics/trackGame";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 
 export default function MatchResult() {
   const router = useRouter();
@@ -162,6 +163,8 @@ export default function MatchResult() {
               Build a fresh XI
             </Button>
           )}
+
+          <FantasyPromoCard surface="38-0-match" />
         </div>
       </div>
 

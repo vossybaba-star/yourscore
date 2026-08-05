@@ -33,6 +33,7 @@ import { useUser } from "@/hooks/useUser";
 import { PenaltyShootout, type PensView } from "@/components/draft/PenaltyShootout";
 import { BackPill } from "@/components/ui/BackPill";
 import type { PenKick } from "@/lib/draft/pens";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 
 type Fixture = { stage: string; label: string; opponent: { nation: string; crest?: string } };
 type Run = {
@@ -646,6 +647,8 @@ export default function WorldCupRun() {
             </div>
           </div>
         )}
+
+        {terminal && <div className="mt-4"><FantasyPromoCard surface="wc-run" /></div>}
 
         {/* Road to the Final */}
         <div className="mt-4 rounded-2xl overflow-hidden" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)" }}>

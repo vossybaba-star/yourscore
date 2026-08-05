@@ -8,6 +8,7 @@ import { trackShare, trackGamePlay, trackGameComplete } from "@/lib/analytics/tr
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { useHideGamesNav } from "@/lib/gamesNav";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 
 // "Perfect 10" — name everyone in a ranked top-10 football list. Third Quiz
 // game-type. This is the literal /play/game/perfect-10 folder, which Next.js
@@ -1187,6 +1188,8 @@ export default function Perfect10Game() {
           <Button variant="ghost" tone="gold" size="lg" fullWidth onClick={() => router.push("/play")}>
             MORE GAMES
           </Button>
+
+          <FantasyPromoCard surface="p10" />
         </div>
 
         <BottomNav />

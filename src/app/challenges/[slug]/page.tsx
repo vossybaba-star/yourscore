@@ -14,6 +14,7 @@ import { RankRewardCard } from "@/components/rank/RankRewardCard";
 import { QuizNotifyPrompt } from "@/components/quiz/QuizNotifyPrompt";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import HalftimePredictionPoll from "@/components/halftime/HalftimePredictionPoll";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
 import { BeatScoreRail } from "@/components/versus/BeatScoreRail";
@@ -1440,6 +1441,8 @@ export default function ChallengePage() {
           <Button variant="ghost" tone="teal" size="md" fullWidth onClick={openShare}>
             📸 SHARE YOUR RESULT
           </Button>
+
+          <FantasyPromoCard surface="quiz" />
 
           {/* Front door to the pack's standalone thread page — while the
               result's fresh, this is the only route to that page besides a

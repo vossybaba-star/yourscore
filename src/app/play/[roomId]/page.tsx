@@ -25,6 +25,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { AddFriendCard, AddFriendInline } from "@/components/social/AddFriendCard";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
+import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1076,6 +1077,8 @@ export default function RoomPage() {
               </div>
             </div>
           )}
+
+          <FantasyPromoCard surface="room-quiz" />
 
           {/* Final Standings */}
           <div className="rounded-2xl overflow-hidden bg-surface border border-border">
