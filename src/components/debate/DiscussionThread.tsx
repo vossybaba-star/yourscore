@@ -7,7 +7,9 @@ import { useUser } from "@/hooks/useUser";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
-import { trackReplyCreated, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished } from "@/lib/analytics/trackSocial";
+import { trackReplyCreated, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished, trackVideoReplyPublished } from "@/lib/analytics/trackSocial";
+import { uploadPostVideo, validateAndProbeVideo, PostVideoError } from "@/lib/postVideo";
+import { InlineVideoPlayer, type PostVideo } from "@/components/fantasy/VideoPlayer";
 
 // Two-level (IG-style) discussion thread per subject (quiz pack or debate).
 // Top-level: newest first. Replies: oldest first within a parent, collapsed
@@ -29,6 +31,10 @@ interface CommentRow {
   likeCount: number;
   likedByMe: boolean;
   deleted?: boolean;
+  /** An optional video attached to this comment/reply (native video upload,
+   *  Phase 2c) — mutually exclusive with any future reply image support
+   *  (there isn't one today). Null for a comment with no video. */
+  video?: PostVideo | null;
 }
 
 function timeAgo(iso: string): string {
@@ -38,6 +44,142 @@ function timeAgo(iso: string): string {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h`;
   return `${Math.floor(h / 24)}d`;
+}
+
+function fmtVideoDuration(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
+
+/** One video attach + upload's state machine, staged in the composer before
+ *  it's posted — mirrors CreatePostSheet's VideoAttachment (validate/probe
+ *  fast → upload with progress/cancel/retry → ready), just compact. Two
+ *  independent instances live in DiscussionThread (top-level + reply
+ *  composer), same duplication shape the mentions state already uses here. */
+interface VideoAttachment {
+  file: File;
+  previewUrl: string;
+  durationMs: number; width: number; height: number;
+  state: "uploading" | "ready" | "failed" | "cancelled";
+  progress: number;
+  error: string | null;
+  result: { url: string; posterUrl: string | null } | null;
+}
+
+function useVideoAttachment() {
+  const [video, setVideo] = useState<VideoAttachment | null>(null);
+  const [pickError, setPickError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const startUpload = useCallback((file: File, previewUrl: string, durationMs: number, width: number, height: number) => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setVideo({ file, previewUrl, durationMs, width, height, state: "uploading", progress: 0, error: null, result: null });
+    uploadPostVideo(file, {
+      onProgress: (p) => setVideo((v) => (v && v.file === file ? { ...v, progress: p } : v)),
+      signal: controller.signal,
+    }).then((res) => {
+      setVideo((v) => (v && v.file === file ? { ...v, state: "ready", progress: 1, result: { url: res.url, posterUrl: res.posterUrl } } : v));
+    }).catch((er) => {
+      const cancelled = er instanceof PostVideoError && !!er.cancelled;
+      setVideo((v) => {
+        if (!v || v.file !== file) return v;
+        if (cancelled) return { ...v, state: "cancelled", error: null };
+        return { ...v, state: "failed", error: er instanceof PostVideoError ? er.message : "Upload failed. Tap to retry." };
+      });
+    });
+  }, []);
+
+  const onFile = useCallback((file: File) => {
+    abortRef.current?.abort(); abortRef.current = null;
+    setVideo((v) => { if (v) URL.revokeObjectURL(v.previewUrl); return null; });
+    setPickError(null);
+    const previewUrl = URL.createObjectURL(file);
+    // "selecting": validate + probe fast, BEFORE ever showing a tile or
+    // starting the (up to 100MB) upload — same fail-early shape CreatePostSheet uses.
+    validateAndProbeVideo(file)
+      .then(({ durationMs, width, height }) => startUpload(file, previewUrl, durationMs, width, height))
+      .catch((er) => {
+        URL.revokeObjectURL(previewUrl);
+        setPickError(er instanceof PostVideoError ? er.message : "That video format isn't supported.");
+      });
+  }, [startUpload]);
+
+  const remove = useCallback(() => {
+    abortRef.current?.abort(); abortRef.current = null;
+    setVideo((v) => { if (v) URL.revokeObjectURL(v.previewUrl); return null; });
+  }, []);
+
+  const retry = useCallback(() => {
+    setVideo((v) => {
+      if (v) startUpload(v.file, v.previewUrl, v.durationMs, v.width, v.height);
+      return v;
+    });
+  }, [startUpload]);
+
+  const reset = useCallback(() => {
+    abortRef.current?.abort(); abortRef.current = null;
+    setVideo((v) => { if (v) URL.revokeObjectURL(v.previewUrl); return null; });
+    setPickError(null);
+  }, []);
+
+  return { video, pickError, onFile, remove, retry, reset };
+}
+type VideoAttachmentApi = ReturnType<typeof useVideoAttachment>;
+
+/** Bare SVG glyph, X-grade — same path CreatePostSheet's own video toolbar
+ *  button uses, for a consistent icon language across every video attach
+ *  point in the app. */
+function VideoAttachButton({ onPick, disabled }: { onPick: () => void; disabled?: boolean }) {
+  return (
+    <button type="button" onClick={onPick} disabled={disabled} aria-label="Add a video"
+      className="flex-shrink-0 flex items-center justify-center"
+      style={{ width: 36, height: 36, borderRadius: 999, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#586058", cursor: disabled ? "default" : "pointer" }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M3 6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" />
+        <path d="M16 9.5l5-3v11l-5-3" />
+      </svg>
+    </button>
+  );
+}
+
+/** The compact staged-video tile — preview, duration chip, upload progress,
+ *  failed/cancelled retry, remove. Scaled-down CreatePostSheet idiom. */
+function VideoAttachTile({ vid }: { vid: VideoAttachmentApi }) {
+  const v = vid.video;
+  if (!v) return null;
+  return (
+    <div className="relative mt-2 overflow-hidden rounded-xl" style={{ width: 96, height: 96, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video src={v.previewUrl} muted playsInline className="block h-full w-full object-cover" />
+      <span className="absolute left-1 bottom-1 rounded-full px-1.5 py-0.5 font-body text-[9px] font-bold text-white" style={{ background: "rgba(0,0,0,0.6)" }}>
+        {fmtVideoDuration(v.durationMs)}
+      </span>
+      {v.state === "uploading" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <span aria-hidden className="ys-thread-video-spinner" style={{ width: 16, height: 16, borderRadius: 999, border: "2px solid rgba(255,255,255,0.35)", borderTopColor: "#fff", display: "block" }} />
+        </div>
+      )}
+      {(v.state === "failed" || v.state === "cancelled") && (
+        <button onClick={vid.retry} className="absolute inset-0 flex items-center justify-center px-1 text-center font-body text-[9.5px] font-bold" style={{ background: "rgba(0,0,0,0.62)", color: "#f87171" }}>
+          {v.state === "failed" ? (v.error ?? "Failed. Tap to retry.") : "Cancelled. Tap to retry."}
+        </button>
+      )}
+      <button onClick={vid.remove} aria-label="Remove video" className="absolute right-1 top-1 flex items-center justify-center rounded-full"
+        style={{ width: 18, height: 18, background: "rgba(0,0,0,0.65)", color: "#fff", border: "none", cursor: "pointer", padding: 0 }}>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" aria-hidden>
+          <path d="M5 5l14 14M19 5 5 19" />
+        </svg>
+      </button>
+      <style>{`
+        .ys-thread-video-spinner { animation: ys-thread-spin 0.8s linear infinite; }
+        @keyframes ys-thread-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .ys-thread-video-spinner { animation: none; } }
+      `}</style>
+    </div>
+  );
 }
 
 export function DiscussionThread({
@@ -79,6 +221,17 @@ export function DiscussionThread({
   const [total, setTotal] = useState(0);
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
+  // Video attach (Phase 2c) — one instance for the top-level composer, one
+  // for whichever reply box is open, same duplication shape the mentions
+  // state below uses (only one reply composer is ever open at a time).
+  const draftVid = useVideoAttachment();
+  const replyVid = useVideoAttachment();
+  const draftVideoFileRef = useRef<HTMLInputElement>(null);
+  const replyVideoFileRef = useRef<HTMLInputElement>(null);
+  const draftVideoReady = !!(draftVid.video && draftVid.video.state === "ready" && draftVid.video.result);
+  const draftVideoUploading = draftVid.video?.state === "uploading";
+  const replyVideoReady = !!(replyVid.video && replyVid.video.state === "ready" && replyVid.video.result);
+  const replyVideoUploading = replyVid.video?.state === "uploading";
   // Real @username -> userId, resolved server-side for THIS page's comment
   // bodies (Phase 3b, AC3) — an unresolved handle just isn't in here and
   // renders as plain text. Same batch-resolve shape as the feed's own
@@ -196,15 +349,18 @@ export function DiscussionThread({
 
   async function post() {
     const body = draft.trim();
-    if (!body || posting || !canPost) return;
+    if ((!body && !draftVideoReady) || posting || !canPost || draftVideoUploading) return;
     if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(signInNext)}`); return; }
     setPosting(true);
     setError(null);
+    const videoBody = draftVideoReady
+      ? { url: draftVid.video!.result!.url, posterUrl: draftVid.video!.result!.posterUrl, width: draftVid.video!.width, height: draftVid.video!.height, durationMs: draftVid.video!.durationMs }
+      : undefined;
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ subjectType, subjectId, body, mentions: draftMentions.length ? draftMentions : undefined }),
+        body: JSON.stringify({ subjectType, subjectId, body, mentions: draftMentions.length ? draftMentions : undefined, video: videoBody }),
       });
       const out = await res.json();
       if (!res.ok) { setError(out.error ?? "Could not post"); return; }
@@ -213,9 +369,10 @@ export function DiscussionThread({
       // in scope for the Social event set.
       if (subjectType === "fantasy_feed") trackReplyCreated();
       if (draftMentions.length) trackMentionPublished("comment", draftMentions.length);
-      setDraft(""); setDraftMentions([]);
+      if (videoBody) trackVideoReplyPublished();
+      setDraft(""); setDraftMentions([]); draftVid.reset();
       setComments((prev) => [
-        { id: out.id, parentId: null, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
+        { id: out.id, parentId: null, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false, video: videoBody ?? null },
         ...prev,
       ]);
       setTotal((t) => t + 1);
@@ -230,34 +387,38 @@ export function DiscussionThread({
   function startReply(parentId: string) {
     if (!user) { router.push(`/auth/sign-in?next=${encodeURIComponent(signInNext)}`); return; }
     setReplyingTo((cur) => (cur === parentId ? null : parentId));
-    setReplyDraft(""); setReplyMentions([]);
+    setReplyDraft(""); setReplyMentions([]); replyVid.reset();
     setReplyError(null);
   }
 
   async function postReply(parentId: string) {
     const body = replyDraft.trim();
-    if (!body || replyPosting || !user) return;
+    if ((!body && !replyVideoReady) || replyPosting || !user || replyVideoUploading) return;
     setReplyPosting(true);
     setReplyError(null);
+    const videoBody = replyVideoReady
+      ? { url: replyVid.video!.result!.url, posterUrl: replyVid.video!.result!.posterUrl, width: replyVid.video!.width, height: replyVid.video!.height, durationMs: replyVid.video!.durationMs }
+      : undefined;
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ subjectType, subjectId, body, parentId, mentions: replyMentions.length ? replyMentions : undefined }),
+        body: JSON.stringify({ subjectType, subjectId, body, parentId, mentions: replyMentions.length ? replyMentions : undefined, video: videoBody }),
       });
       const out = await res.json();
       if (!res.ok) { setReplyError(out.error ?? "Could not post"); return; }
       if (subjectType === "fantasy_feed") trackReplyCreated();
       if (replyMentions.length) trackMentionPublished("reply", replyMentions.length);
+      if (videoBody) trackVideoReplyPublished();
       setComments((prev) => [
         ...prev,
-        { id: out.id, parentId, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false },
+        { id: out.id, parentId, userId: user.id, name: user.user_metadata?.display_name ?? "You", avatarUrl: user.user_metadata?.avatar_url ?? null, club: myClub, body, createdAt: out.createdAt, likeCount: 0, likedByMe: false, video: videoBody ?? null },
       ]);
       setTotal((t) => t + 1);
       // Your own reply is always visible, even if the parent already had 2+
       // collapsed replies.
       setExpanded((prev) => new Set(prev).add(parentId));
-      setReplyDraft(""); setReplyMentions([]);
+      setReplyDraft(""); setReplyMentions([]); replyVid.reset();
       setReplyingTo(null);
     } finally {
       setReplyPosting(false);
@@ -355,7 +516,16 @@ export function DiscussionThread({
               </button>
             )}
           </div>
-          <p className="font-body text-sm text-text-muted leading-snug break-words">{renderMentionBody(c.body)}</p>
+          {c.body.trim() && (
+            <p className="font-body text-sm text-text-muted leading-snug break-words">{renderMentionBody(c.body)}</p>
+          )}
+          {/* A reply/comment's video (Phase 2c) — tap-to-play ONLY, never
+              autoplay: in a busy thread, only the parent POST autoplays. */}
+          {c.video && (
+            <div className="max-w-[280px]" style={{ marginTop: c.body.trim() ? 6 : 2 }}>
+              <InlineVideoPlayer video={c.video} autoPlay={false} />
+            </div>
+          )}
           <div className="flex items-center gap-3 mt-1">
             <button
               onClick={() => toggleLike(c)}
@@ -412,6 +582,7 @@ export function DiscussionThread({
     return (
       <div className="pl-[38px] pt-1">
         <div className="flex gap-2">
+          <VideoAttachButton onPick={() => replyVideoFileRef.current?.click()} disabled={replyVideoUploading} />
           <input
             ref={replyRef}
             value={replyDraft}
@@ -425,20 +596,25 @@ export function DiscussionThread({
           />
           <button
             onClick={() => postReply(parentId)}
-            disabled={replyPosting || !replyDraft.trim()}
+            disabled={replyPosting || (!replyDraft.trim() && !replyVideoReady) || replyVideoUploading}
             className="rounded-xl px-3 font-display text-[11px] tracking-wide active:scale-[0.97] transition-transform disabled:opacity-40"
             style={{ background: accent, color: "#04231f" }}
           >
             REPLY
           </button>
           <button
-            onClick={() => setReplyingTo(null)}
+            onClick={() => { replyVid.reset(); setReplyingTo(null); }}
             className="font-body text-[11px] flex-shrink-0"
             style={{ color: "#586058" }}
           >
             Cancel
           </button>
         </div>
+        <input ref={replyVideoFileRef} type="file" accept="video/mp4,video/quicktime"
+          onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) replyVid.onFile(f); }}
+          className="hidden" />
+        {replyVid.pickError && <p className="font-body text-[11px] mt-1" style={{ color: "#f87171" }}>{replyVid.pickError}</p>}
+        <VideoAttachTile vid={replyVid} />
         <MentionDropdown query={replyMentionQuery} onSelect={pickReplyMention} />
         {replyError && <p className="font-body text-[11px] mt-1" style={{ color: "#f87171" }}>{replyError}</p>}
       </div>
@@ -504,6 +680,7 @@ export function DiscussionThread({
           stays out of the way and posting keeps the thread in view. */}
       <div className="px-4 pt-2 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex gap-2">
+          <VideoAttachButton onPick={() => draftVideoFileRef.current?.click()} disabled={!canPost || draftVideoUploading} />
           <input
             ref={draftRef}
             value={draft}
@@ -518,13 +695,18 @@ export function DiscussionThread({
           />
           <button
             onClick={post}
-            disabled={posting || !canPost || !draft.trim()}
+            disabled={posting || !canPost || (!draft.trim() && !draftVideoReady) || draftVideoUploading}
             className="rounded-full px-4 font-display text-[12px] tracking-wide active:scale-[0.97] transition-transform disabled:opacity-40"
             style={{ background: accent, color: "#04231f" }}
           >
             POST
           </button>
         </div>
+        <input ref={draftVideoFileRef} type="file" accept="video/mp4,video/quicktime"
+          onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) draftVid.onFile(f); }}
+          className="hidden" />
+        {draftVid.pickError && <p className="font-body text-[11px] mt-1" style={{ color: "#f87171" }}>{draftVid.pickError}</p>}
+        <VideoAttachTile vid={draftVid} />
         {canPost && (
           <MentionDropdown query={draftMentionQuery} onSelect={(u) => {
             const next = applyMention(draft, draftCaret, u.username);

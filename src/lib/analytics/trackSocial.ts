@@ -80,6 +80,13 @@ export function trackVideoUploadRetried(): void { fire("video_upload_retried"); 
 export function trackVideoRemoved(): void { fire("video_removed"); }
 export function trackVideoPostPublished(): void { fire("video_post_published"); }
 
+// ── native video (social spread, Phase 2c) ───────────────────────────────
+// Counts only — where composer/playback events already exist (video_picker_
+// opened, video_upload_started, etc.), replies and chat reuse them as-is;
+// these two are the only genuinely new events this phase adds.
+export function trackVideoReplyPublished(): void { fire("video_reply_published"); }
+export function trackVideoChatMessageSent(): void { fire("video_chat_message_sent"); }
+
 // ── native video (playback) ──────────────────────────────────────────────
 export function trackVideoImpression(): void { fire("video_impression"); }
 export function trackVideoPlay(mode: "auto" | "tap"): void { fire("video_play", { mode }); }

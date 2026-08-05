@@ -145,11 +145,17 @@ export function VideoPosterPreview({ video, height = 120 }: { video: PostVideo; 
 /** THE reusable inline video player — poster-first, hysteresis autoplay,
  *  single-active-player, session sound memory, reduced-motion/data-saver
  *  respected, an honest error state instead of a black box. */
-export function InlineVideoPlayer({ video, context }: {
+export function InlineVideoPlayer({ video, context, autoPlay = true }: {
   video: PostVideo;
   /** Optional identity for the surface this is mounted in — not required by
    *  any current behaviour, just future-proofing for per-post analytics. */
   context?: { postId?: string };
+  /** false = poster + tap-to-play ONLY, never auto-started by scroll
+   *  visibility (Phase 2c) — a busy thread/chat where only the parent post
+   *  autoplays. Everything else (single-active-player, session sound,
+   *  fullscreen, quartile tracking) behaves identically either way. Defaults
+   *  true so every existing call site (the feed) is unaffected. */
+  autoPlay?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -194,14 +200,14 @@ export function InlineVideoPlayer({ video, context }: {
         impressionFired.current = true;
         trackVideoImpression();
       }
-      if (tapToPlayOnly) return; // reduced-motion / saveData: tap only, ever
+      if (!autoPlay || tapToPlayOnly) return; // tap only: caller opted out, or reduced-motion/saveData
       if (entry.intersectionRatio >= 0.6) attemptPlay(true);
       else if (entry.intersectionRatio < 0.4) pause();
     }, { threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] });
     io.observe(el);
     return () => io.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tapToPlayOnly, errored]);
+  }, [autoPlay, tapToPlayOnly, errored]);
 
   // Backgrounding the tab pauses playback.
   useEffect(() => {
