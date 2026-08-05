@@ -376,10 +376,15 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, busy }: {
 
       {c.status === "pending" && viewerIsOpponent && (
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href={c.h2hId ? `/h2h/${c.h2hId}` : "#"} onClick={(e) => e.stopPropagation()} style={{
-            flex: 1, textAlign: "center", padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700,
-            background: tint(GOLD, "22"), color: GOLD, border: `1px solid ${tint(GOLD, "66")}`, textDecoration: "none",
-          }}>Accept</Link>
+          {/* Accept only renders with a real play destination — a "#" link is
+              a dead button in disguise (house rule). h2hId is always set for
+              quiz_battle; this guards a malformed row, not a normal state. */}
+          {c.h2hId && (
+            <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+              flex: 1, textAlign: "center", padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700,
+              background: tint(GOLD, "22"), color: GOLD, border: `1px solid ${tint(GOLD, "66")}`, textDecoration: "none",
+            }}>Accept</Link>
+          )}
           <button disabled={busy} onClick={(e) => { e.stopPropagation(); onDecline(c.challengeId); }} style={{
             flex: 1, padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
             background: PANEL_2, color: MUTED, border: `1px solid ${LINE}`, opacity: busy ? 0.6 : 1,
