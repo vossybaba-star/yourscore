@@ -13,7 +13,7 @@
  * Reactions mirror the league-chat set (😂 👀 🔥 👏 ❤️ 😭). One per user per
  * event: tap an emoji to react, tap your own to remove it, tap another to switch.
  */
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
@@ -27,6 +27,8 @@ import { SharePost } from "@/components/fantasy/SharePost";
 import { FollowButton } from "@/components/social/FollowButton";
 import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+import { ImageGrid } from "@/components/fantasy/ImageGrid";
+import { MediaGallery } from "@/components/fantasy/MediaGallery";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -39,12 +41,42 @@ interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; cap
 interface FeedReaction { emoji: string; count: number }
 interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number }
 interface FeedQuiz { correct: number; total: number; title: string | null; game: "quiz" | "round" }
+interface FeedGif { mp4: string | null; webp: string | null; gifUrl: string | null; width: number; height: number }
 interface FeedEvent {
   id: string; actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
-  text?: string | null; poll?: FeedPoll | null; image?: string | null; quiz?: FeedQuiz | null;
+  text?: string | null; poll?: FeedPoll | null; image?: string | null; images?: string[] | null; gif?: FeedGif | null; quiz?: FeedQuiz | null;
+}
+
+/** A post's GIF: mp4 renders as a looping muted autoplay video; otherwise the
+ *  webp/gif image fallback. An IntersectionObserver pauses the video once it
+ *  scrolls out of view and resumes it on the way back in, so a feed full of GIFs
+ *  doesn't play every one of them at once. */
+function GifTile({ gif }: { gif: FeedGif }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { if (entry.isIntersecting) void el.play().catch(() => {}); else el.pause(); });
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const imgSrc = gif.webp ?? gif.gifUrl;
+  return (
+    <div style={{ marginTop: 10, borderRadius: 12, overflow: "hidden", border: `1px solid ${LINE}`, background: PANEL_2 }}>
+      {gif.mp4 ? (
+        <video ref={videoRef} src={gif.mp4} loop muted playsInline autoPlay
+          style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover" }} />
+      ) : imgSrc ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imgSrc} alt="" loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover" }} />
+      ) : null}
+    </div>
+  );
 }
 
 /** Render post text with any http(s) URLs turned into safe, tappable links. */
@@ -251,6 +283,9 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
+  // Legacy single-image posts render through the same grid — just a one-item array.
+  const images = ev.images && ev.images.length ? ev.images : ev.image ? [ev.image] : [];
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
   const canShare = hasBoard || (!!ev.player && ev.playerId != null);
   const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
@@ -308,10 +343,12 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
       {ev.type === "post" && ev.text && (
         <div style={{ fontSize: 14.5, color: INK, lineHeight: 1.45, marginTop: 10, whiteSpace: "pre-wrap", wordBreak: "break-word" }}><LinkedText text={ev.text} /></div>
       )}
-      {ev.type === "post" && ev.image && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={ev.image} alt="" loading="lazy"
-          style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover", borderRadius: 12, marginTop: 10, border: `1px solid ${LINE}` }} />
+      {ev.type === "post" && images.length > 0 && (
+        <ImageGrid images={images} onOpen={(i) => setGalleryIndex(i)} />
+      )}
+      {ev.type === "post" && ev.gif && <GifTile gif={ev.gif} />}
+      {galleryIndex !== null && (
+        <MediaGallery images={images} index={galleryIndex} onClose={() => setGalleryIndex(null)} />
       )}
       {ev.poll && <PollBlock ev={ev} />}
 

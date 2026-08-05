@@ -29,3 +29,17 @@ export async function uploadPostImage(file: File): Promise<string> {
   if (!data?.publicUrl) throw new PostImageError("Upload failed. Try again.");
   return data.publicUrl;
 }
+
+/** Up to this many images on one post (Phase 2a, multi-image composer). */
+export const MAX_POST_IMAGES = 4;
+
+/** Upload several images for one post, reusing uploadPostImage per file. The
+ *  composer itself uploads each file independently (so one failure never blocks
+ *  the rest and each thumb can show its own state) — this batch helper is for
+ *  callers that just want all-or-nothing URLs back. */
+export async function uploadPostImages(files: File[]): Promise<string[]> {
+  const capped = files.slice(0, MAX_POST_IMAGES);
+  const urls: string[] = [];
+  for (const file of capped) urls.push(await uploadPostImage(file));
+  return urls;
+}

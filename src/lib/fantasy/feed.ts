@@ -53,6 +53,25 @@ export interface FeedPoll {
 }
 export const MAX_POLL_OPTIONS = 4;
 export const POST_MAX = 500;
+/** Up to this many images on one post (Phase 2a multi-image composer). Kept in
+ *  sync with MAX_POST_IMAGES in lib/postMedia.ts (that module is client-side). */
+export const MAX_POST_IMAGES = 4;
+
+/** A GIF attached to a post (Phase 2a). mp4 renders as a looping muted video where
+ *  present; webp/gifUrl are the image fallbacks. All three may be null if the
+ *  provider only returned some variants — the renderer picks whichever exists. */
+export interface FeedGif {
+  mp4: string | null;
+  webp: string | null;
+  gifUrl: string | null;
+  width: number;
+  height: number;
+}
+
+/** Hosts a post.payload.gif URL is allowed to point at. Klipy's real CDN host is
+ *  unverified (no API key at build time) — widen this once the live response
+ *  shape is confirmed. */
+export const ALLOWED_GIF_HOSTS = ["klipy.com"];
 
 /** A quiz_result tile: the score line plus where the game lives, so the tile
  *  can send a reader off to play the same thing. */
@@ -94,8 +113,15 @@ export interface FeedEvent {
   text?: string | null;
   /** An optional poll attached to a post. */
   poll?: FeedPoll | null;
-  /** An optional image attached to a post (public post-media URL). */
+  /** An optional image attached to a post (public post-media URL). Legacy single
+   *  image field — still populated for posts written before Phase 2a and always
+   *  rendered exactly as it always has been. */
   image?: string | null;
+  /** Up to MAX_POST_IMAGES public post-media URLs (Phase 2a). */
+  images?: string[] | null;
+  /** An optional GIF attached to a post (Phase 2a). Mutually exclusive with
+   *  image/images at the composer level, but the server doesn't enforce that. */
+  gif?: FeedGif | null;
   /** A quiz_result's score card. */
   quiz?: FeedQuiz | null;
 }
@@ -248,7 +274,7 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
  *  moderation as comments. Renders in Live like any other event, and gets
  *  reactions + comments for free (they key off the event id). */
 export async function postToFeed(db: Db, userId: string, body: unknown): Promise<{ id: string }> {
-  const b = (body ?? {}) as { text?: unknown; poll?: unknown; image?: unknown; playerId?: unknown };
+  const b = (body ?? {}) as { text?: unknown; poll?: unknown; image?: unknown; images?: unknown; gif?: unknown; playerId?: unknown };
   const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
 
   // An attached player card — must be a real pool id (the tile links to their
@@ -273,16 +299,47 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   }
 
   // An image must live in OUR post-media bucket — never an arbitrary external URL.
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  const isPostMediaUrl = (u: string) => !!base && u.startsWith(`${base}/storage/v1/object/public/post-media/`);
+
   let image = typeof b.image === "string" ? b.image.trim() : "";
   if (image) {
-    const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
-    if (!base || !image.startsWith(`${base}/storage/v1/object/public/post-media/`)) {
-      throw new HttpError(400, "bad image");
-    }
+    if (!isPostMediaUrl(image)) throw new HttpError(400, "bad image");
     image = image.slice(0, 500);
   }
 
-  if (!text && !poll && !image && playerId == null) throw new HttpError(400, "Write something, add a poll or an image");
+  // Up to MAX_POST_IMAGES images (Phase 2a) — same bucket check as the legacy
+  // single-image field, just applied per URL.
+  let images: string[] = [];
+  if (b.images !== undefined) {
+    if (!Array.isArray(b.images) || b.images.length > MAX_POST_IMAGES) throw new HttpError(400, "Up to four images per post");
+    images = b.images.map((u) => (typeof u === "string" ? u.trim() : ""));
+    if (images.some((u) => !u || !isPostMediaUrl(u))) throw new HttpError(400, "bad image");
+    images = images.map((u) => u.slice(0, 500));
+  }
+
+  // A GIF (Phase 2a) — https URLs on an allowed host only. At least one of the
+  // three variants must survive the check, or the attachment is rejected outright.
+  let gif: FeedGif | null = null;
+  const rawGif = b.gif as { mp4?: unknown; webp?: unknown; gifUrl?: unknown; width?: unknown; height?: unknown } | undefined;
+  if (rawGif && (rawGif.mp4 || rawGif.webp || rawGif.gifUrl)) {
+    const checkUrl = (u: unknown): string | null => {
+      if (typeof u !== "string" || !u) return null;
+      try {
+        const parsed = new URL(u);
+        if (parsed.protocol !== "https:") return null;
+        if (!ALLOWED_GIF_HOSTS.some((h) => parsed.hostname === h || parsed.hostname.endsWith(`.${h}`))) return null;
+        return u.slice(0, 700);
+      } catch { return null; }
+    };
+    const mp4 = checkUrl(rawGif.mp4);
+    const webp = checkUrl(rawGif.webp);
+    const gifUrl = checkUrl(rawGif.gifUrl);
+    if (!mp4 && !webp && !gifUrl) throw new HttpError(400, "bad gif");
+    gif = { mp4, webp, gifUrl, width: Number(rawGif.width) || 0, height: Number(rawGif.height) || 0 };
+  }
+
+  if (!text && !poll && !image && !images.length && !gif && playerId == null) throw new HttpError(400, "Write something, add a poll or some media");
   const why = commentRejection([text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "));
   if (why) throw new HttpError(400, why);
 
@@ -290,6 +347,8 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   if (text) payload.text = text;
   if (poll) payload.poll = poll;
   if (image) payload.image = image;
+  if (images.length) payload.images = images;
+  if (gif) payload.gif = gif;
   if (playerId != null) payload.player = playerId;
   const { data, error } = await db.from("fantasy_feed_events")
     .insert({ actor_id: userId, type: "post", gw: null, payload })
@@ -480,13 +539,29 @@ async function hydrateEvents(
         game: payload.game === "round" ? "round" : "quiz",
       };
     }
-    // A user post carries its text, an optional image, and (optionally) a poll.
+    // A user post carries its text, an optional image (or images / gif), and
+    // (optionally) a poll.
     let text: string | null | undefined;
     let poll: FeedPoll | null | undefined;
     let image: string | null | undefined;
+    let images: string[] | null | undefined;
+    let gif: FeedGif | null | undefined;
     if (type === "post") {
       text = typeof payload.text === "string" ? payload.text : null;
       image = typeof payload.image === "string" ? payload.image : null;
+      images = Array.isArray(payload.images)
+        ? (payload.images as unknown[]).filter((u): u is string => typeof u === "string").slice(0, MAX_POST_IMAGES)
+        : null;
+      const rawGif = payload.gif as { mp4?: unknown; webp?: unknown; gifUrl?: unknown; width?: unknown; height?: unknown } | undefined;
+      gif = rawGif
+        ? {
+            mp4: typeof rawGif.mp4 === "string" ? rawGif.mp4 : null,
+            webp: typeof rawGif.webp === "string" ? rawGif.webp : null,
+            gifUrl: typeof rawGif.gifUrl === "string" ? rawGif.gifUrl : null,
+            width: Number(rawGif.width) || 0,
+            height: Number(rawGif.height) || 0,
+          }
+        : null;
       const p = payload.poll as { question?: unknown; options?: unknown } | undefined;
       if (p && Array.isArray(p.options)) {
         const opts = (p.options as unknown[]).map((o) => (typeof o === "string" ? o : "")).filter(Boolean).slice(0, MAX_POLL_OPTIONS);
@@ -516,6 +591,8 @@ async function hydrateEvents(
       text,
       poll,
       image,
+      images,
+      gif,
       quiz,
     };
   });
