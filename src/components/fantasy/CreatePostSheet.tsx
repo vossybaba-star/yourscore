@@ -28,6 +28,10 @@ import { Crest } from "@/components/ui/Crest";
 
 interface ImageSlot { key: string; url: string | null; uploading: boolean; error: string | null }
 interface LinkPreview { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
+/** The post being quoted (Phase 3a) — a compact, non-removable embed pinned
+ *  under the composer. Passed in already-trimmed by the caller (FeedStream's
+ *  RepostControl), so this component never needs to know the FeedEvent shape. */
+export interface QuotingPost { id: string; actorName: string; actorAvatar: string | null; text: string | null; image: string | null; createdAt: string }
 
 const POLL_DURATIONS: { hours: 1 | 6 | 24 | 72; label: string }[] = [
   { hours: 1, label: "1 hour" }, { hours: 6, label: "6 hours" },
@@ -42,7 +46,13 @@ function firstUrl(text: string): string | null {
   return m[0].replace(/[),.!?;:'"]+$/, "");
 }
 
-export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; onClose: () => void; onPosted: () => void }) {
+export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
+  open: boolean; onClose: () => void; onPosted: () => void;
+  /** Quote mode (Phase 3a): a compact, non-removable embed of the quoted post
+   *  pinned under the composer. Requires text or media before it can post
+   *  (unlike a plain post, which can also be just a poll/player/fixture). */
+  quoting?: QuotingPost | null;
+}) {
   const [text, setText] = useState("");
   const [pollOn, setPollOn] = useState(false);
   const [question, setQuestion] = useState("");
@@ -137,8 +147,13 @@ export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; on
   const pickFixture = (f: PickableFixture) => { setFixture(f); setGif(null); setPlayer(null); setFixturePickerOpen(false); };
 
   const pollValid = !!question.trim() && options.filter((o) => o.trim()).length >= 2;
+  // A quote always needs its own text or media — a poll/player/fixture alone
+  // isn't enough (that's indistinguishable from a plain repost, which has its
+  // own action). A plain post keeps the looser rule.
   const canPost = !uploading && !busy && (
-    text.trim().length > 0 || images.length > 0 || !!gif || !!player || !!fixture || (pollOn && pollValid)
+    quoting
+      ? (text.trim().length > 0 || images.length > 0 || !!gif)
+      : (text.trim().length > 0 || images.length > 0 || !!gif || !!player || !!fixture || (pollOn && pollValid))
   );
 
   const submit = async () => {
@@ -154,6 +169,7 @@ export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; on
       link: showLink && linkPreview
         ? { url: linkPreview.url, title: linkPreview.title, description: linkPreview.description, siteName: linkPreview.siteName, image: linkPreview.image }
         : undefined,
+      quoteOf: quoting ? quoting.id : undefined,
     };
     try {
       const r = await fetch("/api/fantasy/feed/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -182,10 +198,27 @@ export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; on
 
   return (
     <Sheet onClose={close} labelledBy="create-post-title">
-      <div id="create-post-title" className="font-display" style={{ fontSize: 19, color: INK, marginBottom: 10 }}>New post</div>
+      <div id="create-post-title" className="font-display" style={{ fontSize: 19, color: INK, marginBottom: 10 }}>{quoting ? "Quote post" : "New post"}</div>
 
-      <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 500))} placeholder="Share your FPL take" rows={4}
+      <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 500))} placeholder={quoting ? "Add a comment" : "Share your FPL take"} rows={4}
         style={{ ...input, resize: "none", lineHeight: 1.45 }} />
+
+      {/* The quoted post — compact, non-removable (it's the whole point of a quote). */}
+      {quoting && (
+        <div style={{ display: "flex", gap: 8, marginTop: 8, padding: 8, borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}` }}>
+          <PlayerAvatar name={quoting.actorName} avatarUrl={quoting.actorAvatar} size={28} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{quoting.actorName}</div>
+            {quoting.text && (
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{quoting.text}</div>
+            )}
+          </div>
+          {quoting.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={quoting.image} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+          )}
+        </div>
+      )}
 
       {linkLoading && !showLink && <p style={{ fontSize: 11.5, color: MUTED, margin: "6px 0 0" }}>Fetching a preview…</p>}
       {showLink && linkPreview && (
