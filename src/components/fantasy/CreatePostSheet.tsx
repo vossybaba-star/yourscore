@@ -66,7 +66,7 @@ export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; on
     <Sheet onClose={close} labelledBy="create-post-title">
       <div id="create-post-title" className="font-display" style={{ fontSize: 19, color: INK, marginBottom: 10 }}>New post</div>
 
-      <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 500))} placeholder="What are you thinking?" rows={4}
+      <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 500))} placeholder="Share your FPL take" rows={4}
         style={{ ...input, resize: "none", lineHeight: 1.45 }} />
 
       <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{ display: "none" }} />
@@ -121,7 +121,7 @@ export function CreatePostSheet({ open, onClose, onPosted }: { open: boolean; on
 
       {err && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "10px 0 0" }}>{err}</p>}
 
-      <div style={{ fontSize: 11.5, color: MUTED, margin: "12px 0 10px" }}>Posting to Live · everyone can see it.</div>
+      <div style={{ fontSize: 11.5, color: MUTED, margin: "12px 0 10px" }}>Posting to For You · everyone can see it.</div>
       <Btn gold disabled={!canPost || busy} onClick={submit}>{busy ? "Posting…" : "Post"}</Btn>
     </Sheet>
   );

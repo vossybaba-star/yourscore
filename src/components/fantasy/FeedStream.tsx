@@ -82,11 +82,15 @@ function applyReaction(current: FeedReaction[], from: string | null, to: string 
   return REACTION_SET.filter((e) => (counts.get(e) ?? 0) > 0).map((emoji) => ({ emoji, count: counts.get(emoji)! }));
 }
 
-/** The reaction bar under a feed card: the existing tallies plus a picker. */
+/** The reaction control under a feed card: a single React button plus — only
+ *  once reactions exist — a compact summary (top 3 emoji + one total count).
+ *  No more one pill per emoji; tapping either opens the 6-emoji tray, and
+ *  tapping the tray's outside overlay closes it (the same pattern CardMenu
+ *  uses below). */
 function ReactionBar({ ev }: { ev: FeedEvent }) {
   const [reactions, setReactions] = useState<FeedReaction[]>(ev.reactions);
   const [mine, setMine] = useState<string | null>(ev.myEmoji);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [trayOpen, setTrayOpen] = useState(false);
 
   const react = useCallback(async (emoji: string) => {
     const remove = mine === emoji;
@@ -95,7 +99,7 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
     // Optimistic.
     setReactions(applyReaction(reactions, mine, next));
     setMine(next);
-    setPickerOpen(false);
+    setTrayOpen(false);
     try {
       const res = remove
         ? await fetch("/api/fantasy/feed/react", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id }) })
@@ -105,39 +109,47 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
     } catch { setReactions(prevReactions); setMine(prevMine); }
   }, [mine, reactions, ev.id]);
 
-  return (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-      {reactions.map((r) => {
-        const on = r.emoji === mine;
-        return (
-          <button key={r.emoji} onClick={() => react(r.emoji)} style={{
-            display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
-            padding: "3px 8px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
-            background: on ? tint(TEAL, "22") : PANEL_2, color: on ? TEAL : MUTED,
-            border: `1px solid ${on ? tint(TEAL, "66") : LINE}`,
-          }}><span style={{ fontSize: 14 }}>{r.emoji}</span>{r.count}</button>
-        );
-      })}
-      <button onClick={() => setPickerOpen((o) => !o)} aria-label="React" style={{
-        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-        width: 28, height: 28, borderRadius: 999, fontSize: 14,
-        background: pickerOpen ? tint(TEAL, "22") : "none", color: pickerOpen ? TEAL : MUTED,
-        border: `1px solid ${pickerOpen ? tint(TEAL, "66") : LINE}`,
-      }}>{reactions.length ? "＋" : "☺"}</button>
+  const total = reactions.reduce((s, r) => s + r.count, 0);
+  const top = [...reactions].sort((a, b) => b.count - a.count).slice(0, 3);
 
-      {pickerOpen && (
-        <div style={{
-          position: "absolute", bottom: "calc(100% + 6px)", left: 0, zIndex: 5,
-          display: "flex", gap: 2, padding: 5, borderRadius: 999,
-          background: PANEL, border: `1px solid ${LINE}`, boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+  return (
+    <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 4 }}>
+      {total > 0 && (
+        <button onClick={() => setTrayOpen((o) => !o)} style={{
+          display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
+          padding: "9px 9px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
+          background: mine ? tint(TEAL, "1a") : PANEL_2, color: mine ? TEAL : MUTED,
+          border: `1px solid ${mine ? tint(TEAL, "55") : LINE}`,
         }}>
-          {REACTION_SET.map((emoji) => (
-            <button key={emoji} onClick={() => react(emoji)} style={{
-              cursor: "pointer", background: emoji === mine ? tint(TEAL, "22") : "none",
-              border: "none", borderRadius: 999, padding: "4px 6px", fontSize: 18, lineHeight: 1,
-            }}>{emoji}</button>
-          ))}
-        </div>
+          <span style={{ display: "flex", alignItems: "center" }}>
+            {top.map((r) => <span key={r.emoji} style={{ fontSize: 13 }}>{r.emoji}</span>)}
+          </span>
+          {total}
+        </button>
+      )}
+      <button onClick={() => setTrayOpen((o) => !o)} aria-label="React" style={{
+        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+        width: 36, height: 36, borderRadius: 999, fontSize: 15,
+        background: trayOpen ? tint(TEAL, "22") : "none", color: trayOpen ? TEAL : MUTED,
+        border: `1px solid ${trayOpen ? tint(TEAL, "66") : LINE}`,
+      }}>{total > 0 ? "＋" : "☺"}</button>
+
+      {trayOpen && (
+        <>
+          <div onClick={() => setTrayOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 4 }} />
+          <div style={{
+            position: "absolute", bottom: "calc(100% + 6px)", left: 0, zIndex: 5,
+            display: "flex", gap: 2, padding: 5, borderRadius: 999,
+            background: PANEL, border: `1px solid ${LINE}`, boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+          }}>
+            {REACTION_SET.map((emoji) => (
+              <button key={emoji} onClick={() => react(emoji)} style={{
+                cursor: "pointer", background: emoji === mine ? tint(TEAL, "22") : "none",
+                border: "none", borderRadius: 999, padding: "6px 7px", fontSize: 18, lineHeight: 1,
+              }}>{emoji}</button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -256,7 +268,10 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
     : undefined;
 
   return (
-    <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 12, marginBottom: 10 }}>
+    // Flat timeline row (founder: "content, not container, is the focus") — no
+    // card shell, just a divider between posts. Horizontal edge-to-edge inside
+    // the page's own side padding so an image can span the full content width.
+    <div style={{ padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
       {/* Twitter grammar (founder, 4 Aug): BOLD screen name, muted non-bold
           @handle, the time inline after a dot — then the content underneath. */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -317,9 +332,9 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         </Link>
       )}
 
-      {/* Squad tiles render the real tactical PITCH (founder, 3 Aug — a row of faces
-          isn't useful; we need to see the team in formation). Tap opens the
-          manager's full squad (back retraces feed → profile → player). */}
+      {/* Squad tiles render the real tactical PITCH (founder, 5 Aug — kept over
+          a compact card: people like seeing pitches as they scroll, PR #60).
+          Tap opens the manager's full squad (back retraces feed → profile → player). */}
       {hasBoard && (
         <Link href={`/profile/${ev.actorId}#fantasy-xi`} style={{ display: "block", marginTop: 12, textDecoration: "none" }}>
           <div style={{ paddingBottom: 12 }}>
@@ -348,18 +363,20 @@ function FeedCard({ ev, signInNext }: { ev: FeedEvent; signInNext: string }) {
         )
       )}
 
-      {/* Primary sequence (spec): React · Comment · Share. Invite moved into the
-          ⋯ menu (4 Aug) so the row breathes like a tweet's. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 12, paddingLeft: 2, flexWrap: "wrap" }}>
+      {/* Primary sequence (spec): React · Comment · Share, one line always —
+          no flexWrap, tight gaps. Invite moved into the ⋯ menu (4 Aug) so the
+          row breathes like a tweet's. Each control carries vertical padding so
+          the tap target is ~44px tall even though it reads visually small. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 4, marginLeft: -9 }}>
         <ReactionBar ev={ev} />
-        <button onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: open ? TEAL : MUTED, fontSize: 13, fontWeight: 600 }}>
+        <button onClick={() => setOpen((o) => !o)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: "10px 9px", color: open ? TEAL : MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
           {/* Silhouette, not emoji (founder, 4 Aug) — the Twitter-style outline bubble. */}
           <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
           </svg>
           {ev.commentCount > 0 ? ev.commentCount : "Comment"}
         </button>
-        <button onClick={() => setShareOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: 0, color: MUTED, fontSize: 13, fontWeight: 600 }}>
+        <button onClick={() => setShareOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: "10px 9px", color: MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
           <span style={{ fontSize: 14 }}>↗</span>Share
         </button>
       </div>
@@ -487,7 +504,7 @@ export function FeedStream({
                   padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
                   background: active ? tint(TEAL, "18") : "transparent", color: active ? TEAL : MUTED,
                   border: `1px solid ${active ? tint(TEAL, "55") : LINE}`,
-                }}>{s === "recent" ? "Recent" : "Top"}</button>
+                }}>{s === "recent" ? "Latest" : "Top"}</button>
               );
             })}
           </div>
