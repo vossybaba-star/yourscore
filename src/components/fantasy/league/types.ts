@@ -75,16 +75,30 @@ export interface FeedShareCard {
   actorName: string | null; actorAvatarUrl: string | null;
   text: string | null; summary: string | null;
 }
+/** A league-mate challenge card (Phase 1C) — mirrors challenges.ts's
+ *  ChallengeCardData. Hydrated fresh on every read; the viewer compares their
+ *  own id against opponentId/challengerId to decide what's actionable. */
+export interface ChallengeCard {
+  challengeId: string;
+  status: string;
+  gameName: string;
+  quizName: string;
+  challengerId: string; challengerName: string; challengerAvatarUrl: string | null;
+  opponentId: string; opponentName: string; opponentAvatarUrl: string | null;
+  expiresAt: string;
+  h2hId: string | null;
+  winnerId: string | null;
+}
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no
  *  avatar or bubble, and excluded from unread badges (see leagues.ts/home.ts). */
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system";
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system" | "challenge";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
   kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null;
   news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null;
-  image?: ImageCard | null; feed?: FeedShareCard | null;
+  image?: ImageCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCard | null;
   /** Replies (Phase 4a, AC2) — the parent message's id and a resolved
    *  {name, summary} for the quoted-context strip. Both null/undefined when
    *  this isn't a reply, or when the schema doesn't support replies yet. */
@@ -136,6 +150,7 @@ export function summariseChatMessage(m: Pick<ChatMessage, "kind" | "body" | "new
     case "image": return "sent a photo";
     case "feed": return "shared a post";
     case "poll": return m.poll?.question || "started a poll";
+    case "challenge": return "sent a challenge";
     case "system": return m.body;
     default: return m.body;
   }

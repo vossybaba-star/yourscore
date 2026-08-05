@@ -21,6 +21,7 @@ import { loadLeagueFeed, loadFeedEvent, isPostMediaUrl, type FeedEvent } from ".
 import { notifyFantasy } from "./notify";
 import { hiddenActorIds, blockedActorIds } from "@/lib/social/safety";
 import { extractMentions, resolveUsernames, resolveMentionEntities, type MentionEntity } from "@/lib/mentions";
+import { challengeCardsFor, type ChallengeCardData } from "./challenges";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -85,7 +86,7 @@ export interface FeedShareCard {
  *  lead change). Never authored by a member; user_id is just whoever the FK
  *  needs (the joiner for a join line, the league owner otherwise) — the UI
  *  never shows a system row's author. */
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system";
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system" | "challenge";
 
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
@@ -101,6 +102,10 @@ export interface ChatMessage {
   gif?: GifCard | null;
   image?: ImageCard | null;
   feed?: FeedShareCard | null;
+  /** A league-mate challenge card (Phase 1C) — hydrated fresh on every read
+   *  (challenges.ts's challengeCardsFor), same "never trust the payload
+   *  beyond an id" idiom as feed/player/etc. */
+  challenge?: ChallengeCardData | null;
   /** Replies (Phase 4a, AC2) — the message this one is quoting, and a resolved
    *  {name, summary} for the quoted-context strip. Both null for a non-reply,
    *  and parentId/replyTo both come back null wholesale when the underlying
@@ -138,6 +143,7 @@ export function summariseLeagueMessage(kind: string | null, body: string, payloa
     case "image": return "sent a photo";
     case "feed": return "shared a post";
     case "poll": return typeof p.question === "string" ? p.question : "started a poll";
+    case "challenge": return "sent a challenge";
     case "system": return body;
     default: return body;
   }
@@ -491,7 +497,16 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
     }
   }
 
-  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null; image?: ImageCard | null; feed?: FeedShareCard | null } => {
+  // Challenge cards (Phase 1C) — batched exactly like feedCardById above, one
+  // query set for every challenge referenced in this window rather than N+1.
+  const challengeIds = Array.from(new Set(
+    msgs.filter((m) => m.kind === "challenge" && m.payload && typeof m.payload === "object")
+      .map((m) => { const id = (m.payload as { challengeId?: unknown }).challengeId; return typeof id === "string" ? id : ""; })
+      .filter(Boolean),
+  ));
+  const challengeCardById = challengeIds.length ? await challengeCardsFor(db, challengeIds) : new Map<string, ChallengeCardData>();
+
+  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null; image?: ImageCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCardData | null } => {
     // System rows (Phase 4b, AC3) carry no card — just the kind, so the client
     // renders the plain centred/muted line instead of falling through to "text".
     if (m.kind === "system") return { kind: "system" };
@@ -506,6 +521,12 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
       const eventId = typeof id === "string" ? id : "";
       if (!eventId) return { kind: "text" };
       return { kind: "feed", feed: feedCardById.get(eventId) ?? { eventId, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null } };
+    }
+    if (m.kind === "challenge" && m.payload && typeof m.payload === "object") {
+      const id = (m.payload as { challengeId?: unknown }).challengeId;
+      const challengeId = typeof id === "string" ? id : "";
+      const card = challengeId ? challengeCardById.get(challengeId) : undefined;
+      return card ? { kind: "challenge", challenge: card } : { kind: "text" };
     }
     if (m.kind === "gif" && m.payload && typeof m.payload === "object") {
       const pl = m.payload as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
@@ -645,7 +666,7 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
         reactions: reactionsFor(m.id),
         kind: card.kind, player: card.player ?? null, poll: card.poll ?? null, squad: card.squad ?? null,
         news: card.news ?? null, compare: card.compare ?? null, gif: card.gif ?? null,
-        image: card.image ?? null, feed: card.feed ?? null,
+        image: card.image ?? null, feed: card.feed ?? null, challenge: card.challenge ?? null,
         parentId, replyTo: replyToFor(parentId ?? undefined),
         mentionedUsers: mentionedUsersFor(m),
       };
