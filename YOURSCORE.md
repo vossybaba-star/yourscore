@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-05 (**Social Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-05 (**Social Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,6 +806,19 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05 (eve, later)** — **Social Phase 2a rich media SHIPPED** (PR #62). Posts take
+  up to FOUR images (`payload.images[]`, per-thumb upload state, remove/reorder; legacy
+  single `payload.image` untouched) with feed layouts 1 large / 2 columns / 3 large+pair /
+  4 grid (`ImageGrid`) and a full-screen `MediaGallery` (swipe, pinch zoom, counter, scroll
+  lock). **GIF posting is live via Klipy** (`GifPicker`: search + trending + Celebration/
+  Reactions/Disappointment/Banter chips; GIF and images mutually exclusive): `/api/gif/*`
+  proxy keeps `KLIPY_API_KEY` server-side (set in Vercel + .env.local; missing key = graceful
+  "GIF search isn't available yet" state); feed renders GIFs as looping muted mp4 video,
+  paused offscreen via IntersectionObserver. ⚠️ Klipy nests media under quality tiers
+  (`file.{hd,md,sm}.{mp4,webp,gif,jpg}`) — the mapper descends them (`src/lib/gif.ts`),
+  verified against the live API + a full bot round trip into the DB. `postToFeed` accepts
+  gif URLs only from klipy.com/subdomains (`ALLOWED_GIF_HOSTS`). No migrations.
+  Deferred from Phase 2 by founder: player-comparison cards, game-result attachments.
 - **2026-08-05 (eve)** — **Social Phase 1 visual upgrade SHIPPED** (PR #61, merge `42ae427`) —
   first slice of the new Social master build prompt (5 Aug), which supersedes the 3 Aug spec.
   Social tabs renamed **For You | Following | Discover** (internal id stays `live`, old `?tab=`
