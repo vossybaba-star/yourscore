@@ -96,9 +96,12 @@ export async function fetchFplBootstrap(): Promise<FplBootstrap> {
  *  degrades to "no last-season line" rather than erroring the profile. */
 export async function fetchFplBootstrapCached(): Promise<FplBootstrap | null> {
   try {
+    // `next` is a Next.js fetch extension; cast so the pool build's standalone
+    // tsc (plain lib.dom RequestInit, no Next types) still type-checks. The cast
+    // is compile-time only — Next reads the property at runtime regardless.
     const res = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/", {
       next: { revalidate: 21600 },
-    });
+    } as RequestInit);
     if (!res.ok) return null;
     return (await res.json()) as FplBootstrap;
   } catch {
