@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-05 (**Social Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-05 (**Social Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,6 +806,23 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05 (night)** — **Social Phase 2b SHIPPED** (PR #63; **migration 250 APPLIED to
+  prod**): pasted links auto-unfurl in the composer (debounced, dismissable) and render as
+  tappable cards in the feed. `/api/unfurl` is signed-in-only with a full SSRF guard
+  (private/reserved v4+v6 ranges incl. CGNAT/TEST-NETs/mapped-v6/ULA, literal-IP + localhost
+  checks, DNS check per REDIRECT HOP, 3-hop cap, 5s timeout, 512KB body cap) and a 7-day
+  `link_previews` cache (RLS deny-all, anon-curl verified; falls back to uncached fetch on
+  table errors). **Polls now have durations** (1h/6h/24h/3d, default 24h; `endsAt` computed
+  server-side from a whitelist; votes after close 400 "Poll closed"; closed polls show final
+  results; legacy polls stay open forever). **Player + fixture attachments** in the composer
+  (pool search sheet; current-GW fixture sheet off `fetchFixturesWindow` — NOT the news
+  difficulty ticker, which has no match pairs); toolbar = Photo/GIF/Poll/Player/Fixture, one
+  row at 375px. Fixed pre-existing: `commentRejection` bans URLs, so every link post 400'd —
+  posts opt out via `allowLinks`, comments/chat keep the ban. Accepted residuals, documented
+  in PR #63: DNS-rebinding TOCTOU (fix = pinned-IP dispatch) and feed preview images loading
+  from external origins (fix = image proxy). Deferred by founder: comparison cards, game
+  attachments. Phases 3-5 (replies/reposts/notifications; league hub+chat; discovery/
+  ranking/search) not started.
 - **2026-08-05 (eve, later)** — **Social Phase 2a rich media SHIPPED** (PR #62). Posts take
   up to FOUR images (`payload.images[]`, per-thumb upload state, remove/reorder; legacy
   single `payload.image` untouched) with feed layouts 1 large / 2 columns / 3 large+pair /
