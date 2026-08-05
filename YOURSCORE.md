@@ -825,6 +825,20 @@ Confirmed preamble above and the referenced section.
   Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
   surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
   `FantasyPromoCard.tsx`.
+- **2026-08-06** — **Social Phase 5b SHIPPED (PR #72) — THE SOCIAL MASTER BUILD PROMPT IS
+  COMPLETE (all 5 phases, PRs #61 #62 #63 #64 #65 #67 #69 #71 #72, migs 250-253 applied).**
+  5b: For You Top ranking (`src/lib/fantasy/feedRank.ts`, pure fns, 12 unit tests: score =
+  reactions + 2x comments + 3x reposts, 24h half-life decay, 1.25x follow boost; diversity
+  pass caps consecutive same-author/same-class at 2, demote never drop; Latest untouched;
+  Top ranks within the fetched window). Discover chips Trending/Players/Leagues/Polls/
+  Squads/Games + Managers kept; **Trending = raw engagement >= 5 in 48h, hard floor, under
+  3 qualifiers shows the honest empty state** (founder rule: never fake trends). Search
+  overlay (Users/Posts/Leagues/Players; posts = 30-day ilike, wildcard-escaped,
+  deleted/bot/blocked filtered via hydrateEvents). trackSocial.ts analytics on the
+  trackDiag transport (§27 events). A11y pass on all social components (labels, focus trap,
+  aria-live polls, reduced motion, 44px targets; composer thumb micro-badges stay small,
+  documented). Verified live: trending floor holds, diversity active on prod data (max 1
+  consecutive same-author in Top), 12/12 tests re-run by reviewer.
 - **2026-08-06 (small hours)** — **Social Phase 5a SAFETY SHIPPED** (PR #71; **mig 253
   APPLIED**: `social_reports` insert-own/service-reads + `user_blocks`/`user_mutes` own-row
   RLS): report post/message/profile (reason sheet, one per reporter per subject), BLOCK
