@@ -36,7 +36,9 @@ import { ReportSheet } from "@/components/social/ReportSheet";
 import {
   trackBlockUser, trackBookmarkAdded, trackMuteUser, trackPollVoted, trackPostOpened,
   trackQuoteCreated, trackReactionAdded, trackRepostCreated, trackShareOpened,
+  trackVideoEmbedPlayed, trackVideoSourceOpened,
 } from "@/lib/analytics/trackSocial";
+import { youTubeEmbedUrl, youTubeThumbUrl } from "@/lib/videoEmbeds";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -56,7 +58,13 @@ interface FeedReaction { emoji: string; count: number }
 interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number; endsAt: string | null }
 interface FeedQuiz { correct: number; total: number; title: string | null; game: "quiz" | "round" }
 interface FeedGif { mp4: string | null; webp: string | null; gifUrl: string | null; width: number; height: number }
-interface FeedLink { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
+/** videoKind/youtubeId (video build 2D) drive the three-level fallback card
+ *  below — youtube: inline lazy embed; rich: large tap-to-source preview;
+ *  null: the plain card, unchanged from before this build. */
+interface FeedLink {
+  url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string;
+  videoKind: "youtube" | "rich" | null; youtubeId: string | null;
+}
 interface FeedFixture { homeClub: string; awayClub: string; kickoffIso: string; gw: number }
 /** A repost/quote target's compact summary (kept in sync with EmbeddedPost in
  *  lib/fantasy/feed.ts — that module is server-only, so duplicated here). */
@@ -146,6 +154,115 @@ function LinkCard({ link }: { link: FeedLink }) {
           }}>{link.title}</div>
         )}
         <div style={{ fontSize: 11.5, color: MUTED, marginTop: link.title ? 4 : 0 }}>{link.domain}</div>
+      </div>
+    </a>
+  );
+}
+
+/** Bare SVG play glyph (X-grade stroke idiom, no emoji) — same shape as
+ *  VideoPlayer.tsx's PlayGlyph, kept local since that one isn't exported and
+ *  this card is never allowed to reuse InlineVideoPlayer for an embed (an
+ *  iframe is not a <video>). */
+function PlayGlyph({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
+/** Level 1 of the fallback hierarchy (video build 2D): a YouTube link gets a
+ *  poster-first, lazily-initialised inline embed. No iframe is mounted until
+ *  the viewer taps — only the thumbnail + play glyph exist before that, so
+ *  there's never a "dead player" to break: the tap either mounts a working
+ *  iframe or the viewer still has the thumbnail and the source link never
+ *  goes away (it's still a normal-looking card either way). Once tapped, the
+ *  iframe stays mounted (no toggle back to the poster). */
+function YouTubeEmbedCard({ link }: { link: FeedLink }) {
+  const [playing, setPlaying] = useState(false);
+  if (!link.youtubeId) return null;
+  const thumb = link.image ?? youTubeThumbUrl(link.youtubeId);
+
+  if (playing) {
+    return (
+      <div style={{
+        position: "relative", width: "100%", aspectRatio: "16/9", marginTop: 10,
+        borderRadius: 12, overflow: "hidden", border: `1px solid ${LINE}`, background: "#000",
+      }} onClick={(e) => e.stopPropagation()}>
+        <iframe
+          src={`${youTubeEmbedUrl(link.youtubeId)}&autoplay=1`}
+          title={link.title ?? "YouTube video"}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); trackVideoEmbedPlayed(); setPlaying(true); }}
+      style={{
+        display: "block", width: "100%", marginTop: 10, padding: 0, textAlign: "left",
+        borderRadius: 12, overflow: "hidden", border: `1px solid ${LINE}`, background: PANEL_2, cursor: "pointer",
+      }}
+    >
+      <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", background: PANEL }}>
+        {thumb && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumb} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+        )}
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.2)" }}>
+          <span style={{ width: 52, height: 52, borderRadius: 999, background: "rgba(0,0,0,0.6)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <PlayGlyph size={24} />
+          </span>
+        </div>
+      </div>
+      <div style={{ padding: "10px 12px" }}>
+        {link.title && (
+          <div style={{
+            fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.35,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>{link.title}</div>
+        )}
+        <div style={{ fontSize: 11.5, color: MUTED, marginTop: link.title ? 4 : 0 }}>YouTube</div>
+      </div>
+    </button>
+  );
+}
+
+/** Level 2 of the fallback hierarchy (video build 2D): any unfurled page
+ *  whose og tags declared video, but isn't YouTube — never embedded (no
+ *  guarantee it's reliable/ToS-compliant to iframe), so this is a large
+ *  tap-to-source preview only. The whole card opens the source in a new tab,
+ *  same anchor behaviour as the plain LinkCard below. */
+function RichVideoCard({ link }: { link: FeedLink }) {
+  const publisher = link.siteName || link.domain;
+  return (
+    <a href={link.url} target="_blank" rel="noopener noreferrer nofollow"
+      onClick={(e) => { e.stopPropagation(); trackVideoSourceOpened(); }}
+      style={{ display: "block", marginTop: 10, borderRadius: 12, overflow: "hidden", border: `1px solid ${LINE}`, background: PANEL_2, textDecoration: "none" }}>
+      <div style={{ position: "relative", width: "100%", aspectRatio: "16/9", background: PANEL }}>
+        {link.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={link.image} alt="" loading="lazy" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
+        )}
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.2)" }}>
+          <span style={{ width: 52, height: 52, borderRadius: 999, background: "rgba(0,0,0,0.6)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <PlayGlyph size={24} />
+          </span>
+        </div>
+      </div>
+      <div style={{ padding: "10px 12px" }}>
+        {link.title && (
+          <div style={{
+            fontSize: 13.5, fontWeight: 700, color: INK, lineHeight: 1.35,
+            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+          }}>{link.title}</div>
+        )}
+        <div style={{ fontSize: 11.5, color: MUTED, marginTop: link.title ? 4 : 0 }}>Watch on {publisher}</div>
       </div>
     </a>
   );
@@ -793,7 +910,13 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
       {galleryIndex !== null && (
         <MediaGallery images={images} index={galleryIndex} onClose={() => setGalleryIndex(null)} />
       )}
-      {ev.type === "post" && ev.link && <LinkCard link={ev.link} />}
+      {ev.type === "post" && ev.link && (
+        ev.link.videoKind === "youtube" && ev.link.youtubeId
+          ? <YouTubeEmbedCard link={ev.link} />
+          : ev.link.videoKind === "rich"
+            ? <RichVideoCard link={ev.link} />
+            : <LinkCard link={ev.link} />
+      )}
       {ev.type === "post" && ev.fixture && <FixtureCard fixture={ev.fixture} />}
       {ev.type === "post" && ev.quoteOf && <QuoteEmbedCard embed={ev.quoteOf} />}
       {ev.poll && <PollBlock ev={ev} />}

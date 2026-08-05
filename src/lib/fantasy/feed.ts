@@ -18,6 +18,7 @@ import { notifyMentions } from "./mentions";
 import { extractMentions, resolveUsernames, resolveMentionEntities, type MentionEntity } from "@/lib/mentions";
 import { commentRejection } from "@/lib/moderation";
 import { hiddenActorIds } from "@/lib/social/safety";
+import { YOUTUBE_ID_RE } from "@/lib/videoEmbeds";
 import { HttpError } from "./server";
 import { rankTop, rawEngagement, scoreFeedEvent } from "./feedRank";
 
@@ -102,7 +103,10 @@ export interface FeedGif {
 export const ALLOWED_GIF_HOSTS = ["klipy.com"];
 
 /** A link preview attached to a post (Phase 2b) — the composer unfurls the
- *  first URL in the post text via /api/unfurl; this is what got saved. */
+ *  first URL in the post text via /api/unfurl; this is what got saved.
+ *  `videoKind`/`youtubeId` (video build 2D) drive the three-level fallback
+ *  card in FeedStream: "youtube" → inline lazy embed, "rich" → large
+ *  tap-to-source preview, null → the plain card, unchanged from before. */
 export interface FeedLink {
   url: string;
   title: string | null;
@@ -110,6 +114,8 @@ export interface FeedLink {
   siteName: string | null;
   image: string | null;
   domain: string;
+  videoKind: "youtube" | "rich" | null;
+  youtubeId: string | null;
 }
 
 /** A fixture card attached to a post (Phase 2b) — picked from the current
@@ -532,8 +538,16 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   // A link preview (Phase 2b) — the composer already unfurled it via
   // /api/unfurl; re-sanitised here rather than trusted, since the client sent
   // it. og:image must itself be http(s) — same rule the unfurler applies.
+  // videoKind/youtubeId (video build 2D) get the SAME re-validation
+  // treatment: videoKind is whitelisted to the two known literals, and a
+  // "youtube" claim is only kept if youtubeId re-passes YOUTUBE_ID_RE
+  // server-side — a hand-crafted/malformed id is dropped to a plain link
+  // (videoKind null) rather than trusted or rejecting the whole post.
   let link: FeedLink | null = null;
-  const rawLink = b.link as { url?: unknown; title?: unknown; description?: unknown; siteName?: unknown; image?: unknown } | undefined;
+  const rawLink = b.link as {
+    url?: unknown; title?: unknown; description?: unknown; siteName?: unknown; image?: unknown;
+    videoKind?: unknown; youtubeId?: unknown;
+  } | undefined;
   if (rawLink && typeof rawLink.url === "string" && rawLink.url) {
     let linkUrl: URL;
     try { linkUrl = new URL(rawLink.url.trim()); } catch { throw new HttpError(400, "bad link"); }
@@ -545,6 +559,14 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
         if (imgUrl.protocol === "http:" || imgUrl.protocol === "https:") image = imgUrl.toString().slice(0, 600);
       } catch { /* drop a bad image url, keep the rest of the card */ }
     }
+    let videoKind: "youtube" | "rich" | null =
+      rawLink.videoKind === "youtube" || rawLink.videoKind === "rich" ? rawLink.videoKind : null;
+    let youtubeId: string | null = null;
+    if (videoKind === "youtube") {
+      const rawId = typeof rawLink.youtubeId === "string" ? rawLink.youtubeId.trim() : "";
+      if (YOUTUBE_ID_RE.test(rawId)) youtubeId = rawId;
+      else videoKind = null; // malformed id — falls back to a plain link, never trusted as-is
+    }
     link = {
       url: linkUrl.toString().slice(0, 600),
       title: typeof rawLink.title === "string" && rawLink.title ? rawLink.title.trim().slice(0, 200) : null,
@@ -552,6 +574,8 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
       siteName: typeof rawLink.siteName === "string" && rawLink.siteName ? rawLink.siteName.trim().slice(0, 100) : null,
       image,
       domain: linkUrl.hostname.replace(/^www\./, ""),
+      videoKind,
+      youtubeId,
     };
   }
 
@@ -1166,17 +1190,33 @@ async function hydrateEvents(
             durationMs: Number(rawVideo.durationMs) || 0,
           }
         : null;
-      const rawLink = payload.link as { url?: unknown; title?: unknown; description?: unknown; siteName?: unknown; image?: unknown; domain?: unknown } | undefined;
-      link = rawLink && typeof rawLink.url === "string"
-        ? {
-            url: rawLink.url,
-            title: typeof rawLink.title === "string" ? rawLink.title : null,
-            description: typeof rawLink.description === "string" ? rawLink.description : null,
-            siteName: typeof rawLink.siteName === "string" ? rawLink.siteName : null,
-            image: typeof rawLink.image === "string" ? rawLink.image : null,
-            domain: typeof rawLink.domain === "string" ? rawLink.domain : "",
-          }
-        : null;
+      const rawLink = payload.link as {
+        url?: unknown; title?: unknown; description?: unknown; siteName?: unknown; image?: unknown; domain?: unknown;
+        videoKind?: unknown; youtubeId?: unknown;
+      } | undefined;
+      if (rawLink && typeof rawLink.url === "string") {
+        const youtubeId = typeof rawLink.youtubeId === "string" && YOUTUBE_ID_RE.test(rawLink.youtubeId) ? rawLink.youtubeId : null;
+        // Re-validated on read too (defense in depth) — a legacy row written
+        // before this build simply has neither field, which reads back as a
+        // plain link (null), exactly as it always has. A "youtube" claim
+        // with no valid id falls back to a plain link, same as postToFeed.
+        const videoKind: "youtube" | "rich" | null =
+          rawLink.videoKind === "youtube" && youtubeId ? "youtube"
+          : rawLink.videoKind === "rich" ? "rich"
+          : null;
+        link = {
+          url: rawLink.url,
+          title: typeof rawLink.title === "string" ? rawLink.title : null,
+          description: typeof rawLink.description === "string" ? rawLink.description : null,
+          siteName: typeof rawLink.siteName === "string" ? rawLink.siteName : null,
+          image: typeof rawLink.image === "string" ? rawLink.image : null,
+          domain: typeof rawLink.domain === "string" ? rawLink.domain : "",
+          videoKind,
+          youtubeId: videoKind === "youtube" ? youtubeId : null,
+        };
+      } else {
+        link = null;
+      }
       const rawFixture = payload.fixture as { homeClub?: unknown; awayClub?: unknown; kickoffIso?: unknown; gw?: unknown } | undefined;
       fixture = rawFixture && typeof rawFixture.homeClub === "string" && typeof rawFixture.awayClub === "string"
         ? {

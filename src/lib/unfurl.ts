@@ -18,6 +18,7 @@ import { lookup } from "dns/promises";
 import { isIP } from "net";
 import { createHash } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveYouTube, youTubeThumbUrl } from "@/lib/videoEmbeds";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -29,6 +30,15 @@ export interface LinkPreview {
   siteName: string | null;
   image: string | null;
   domain: string;
+  /** The fallback level (video build 2D): "youtube" gets an inline playable
+   *  embed (resolved from the URL itself, not the page — see
+   *  detectYouTube below); "rich" is any other page whose og tags declare
+   *  video (og:video/og:video:url/og:video:secure_url, og:type video.*, or
+   *  twitter:card=player) — a large tap-to-source preview, never embedded;
+   *  null is an ordinary link, unchanged from before this build. */
+  videoKind: "youtube" | "rich" | null;
+  /** Set only when videoKind === "youtube". Always passes YOUTUBE_ID_RE. */
+  youtubeId: string | null;
 }
 
 const FETCH_TIMEOUT_MS = 5_000;
@@ -217,6 +227,21 @@ function safeImageUrl(raw: string | null, base: URL): string | null {
   } catch { return null; }
 }
 
+/** True when the page's own og/twitter tags declare it carries a video —
+ *  og:video/og:video:url/og:video:secure_url present, og:type is "video.*",
+ *  or twitter:card is "player". Deliberately NOT used to detect YouTube
+ *  (that's URL-driven — see detectYouTube) so a YouTube page's own og:video
+ *  tag never overrides the youtube-vs-rich decision. */
+function declaresVideo(html: string): boolean {
+  const ogVideo = metaContent(html, ["og:video", "og:video:url", "og:video:secure_url"]);
+  if (ogVideo) return true;
+  const ogType = metaContent(html, ["og:type"]);
+  if (ogType && ogType.toLowerCase().startsWith("video")) return true;
+  const twitterCard = metaContent(html, ["twitter:card"]);
+  if (twitterCard && twitterCard.toLowerCase() === "player") return true;
+  return false;
+}
+
 function parseHtml(html: string, finalUrl: URL): LinkPreview {
   const title = metaContent(html, ["og:title", "twitter:title"]) ?? titleTag(html);
   const description = metaContent(html, ["og:description", "twitter:description", "description"]);
@@ -229,6 +254,35 @@ function parseHtml(html: string, finalUrl: URL): LinkPreview {
     siteName: siteName ? clean(siteName, 100) : null,
     image: safeImageUrl(image, finalUrl),
     domain: finalUrl.hostname.replace(/^www\./, ""),
+    // youtube (if it applies) is layered on top by the caller — see
+    // detectYouTube in unfurlUrl; here we only ever know "rich" or null.
+    videoKind: declaresVideo(html) ? "rich" : null,
+    youtubeId: null,
+  };
+}
+
+/** YouTube detection is purely URL-driven (per the product brief: "the
+ *  videoKind decision comes from the URL, not the page") — tried against
+ *  both the URL the caller asked to unfurl and the URL we actually landed
+ *  on after redirects, so a shortener/redirect in front of a YouTube link
+ *  still resolves. */
+function detectYouTube(requestedUrl: string, finalUrl?: URL): { videoId: string } | null {
+  return resolveYouTube(requestedUrl) ?? (finalUrl ? resolveYouTube(finalUrl.toString()) : null);
+}
+
+/** Layer the YouTube decision onto a preview that doesn't have one yet
+ *  (a fresh minimal/parsed preview, or one read back from the cache — see
+ *  the CacheRow note below for why the cache never carries this itself).
+ *  Falls back to the YouTube-derived thumbnail only when no og:image was
+ *  unfurled (a live fetch's own image wins when both exist). */
+function withYouTubeOverlay(preview: LinkPreview, requestedUrl: string, finalUrl?: URL): LinkPreview {
+  const yt = detectYouTube(requestedUrl, finalUrl);
+  if (!yt) return preview;
+  return {
+    ...preview,
+    videoKind: "youtube",
+    youtubeId: yt.videoId,
+    image: preview.image ?? youTubeThumbUrl(yt.videoId),
   };
 }
 
@@ -248,6 +302,11 @@ function urlHash(url: string): string {
 interface CacheRow {
   url: string; title: string | null; description: string | null;
   site_name: string | null; image: string | null; fetched_at: string;
+  /** Video classification (migration 257) — nullable, so a pre-257 row or
+   *  pre-2D cache entry reads as a plain link, exactly what it was. youtube
+   *  is URL-derived and overlaid on every read regardless; "rich" is
+   *  page-derived, and THIS is what makes it survive a cache hit. */
+  video_kind?: string | null; youtube_id?: string | null;
 }
 
 async function readCache(db: Db, hash: string): Promise<LinkPreview | null> {
@@ -262,6 +321,10 @@ async function readCache(db: Db, hash: string): Promise<LinkPreview | null> {
     return {
       url: row.url, title: row.title, description: row.description,
       siteName: row.site_name, image: row.image, domain,
+      // youtube is overlaid from the URL by withYouTubeOverlay in unfurlUrl
+      // either way; "rich" comes back from the cached row (mig 257).
+      videoKind: row.video_kind === "rich" ? "rich" : null,
+      youtubeId: null,
     };
   } catch {
     return null; // table absent / RLS surprise / transient — fall through to a live fetch
@@ -270,9 +333,14 @@ async function readCache(db: Db, hash: string): Promise<LinkPreview | null> {
 
 async function writeCache(db: Db, hash: string, preview: LinkPreview): Promise<void> {
   try {
+    // video_kind persists the page-derived "rich" classification (mig 257);
+    // youtube_id is stored for completeness but reads recompute it from the
+    // URL anyway. If 257 isn't applied yet the whole upsert fails — cache is
+    // best-effort, the preview itself already succeeded.
     await db.from("link_previews").upsert({
       url_hash: hash, url: preview.url, title: preview.title, description: preview.description,
       site_name: preview.siteName, image: preview.image, fetched_at: new Date().toISOString(),
+      video_kind: preview.videoKind, youtube_id: preview.youtubeId,
     });
   } catch { /* cache is best-effort — the preview itself already succeeded */ }
 }
@@ -298,16 +366,27 @@ export async function unfurlUrl(db: Db, rawUrl: string): Promise<LinkPreview> {
   const domain = parsed.hostname.replace(/^www\./, "");
 
   const cached = await readCache(db, hash);
-  if (cached) return cached;
+  if (cached) return withYouTubeOverlay(cached, normalised);
 
   try {
     const { html, finalUrl } = await fetchWithGuard(normalised);
-    const preview = html ? parseHtml(html, finalUrl) : { url: normalised, title: null, description: null, siteName: null, image: null, domain };
-    void writeCache(db, hash, preview);
-    return preview;
+    const preview = html
+      ? parseHtml(html, finalUrl)
+      : { url: normalised, title: null, description: null, siteName: null, image: null, domain, videoKind: null, youtubeId: null };
+    // A YouTube URL still gets the normal fetch above (title/site_name), per
+    // the brief — only the videoKind DECISION is URL-driven, overriding
+    // whatever declaresVideo saw in the page's own og tags.
+    const withYouTube = withYouTubeOverlay(preview, normalised, finalUrl);
+    void writeCache(db, hash, withYouTube);
+    return withYouTube;
   } catch (e) {
     if (e instanceof UnfurlBlockedError) throw e;
-    // Fetch/timeout/parse failure — a minimal card beats an error toast.
-    return { url: normalised, title: null, description: null, siteName: null, image: null, domain };
+    // Fetch/timeout/parse failure — a minimal card beats an error toast. A
+    // YouTube link still resolves fully here (id/thumbnail are URL-derived,
+    // no network needed) — only the title is missing.
+    return withYouTubeOverlay(
+      { url: normalised, title: null, description: null, siteName: null, image: null, domain, videoKind: null, youtubeId: null },
+      normalised,
+    );
   }
 }
