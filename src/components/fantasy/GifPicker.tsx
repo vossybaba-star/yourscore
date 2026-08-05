@@ -98,7 +98,10 @@ export function GifPicker({ open, onClose, onSelect }: {
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 10px", flexShrink: 0 }}>
           <span className="font-display" style={{ fontSize: 17, color: INK }}>Add a GIF</span>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: MUTED, fontSize: 22, cursor: "pointer", lineHeight: 1 }}>×</button>
+          <button onClick={onClose} aria-label="Close" style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 44, height: 44, background: "none", border: "none", color: MUTED, fontSize: 22, cursor: "pointer", lineHeight: 1,
+          }}>×</button>
         </div>
 
         <div style={{ padding: "0 16px 10px", flexShrink: 0 }}>

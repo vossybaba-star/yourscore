@@ -17,6 +17,7 @@ import { MediaGallery } from "@/components/fantasy/MediaGallery";
 import { uploadPostImage } from "@/lib/postMedia";
 import { ReportSheet } from "@/components/social/ReportSheet";
 import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type GifCard } from "./types";
+import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded } from "@/lib/analytics/trackSocial";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
   const res = await fetch(`/api/fantasy/leagues/${code}/${path}`, {
@@ -114,19 +115,21 @@ function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, is
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4, alignItems: "center" }}>
       {msg.reactions.map((r) => (
-        <button key={r.emoji} disabled={readOnly} onClick={(e) => { e.stopPropagation(); onReact(r.emoji, !r.mine); }} style={{
-          display: "flex", alignItems: "center", gap: 3, padding: "1px 6px", borderRadius: 999, cursor: readOnly ? "default" : "pointer",
+        <button key={r.emoji} disabled={readOnly} onClick={(e) => { e.stopPropagation(); onReact(r.emoji, !r.mine); }}
+          aria-label={`${r.emoji} reaction, ${r.count}${r.mine ? ", you reacted" : ""}`} aria-pressed={r.mine} style={{
+          display: "flex", alignItems: "center", gap: 3, padding: "1px 6px", minHeight: 32, borderRadius: 999, cursor: readOnly ? "default" : "pointer",
           fontSize: 11.5, lineHeight: 1.6, background: r.mine ? tint(TEAL, "1c") : "rgba(255,255,255,0.04)",
           border: `1px solid ${r.mine ? tint(TEAL, "55") : LINE}`, color: INK,
         }}>
-          <span>{r.emoji}</span><span style={{ fontSize: 10.5, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{r.count}</span>
+          <span aria-hidden>{r.emoji}</span><span aria-hidden style={{ fontSize: 10.5, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{r.count}</span>
         </button>
       ))}
       {open && !readOnly && (
-        <div style={{ display: "flex", gap: 2, padding: "2px 6px", borderRadius: 999, background: PANEL_2, border: `1px solid ${LINE}` }}>
+        <div role="group" aria-label="Reactions" style={{ display: "flex", gap: 2, padding: "2px 6px", borderRadius: 999, background: PANEL_2, border: `1px solid ${LINE}` }}>
           {CHAT_EMOJI.map((e) => (
-            <button key={e} onClick={(ev) => { ev.stopPropagation(); onReact(e, true); }}
-              style={{ fontSize: 16, background: "none", border: "none", cursor: "pointer", padding: 1 }}>{e}</button>
+            <button key={e} onClick={(ev) => { ev.stopPropagation(); trackReactionAdded(e); onReact(e, true); }}
+              aria-label={`React with ${e}`}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: 36, minHeight: 36, fontSize: 16, background: "none", border: "none", cursor: "pointer", padding: 1 }}>{e}</button>
           ))}
         </div>
       )}
@@ -327,11 +330,12 @@ function Poll({ msg, onVote, readOnly }: { msg: ChatMessage; onVote: (i: number)
           return (
             <button key={i} disabled={readOnly} onClick={(e) => { e.stopPropagation(); onVote(i); }} style={{
               position: "relative", overflow: "hidden", textAlign: "left", cursor: readOnly ? "default" : "pointer",
+              minHeight: 44, display: "flex", alignItems: "center",
               borderRadius: 8, padding: "8px 10px", background: "rgba(255,255,255,0.03)",
               border: `1px solid ${mine ? tint(LIME, "66") : LINE}`,
             }}>
               <div aria-hidden style={{ position: "absolute", inset: 0, width: `${pct}%`, background: tint(LIME, mine ? "24" : "12") }} />
-              <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 12.5, color: INK, fontWeight: mine ? 700 : 500 }}>{o.text}{mine ? " ✓" : ""}</span>
                 {total > 0 && <span style={{ fontSize: 11.5, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{pct}%</span>}
               </div>
@@ -339,7 +343,8 @@ function Poll({ msg, onVote, readOnly }: { msg: ChatMessage; onVote: (i: number)
           );
         })}
       </div>
-      <div style={{ fontSize: 10.5, color: MUTED, marginTop: 7 }}>{total} vote{total === 1 ? "" : "s"}{poll.myVote === null ? " · tap to vote" : ""}</div>
+      {/* aria-live (AC5): announces the result once a vote lands. */}
+      <div aria-live="polite" style={{ fontSize: 10.5, color: MUTED, marginTop: 7 }}>{total} vote{total === 1 ? "" : "s"}{poll.myVote === null ? " · tap to vote" : ""}</div>
     </CardShell>
   );
 }
@@ -498,7 +503,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const parentId = replyTo?.id;
   const send = () => { const t = draft.trim(); if (!t) return; guard(async () => { await api(code, "chat", { body: t, parentId }); setDraft(""); setReplyTo(null); }); };
   const react = (id: string, emoji: string, on: boolean) => { setReactFor(null); guard(() => api(code, "react", { commentId: id, emoji, on })); };
-  const vote = (id: string, i: number) => guard(() => api(code, "poll", { commentId: id, optionIndex: i }, "PATCH"));
+  const vote = (id: string, i: number) => { trackPollVoted(); guard(() => api(code, "poll", { commentId: id, optionIndex: i }, "PATCH")); };
   const postPoll = (q: string, opts: string[]) => guard(async () => { await api(code, "poll", { question: q, options: opts, parentId }); setPoll(false); setReplyTo(null); });
   const sendGif = (g: GifCard) => guard(async () => { await api(code, "chat", { kind: "gif", gif: g, parentId }); setGifOpen(false); setReplyTo(null); });
   const shareSquad = () => guard(async () => { await api(code, "share", { kind: "squad", parentId }); setMenu(false); setReplyTo(null); });
@@ -526,6 +531,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
     setReactFor(null);
     guard(async () => {
       await fetch("/api/social/block", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: m.userId }) });
+      trackBlockUser();
     });
   };
   const muteAuthor = (m: ChatMessage) => {
@@ -533,6 +539,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
     setReactFor(null);
     guard(async () => {
       await fetch("/api/social/mute", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: m.userId }) });
+      trackMuteUser();
     });
   };
 
@@ -727,7 +734,10 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                   <div style={{ fontSize: 10, color: TEAL, fontWeight: 700 }}>Replying to {replyTo.name}</div>
                   <div style={{ fontSize: 11.5, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{summariseChatMessage(replyTo)}</div>
                 </div>
-                <button onClick={() => setReplyTo(null)} aria-label="Cancel reply" style={{ background: "none", border: "none", color: MUTED, fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1 }}>×</button>
+                <button onClick={() => setReplyTo(null)} aria-label="Cancel reply" style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", minWidth: 44, minHeight: 44,
+                  background: "none", border: "none", color: MUTED, fontSize: 16, cursor: "pointer", lineHeight: 1,
+                }}>×</button>
               </div>
             )}
             {poll && <PollComposer onPost={postPoll} onCancel={() => setPoll(false)} busy={busy} />}
@@ -743,16 +753,17 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
             )}
             <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChosen} style={{ display: "none" }} />
             <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
-              <button onClick={() => setMenu((v) => !v)} aria-label="Share to the league" style={{
-                width: 32, height: 32, flexShrink: 0, borderRadius: 999, cursor: "pointer", fontSize: 18, lineHeight: 1,
+              <button onClick={() => setMenu((v) => !v)} aria-label="Share to the league" aria-expanded={menu} style={{
+                width: 44, height: 44, flexShrink: 0, borderRadius: 999, cursor: "pointer", fontSize: 18, lineHeight: 1,
                 background: menu ? tint(TEAL, "22") : PANEL_2, border: `1px solid ${menu ? tint(TEAL, "66") : LINE}`, color: menu ? TEAL : MUTED,
                 display: "flex", alignItems: "center", justifyContent: "center", transform: menu ? "rotate(45deg)" : "none", transition: "transform .15s",
               }}>＋</button>
               <input value={draft} maxLength={280} placeholder={replyTo ? "Write a reply…" : "Message the league…"}
+                aria-label="Message the league"
                 onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-                style={{ flex: 1, minWidth: 0, fontSize: 14, padding: "7px 14px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none" }} />
+                style={{ flex: 1, minWidth: 0, fontSize: 14, padding: "7px 14px", minHeight: 44, boxSizing: "border-box", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none" }} />
               <button onClick={send} disabled={!canSend} aria-label="Send" style={{
-                width: 32, height: 32, flexShrink: 0, borderRadius: 999, cursor: canSend ? "pointer" : "default", fontSize: 16, lineHeight: 1,
+                width: 44, height: 44, flexShrink: 0, borderRadius: 999, cursor: canSend ? "pointer" : "default", fontSize: 16, lineHeight: 1,
                 background: canSend ? TEAL : PANEL_2, color: canSend ? "#03211d" : MUTED, border: `1px solid ${canSend ? TEAL : LINE}`,
                 display: "flex", alignItems: "center", justifyContent: "center", opacity: busy ? 0.6 : 1, fontWeight: 800,
               }}>↑</button>

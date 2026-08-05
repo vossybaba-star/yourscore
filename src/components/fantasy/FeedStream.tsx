@@ -32,6 +32,10 @@ import { MediaGallery } from "@/components/fantasy/MediaGallery";
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
 import { useUser } from "@/hooks/useUser";
 import { ReportSheet } from "@/components/social/ReportSheet";
+import {
+  trackBlockUser, trackBookmarkAdded, trackMuteUser, trackPollVoted, trackPostOpened,
+  trackQuoteCreated, trackReactionAdded, trackRepostCreated, trackShareOpened,
+} from "@/lib/analytics/trackSocial";
 
 // Kept in sync with FEED_REACTIONS in lib/fantasy/feed.ts (that module is
 // server-only, so the set is duplicated here for the client).
@@ -233,6 +237,7 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
     setReactions(applyReaction(reactions, mine, next));
     setMine(next);
     setTrayOpen(false);
+    if (!remove) trackReactionAdded(emoji);
     try {
       const res = remove
         ? await fetch("/api/fantasy/feed/react", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id }) })
@@ -248,21 +253,23 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 4 }}>
       {total > 0 && (
-        <button onClick={() => setTrayOpen((o) => !o)} style={{
-          display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
-          padding: "9px 9px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
-          background: mine ? tint(TEAL, "1a") : PANEL_2, color: mine ? TEAL : MUTED,
-          border: `1px solid ${mine ? tint(TEAL, "55") : LINE}`,
-        }}>
-          <span style={{ display: "flex", alignItems: "center" }}>
+        <button onClick={() => setTrayOpen((o) => !o)}
+          aria-label={`${total} reaction${total === 1 ? "" : "s"}${mine ? `, you reacted ${mine}` : ""}. Tap to react`}
+          style={{
+            display: "flex", alignItems: "center", gap: 4, cursor: "pointer", minHeight: 44,
+            padding: "9px 9px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
+            background: mine ? tint(TEAL, "1a") : PANEL_2, color: mine ? TEAL : MUTED,
+            border: `1px solid ${mine ? tint(TEAL, "55") : LINE}`,
+          }}>
+          <span aria-hidden style={{ display: "flex", alignItems: "center" }}>
             {top.map((r) => <span key={r.emoji} style={{ fontSize: 13 }}>{r.emoji}</span>)}
           </span>
           {total}
         </button>
       )}
-      <button onClick={() => setTrayOpen((o) => !o)} aria-label="React" style={{
+      <button onClick={() => setTrayOpen((o) => !o)} aria-label="React" aria-expanded={trayOpen} style={{
         display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-        width: 36, height: 36, borderRadius: 999, fontSize: 15,
+        width: 44, height: 44, borderRadius: 999, fontSize: 15,
         background: trayOpen ? tint(TEAL, "22") : "none", color: trayOpen ? TEAL : MUTED,
         border: `1px solid ${trayOpen ? tint(TEAL, "66") : LINE}`,
       }}>{total > 0 ? "＋" : "☺"}</button>
@@ -274,15 +281,17 @@ function ReactionBar({ ev }: { ev: FeedEvent }) {
               without it, tapping outside the tray to close it would ALSO open
               the post detail page underneath. */}
           <div onClick={(e) => { e.stopPropagation(); setTrayOpen(false); }} style={{ position: "fixed", inset: 0, zIndex: 4 }} />
-          <div style={{
+          <div role="group" aria-label="Reactions" style={{
             position: "absolute", bottom: "calc(100% + 6px)", left: 0, zIndex: 5,
             display: "flex", gap: 2, padding: 5, borderRadius: 999,
             background: PANEL, border: `1px solid ${LINE}`, boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
           }}>
             {REACTION_SET.map((emoji) => (
-              <button key={emoji} onClick={() => react(emoji)} style={{
+              <button key={emoji} onClick={() => react(emoji)} aria-label={`React with ${emoji}`} aria-pressed={emoji === mine} style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", background: emoji === mine ? tint(TEAL, "22") : "none",
-                border: "none", borderRadius: 999, padding: "6px 7px", fontSize: 18, lineHeight: 1,
+                border: "none", borderRadius: 999, fontSize: 18, lineHeight: 1,
+                minWidth: 44, minHeight: 44,
               }}>{emoji}</button>
             ))}
           </div>
@@ -325,6 +334,7 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
     });
     const total = poll.total + (poll.myChoice == null ? 1 : 0);
     setPoll({ ...poll, options, myChoice: idx, total });
+    trackPollVoted();
     try {
       const r = await fetch("/api/fantasy/feed/poll/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id, optionIndex: idx }) });
       if (r.status === 401) { window.location.href = "/auth/sign-in?next=/fantasy/social"; return; }
@@ -349,11 +359,12 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
           return (
             <button key={i} onClick={() => vote(i)} disabled={closed} style={{
               position: "relative", overflow: "hidden", textAlign: "left", cursor: closed ? "default" : voted ? "default" : "pointer", width: "100%",
+              minHeight: 44, display: "flex", alignItems: "center",
               padding: "9px 12px", borderRadius: 10, background: PANEL_2, border: `1px solid ${mine ? tint(TEAL, "66") : LINE}`,
               opacity: closed && !mine ? 0.8 : 1,
             }}>
               {showBars && <div aria-hidden style={{ position: "absolute", inset: 0, width: `${pct}%`, background: mine ? tint(TEAL, "2a") : "rgba(255,255,255,0.05)" }} />}
-              <div style={{ position: "relative", display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "space-between", gap: 8 }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: mine ? TEAL : INK }}>{o.text}</span>
                 {showBars && <span style={{ fontSize: 13, fontWeight: 700, color: mine ? TEAL : MUTED }}>{pct}%</span>}
               </div>
@@ -361,7 +372,9 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
           );
         })}
       </div>
-      <div style={{ fontSize: 11.5, color: MUTED, marginTop: 6 }}>
+      {/* aria-live (AC5): announces the result line once a vote lands, so a
+          screen-reader user hears the outcome without hunting for it. */}
+      <div aria-live="polite" style={{ fontSize: 11.5, color: MUTED, marginTop: 6 }}>
         {closed
           ? `Final result · ${poll.total} vote${poll.total === 1 ? "" : "s"}`
           : `${poll.total} vote${poll.total === 1 ? "" : "s"}${voted ? "" : " · tap to vote"}`}
@@ -408,6 +421,7 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl, viewerId, onHid
       });
       if (res.status === 401) { window.location.href = "/auth/sign-in?next=/fantasy/social"; return; }
       if (!res.ok) setBookmarked(!next);
+      else if (next) trackBookmarkAdded();
     } catch { setBookmarked(!next); }
     setBookmarkBusy(false);
   }, [bookmarked, bookmarkBusy, ev.id]);
@@ -432,7 +446,7 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl, viewerId, onHid
       const res = await fetch("/api/social/block", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: ev.actorId }),
       });
-      if (res.ok) onHide?.();
+      if (res.ok) { trackBlockUser(); onHide?.(); }
     } finally { setSafetyBusy(false); }
   }, [safetyBusy, ev.actorId, ev.actorName, onHide]);
 
@@ -444,21 +458,21 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl, viewerId, onHid
       const res = await fetch("/api/social/mute", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: ev.actorId }),
       });
-      if (res.ok) onHide?.();
+      if (res.ok) { trackMuteUser(); onHide?.(); }
     } finally { setSafetyBusy(false); }
   }, [safetyBusy, ev.actorId, ev.actorName, onHide]);
 
   const item = (label: string, emoji: string, fn: () => void) => (
     <button key={label} onClick={() => { setMenuOpen(false); fn(); }} style={{
-      display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+      display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer", minHeight: 44,
       background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK, whiteSpace: "nowrap",
     }}><span aria-hidden style={{ fontSize: 15 }}>{emoji}</span>{label}</button>
   );
   return (
     <div style={{ position: "relative", flexShrink: 0 }}>
-      <button onClick={() => setMenuOpen((o) => !o)} aria-label="More" style={{
+      <button onClick={() => setMenuOpen((o) => !o)} aria-label="More" aria-expanded={menuOpen} style={{
         display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-        width: 30, height: 30, borderRadius: 999, background: menuOpen ? PANEL_2 : "none",
+        width: 44, height: 44, borderRadius: 999, background: menuOpen ? PANEL_2 : "none",
         border: "none", color: MUTED, fontSize: 17, letterSpacing: "0.08em", lineHeight: 1,
       }}>···</button>
       {menuOpen && (
@@ -470,7 +484,7 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl, viewerId, onHid
             borderRadius: 12, background: PANEL, border: `1px solid ${LINE}`, boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
             padding: "4px 0", overflow: "hidden",
           }}>
-            {item("Share post", "↗", onShare)}
+            {item("Share post", "↗", () => { trackShareOpened(); onShare(); })}
             {item(copied ? "Link copied" : "Copy link", "🔗", () => {
               navigator.clipboard?.writeText(shareUrl).catch(() => {});
               setCopied(true); setTimeout(() => setCopied(false), 1600);
@@ -590,6 +604,7 @@ function RepostControl({ ev, signInNext }: { ev: FeedEvent; signInNext: string }
         : await fetch("/api/fantasy/feed/repost", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: ev.id }) });
       if (res.status === 401) { window.location.href = `/auth/sign-in?next=${encodeURIComponent(signInNext)}`; return; }
       if (!res.ok) { setReposted(prevReposted); setCount(prevCount); }
+      else if (!undo) trackRepostCreated();
     } catch { setReposted(prevReposted); setCount(prevCount); }
   }, [reposted, count, ev.id, signInNext]);
 
@@ -603,8 +618,8 @@ function RepostControl({ ev, signInNext }: { ev: FeedEvent; signInNext: string }
 
   return (
     <div style={{ position: "relative" }}>
-      <button onClick={tap} style={{
-        display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none",
+      <button onClick={tap} aria-label={reposted ? "Undo repost" : "Repost or quote"} style={{
+        display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", minHeight: 44,
         padding: "10px 9px", color: reposted ? TEAL : MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
       }}>
         <RepostIcon />
@@ -619,17 +634,18 @@ function RepostControl({ ev, signInNext }: { ev: FeedEvent; signInNext: string }
             padding: "4px 0", overflow: "hidden",
           }}>
             <button onClick={(e) => { e.stopPropagation(); toggle(false); }} style={{
-              display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer", minHeight: 44,
               background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK,
             }}><RepostIcon />Repost</button>
             <button onClick={(e) => { e.stopPropagation(); setChooserOpen(false); setQuoteOpen(true); }} style={{
-              display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer", minHeight: 44,
               background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK,
             }}><span aria-hidden style={{ fontSize: 15 }}>✎</span>Quote</button>
           </div>
         </>
       )}
-      <CreatePostSheet open={quoteOpen} onClose={() => setQuoteOpen(false)} onPosted={() => setQuoteOpen(false)} quoting={quoted} />
+      <CreatePostSheet open={quoteOpen} onClose={() => setQuoteOpen(false)}
+        onPosted={() => { trackQuoteCreated(); setQuoteOpen(false); }} quoting={quoted} />
     </div>
   );
 }
@@ -694,6 +710,7 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
   const onBodyClick = openDetail
     ? (e: React.MouseEvent<HTMLDivElement>) => {
         if ((e.target as HTMLElement).closest("a,button,video")) return;
+        trackPostOpened(ev.type);
         router.push(`/fantasy/social/post/${ev.id}`);
       }
     : undefined;
@@ -817,7 +834,7 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
           {ev.commentCount > 0 ? ev.commentCount : "Comment"}
         </button>
         {ev.type === "post" && <RepostControl ev={ev} signInNext={signInNext} />}
-        <button onClick={(e) => { e.stopPropagation(); setShareOpen(true); }} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: "10px 9px", color: MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
+        <button onClick={(e) => { e.stopPropagation(); trackShareOpened(); setShareOpen(true); }} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none", padding: "10px 9px", color: MUTED, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
           <span style={{ fontSize: 14 }}>↗</span>Share
         </button>
       </div>

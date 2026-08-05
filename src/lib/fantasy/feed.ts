@@ -17,6 +17,7 @@ import { extractMentions, resolveUsernames } from "@/lib/mentions";
 import { commentRejection } from "@/lib/moderation";
 import { hiddenActorIds } from "@/lib/social/safety";
 import { HttpError } from "./server";
+import { rankTop, rawEngagement, scoreFeedEvent } from "./feedRank";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -685,7 +686,10 @@ export async function loadFeed(
   if (before) q = q.lt("created_at", before);
   const { data: rows } = await q;
   const rawRows = rows ?? [];
-  const events = await hydrateEvents(db, viewerId, rawRows, sort, limit);
+  // Followed ids (AC1) — already fetched above for the "following" scope
+  // filter; reused here for Top's 1.25x follow boost so a second query isn't
+  // needed. Only meaningful with a viewer.
+  const events = await hydrateEvents(db, viewerId, rawRows, sort, limit, viewerId ? new Set(followeeIds) : undefined);
   const oldest = rawRows.length ? (rawRows[rawRows.length - 1] as { created_at: string }).created_at : null;
   const nextCursor = rawRows.length === fetchLimit ? oldest : null;
   return { events, followingCount, nextCursor };
@@ -710,6 +714,9 @@ export async function loadLeagueFeed(
 async function hydrateEvents(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: Db, viewerId: string | null, events: any[], sort: FeedSort, limit: number,
+  /** Ids the viewer follows (Phase 5b, AC1) — drives Top's 1.25x follow boost.
+   *  Undefined/empty for a guest or when the caller has no viewer context. */
+  followedIds?: Set<string>,
 ): Promise<FeedEvent[]> {
   // Read-time belt to the emit-time braces: rows a bot wrote under an older
   // deploy (or one missing HEALTH_BOT_USER_ID) still never render.
@@ -902,11 +909,6 @@ async function hydrateEvents(
     if (!byEmoji) return [];
     return FEED_REACTIONS.filter((e) => byEmoji.has(e)).map((emoji) => ({ emoji, count: byEmoji.get(emoji)! }));
   };
-  const totalReactions = (eventId: string): number => {
-    const byEmoji = reactionTally.get(eventId);
-    if (!byEmoji) return 0;
-    let n = 0; byEmoji.forEach((c) => (n += c)); return n;
-  };
 
   const commentCount = new Map<string, number>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1098,13 +1100,12 @@ async function hydrateEvents(
     } satisfies FeedEvent;
   });
 
-  // "Top" = most engaged first (reactions + comments), recency as the tiebreak.
-  // Reactions/comments are keyed by content id (`e.id`, post-mapping) — the
-  // same id `reactionsFor`/`commentCount` above were built against.
-  if (sort === "top") {
-    const engagement = (e: FeedEvent) => totalReactions(e.id) + e.commentCount;
-    mapped.sort((a, b) => engagement(b) - engagement(a) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
-  }
+  // "Top" (Phase 5b, AC1) — deterministic score (reactions + 2*comments +
+  // 3*reposts, 24h half-life decay, 1.25x for a followed author) then a
+  // post-sort diversity pass (no 3-in-a-row same author or same content
+  // class — see feedRank.ts, unit-tested standalone). "Latest" (sort ===
+  // "recent") is untouched — still plain created_at order from the query.
+  if (sort === "top") return rankTop(mapped, { followedIds: followedIds ?? null }).slice(0, limit);
   return mapped.slice(0, limit);
 }
 
@@ -1296,4 +1297,134 @@ export async function loadUserMedia(db: Db, userId: string, limit = 30): Promise
     if (items.length >= limit) break;
   }
   return items;
+}
+
+// ── Discover feed filters (Phase 5b, AC2) ────────────────────────────────────
+
+export type DiscoverFilter = "trending" | "players" | "polls" | "squads" | "games";
+
+/** A post can never be labelled Trending below this raw (undecayed) engagement
+ *  floor (AC2) — reactions + comments + reposts, on the actual post, not the
+ *  time-decayed score. Exported so the client's empty-state copy can reference
+ *  the same number if it ever needs to. */
+export const TRENDING_MIN_ENGAGEMENT = 5;
+const TRENDING_WINDOW_HOURS = 48;
+const DISCOVER_FETCH_LIMIT = 200; // wide window to rank/group within, mirrors "top" sort's fetchLimit
+
+export interface DiscoverPlayer { playerId: number; name: string; club: string; avatarUrl: string | null; postCount: number }
+export interface DiscoverFeedResult {
+  events: FeedEvent[];
+  /** Only populated for filter === "players" — the top discussed players,
+   *  grouped by playerId, min 2 posts to appear (AC2). */
+  players?: DiscoverPlayer[];
+}
+
+/** Discover's five feed-backed filter chips (AC2). Leagues and Managers are
+ *  NOT here — they're existing surfaces (discoverLeagues(), /api/fantasy/
+ *  discover) this deliberately leaves untouched. */
+export async function loadDiscoverFeed(
+  db: Db, viewerId: string | null, filter: DiscoverFilter, limit = 30,
+): Promise<DiscoverFeedResult> {
+  if (filter === "squads") {
+    const { data: rows } = await db.from("fantasy_feed_events")
+      .select("id, actor_id, type, gw, payload, created_at")
+      .eq("type", "squad_complete")
+      .order("created_at", { ascending: false }).limit(limit);
+    return { events: await hydrateEvents(db, viewerId, rows ?? [], "recent", limit) };
+  }
+
+  if (filter === "games") {
+    const { data: rows } = await db.from("fantasy_feed_events")
+      .select("id, actor_id, type, gw, payload, created_at")
+      .eq("type", "quiz_result")
+      .order("created_at", { ascending: false }).limit(limit);
+    return { events: await hydrateEvents(db, viewerId, rows ?? [], "recent", limit) };
+  }
+
+  if (filter === "polls") {
+    // Headroom above `limit`: the open-first re-sort below happens AFTER
+    // hydration, so the fetch needs enough rows that a real "open" poll isn't
+    // left behind a page of closed ones the DB happened to return first.
+    const { data: rows } = await db.from("fantasy_feed_events")
+      .select("id, actor_id, type, gw, payload, created_at")
+      .eq("type", "post")
+      .not("payload->poll", "is", null)
+      .order("created_at", { ascending: false }).limit(limit * 3);
+    const events = await hydrateEvents(db, viewerId, rows ?? [], "recent", limit * 3);
+    const now = Date.now();
+    const isOpen = (e: FeedEvent) => !e.poll?.endsAt || Date.parse(e.poll.endsAt) > now;
+    const sorted = [...events].sort((a, b) =>
+      Number(isOpen(b)) - Number(isOpen(a)) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    return { events: sorted.slice(0, limit) };
+  }
+
+  if (filter === "trending") {
+    // Last 48h (AC2), a wide window like Top's own fetchLimit, ranked by the
+    // SAME scorer AC1 uses — but the >=5 floor is on RAW engagement, never
+    // the decayed score, so a post can't sneak in on the follow boost alone.
+    const since = new Date(Date.now() - TRENDING_WINDOW_HOURS * 3_600_000).toISOString();
+    const { data: rows } = await db.from("fantasy_feed_events")
+      .select("id, actor_id, type, gw, payload, created_at")
+      .eq("type", "post")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false }).limit(DISCOVER_FETCH_LIMIT);
+    const events = await hydrateEvents(db, viewerId, rows ?? [], "recent", DISCOVER_FETCH_LIMIT);
+    const qualifying = events.filter((e) => rawEngagement(e) >= TRENDING_MIN_ENGAGEMENT);
+    let followedIds: Set<string> | undefined;
+    if (viewerId) {
+      const { data: follows } = await db.from("user_follows").select("followee_id").eq("follower_id", viewerId);
+      followedIds = new Set(((follows ?? []) as { followee_id: string }[]).map((f) => f.followee_id));
+    }
+    const ranked = [...qualifying].sort((a, b) =>
+      scoreFeedEvent(b, { followedIds }) - scoreFeedEvent(a, { followedIds }) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    return { events: ranked.slice(0, limit) };
+  }
+
+  // filter === "players" — posts carrying a player attachment, plus the top
+  // discussed players across this window (grouped by playerId, min 2 posts).
+  const { data: rows } = await db.from("fantasy_feed_events")
+    .select("id, actor_id, type, gw, payload, created_at")
+    .eq("type", "post")
+    .not("payload->player", "is", null)
+    .order("created_at", { ascending: false }).limit(DISCOVER_FETCH_LIMIT);
+  const events = await hydrateEvents(db, viewerId, rows ?? [], "recent", DISCOVER_FETCH_LIMIT);
+  const poolById = new Map(clientPool().players.map((p) => [p.id, p]));
+  const counts = new Map<number, number>();
+  events.forEach((e) => { if (e.playerId != null) counts.set(e.playerId, (counts.get(e.playerId) ?? 0) + 1); });
+  const players: DiscoverPlayer[] = Array.from(counts.entries())
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([playerId, postCount]) => {
+      const p = poolById.get(playerId);
+      return { playerId, name: p?.name ?? `#${playerId}`, club: p?.club ?? "", avatarUrl: p?.avatarUrl ?? null, postCount };
+    });
+  return { events: events.slice(0, limit), players };
+}
+
+// ── Post search (Phase 5b, AC3) ──────────────────────────────────────────────
+
+const POST_SEARCH_WINDOW_DAYS = 30;
+const POST_SEARCH_LIMIT = 20;
+
+/** Search posts by body text — authed-optional (guests search too), last 30
+ *  days, exclude deleted/hidden. hydrateEvents already applies the 5a hidden-
+ *  actor filter (signed-in viewer only) and drops soft-deleted/bot posts, so
+ *  this just needs to narrow the query itself. */
+export async function searchFeedPosts(db: Db, viewerId: string | null, q: unknown, limit = POST_SEARCH_LIMIT): Promise<FeedEvent[]> {
+  const query = typeof q === "string" ? q.trim().slice(0, 80) : "";
+  if (query.length < 2) return [];
+  const since = new Date(Date.now() - POST_SEARCH_WINDOW_DAYS * 86_400_000).toISOString();
+  // Escape PostgREST ilike wildcards so a search term can't smuggle a % or _
+  // pattern into the filter.
+  const escaped = query.replace(/[%_\\]/g, (c) => `\\${c}`);
+  const cappedLimit = Math.min(Math.max(1, limit), 20);
+  const { data: rows } = await db.from("fantasy_feed_events")
+    .select("id, actor_id, type, gw, payload, created_at")
+    .eq("type", "post")
+    .gte("created_at", since)
+    .ilike("payload->>text", `%${escaped}%`)
+    .order("created_at", { ascending: false })
+    .limit(cappedLimit + 15); // headroom for hydrateEvents' own bot/hidden/deleted filter
+  return hydrateEvents(db, viewerId, rows ?? [], "recent", cappedLimit);
 }

@@ -1,43 +1,54 @@
 "use client";
 /**
- * Social → Discover splits into two things you can look for (founder, 3 Aug):
- *   Leagues — public leagues to join, searchable by name (<DiscoverLeagues/>).
- *   Players — managers to follow, searchable by username (<DiscoverManagers/>).
+ * Social → Discover (founder, 3 Aug; Phase 5b, AC2 — filter chips). Started as
+ * two tabs (Leagues, "Players" = managers to follow); Phase 5b adds five more
+ * feed-backed filters — Trending, Players (real footballers discussed in
+ * posts), Polls, Squads, Games — as a scrollable chip row. The original
+ * "Players" tab is relabelled Managers here so it doesn't collide with the
+ * new, differently-meant Players chip; nothing about DiscoverManagers itself
+ * changed, and it's still reachable (kept, not deleted, per spec).
  *
- * `initialSub` lets a "Find managers" entry point land straight on Players.
+ * `initialSub` lets a "Find managers" entry point land straight on Managers.
  */
 import { useState } from "react";
 import Link from "next/link";
-import { MUTED, TEAL, tint } from "@/components/fantasy/shared";
+import { MUTED } from "@/components/fantasy/shared";
 import { DiscoverLeagues } from "@/components/fantasy/DiscoverLeagues";
 import { DiscoverManagers } from "@/components/fantasy/DiscoverManagers";
+import { DiscoverFeedFilter, FilterChip, FEED_FILTER_CHIPS, type FeedFilter } from "@/components/fantasy/DiscoverFeedFilter";
+import { trackDiscoverFilterSelected } from "@/lib/analytics/trackSocial";
 
-type Sub = "leagues" | "players";
-const SUBS: { id: Sub; label: string }[] = [
+// "managers" (not "players") for the original follow-suggestions tab — the
+// new FeedFilter also has a "players" id (real footballers discussed in
+// posts), and the two must never collide.
+type Sub = "leagues" | "managers" | FeedFilter;
+const CHIPS: { id: Sub; label: string }[] = [
   { id: "leagues", label: "Leagues" },
-  { id: "players", label: "Players" },
+  { id: "managers", label: "Managers" },
+  ...FEED_FILTER_CHIPS,
 ];
 
-export function DiscoverTabs({ initialSub }: { initialSub?: Sub }) {
-  const [sub, setSub] = useState<Sub>(initialSub ?? "leagues");
+export function DiscoverTabs({ initialSub }: { initialSub?: "leagues" | "players" }) {
+  // The external prop keeps its long-standing "players" value (SocialHome's
+  // "Find managers" entry point passes it) — translated to the internal
+  // "managers" id right here so callers never had to change.
+  const [sub, setSub] = useState<Sub>(initialSub === "players" ? "managers" : (initialSub ?? "leagues"));
+
+  const select = (s: Sub) => {
+    setSub(s);
+    trackDiscoverFilterSelected(s);
+  };
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <div role="tablist" style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", flex: 1 }}>
-          {SUBS.map((s) => {
-            const on = s.id === sub;
-            return (
-              <button key={s.id} role="tab" aria-selected={on} onClick={() => setSub(s.id)} style={{
-                flex: 1, padding: "7px 4px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                background: on ? tint(TEAL, "22") : "transparent", color: on ? TEAL : MUTED,
-                border: `1px solid ${on ? tint(TEAL, "55") : "transparent"}`,
-              }}>{s.label}</button>
-            );
-          })}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <div role="tablist" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2, flex: 1 }}>
+          {CHIPS.map((c) => (
+            <FilterChip key={c.id} active={c.id === sub} onClick={() => select(c.id)}>{c.label}</FilterChip>
+          ))}
         </div>
         {/* Saved posts entry point (Social Phase 3b, AC2) — the lighter touch:
-            a plain text link beside the sub-tabs rather than a new tab, sheet,
+            a plain text link beside the chips rather than a new tab, sheet,
             or its own row in the Social tab bar. */}
         <Link href="/fantasy/social/saved" style={{
           flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: MUTED, textDecoration: "none",
@@ -45,7 +56,9 @@ export function DiscoverTabs({ initialSub }: { initialSub?: Sub }) {
         }}>🔖 Saved</Link>
       </div>
 
-      {sub === "leagues" ? <DiscoverLeagues /> : <DiscoverManagers intro={false} />}
+      {sub === "leagues" ? <DiscoverLeagues />
+        : sub === "managers" ? <DiscoverManagers intro={false} />
+        : <DiscoverFeedFilter filter={sub} />}
     </div>
   );
 }

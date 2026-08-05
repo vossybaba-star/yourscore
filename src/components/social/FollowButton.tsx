@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { trackFollowClicked } from "@/lib/analytics/trackSocial";
 
 const TEAL = "#00d8c0";
 
@@ -59,6 +60,7 @@ export function FollowButton({
     if (busy || !state) return;
     if (needsAuth) { router.push(`/auth/sign-in?next=${encodeURIComponent(pathname || "/")}`); return; }
     const next = !state.following;
+    if (next) trackFollowClicked(); // fires on the follow tap (intent), not on unfollow
     setBusy(true);
     setState({ ...state, following: next }); // optimistic
     try {
