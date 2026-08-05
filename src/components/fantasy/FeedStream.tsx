@@ -43,7 +43,13 @@ const REACTION_SET = ["😂", "👀", "🔥", "👏", "❤️", "😭"] as const
 
 type FeedScope = "following" | "global";
 type FeedSort = "recent" | "top";
-interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
+interface FeedFixtureCell { gw: number; oppShort: string; home: boolean; difficulty: "kind" | "medium" | "tough" }
+interface FeedFace {
+  name: string; avatarUrl: string | null; captain?: boolean;
+  pos?: string; price?: number;
+  ownership?: number | null; lastSeasonPts?: number | null;
+  fixtures?: FeedFixtureCell[];
+}
 interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number; vice?: number }
 interface FeedReaction { emoji: string; count: number }
 interface FeedPoll { question: string; options: { text: string; votes: number }[]; myChoice: number | null; total: number; endsAt: string | null }
@@ -670,6 +676,7 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   // Phase 5a — a successful delete/block/mute from this card's CardMenu hides
   // it immediately, client-side. Other cards by the same actor elsewhere in
@@ -807,22 +814,74 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
         </Link>
       )}
 
-      {/* Shortlist / squad-update tiles show the one player. */}
-      {ev.player && (
-        ev.playerId != null ? (
-          <Link href={`/fantasy/players/${ev.playerId}`}
-            style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", textDecoration: "none", marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}` }}>
-            <PlayerAvatar name={ev.player.name} avatarUrl={ev.player.avatarUrl} size={40} />
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
-            <span style={{ color: MUTED, fontSize: 18 }}>›</span>
-          </Link>
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginTop: 12, padding: "8px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}` }}>
-            <PlayerAvatar name={ev.player.name} avatarUrl={ev.player.avatarUrl} size={40} />
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: INK }}>{ev.player.name}</span>
+      {/* Shortlist / squad-update tiles show the one player — fixture-forward:
+          pos · price · next fixture inline, with next 3 fixtures + ownership +
+          last season behind a "More stats" expand. */}
+      {ev.player && (() => {
+        const pl = ev.player!;
+        const DIFF: Record<string, string> = { kind: "#6FCF97", medium: "#E0C36B", tough: "#E08A6B" };
+        const nextFx = pl.fixtures?.[0];
+        const line = [pl.pos, pl.price != null ? `£${pl.price.toFixed(1)}m` : null].filter(Boolean).join(" · ");
+        const canExpand = (pl.fixtures?.length ?? 0) > 0 || pl.ownership != null || pl.lastSeasonPts != null;
+        const headStyle = { display: "flex", alignItems: "center", gap: 10, width: "100%", textDecoration: "none", padding: "8px 10px" } as const;
+        const head = (
+          <>
+            <PlayerAvatar name={pl.name} avatarUrl={pl.avatarUrl} size={40} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: INK }}>{pl.name}</span>
+              {(line || nextFx) && (
+                <span style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, fontSize: 12, color: MUTED, marginTop: 2 }}>
+                  {line && <span>{line}</span>}
+                  {nextFx && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span style={{ color: INK }}>GW{nextFx.gw} {nextFx.home ? "v" : "@"} {nextFx.oppShort}</span>
+                      <span aria-hidden style={{ width: 7, height: 7, borderRadius: "50%", background: DIFF[nextFx.difficulty], display: "inline-block" }} />
+                    </>
+                  )}
+                </span>
+              )}
+            </span>
+            {ev.playerId != null && <span style={{ color: MUTED, fontSize: 18 }}>›</span>}
+          </>
+        );
+        return (
+          <div style={{ marginTop: 12, borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`, overflow: "hidden" }}>
+            {ev.playerId != null
+              ? <Link href={`/fantasy/players/${ev.playerId}`} style={headStyle}>{head}</Link>
+              : <div style={headStyle}>{head}</div>}
+            {canExpand && (
+              <>
+                <button onClick={(e) => { e.stopPropagation(); setStatsOpen((o) => !o); }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%", background: "none", border: "none", borderTop: `1px solid ${LINE}`, color: MUTED, fontSize: 11.5, fontWeight: 600, padding: "6px 0", cursor: "pointer" }}>
+                  {statsOpen ? "Less" : "More stats"} <span style={{ fontSize: 9 }}>{statsOpen ? "▲" : "▼"}</span>
+                </button>
+                {statsOpen && (
+                  <div style={{ padding: "2px 10px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
+                    {(pl.fixtures?.length ?? 0) > 0 && (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {pl.fixtures!.map((f) => (
+                          <div key={f.gw} style={{ flex: 1, textAlign: "center", padding: "6px 3px", borderRadius: 6, background: "rgba(159,178,165,0.08)", borderBottom: `2px solid ${DIFF[f.difficulty] ?? MUTED}` }}>
+                            <div style={{ fontSize: 9.5, color: MUTED }}>GW{f.gw}</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, marginTop: 1 }}>{f.oppShort}</div>
+                            <div style={{ fontSize: 9.5, color: MUTED }}>{f.home ? "Home" : "Away"}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {(pl.ownership != null || pl.lastSeasonPts != null) && (
+                      <div style={{ display: "flex", gap: 16, fontSize: 12, color: MUTED }}>
+                        {pl.ownership != null && <span>Owned by <b style={{ color: INK }}>{pl.ownership.toFixed(1)}%</b></span>}
+                        {pl.lastSeasonPts != null && <span>Last season <b style={{ color: INK }}>{pl.lastSeasonPts} pts</b></span>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        )
-      )}
+        );
+      })()}
 
       {/* Primary sequence (spec): React · Comment · Share, one line always —
           no flexWrap, tight gaps. Invite moved into the ⋯ menu (4 Aug) so the

@@ -10,6 +10,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clientPool } from "./pool";
+import { fantasyContext } from "./context";
+import { fetchFplBootstrapCached } from "@/lib/gates/fpl";
 import { pitchName, type BoardPlayer } from "./board";
 import { notifyFantasy } from "./notify";
 import { notifyMentions } from "./mentions";
@@ -37,7 +39,17 @@ export interface FeedResult {
   nextCursor: string | null;
 }
 
-export interface FeedFace { name: string; avatarUrl: string | null; captain?: boolean }
+export interface FeedFixtureCell { gw: number; oppShort: string; home: boolean; difficulty: "kind" | "medium" | "tough" }
+export interface FeedFace {
+  name: string; avatarUrl: string | null; captain?: boolean;
+  /** Stats for the tagged-player tile (fixture-forward). Present on player tiles;
+   *  absent on board markers, which only need name + face. */
+  pos?: string;
+  price?: number;
+  ownership?: number | null;
+  lastSeasonPts?: number | null;
+  fixtures?: FeedFixtureCell[];
+}
 
 /** A squad_complete tile renders as the real pitch board — positions + crests. */
 export interface FeedBoard {
@@ -791,7 +803,33 @@ async function hydrateEvents(
   // (pos + club + face) for the squad_complete pitch.
   const poolById = new Map(clientPool().players.map((p) => [p.id, p]));
   const nameOf = (id: number) => poolById.get(id)?.name ?? `#${id}`;
-  const faceOf = (id: number): FeedFace => ({ name: poolById.get(id)?.name ?? `#${id}`, avatarUrl: poolById.get(id)?.avatarUrl ?? null });
+  // Tagged-player tiles carry fixture-forward stats (pos · price · next fixture,
+  // with more behind an expand). Fetch the fixture ticker + FPL ownership /
+  // last-season ONCE, and only when the batch actually has a player tile — a
+  // text-only feed pays nothing for it.
+  const hasPlayerTiles = events.some((e) => {
+    const t = e.type as string;
+    return (t === "shortlist_add" || t === "squad_update" || t === "post")
+      && (e.payload as Record<string, unknown> | null)?.player != null;
+  });
+  const fixturesByClub = hasPlayerTiles ? (await fantasyContext(db)).fixtures : {};
+  const boot = hasPlayerTiles ? await fetchFplBootstrapCached() : null;
+  const bootEl = new Map((boot?.elements ?? []).map((el) => [el.id, el]));
+  const faceOf = (id: number): FeedFace => {
+    const p = poolById.get(id);
+    const el = bootEl.get(id);
+    return {
+      name: p?.name ?? `#${id}`,
+      avatarUrl: p?.avatarUrl ?? null,
+      pos: p?.pos,
+      price: p?.price,
+      ownership: el?.selected_by_percent != null ? Number(el.selected_by_percent) : null,
+      lastSeasonPts: el?.total_points ?? null,
+      fixtures: (fixturesByClub[p?.clubId ?? -1] ?? []).slice(0, 3).map((c) => ({
+        gw: c.gw, oppShort: c.oppShort, home: c.home, difficulty: c.difficulty,
+      })),
+    };
+  };
   const markerOf = (id: number): BoardPlayer => {
     const p = poolById.get(id);
     return { id, name: p?.name ?? `#${id}`, label: pitchName(p?.name ?? `#${id}`), pos: p?.pos ?? "MID", club: p?.club, avatarUrl: p?.avatarUrl ?? null };
