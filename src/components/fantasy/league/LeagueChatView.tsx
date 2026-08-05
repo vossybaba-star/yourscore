@@ -8,18 +8,50 @@
  *  accent so the thread reads at a glance (gold = captain, lime = poll, amber =
  *  news, teal = squad intel). The composer is a slim bar PINNED above the nav
  *  (position: fixed — genuinely stays put while the thread scrolls). */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, PosTag, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
-import { CHAT_EMOJI, type ChatData, type ChatMessage, type GifCard } from "./types";
+import { MediaGallery } from "@/components/fantasy/MediaGallery";
+import { uploadPostImage } from "@/lib/postMedia";
+import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type GifCard } from "./types";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
   const res = await fetch(`/api/fantasy/leagues/${code}/${path}`, {
     method, headers: { "content-type": "application/json" }, body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
+}
+
+/** Same 5-minute window that decides both grouping and where a fresh timestamp
+ *  is warranted (AC3). */
+const GROUP_WINDOW_MS = 5 * 60_000;
+const clock = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+/** For each message: whether it leads a new sender-group (avatar + name show)
+ *  and whether it's the last of its group (timestamp shows). */
+function chatGroups(messages: ChatMessage[]): { showHeader: boolean; showTimestamp: boolean }[] {
+  return messages.map((m, i) => {
+    const prev = messages[i - 1];
+    const next = messages[i + 1];
+    const t = new Date(m.createdAt).getTime();
+    const sameAsPrev = !!prev && prev.userId === m.userId && t - new Date(prev.createdAt).getTime() <= GROUP_WINDOW_MS;
+    const sameAsNext = !!next && next.userId === m.userId && new Date(next.createdAt).getTime() - t <= GROUP_WINDOW_MS;
+    return { showHeader: !sameAsPrev, showTimestamp: !sameAsNext };
+  });
+}
+
+/** Scroll a message into view if it's loaded in the current window (a reply's
+ *  parent or the pinned message might be off in an earlier page/archive —
+ *  scrollIntoView is simply a no-op then, per spec). A brief highlight ring
+ *  helps a manager actually spot which bubble the tap landed on. */
+function scrollToMessage(id: string) {
+  const el = document.getElementById(`chat-msg-${id}`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  el.style.outline = `2px solid ${TEAL}`; el.style.outlineOffset = "3px";
+  setTimeout(() => { el.style.outline = ""; el.style.outlineOffset = ""; }, 1000);
 }
 
 /** The uppercase eyebrow every shared card wears. */
@@ -43,10 +75,21 @@ function CardShell({ accent, full, children }: { accent: string; full?: boolean;
   );
 }
 
-/** The reactions strip: pills for what's there, an emoji picker when this message
- *  is tapped. No always-on ＋ button — that padded every message with dead space. */
-function Reactions({ msg, onReact, open, readOnly }: { msg: ChatMessage; onReact: (emoji: string, on: boolean) => void; open: boolean; readOnly?: boolean }) {
+/** The reactions strip: pills for what's there, an emoji picker + the Reply/Pin
+ *  action row when this message is tapped. No always-on ＋ button — that padded
+ *  every message with dead space, so Reply/Pin ride the exact same tap-to-open
+ *  gesture reactions already use (AC2/AC6). */
+function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, isPinned, onPin }: {
+  msg: ChatMessage; onReact: (emoji: string, on: boolean) => void; open: boolean; readOnly?: boolean;
+  canReply?: boolean; onReply?: () => void;
+  canPin?: boolean; isPinned?: boolean; onPin?: () => void;
+}) {
+  const showActions = open && !readOnly;
   if (!msg.reactions.length && !open) return null;
+  const actionBtn: React.CSSProperties = {
+    fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: "2px 8px", borderRadius: 999,
+    background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED,
+  };
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4, alignItems: "center" }}>
       {msg.reactions.map((r) => (
@@ -66,7 +109,64 @@ function Reactions({ msg, onReact, open, readOnly }: { msg: ChatMessage; onReact
           ))}
         </div>
       )}
+      {showActions && canReply && (
+        <button onClick={(e) => { e.stopPropagation(); onReply?.(); }} style={actionBtn}>↩ Reply</button>
+      )}
+      {showActions && canPin && (
+        <button onClick={(e) => { e.stopPropagation(); onPin?.(); }} style={{ ...actionBtn, color: GOLD, borderColor: tint(GOLD, "44") }}>
+          {isPinned ? "Unpin" : "📌 Pin"}
+        </button>
+      )}
     </div>
+  );
+}
+
+/** A photo dropped straight into the chat (AC4) — a compact rounded thumb,
+ *  never full bubble height, tapping opens the shared full-screen gallery. */
+function SharedImage({ msg, onView }: { msg: ChatMessage; onView: () => void }) {
+  const im = msg.image!;
+  return (
+    <div style={{ maxWidth: 220 }}>
+      {!msg.isMe && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 3 }}>{msg.name}</div>}
+      <button onClick={(e) => { e.stopPropagation(); onView(); }} style={{
+        display: "block", padding: 0, cursor: "pointer", borderRadius: 13, overflow: "hidden", background: PANEL,
+        border: `1px solid ${msg.isMe ? tint(TEAL, "44") : LINE}`,
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={im.url} alt="" loading="lazy" style={{ display: "block", maxHeight: 240, maxWidth: "100%", width: "auto", objectFit: "cover" }} />
+      </button>
+    </div>
+  );
+}
+
+/** A feed post shared into the chat (AC5) — compact pointer card, resolved
+ *  fresh server-side each read. Renders the muted stub when the post's gone. */
+function SharedFeedPost({ msg, onView }: { msg: ChatMessage; onView: () => void }) {
+  const f = msg.feed!;
+  const label = msg.isMe ? "YOU SHARED" : `${msg.name.toUpperCase()} SHARED`;
+  if (!f.available) {
+    return (
+      <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 10, maxWidth: "94%" }}>
+        <KindLabel color={MUTED} text={label} />
+        <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>This post isn&apos;t available anymore.</p>
+      </div>
+    );
+  }
+  return (
+    <CardShell accent={TEAL}>
+      <KindLabel color={TEAL} text={`${label} · POST`} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <PlayerAvatar name={f.actorName ?? "Player"} avatarUrl={f.actorAvatarUrl} size={22} />
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>{f.actorName ?? "Player"}</span>
+      </div>
+      <div style={{
+        fontSize: 13, color: INK, lineHeight: 1.4,
+        display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+      }}>{f.text ?? f.summary}</div>
+      <button onClick={(e) => { e.stopPropagation(); onView(); }} style={{ marginTop: 8, background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+        View post →
+      </button>
+    </CardShell>
   );
 }
 
@@ -237,22 +337,28 @@ function PollComposer({ onPost, onCancel, busy }: { onPost: (q: string, opts: st
   );
 }
 
-/** The bubble/card for one message, minus the reactions row. */
-function MessageBody({ m, onView, onOpenNews, onVote, readOnly }: {
-  m: ChatMessage; onView: (id: number) => void; onOpenNews: (m: ChatMessage) => void; onVote: (i: number) => void; readOnly?: boolean;
+/** The bubble/card for one message, minus the reactions row. `showHeader` is
+ *  the sender-grouping signal (AC3) — only the first bubble of a same-sender
+ *  run within 5 minutes carries the name. */
+function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, readOnly, showHeader = true }: {
+  m: ChatMessage; onView: (id: number) => void; onOpenNews: (m: ChatMessage) => void; onVote: (i: number) => void;
+  onViewImage: (url: string) => void; onViewFeed: (eventId: string) => void;
+  readOnly?: boolean; showHeader?: boolean;
 }) {
   if ((m.kind === "player" || m.kind === "captain") && m.player) return <SharedPlayer msg={m} onView={() => onView(m.player!.id)} />;
   if (m.kind === "squad" && m.squad) return <SharedSquad msg={m} />;
   if (m.kind === "news" && m.news) return <SharedNews msg={m} onOpen={() => onOpenNews(m)} />;
   if (m.kind === "compare" && m.compare) return <SharedCompare msg={m} onView={onView} />;
   if (m.kind === "gif" && m.gif) return <SharedGif msg={m} />;
+  if (m.kind === "image" && m.image) return <SharedImage msg={m} onView={() => onViewImage(m.image!.url)} />;
+  if (m.kind === "feed" && m.feed) return <SharedFeedPost msg={m} onView={() => onViewFeed(m.feed!.eventId)} />;
   if (m.kind === "poll" && m.poll) return <Poll msg={m} onVote={onVote} readOnly={readOnly} />;
   return (
     <div style={{
       background: m.isMe ? tint(TEAL, "1c") : PANEL, border: `1px solid ${m.isMe ? tint(TEAL, "44") : LINE}`,
       borderRadius: 13, padding: "6px 11px", minWidth: 0,
     }}>
-      {!m.isMe && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 1 }}>{m.name}</div>}
+      {!m.isMe && showHeader && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 1 }}>{m.name}</div>}
       <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.4, overflowWrap: "anywhere" }}>{m.body}</div>
     </div>
   );
@@ -324,6 +430,11 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const [poll, setPoll] = useState(false);
   const [gifOpen, setGifOpen] = useState(false);
   const [reactFor, setReactFor] = useState<string | null>(null);
+  // AC2 — the message being replied to (composer switches into reply mode).
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  // AC4 — the image currently open full-screen.
+  const [galleryUrl, setGalleryUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async (gw: number | null) => {
     try {
@@ -345,14 +456,36 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
     catch (e) { setErr((e as Error).message); }
     setBusy(false);
   };
-  const send = () => { const t = draft.trim(); if (!t) return; guard(async () => { await api(code, "chat", { body: t }); setDraft(""); }); };
+  const parentId = replyTo?.id;
+  const send = () => { const t = draft.trim(); if (!t) return; guard(async () => { await api(code, "chat", { body: t, parentId }); setDraft(""); setReplyTo(null); }); };
   const react = (id: string, emoji: string, on: boolean) => { setReactFor(null); guard(() => api(code, "react", { commentId: id, emoji, on })); };
   const vote = (id: string, i: number) => guard(() => api(code, "poll", { commentId: id, optionIndex: i }, "PATCH"));
-  const postPoll = (q: string, opts: string[]) => guard(async () => { await api(code, "poll", { question: q, options: opts }); setPoll(false); });
-  const sendGif = (g: GifCard) => guard(async () => { await api(code, "chat", { kind: "gif", gif: g }); setGifOpen(false); });
-  const shareSquad = () => guard(async () => { await api(code, "share", { kind: "squad" }); setMenu(false); });
-  const shareCaptain = () => guard(async () => { await api(code, "share", { kind: "captain" }); setMenu(false); });
+  const postPoll = (q: string, opts: string[]) => guard(async () => { await api(code, "poll", { question: q, options: opts, parentId }); setPoll(false); setReplyTo(null); });
+  const sendGif = (g: GifCard) => guard(async () => { await api(code, "chat", { kind: "gif", gif: g, parentId }); setGifOpen(false); setReplyTo(null); });
+  const shareSquad = () => guard(async () => { await api(code, "share", { kind: "squad", parentId }); setMenu(false); setReplyTo(null); });
+  const shareCaptain = () => guard(async () => { await api(code, "share", { kind: "captain", parentId }); setMenu(false); setReplyTo(null); });
   const openNews = (m: ChatMessage) => { const n = m.news!; if (n.internal) router.push(n.url); else window.open(n.url, "_blank", "noopener,noreferrer"); };
+  const openFeed = (eventId: string) => router.push(`/fantasy/social/post/${eventId}`);
+  const startReply = (m: ChatMessage) => { setReactFor(null); setReplyTo(m); };
+  const pin = (id: string) => { setReactFor(null); guard(() => api(code, "chat", { kind: "pin", commentId: id }, "PATCH")); };
+  const unpin = () => guard(() => api(code, "chat", { kind: "unpin" }, "PATCH"));
+
+  // AC4 — pick + upload one image, then post it (own busy/err handling since it
+  // wraps an upload step guard() doesn't know about).
+  const pickImage = () => { setMenu(false); fileInputRef.current?.click(); };
+  const onImageChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || busy) return;
+    setBusy(true); setErr(null);
+    try {
+      const url = await uploadPostImage(file);
+      await api(code, "chat", { kind: "image", image: { url }, parentId });
+      setReplyTo(null);
+      await load(viewGw);
+    } catch (imgErr) { setErr((imgErr as Error).message); }
+    setBusy(false);
+  };
 
   // Tap anywhere on a message (but not on a control inside it) to react.
   const tapMessage = (id: string, e: React.MouseEvent) => {
@@ -366,6 +499,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const canSend = !!draft.trim() && !busy;
   // Most recent gameweeks first, capped so the selector stays thumb-sized.
   const gwChips = [...chat.gameweeks].sort((a, b) => b - a).slice(0, 6);
+  const groups = chatGroups(chat.messages);
 
   return (
     <div>
@@ -399,6 +533,27 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
         </div>
       )}
 
+      {/* Pinned-message banner (AC6) — slim, sits above the moments/thread.
+          Absent entirely when nothing's pinned or the schema doesn't support
+          it yet (chat.pinned comes back null either way). */}
+      {chat.pinned && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9, background: tint(GOLD, "10"), border: `1px solid ${tint(GOLD, "3a")}`, borderRadius: 10, padding: "6px 11px" }}>
+          <span style={{ fontSize: 14, flexShrink: 0 }}>📌</span>
+          <button onClick={() => scrollToMessage(chat.pinned!.id)} style={{
+            flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0,
+          }}>
+            <div style={{ fontSize: 9.5, color: GOLD, fontWeight: 700 }}>{chat.pinned.name}</div>
+            <div style={{ fontSize: 12, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chat.pinned.summary}</div>
+          </button>
+          {chat.league.isOwner && chat.capabilities.pin && (
+            <button onClick={unpin} disabled={busy} style={{
+              flexShrink: 0, fontSize: 11, color: MUTED, background: "none", border: `1px solid ${LINE}`, borderRadius: 999,
+              padding: "3px 9px", cursor: busy ? "default" : "pointer",
+            }}>Unpin</button>
+          )}
+        </div>
+      )}
+
       {chat.moments.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
           {chat.moments.map((m, i) => (
@@ -418,18 +573,52 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
         {!chat.messages.length && (
           <p style={{ fontSize: 12.5, color: MUTED, margin: "2px 0", textAlign: "center", padding: "18px 0" }}>Nothing said yet. Someone has to start it.</p>
         )}
-        {chat.messages.map((m) => {
+        {chat.messages.map((m, i) => {
           const structured = m.kind !== "text";
           const mine = m.isMe && !structured;
+          // AC3 — grouping: only the group's first bubble shows avatar/name;
+          // a hidden avatar still reserves its column so continuation bubbles
+          // stay indented under the one above.
+          const { showHeader, showTimestamp } = groups[i];
           return (
-            <div key={m.id} onClick={(e) => tapMessage(m.id, e)}
+            <div key={m.id} id={`chat-msg-${m.id}`} onClick={(e) => tapMessage(m.id, e)}
               style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", cursor: readOnly ? "default" : "pointer" }}>
+              {/* AC2 — the quoted-context strip for a reply. Tap scrolls to the
+                  parent when it's loaded in this window. */}
+              {m.replyTo && (
+                <button onClick={(e) => { e.stopPropagation(); if (m.parentId) scrollToMessage(m.parentId); }} style={{
+                  display: "block", background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 3,
+                  maxWidth: "94%", alignSelf: mine ? "flex-end" : "flex-start",
+                }}>
+                  <div style={{
+                    display: "inline-flex", flexDirection: "column", gap: 1, padding: "4px 9px", borderRadius: 8,
+                    background: PANEL_2, border: `1px solid ${LINE}`, borderLeft: `2px solid ${TEAL}`, maxWidth: 240,
+                  }}>
+                    <span style={{ fontSize: 9.5, color: TEAL, fontWeight: 700 }}>{m.replyTo.name}</span>
+                    <span style={{ fontSize: 11, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.replyTo.summary}</span>
+                  </div>
+                </button>
+              )}
               <div style={{ display: "flex", gap: 7, maxWidth: m.kind === "squad" ? "100%" : "94%", width: m.kind === "squad" ? "100%" : undefined, flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end" }}>
-                {!mine && !structured && <PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={22} />}
-                <MessageBody m={m} onView={(id) => router.push(`/fantasy/players/${id}`)} onOpenNews={openNews} onVote={(i) => vote(m.id, i)} readOnly={readOnly} />
+                {!mine && !structured && (showHeader
+                  ? <PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={22} />
+                  : <span aria-hidden style={{ width: 22, flexShrink: 0 }} />)}
+                <MessageBody m={m} onView={(id) => router.push(`/fantasy/players/${id}`)} onOpenNews={openNews}
+                  onVote={(i2) => vote(m.id, i2)} onViewImage={setGalleryUrl} onViewFeed={openFeed}
+                  readOnly={readOnly} showHeader={showHeader} />
               </div>
               <div style={{ maxWidth: "94%", paddingLeft: mine ? 0 : (structured ? 2 : 29) }}>
-                <Reactions msg={m} onReact={(emoji, on) => react(m.id, emoji, on)} open={reactFor === m.id} readOnly={readOnly} />
+                {/* Replies are ONE level deep (the comments table's reply
+                    trigger, migration 221) — no Reply control on a message
+                    that's already a reply, so every reply targets a top-level
+                    message. */}
+                <Reactions msg={m} onReact={(emoji, on) => react(m.id, emoji, on)} open={reactFor === m.id} readOnly={readOnly}
+                  canReply={chat.capabilities.replies && !m.parentId} onReply={() => startReply(m)}
+                  canPin={chat.capabilities.pin && chat.league.isOwner} isPinned={chat.pinned?.id === m.id} onPin={() => pin(m.id)} />
+                {/* AC3 — timestamp on the last bubble of a sender-group. */}
+                {showTimestamp && (
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>{clock(m.createdAt)}</div>
+                )}
               </div>
             </div>
           );
@@ -442,6 +631,9 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
           last message never hides behind either. */}
       {!readOnly && <div style={{ height: 96 }} />}
 
+      {/* Full-screen gallery for a chat image (AC4) — the shared viewer. */}
+      {galleryUrl && <MediaGallery images={[galleryUrl]} index={0} onClose={() => setGalleryUrl(null)} />}
+
       {/* Composer — FIXED just above the bottom nav, so it never scrolls away. An
           archived gameweek takes no new posts. */}
       {!readOnly && (
@@ -451,23 +643,35 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
           borderTop: `1px solid ${LINE}`,
         }}>
           <div style={{ maxWidth: 512, margin: "0 auto", padding: "7px 14px" }}>
+            {/* AC2 — reply mode: a compact quoted strip, × to cancel. */}
+            {replyTo && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "6px 10px", borderRadius: 10, background: PANEL_2, border: `1px solid ${LINE}`, borderLeft: `2px solid ${TEAL}` }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 10, color: TEAL, fontWeight: 700 }}>Replying to {replyTo.name}</div>
+                  <div style={{ fontSize: 11.5, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{summariseChatMessage(replyTo)}</div>
+                </div>
+                <button onClick={() => setReplyTo(null)} aria-label="Cancel reply" style={{ background: "none", border: "none", color: MUTED, fontSize: 16, cursor: "pointer", padding: "0 2px", lineHeight: 1 }}>×</button>
+              </div>
+            )}
             {poll && <PollComposer onPost={postPoll} onCancel={() => setPoll(false)} busy={busy} />}
             {gifOpen && <GifPicker onPick={sendGif} onCancel={() => setGifOpen(false)} busy={busy} />}
             {menu && !poll && !gifOpen && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                <MenuChip onClick={pickImage} accent={TEAL} disabled={busy}>📷 Photo</MenuChip>
                 <MenuChip onClick={() => { setGifOpen(true); setMenu(false); }} accent={CORAL}>GIF</MenuChip>
                 <MenuChip onClick={() => { setPoll(true); setMenu(false); }} accent={LIME}>📊 Poll</MenuChip>
                 <MenuChip onClick={shareSquad} accent={TEAL} disabled={busy}>👕 Share my squad</MenuChip>
                 <MenuChip onClick={shareCaptain} accent={GOLD} disabled={busy}>Ⓒ Share my captain</MenuChip>
               </div>
             )}
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChosen} style={{ display: "none" }} />
             <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
               <button onClick={() => setMenu((v) => !v)} aria-label="Share to the league" style={{
                 width: 32, height: 32, flexShrink: 0, borderRadius: 999, cursor: "pointer", fontSize: 18, lineHeight: 1,
                 background: menu ? tint(TEAL, "22") : PANEL_2, border: `1px solid ${menu ? tint(TEAL, "66") : LINE}`, color: menu ? TEAL : MUTED,
                 display: "flex", alignItems: "center", justifyContent: "center", transform: menu ? "rotate(45deg)" : "none", transition: "transform .15s",
               }}>＋</button>
-              <input value={draft} maxLength={280} placeholder="Message the league…"
+              <input value={draft} maxLength={280} placeholder={replyTo ? "Write a reply…" : "Message the league…"}
                 onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }}
                 style={{ flex: 1, minWidth: 0, fontSize: 14, padding: "7px 14px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none" }} />
               <button onClick={send} disabled={!canSend} aria-label="Send" style={{

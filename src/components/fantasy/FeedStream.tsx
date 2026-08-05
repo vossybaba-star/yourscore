@@ -601,7 +601,10 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
   // Legacy single-image posts render through the same grid — just a one-item array.
   const images = ev.images && ev.images.length ? ev.images : ev.image ? [ev.image] : [];
   const hasBoard = !!(ev.board && ev.board.xi.length > 0);
-  const canShare = hasBoard || (!!ev.player && ev.playerId != null);
+  // Phase 4a, AC5: a genuine user post (not a repost pointer/unavailable stub —
+  // both are filtered above) can go into a league's chat as a "feed" card too,
+  // same as a squad/player already can.
+  const canShare = hasBoard || (!!ev.player && ev.playerId != null) || ev.type === "post";
   const crestUrl = ev.actorClub ? getTeamBadgeUrlSync(ev.actorClub) : null;
   // Where a shared post points: a squad → the manager's XI, a player → that
   // player, a user post (or a repost/quote of one — `ev.id` is already the
@@ -616,7 +619,9 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
     : hasBoard ? `${ev.actorName}'s Fantasy XI on YourScore`
     : `${ev.actorName} on YourScore Fantasy`;
   const leagueBody = canShare
-    ? () => (hasBoard ? { kind: "squad", ofUserId: ev.actorId } : { kind: "player", playerId: ev.playerId })
+    ? () => (hasBoard ? { kind: "squad", ofUserId: ev.actorId }
+      : (ev.player && ev.playerId != null) ? { kind: "player", playerId: ev.playerId }
+      : { kind: "feed", eventId: ev.id })
     : undefined;
 
   // AC3: tapping the post's body opens its detail page — but not a tap that

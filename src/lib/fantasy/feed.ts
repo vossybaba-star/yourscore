@@ -129,6 +129,14 @@ export interface EmbeddedPost {
 }
 const EMBED_TEXT_MAX = 280;
 
+/** An image must live in OUR post-media bucket — never an arbitrary external URL.
+ *  Shared with league chat's image messages (Social Phase 4a), which reuses the
+ *  same composer upload (lib/postMedia.ts) and needs the identical trust check. */
+export function isPostMediaUrl(u: string): boolean {
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  return !!base && !!u && u.startsWith(`${base}/storage/v1/object/public/post-media/`);
+}
+
 export interface FeedEvent {
   id: string;
   /** React-list identity for this FEED ROW. Equal to `id` for every event
@@ -388,10 +396,6 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     const endsAt = new Date(Date.now() + durationHours * 3_600_000).toISOString();
     poll = { question, options, endsAt };
   }
-
-  // An image must live in OUR post-media bucket — never an arbitrary external URL.
-  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
-  const isPostMediaUrl = (u: string) => !!base && u.startsWith(`${base}/storage/v1/object/public/post-media/`);
 
   let image = typeof b.image === "string" ? b.image.trim() : "";
   if (image) {
