@@ -39,6 +39,7 @@ import { deadlineComms, monthWinnerComms, resultComms } from "./comms";
 import { gamedayEarn } from "./gameday-credit";
 import { interpretHoldRead } from "./ops-diff";
 import { tryEmitScoringFeed } from "./feed";
+import { notifyLeaguesGwLive, notifyLeaguesLeadChange } from "./leagues";
 
 // Same loose client type server.ts uses — the generated row types model jsonb as
 // `Json`, which fights every SquadPick/MatchFacts read and write in this file.
@@ -249,6 +250,14 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
   );
   if (!scores.size) return { scored: 0 }; // nothing ingested yet — hold
 
+  // Phase 4b, AC3a: the gw goes "live" the moment ANY entry gets a scored_at
+  // stamp — same rule leagueDetail uses for its pre→live phase flip. Read
+  // BEFORE this run's writes below, so the flag reflects state coming INTO
+  // this tick, not state this tick is about to create.
+  const { data: alreadyLive } = await db.from("fantasy_entries")
+    .select("user_id").eq("gw", gw.gw).not("scored_at", "is", null).limit(1);
+  const wasLiveBefore = !!alreadyLive?.length;
+
   const { data: entries } = await db.from("fantasy_entries")
     .select("user_id, hits, picks, xi, bench, captain, vice, chip, cash_points")
     .eq("gw", gw.gw).not("locked_at", "is", null).range(0, 9999);
@@ -287,6 +296,12 @@ export async function scoreGameweek(db: Db, gw: SeasonGw, opts: { final: boolean
   }
 
   if (opts.final) await db.from("fantasy_gameweeks").update({ status: "scored" }).eq("gw", gw.gw);
+
+  // Fire the "Gameweek N is live" system line the FIRST time this gw scores —
+  // fire-and-forget, best-effort (notifyLeaguesGwLive never throws), so a
+  // broadcast hiccup can't hold up scoring.
+  if (!wasLiveBefore && scored > 0) void notifyLeaguesGwLive(gw.gw);
+
   return { scored };
 }
 
@@ -346,6 +361,11 @@ export async function finaliseGameweek(db: Db, gw: SeasonGw): Promise<{ finalise
   // Activity feed: the gameweek is settled, so surface the big hauls and rank
   // jumps. Idempotent + fail-open — it must never block or break settlement.
   await tryEmitScoringFeed(db, gw.gw);
+
+  // Phase 4b, AC3c: "X moved into first" — settled, not provisional, so the
+  // leader can't flip-flop mid-matchday and spam every league's chat.
+  // Fire-and-forget, best-effort (notifyLeaguesLeadChange never throws).
+  void notifyLeaguesLeadChange(gw.gw);
 
   // Settlement — the N → N+1 hand-off. For the gameweek now opening, every
   // manager who had an entry gets: their baseline transfer (everyone, including

@@ -66,7 +66,11 @@ export function LeagueHub({ detail, chat, onTab }: {
   const miniRows: LeagueRow[] = tblYouBelow ? [...tblTop, tblYouBelow] : tblTop;
 
   const moments = (chat?.moments ?? []).slice(0, 4);
-  const preview = (chat?.messages ?? []).slice(-3);
+  // System rows (Phase 4b, AC3) are excluded from the preview — they render
+  // with a normal author strip here ("You: " / "{name}: "), which would
+  // misattribute an auto-posted line ("Gameweek 5 is live") to whichever
+  // member's id happened to carry it.
+  const preview = (chat?.messages ?? []).filter((m) => m.kind !== "system").slice(-3);
 
   return (
     <div>
@@ -110,6 +114,12 @@ export function LeagueHub({ detail, chat, onTab }: {
           <div style={{ marginTop: 12, fontSize: 12.5, color: GOLD, fontWeight: 600 }}>🏆 {detail.league.stakes}</div>
         )}
       </div>
+
+      {/* READINESS — pre-deadline only (AC1). */}
+      {gw.phase === "pre" && detail.readiness && <Readiness readiness={detail.readiness} />}
+
+      {/* GAMEWEEK RECAP — final phase only (AC2). */}
+      {gw.phase === "final" && detail.gwRecap && <GwRecap recap={detail.gwRecap} />}
 
       {/* MINI TABLE — Season / This month toggle, so both are visible up front. */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 }}>
@@ -208,4 +218,74 @@ function Stat({ label, value, accent }: { label: string; value: string; accent: 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/** "Waiting on {name}" copy for the readiness rail (AC1) — neutral, no
+ *  shaming, at most 2 names then a "+k more" tail (k counts the true total
+ *  still out, not just the avatars shown). */
+function waitingCopy(waitingCount: number, waitingAvatars: { name: string }[]): string {
+  const names = waitingAvatars.slice(0, 2).map((a) => a.name);
+  const extra = waitingCount - names.length;
+  if (extra > 0) return `Waiting on ${names.join(", ")} +${extra} more`;
+  if (names.length === 2) return `Waiting on ${names[0]} and ${names[1]}`;
+  return `Waiting on ${names[0] ?? "the rest"}`;
+}
+
+/** READINESS — pre-deadline only (AC1). Squads in / total, plus who's still
+ *  to build one. `detail.readiness` is null outside the pre phase or if the
+ *  server's one extra query came back empty-handed — either way, hide clean. */
+function Readiness({ readiness }: { readiness: NonNullable<LeagueDetail["readiness"]> }) {
+  return (
+    <Card style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>READINESS</div>
+      <p style={{ fontSize: 13.5, color: INK, margin: 0, lineHeight: 1.5 }}>
+        {readiness.squadsIn} of {readiness.totalMembers} squads in
+      </p>
+      {readiness.waitingCount > 0 && (
+        <>
+          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+            {readiness.waitingAvatars.map((w) => (
+              <PlayerAvatar key={w.userId} name={w.name} avatarUrl={w.avatarUrl} size={26} />
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: MUTED, margin: "8px 0 0" }}>
+            {waitingCopy(readiness.waitingCount, readiness.waitingAvatars)}
+          </p>
+        </>
+      )}
+    </Card>
+  );
+}
+
+/** GAMEWEEK RECAP — final phase only (AC2). Winner always shows; the riser
+ *  line only when someone's movement was actually positive (gw1 has nothing
+ *  to compare against, so it's winner-only there — same visual language as
+ *  the summary card's Stat tiles, gold accent for the win). */
+function GwRecap({ recap }: { recap: NonNullable<LeagueDetail["gwRecap"]> }) {
+  return (
+    <div style={{
+      borderRadius: 16, padding: 16, marginBottom: 14,
+      background: `linear-gradient(150deg, ${tint(GOLD, "14")}, ${tint(GOLD, "03")})`,
+      border: `1px solid ${tint(GOLD, "3a")}`,
+    }}>
+      <span className="font-display" style={{ fontSize: 11, letterSpacing: "0.12em", color: GOLD }}>
+        GAMEWEEK {recap.gw} RECAP
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+        <PlayerAvatar name={recap.winner.name} avatarUrl={recap.winner.avatarUrl} size={38} ring={GOLD} />
+        <div style={{ minWidth: 0 }}>
+          <div className="font-display" style={{ fontSize: 15, fontWeight: 700, color: INK, lineHeight: 1.2 }}>{recap.winner.name}</div>
+          <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Gameweek winner · {recap.winner.points} pts</div>
+        </div>
+      </div>
+      {recap.riser && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${tint(GOLD, "22")}` }}>
+          <PlayerAvatar name={recap.riser.name} avatarUrl={recap.riser.avatarUrl} size={26} />
+          <p style={{ fontSize: 12.5, color: INK, margin: 0, lineHeight: 1.4 }}>
+            <b>{recap.riser.name}</b> climbed {recap.riser.places} place{recap.riser.places === 1 ? "" : "s"} this gameweek.
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
