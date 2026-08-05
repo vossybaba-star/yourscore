@@ -825,6 +825,18 @@ Confirmed preamble above and the referenced section.
   Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
   surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
   `FantasyPromoCard.tsx`.
+- **2026-08-06 (small hours)** — **Social Phase 5a SAFETY SHIPPED** (PR #71; **mig 253
+  APPLIED**: `social_reports` insert-own/service-reads + `user_blocks`/`user_mutes` own-row
+  RLS): report post/message/profile (reason sheet, one per reporter per subject), BLOCK
+  (bidirectional server-side hide in one batched query across feed/detail/league feed/chat
+  AND all comment threads — review pass added threads; hidden top-level comments tombstone;
+  follows severed both ways; league member lists/tables still show blocked members, shared
+  spaces), MUTE (one-way), delete-own-content (posts soft-delete via payload flag, stubs for
+  reposts/quotes; chat wires comment soft-delete), /admin/reports queue (is_admin gate),
+  and CURSOR PAGINATION on the feed (infinite scroll; Top ranks within each fetched window,
+  documented; builder caught a stale-closure bug that silently disabled scroll loading).
+  App Store UGC compliance surface (report + block) now exists. Bot-drilled live: block
+  hides then unblock restores, report dedupes to one row, encoded cursor pages correctly.
 - **2026-08-05 (late, 4)** — **Social Phase 4b hub states + system messages SHIPPED** (PR #69,
   no migrations — comments.kind is free text): pre-deadline READINESS block on the league hub
   ("{n} of {m} squads in" + neutral "Waiting on..." avatars; NOTE: no captain-unset state
