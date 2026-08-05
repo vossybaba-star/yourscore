@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: { code: strin
   if (body?.kind === "image") {
     return withFantasyUser("league-chat-image", (db, userId) => postImage(db, userId, params.code, body.image, body.parentId));
   }
-  return withFantasyUser("league-chat-post", (db, userId) => postChat(db, userId, params.code, body.body, body.parentId));
+  return withFantasyUser("league-chat-post", (db, userId) => postChat(db, userId, params.code, body.body, body.parentId, body.mentions));
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { code: string } }) {

@@ -96,27 +96,42 @@ export async function unmuteUser(db: Db, muterId: string, targetId: unknown): Pr
 
 // ── Read-side filtering (AC3/AC4) ────────────────────────────────────────
 
-/** Every actor id that should be hidden from `viewerId`'s feeds/chat: anyone
- *  they've blocked, anyone who's blocked THEM (a block is bidirectional in
- *  effect — AC3), and anyone they've muted (one-directional — AC4, the muted
- *  user's own view is unaffected). Two small batched queries, never N+1 — the
- *  same shape whether this batch is a feed page, a post detail, or a league
- *  chat window. Empty set for a guest (viewerId null) or when the tables
- *  aren't migrated yet (each query is independently tolerant of that). */
-export async function hiddenActorIds(db: Db, viewerId: string | null): Promise<Set<string>> {
-  const hidden = new Set<string>();
-  if (!viewerId) return hidden;
+/** Every actor id `viewerId` has blocked or been blocked BY (bidirectional,
+ *  AC3) — deliberately WITHOUT mutes folded in, unlike hiddenActorIds below.
+ *  This is the "never appears, anywhere — search, autocomplete, rosters"
+ *  rule (Phase 1A mention-autocomplete, master brief §3/§2): a mute only
+ *  ever hides FEED/CHAT CONTENT from the muter (AC4), it was never meant to
+ *  make someone invisible to search or un-mentionable — only a block does
+ *  that. Empty set for a guest or a pre-migration table. */
+export async function blockedActorIds(db: Db, viewerId: string | null): Promise<Set<string>> {
+  const blocked = new Set<string>();
+  if (!viewerId) return blocked;
+  const { data, error } = await db.from("user_blocks").select("blocker_id, blocked_id")
+    .or(`blocker_id.eq.${viewerId},blocked_id.eq.${viewerId}`);
+  if (!error) {
+    for (const r of (data ?? []) as { blocker_id: string; blocked_id: string }[]) {
+      blocked.add(r.blocker_id === viewerId ? r.blocked_id : r.blocker_id);
+    }
+  }
+  return blocked;
+}
 
-  const [blocksRes, mutesRes] = await Promise.all([
-    db.from("user_blocks").select("blocker_id, blocked_id").or(`blocker_id.eq.${viewerId},blocked_id.eq.${viewerId}`),
+/** Every actor id that should be hidden from `viewerId`'s feeds/chat: every
+ *  blockedActorIds() result, PLUS anyone they've muted (one-directional —
+ *  AC4, the muted user's own view is unaffected). Two small batched queries,
+ *  never N+1 — the same shape whether this batch is a feed page, a post
+ *  detail, or a league chat window. Empty set for a guest (viewerId null) or
+ *  when the tables aren't migrated yet (each query is independently
+ *  tolerant of that). */
+export async function hiddenActorIds(db: Db, viewerId: string | null): Promise<Set<string>> {
+  if (!viewerId) return new Set<string>();
+
+  const [blocked, mutesRes] = await Promise.all([
+    blockedActorIds(db, viewerId),
     db.from("user_mutes").select("blocked_id").eq("blocker_id", viewerId),
   ]);
 
-  if (!blocksRes.error) {
-    for (const r of (blocksRes.data ?? []) as { blocker_id: string; blocked_id: string }[]) {
-      hidden.add(r.blocker_id === viewerId ? r.blocked_id : r.blocker_id);
-    }
-  }
+  const hidden = new Set(blocked);
   if (!mutesRes.error) {
     for (const r of (mutesRes.data ?? []) as { blocked_id: string }[]) hidden.add(r.blocked_id);
   }

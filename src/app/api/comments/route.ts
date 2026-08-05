@@ -6,7 +6,7 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { commentRejection } from "@/lib/moderation";
 import { createNotification, pushCommentReply, commentDeepLink } from "@/lib/notifications";
 import { dispatchEngagementEmail, displayNameOf } from "@/lib/engagement";
-import { extractMentions, resolveUsernames } from "@/lib/mentions";
+import { extractMentions, resolveUsernames, resolveMentionEntities, type MentionEntity } from "@/lib/mentions";
 import { notifyMentions } from "@/lib/fantasy/mentions";
 import { hiddenActorIds } from "@/lib/social/safety";
 
@@ -22,6 +22,23 @@ import { hiddenActorIds } from "@/lib/social/safety";
 const SUBJECT_TYPES = new Set(["pack", "debate", "fantasy_feed"]);
 
 export const fetchCache = "force-no-store"; // live threads — see debate/today/route.ts
+
+/** A comment row's own validated payload.mentions (Phase 1A), or null for a
+ *  legacy row (written before Phase 1A, or a hand-typed handle with no
+ *  stored entities) — the caller falls back to the regex+resolve batch for
+ *  those. Malformed entries are dropped rather than thrown on. */
+function storedMentionsOf(payload: unknown): MentionEntity[] | null {
+  const raw = (payload as { mentions?: unknown } | null)?.mentions;
+  if (!Array.isArray(raw) || !raw.length) return null;
+  const out: MentionEntity[] = [];
+  for (const r of raw as unknown[]) {
+    const e = r as { userId?: unknown; usernameSnapshot?: unknown };
+    if (typeof e?.userId === "string" && typeof e?.usernameSnapshot === "string") {
+      out.push({ userId: e.userId, usernameSnapshot: e.usernameSnapshot });
+    }
+  }
+  return out.length ? out : null;
+}
 
 export interface CommentRow {
   id: string;
@@ -80,7 +97,7 @@ export async function GET(req: NextRequest) {
   // replies happens below, in JS, as an explicit branch.
   const topPromise = svc
     .from("comments")
-    .select("id, user_id, body, created_at, deleted_at")
+    .select("id, user_id, body, created_at, deleted_at, payload")
     .eq("subject_type", type)
     .eq("subject_id", id)
     .is("parent_id", null)
@@ -89,14 +106,14 @@ export async function GET(req: NextRequest) {
 
   const [{ count: total }, { data: topRows }] = await Promise.all([totalPromise, topPromise]);
 
-  type TopRow = { id: string; user_id: string; body: string; created_at: string; deleted_at: string | null };
-  type ReplyRow = { id: string; parent_id: string; user_id: string; body: string; created_at: string };
+  type TopRow = { id: string; user_id: string; body: string; created_at: string; deleted_at: string | null; payload: unknown };
+  type ReplyRow = { id: string; parent_id: string; user_id: string; body: string; created_at: string; payload: unknown };
 
   const topIds = (topRows ?? []).map((r) => r.id);
   const { data: replyRows } = topIds.length
     ? await svc
         .from("comments")
-        .select("id, parent_id, user_id, body, created_at")
+        .select("id, parent_id, user_id, body, created_at, payload")
         .in("parent_id", topIds)
         .is("deleted_at", null)
         .order("created_at", { ascending: true })
@@ -225,14 +242,31 @@ export async function GET(req: NextRequest) {
     ...replies.map((r) => liveRow(r, r.parent_id as string)),
   ];
 
-  // Mentions (Phase 3b, AC3) — resolve every REAL @handle across this page's
-  // comment bodies into id+username, so the client can linkify without a
-  // second round trip. Same batch-resolve shape as the feed's own
-  // hydrateEvents. Comments carry no subject-specific gating here — a debate
-  // or pack comment can mention someone too, it just doesn't NOTIFY them
-  // (that hook is fantasy_feed-only, see POST below).
-  const mentionHandles = extractMentions(comments.map((c) => c.body).join(" \n "));
-  const mentionMap = mentionHandles.length ? await resolveUsernames(svc, mentionHandles) : new Map();
+  // Mentions (Phase 3b regex fallback / Phase 1A stored entities, AC3) —
+  // prefer each comment's own validated payload.mentions (no resolve
+  // needed); only a LEGACY row (no stored entities) falls into the batch
+  // regex+resolve, same shape as the feed's own hydrateEvents. Comments
+  // carry no subject-specific gating here — a debate or pack comment can
+  // mention someone too, it just doesn't NOTIFY them (that hook is
+  // fantasy_feed-only, see POST below). One flattened map is returned (not
+  // per-comment) — the client just needs @handle -> userId to linkify, and
+  // usernames are unique case-insensitively, so a single map covers every
+  // comment on the page regardless of which path resolved it.
+  const mentionMap = new Map<string, { id: string; username: string }>();
+  const legacyBodies: string[] = [];
+  for (const r of [...liveTop, ...visibleReplies]) {
+    const stored = storedMentionsOf(r.payload);
+    if (stored) {
+      for (const e of stored) mentionMap.set(e.usernameSnapshot.toLowerCase(), { id: e.userId, username: e.usernameSnapshot });
+    } else {
+      legacyBodies.push(r.body);
+    }
+  }
+  const legacyHandles = extractMentions(legacyBodies.join(" \n "));
+  if (legacyHandles.length) {
+    const resolved = await resolveUsernames(svc, legacyHandles);
+    resolved.forEach((u, h) => { if (!mentionMap.has(h)) mentionMap.set(h, u); });
+  }
   const mentionedUsers = Array.from(mentionMap.values());
 
   // likedByMe is per-user, so this response must never be shared across
@@ -265,6 +299,10 @@ export async function POST(req: NextRequest) {
   const rejection = commentRejection(body);
   if (rejection) return NextResponse.json({ error: rejection }, { status: 400 });
 
+  // Service role for the parent check AND mention validation below — one
+  // client, created once regardless of whether this is a reply.
+  const svc = createServiceClient() as unknown as SupabaseClient;
+
   // Validate the parent via service role and return a clean 400 for the
   // user-facing cases the DB trigger also guards (belt-and-braces — the
   // trigger is the structural backstop, this is the friendly error path).
@@ -272,7 +310,6 @@ export async function POST(req: NextRequest) {
   // notification recipient below, so no second lookup after insert.
   let parentAuthorId: string | null = null;
   if (parentId) {
-    const svc = createServiceClient() as unknown as SupabaseClient;
     const { data: parent } = await svc
       .from("comments")
       .select("id, parent_id, subject_type, subject_id, deleted_at, user_id")
@@ -287,9 +324,20 @@ export async function POST(req: NextRequest) {
     parentAuthorId = parent.user_id;
   }
 
+  // Structured mentions (Phase 1A) — validate whatever the composer tagged
+  // against the body + current DB ownership, merged with any @handle the
+  // user hand-typed without picking from autocomplete. One batch query,
+  // stored on THIS comment's own payload.mentions regardless of subject type
+  // (a debate/pack comment can carry a mention too — it just doesn't notify,
+  // same rule the GET handler's own comment already documents).
+  const mentionEntities = await resolveMentionEntities(svc, body, payload?.mentions);
+
   const { data, error } = await (supabase as unknown as SupabaseClient)
     .from("comments")
-    .insert({ subject_type: type, subject_id: id, user_id: user.id, body, parent_id: parentId })
+    .insert({
+      subject_type: type, subject_id: id, user_id: user.id, body, parent_id: parentId,
+      ...(mentionEntities.length ? { payload: { mentions: mentionEntities } } : {}),
+    })
     .select("id, created_at")
     .single();
   if (error || !data) return NextResponse.json({ error: "Could not post — try again" }, { status: 500 });
@@ -320,7 +368,7 @@ export async function POST(req: NextRequest) {
     });
     // Email fallback for a non-app parent author (first 2 a day, rest digested).
     if (notifId) {
-      const actorName = await displayNameOf(createServiceClient() as unknown as SupabaseClient, user.id);
+      const actorName = await displayNameOf(svc, user.id);
       await dispatchEngagementEmail({
         userId: parentAuthorId,
         notifId,
@@ -339,11 +387,12 @@ export async function POST(req: NextRequest) {
   // own event id — the notification's tap target.
   if (type === "fantasy_feed") {
     void notifyMentions({
-      db: createServiceClient() as unknown as SupabaseClient,
+      db: svc,
       text: body,
       actorId: user.id,
       dedupeSubjectId: data.id,
       url: `/fantasy/social/post/${id}`,
+      entities: mentionEntities,
     });
   }
 

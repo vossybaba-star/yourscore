@@ -10,6 +10,7 @@
  *  (position: fixed — genuinely stays put while the thread scrolls). */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, PosTag, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
@@ -17,7 +18,8 @@ import { MediaGallery } from "@/components/fantasy/MediaGallery";
 import { uploadPostImage } from "@/lib/postMedia";
 import { ReportSheet } from "@/components/social/ReportSheet";
 import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type GifCard } from "./types";
-import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded } from "@/lib/analytics/trackSocial";
+import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished } from "@/lib/analytics/trackSocial";
+import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
   const res = await fetch(`/api/fantasy/leagues/${code}/${path}`, {
@@ -76,6 +78,36 @@ function scrollToMessage(id: string) {
 /** The uppercase eyebrow every shared card wears. */
 function KindLabel({ text, color }: { text: string; color: string }) {
   return <div className="font-display tracking-widest" style={{ fontSize: 9.5, color, marginBottom: 6 }}>{text}</div>;
+}
+
+/** A plain-text message body with any @username token that resolved to a
+ *  real profile (m.mentionedUsers, Phase 1A — server-preferred from stored
+ *  payload.mentions, regex+resolve fallback for a legacy message) turned
+ *  into a link to that profile. An unresolved handle (typo, no such user, or
+ *  a non-"text" kind that never carries mentionedUsers) stays plain text.
+ *  Same idiom as FeedStream's LinkedText / DiscussionThread's
+ *  renderMentionBody, just chat-scoped (no URL linkification — chat bodies
+ *  don't unfurl links today). */
+function LinkedChatText({ body, mentions }: { body: string; mentions?: { username: string; userId: string }[] | null }) {
+  const byHandle = new Map((mentions ?? []).map((m) => [m.username.toLowerCase(), m.userId]));
+  if (!byHandle.size) return <>{body}</>;
+  const parts = body.split(/(@[a-zA-Z0-9_]{2,30})/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("@")) {
+          const uid = byHandle.get(part.slice(1).toLowerCase());
+          if (uid) {
+            return (
+              <Link key={i} href={`/profile/${uid}`} onClick={(e) => e.stopPropagation()}
+                style={{ color: TEAL, fontWeight: 700, textDecoration: "none" }}>{part}</Link>
+            );
+          }
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
 }
 
 /** Shell every structured card sits in: tinted border in its own accent. */
@@ -401,7 +433,9 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, r
       borderRadius: 13, padding: "6px 11px", minWidth: 0,
     }}>
       {!m.isMe && showHeader && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 1 }}>{m.name}</div>}
-      <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.4, overflowWrap: "anywhere" }}>{m.body}</div>
+      <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.4, overflowWrap: "anywhere" }}>
+        <LinkedChatText body={m.body} mentions={m.mentionedUsers} />
+      </div>
     </div>
   );
 }
@@ -480,6 +514,80 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   // Phase 5a — the message currently being reported (opens the sheet).
   const [reportFor, setReportFor] = useState<ChatMessage | null>(null);
 
+  // @mention autocomplete (Phase 1A) — the composer's caret position and the
+  // entities picked from autocomplete, same pattern CreatePostSheet/
+  // DiscussionThread use. Members are ranked FIRST and matched INSTANTLY
+  // (local, no request) via the roster fetched once below; a remote leg
+  // (global mode=mention search — already followed-first, block-filtered)
+  // is layered in for non-members from 2+ chars, debounced.
+  const draftInputRef = useRef<HTMLInputElement>(null);
+  const [draftCaret, setDraftCaret] = useState(0);
+  const [draftMentions, setDraftMentions] = useState<MentionEntity[]>([]);
+  const draftMentionQuery = mentionQueryAt(draft, draftCaret, 1); // 1 char — member roster is local + instant
+  const mentionOpenRef = useRef(false);
+  useEffect(() => {
+    if (draftMentionQuery && !mentionOpenRef.current) { mentionOpenRef.current = true; trackMentionAutocompleteOpened("chat"); }
+    if (!draftMentionQuery) mentionOpenRef.current = false;
+  }, [draftMentionQuery]);
+
+  // The league roster — fetched ONCE on mount (id/username/display_name/
+  // avatar_url only, see leagueMembers() in lib/fantasy/chat.ts — deliberately
+  // lighter than leagueDetail). Blocked accounts are already excluded
+  // server-side.
+  const [members, setMembers] = useState<MentionUser[]>([]);
+  useEffect(() => {
+    let live = true;
+    fetch(`/api/fantasy/leagues/${code}/members`)
+      .then((r) => (r.ok ? r.json() : { members: [] }))
+      .then((d) => {
+        if (!live) return;
+        type RawMember = { userId: string; username: string | null; displayName: string | null; avatarUrl: string | null };
+        setMembers(
+          ((d.members ?? []) as RawMember[])
+            .filter((m): m is RawMember & { username: string } => !!m.username)
+            .map((m) => ({ userId: m.userId, username: m.username, displayName: m.displayName ?? `@${m.username}`, avatarUrl: m.avatarUrl })),
+        );
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [code]);
+
+  // The dropdown's pluggable results source (Phase 1A) — members matched
+  // locally and instantly at @ + 1 char; from 2+ chars, a debounced (~200ms)
+  // remote leg merges in global matches (followed-first, block-filtered by
+  // the endpoint itself), deduped against the local roster by userId. A
+  // generation token supersedes — rather than cancels — a stale in-flight
+  // leg: the actual fetch is skipped entirely if a newer keystroke landed
+  // during the debounce window, and its result is discarded if one landed
+  // while the fetch itself was in flight.
+  const remoteTokenRef = useRef(0);
+  const mentionResults = useCallback(async (query: string): Promise<MentionUser[]> => {
+    const q = query.toLowerCase();
+    const local = members
+      .filter((m) => m.username.toLowerCase().startsWith(q) || m.displayName.toLowerCase().startsWith(q))
+      .slice(0, 8);
+    if (query.length < 2) return local;
+    const myToken = ++remoteTokenRef.current;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    if (remoteTokenRef.current !== myToken) return local; // superseded — skip firing the fetch at all
+    try {
+      const res = await fetch(`/api/fantasy/users/search?q=${encodeURIComponent(query)}&limit=8&mode=mention`);
+      if (remoteTokenRef.current !== myToken) return local; // superseded while in flight
+      const d = res.ok ? await res.json() : { users: [] };
+      const localIds = new Set(local.map((m) => m.userId));
+      const remote = ((d.users ?? []) as MentionUser[]).filter((u) => !localIds.has(u.userId));
+      return [...local, ...remote].slice(0, 8);
+    } catch { return local; }
+  }, [members]);
+  const pickMention = (u: MentionUser) => {
+    const next = applyMention(draft, draftCaret, u.username);
+    setDraft(next.text.slice(0, 280));
+    setDraftCaret(next.caret);
+    setDraftMentions((prev) => [...prev, { userId: u.userId, usernameSnapshot: u.username }]);
+    trackMentionSelected("chat");
+    requestAnimationFrame(() => { draftInputRef.current?.focus(); draftInputRef.current?.setSelectionRange(next.caret, next.caret); });
+  };
+
   const load = useCallback(async (gw: number | null) => {
     try {
       const res = await fetch(`/api/fantasy/leagues/${code}/chat${gw != null ? `?gw=${gw}` : ""}`);
@@ -501,7 +609,16 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
     setBusy(false);
   };
   const parentId = replyTo?.id;
-  const send = () => { const t = draft.trim(); if (!t) return; guard(async () => { await api(code, "chat", { body: t, parentId }); setDraft(""); setReplyTo(null); }); };
+  const send = () => {
+    const t = draft.trim();
+    if (!t) return;
+    const sentMentions = draftMentions;
+    guard(async () => {
+      await api(code, "chat", { body: t, parentId, mentions: sentMentions.length ? sentMentions : undefined });
+      if (sentMentions.length) trackMentionPublished("chat", sentMentions.length);
+      setDraft(""); setDraftMentions([]); setReplyTo(null);
+    });
+  };
   const react = (id: string, emoji: string, on: boolean) => { setReactFor(null); guard(() => api(code, "react", { commentId: id, emoji, on })); };
   const vote = (id: string, i: number) => { trackPollVoted(); guard(() => api(code, "poll", { commentId: id, optionIndex: i }, "PATCH")); };
   const postPoll = (q: string, opts: string[]) => guard(async () => { await api(code, "poll", { question: q, options: opts, parentId }); setPoll(false); setReplyTo(null); });
@@ -758,9 +875,12 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                 background: menu ? tint(TEAL, "22") : PANEL_2, border: `1px solid ${menu ? tint(TEAL, "66") : LINE}`, color: menu ? TEAL : MUTED,
                 display: "flex", alignItems: "center", justifyContent: "center", transform: menu ? "rotate(45deg)" : "none", transition: "transform .15s",
               }}>＋</button>
-              <input value={draft} maxLength={280} placeholder={replyTo ? "Write a reply…" : "Message the league…"}
+              <input ref={draftInputRef} value={draft} maxLength={280} placeholder={replyTo ? "Write a reply…" : "Message the league…"}
                 aria-label="Message the league"
-                onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+                onChange={(e) => { setDraft(e.target.value); setDraftCaret(e.currentTarget.selectionStart ?? 0); }}
+                onKeyUp={(e) => setDraftCaret(e.currentTarget.selectionStart ?? 0)}
+                onClick={(e) => setDraftCaret(e.currentTarget.selectionStart ?? 0)}
+                onKeyDown={(e) => { if (e.key === "Enter") send(); }}
                 style={{ flex: 1, minWidth: 0, fontSize: 14, padding: "7px 14px", minHeight: 44, boxSizing: "border-box", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none" }} />
               <button onClick={send} disabled={!canSend} aria-label="Send" style={{
                 width: 44, height: 44, flexShrink: 0, borderRadius: 999, cursor: canSend ? "pointer" : "default", fontSize: 16, lineHeight: 1,
@@ -768,6 +888,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                 display: "flex", alignItems: "center", justifyContent: "center", opacity: busy ? 0.6 : 1, fontWeight: 800,
               }}>↑</button>
             </div>
+            <MentionDropdown query={draftMentionQuery} onSelect={pickMention} results={mentionResults} />
           </div>
         </div>
       )}

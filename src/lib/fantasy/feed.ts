@@ -15,7 +15,7 @@ import { fetchFplBootstrapCached } from "@/lib/gates/fpl";
 import { pitchName, type BoardPlayer } from "./board";
 import { notifyFantasy } from "./notify";
 import { notifyMentions } from "./mentions";
-import { extractMentions, resolveUsernames } from "@/lib/mentions";
+import { extractMentions, resolveUsernames, resolveMentionEntities, type MentionEntity } from "@/lib/mentions";
 import { commentRejection } from "@/lib/moderation";
 import { hiddenActorIds } from "@/lib/social/safety";
 import { HttpError } from "./server";
@@ -387,6 +387,10 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   const b = (body ?? {}) as {
     text?: unknown; poll?: unknown; image?: unknown; images?: unknown; gif?: unknown; playerId?: unknown;
     link?: unknown; fixture?: unknown; quoteOf?: unknown;
+    /** Mentions picked from the composer's autocomplete (Phase 1A) — untrusted
+     *  client shape, validated below via resolveMentionEntities before it
+     *  ever reaches the payload. */
+    mentions?: unknown;
   };
   const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
 
@@ -522,6 +526,11 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   );
   if (why) throw new HttpError(400, why);
 
+  // Structured mentions (Phase 1A) — validate whatever the composer tagged
+  // against the text + current DB ownership, merged with any handle the
+  // user hand-typed without picking from autocomplete. One batch query.
+  const mentionEntities = text ? await resolveMentionEntities(db, text, b.mentions) : [];
+
   const payload: Record<string, unknown> = {};
   if (text) payload.text = text;
   if (poll) payload.poll = poll;
@@ -532,6 +541,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   if (link) payload.link = link;
   if (fixture) payload.fixture = fixture;
   if (quoteOf) payload.quoteOf = quoteOf;
+  if (mentionEntities.length) payload.mentions = mentionEntities;
   const { data, error } = await db.from("fantasy_feed_events")
     .insert({ actor_id: userId, type: "post", gw: null, payload })
     .select("id").single();
@@ -542,6 +552,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     void notifyMentions({
       db, text, actorId: userId, dedupeSubjectId: postId,
       url: `/fantasy/social/post/${postId}`,
+      entities: mentionEntities,
     });
   }
   return { id: postId };
@@ -777,12 +788,25 @@ async function hydrateEvents(
   const targetRenderable = (t: { type: string; actor_id: string; payload?: any } | undefined) =>
     !!t && t.type === "post" && !bots.has(t.actor_id) && !hidden.has(t.actor_id) && t.payload?.deleted !== true;
 
-  // Mentions (Phase 3b, AC3) — batch-resolve every REAL @handle across this
-  // batch's post text into id+username, so the card can linkify with no
-  // second round trip. A repost's text comes from its resolved TARGET (same
-  // rule the rest of this function follows for a repost pointer row), so
-  // mentions are pulled from the target's payload in that case. An unresolved
-  // handle just doesn't appear in the map — it renders as plain text.
+  // Mentions (Phase 3b AC3 / Phase 1A structured entities) — a post written
+  // by the new composer carries its own validated `payload.mentions`
+  // (MentionEntity[]) — trust that directly, no lookup needed. A LEGACY post
+  // (written before Phase 1A, or a hand-typed handle with no stored
+  // entities) has none, so its handles still need the batch regex+resolve
+  // this always did. A repost's text/mentions come from its resolved TARGET
+  // (same rule the rest of this function follows for a repost pointer row).
+  const storedMentionsOf = (p: Record<string, unknown> | undefined): MentionEntity[] | null => {
+    const raw = p?.mentions;
+    if (!Array.isArray(raw) || !raw.length) return null;
+    const out: MentionEntity[] = [];
+    for (const r of raw as unknown[]) {
+      const e = r as { userId?: unknown; usernameSnapshot?: unknown };
+      if (typeof e?.userId === "string" && typeof e?.usernameSnapshot === "string") {
+        out.push({ userId: e.userId, usernameSnapshot: e.usernameSnapshot });
+      }
+    }
+    return out.length ? out : null;
+  };
   const mentionHandles = Array.from(new Set(
     events
       .filter((e) => e.type === "post")
@@ -790,6 +814,7 @@ async function hydrateEvents(
       .flatMap((e: any) => {
         const repostOfId = typeof e.payload?.repostOf === "string" ? (e.payload.repostOf as string) : null;
         const p = repostOfId ? targetById.get(repostOfId)?.payload : e.payload;
+        if (storedMentionsOf(p)) return []; // already covered — no resolve needed
         return typeof p?.text === "string" ? extractMentions(p.text) : [];
       }),
   ));
@@ -1093,13 +1118,19 @@ async function hydrateEvents(
     const quoteOfId = type === "post" && typeof payload.quoteOf === "string" ? (payload.quoteOf as string) : null;
     const quoteOf = quoteOfId ? embedFor(quoteOfId) : null;
 
-    // Mentions (Phase 3b) — only the REAL handles resolved above; an unknown
-    // one is simply absent, so it stays plain text on render.
+    // Mentions (Phase 3b regex fallback / Phase 1A stored entities) — prefer
+    // this post's own validated payload.mentions; fall back to the legacy
+    // regex+resolve batch for a post with none (all legacy rows). Either
+    // way, an unknown/unresolved handle is simply absent, so it stays plain
+    // text on render.
+    const stored = type === "post" ? storedMentionsOf(payload) : null;
     const mentionedUsers = type === "post" && text
-      ? Array.from(new Set(extractMentions(text)))
-          .map((h) => (mentionMap as Map<string, { id: string; username: string }>).get(h))
-          .filter((u): u is { id: string; username: string } => !!u)
-          .map((u) => ({ username: u.username, userId: u.id }))
+      ? stored
+        ? stored.map((e) => ({ username: e.usernameSnapshot, userId: e.userId }))
+        : Array.from(new Set(extractMentions(text)))
+            .map((h) => (mentionMap as Map<string, { id: string; username: string }>).get(h))
+            .filter((u): u is { id: string; username: string } => !!u)
+            .map((u) => ({ username: u.username, userId: u.id }))
       : null;
 
     return {
