@@ -3821,6 +3821,8 @@ export type Database = {
           id: string
           is_seed: boolean
           notifications_opt_in: boolean
+          push_permission: string | null
+          push_permission_at: string | null
           notifications_read_at: string | null
           referrer: string | null
           social_handle: string | null
@@ -3845,6 +3847,8 @@ export type Database = {
           id: string
           is_seed?: boolean
           notifications_opt_in?: boolean
+          push_permission?: string | null
+          push_permission_at?: string | null
           notifications_read_at?: string | null
           referrer?: string | null
           social_handle?: string | null
@@ -3869,6 +3873,8 @@ export type Database = {
           id?: string
           is_seed?: boolean
           notifications_opt_in?: boolean
+          push_permission?: string | null
+          push_permission_at?: string | null
           notifications_read_at?: string | null
           referrer?: string | null
           social_handle?: string | null

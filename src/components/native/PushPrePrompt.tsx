@@ -18,6 +18,9 @@ import {
 // taps "Maybe later". Gating on `user` means registerForPush() always has a
 // userId to store the device token against.
 
+/** Last value mirrored to the profile, so a no-op open costs no write. */
+const PERMISSION_REPORTED_KEY = "yourscore:push-permission-reported";
+
 function PushPrePromptInner({ permission }: { permission: PushPermission }) {
   const { user, loading } = useUser();
   const [show, setShow] = useState(false);
@@ -172,6 +175,7 @@ function PushPrePromptInner({ permission }: { permission: PushPermission }) {
  * covers returning from background, which is how most opens actually happen.
  */
 export function PushPrePrompt() {
+  const { user } = useUser();
   const [permission, setPermission] = useState<PushPermission | null>(null);
   const [tick, setTick] = useState(0);
 
@@ -183,11 +187,44 @@ export function PushPrePrompt() {
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
         const p = await PushNotifications.checkPermissions();
-        if (!cancelled) setPermission(p.receive as PushPermission);
+        if (cancelled) return;
+        const value = p.receive as PushPermission;
+        setPermission(value);
+        reportPermission(value);
       } catch {
         if (!cancelled) setPermission(null);
       }
     }
+
+    /**
+     * Mirror the OS state onto the profile.
+     *
+     * Server-side, `notifications_opt_in = false` covers two different people:
+     * one Apple will still show a dialog to, and one who already refused and can
+     * only be recovered through iOS Settings. They are indistinguishable from the
+     * database, so there was no way to know whether to push the in-app card
+     * harder or lean on the Settings route. This is the only place that can see
+     * the difference — the permission lives on the device.
+     *
+     * Skipped when unchanged: this runs on every app open, and re-writing the
+     * same value would be a pointless write per user per open.
+     */
+    async function reportPermission(value: PushPermission) {
+      if (!user) return;
+      try {
+        if (localStorage.getItem(PERMISSION_REPORTED_KEY) === value) return;
+      } catch { /* storage blocked — fall through and write */ }
+      try {
+        await createClient()
+          .from("profiles")
+          .update({ push_permission: value, push_permission_at: new Date().toISOString() })
+          .eq("id", user.id);
+        localStorage.setItem(PERMISSION_REPORTED_KEY, value);
+      } catch {
+        // Never let telemetry break the prompt.
+      }
+    }
+
     readPermission();
 
     let remove: (() => void) | undefined;
@@ -202,7 +239,7 @@ export function PushPrePrompt() {
     })();
 
     return () => { cancelled = true; remove?.(); };
-  }, []);
+  }, [user]);
 
   if (!permission) return null;
   if (!shouldAskPush(permission)) return null;
