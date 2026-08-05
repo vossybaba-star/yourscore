@@ -92,8 +92,8 @@ export function FantasyResultInterstitial({ surface, scoreLine, userId }: Fantas
   if (!open) return null;
 
   const cta = userId
-    ? { href: "/fantasy?ref=postgame-pop", label: "BUILD YOUR SQUAD →" }
-    : { href: "/auth/sign-in?next=%2Ffantasy%3Fref%3Dpostgame-pop", label: "SIGN UP NOW →" };
+    ? { href: "/fantasy?ref=postgame-pop", label: "BUILD YOUR TEAM →" }
+    : { href: "/auth/sign-in?next=%2Ffantasy%3Fref%3Dpostgame-pop", label: "BUILD YOUR TEAM →" };
 
   return (
     <div
