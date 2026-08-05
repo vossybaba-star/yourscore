@@ -20,6 +20,8 @@ import { ReportSheet } from "@/components/social/ReportSheet";
 import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type GifCard } from "./types";
 import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished } from "@/lib/analytics/trackSocial";
 import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
+import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
+import { useUser } from "@/hooks/useUser";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
   const res = await fetch(`/api/fantasy/leagues/${code}/${path}`, {
@@ -414,9 +416,9 @@ function PollComposer({ onPost, onCancel, busy }: { onPost: (q: string, opts: st
 /** The bubble/card for one message, minus the reactions row. `showHeader` is
  *  the sender-grouping signal (AC3) — only the first bubble of a same-sender
  *  run within 5 minutes carries the name. */
-function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, readOnly, showHeader = true }: {
+function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, readOnly, showHeader = true }: {
   m: ChatMessage; onView: (id: number) => void; onOpenNews: (m: ChatMessage) => void; onVote: (i: number) => void;
-  onViewImage: (url: string) => void; onViewFeed: (eventId: string) => void;
+  onViewImage: (url: string) => void; onViewFeed: (eventId: string) => void; onAuthor: (m: ChatMessage) => void;
   readOnly?: boolean; showHeader?: boolean;
 }) {
   if ((m.kind === "player" || m.kind === "captain") && m.player) return <SharedPlayer msg={m} onView={() => onView(m.player!.id)} />;
@@ -432,7 +434,12 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, r
       background: m.isMe ? tint(TEAL, "1c") : PANEL, border: `1px solid ${m.isMe ? tint(TEAL, "44") : LINE}`,
       borderRadius: 13, padding: "6px 11px", minWidth: 0,
     }}>
-      {!m.isMe && showHeader && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 1 }}>{m.name}</div>}
+      {!m.isMe && showHeader && (
+        <button onClick={(e) => { e.stopPropagation(); onAuthor(m); }} style={{
+          display: "block", background: "none", border: "none", cursor: "pointer", padding: 0,
+          fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 1,
+        }}>{m.name}</button>
+      )}
       <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.4, overflowWrap: "anywhere" }}>
         <LinkedChatText body={m.body} mentions={m.mentionedUsers} />
       </div>
@@ -497,7 +504,10 @@ function GifPicker({ onPick, onCancel, busy }: { onPick: (g: GifCard) => void; o
 
 export function LeagueChatView({ code, initialGw = null }: { code: string; initialGw?: number | null }) {
   const router = useRouter();
+  const { user } = useUser();
   const [chat, setChat] = useState<ChatData | null>(null);
+  // Member action sheet (Phase 1B) — tapping an avatar or author name.
+  const [actionMember, setActionMember] = useState<MemberActionMember | null>(null);
   const [viewGw, setViewGw] = useState<number | null>(initialGw);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -551,6 +561,52 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
       .catch(() => {});
     return () => { live = false; };
   }, [code]);
+
+  // A member tap from the shared MemberActionSheet (feed/hub "Mention in
+  // league chat" destination) arrives as ?mention=<username> — read it once
+  // on mount, prefill the composer the same way picking a mention does, then
+  // strip the param so a refresh doesn't repeat it.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const mention = sp.get("mention");
+    if (!mention) return;
+    const text = `@${mention} `;
+    setDraft(text);
+    setDraftCaret(text.length);
+    const u = new URL(window.location.href);
+    u.searchParams.delete("mention");
+    window.history.replaceState(null, "", u);
+    requestAnimationFrame(() => { draftInputRef.current?.focus(); draftInputRef.current?.setSelectionRange(text.length, text.length); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Open the shared member action sheet for a message's author — the roster
+  // (fetched above) has their username; fall back to just what the message
+  // itself carries if they're not on it for some reason (never blocks the tap).
+  const openAuthor = (m: ChatMessage) => {
+    const found = members.find((mm) => mm.userId === m.userId);
+    setActionMember({
+      userId: m.userId,
+      username: found?.username ?? null,
+      displayName: found?.displayName ?? m.name,
+      avatarUrl: found?.avatarUrl ?? m.avatarUrl,
+    });
+  };
+  // The member sheet's Mention action didn't come from typing "@" — there's
+  // no partial token for applyMention to replace — so this inserts the same
+  // "@username " string at the caret directly, same insertion shape pickMention
+  // uses, then focuses the field exactly like it does.
+  const insertMention = (username: string) => {
+    const before = draft.slice(0, draftCaret);
+    const after = draft.slice(draftCaret);
+    const insert = `@${username} `;
+    const text = (before + insert + after).slice(0, 280);
+    const caret = (before + insert).length;
+    setDraft(text);
+    setDraftCaret(caret);
+    if (actionMember) setDraftMentions((prev) => [...prev, { userId: actionMember.userId, usernameSnapshot: username }]);
+    requestAnimationFrame(() => { draftInputRef.current?.focus(); draftInputRef.current?.setSelectionRange(caret, caret); });
+  };
 
   // The dropdown's pluggable results source (Phase 1A) — members matched
   // locally and instantly at @ + 1 char; from 2+ chars, a debounced (~200ms)
@@ -794,10 +850,14 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
               )}
               <div style={{ display: "flex", gap: 7, maxWidth: m.kind === "squad" ? "100%" : "94%", width: m.kind === "squad" ? "100%" : undefined, flexDirection: mine ? "row-reverse" : "row", alignItems: "flex-end" }}>
                 {!mine && !structured && (showHeader
-                  ? <PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={22} />
+                  ? (
+                    <button onClick={(e) => { e.stopPropagation(); openAuthor(m); }} aria-label={`View ${m.name}`} style={{
+                      display: "block", background: "none", border: "none", padding: 0, cursor: "pointer", flexShrink: 0, borderRadius: 999,
+                    }}><PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={22} /></button>
+                  )
                   : <span aria-hidden style={{ width: 22, flexShrink: 0 }} />)}
                 <MessageBody m={m} onView={(id) => router.push(`/fantasy/players/${id}`)} onOpenNews={openNews}
-                  onVote={(i2) => vote(m.id, i2)} onViewImage={setGalleryUrl} onViewFeed={openFeed}
+                  onVote={(i2) => vote(m.id, i2)} onViewImage={setGalleryUrl} onViewFeed={openFeed} onAuthor={openAuthor}
                   readOnly={readOnly} showHeader={showHeader} />
               </div>
               <div style={{ maxWidth: "94%", paddingLeft: mine ? 0 : (structured ? 2 : 29) }}>
@@ -834,6 +894,19 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
       {/* Report sheet (Phase 5a) — portaled, same component the feed and
           profile use. */}
       {reportFor && <ReportSheet subjectType="comment" subjectId={reportFor.id} onClose={() => setReportFor(null)} />}
+
+      {/* Member action sheet (Phase 1B) — avatar/name tap; Mention inserts
+          straight into the composer instead of the feed/hub mini-list. */}
+      {actionMember && (
+        <MemberActionSheet
+          member={actionMember}
+          context="chat"
+          leagueCode={code}
+          viewerId={user?.id ?? null}
+          onClose={() => setActionMember(null)}
+          onMention={insertMention}
+        />
+      )}
 
       {/* Composer — FIXED just above the bottom nav, so it never scrolls away. An
           archived gameweek takes no new posts. */}
