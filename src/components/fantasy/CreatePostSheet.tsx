@@ -18,7 +18,7 @@
  * the text and typing a DIFFERENT URL re-unfurls.
  */
 import { useEffect, useRef, useState } from "react";
-import { Btn, INK, LINE, MUTED, PANEL, PANEL_2, Sheet, TEAL, tint } from "@/components/fantasy/shared";
+import { Btn, INK, LINE, MUTED, PANEL, PANEL_2, Sheet, TEAL } from "@/components/fantasy/shared";
 import { uploadPostImage, PostImageError, MAX_POST_IMAGES } from "@/lib/postMedia";
 import { GifPicker, type GifResult } from "@/components/fantasy/GifPicker";
 import { PlayerPickerSheet, type PickablePlayer } from "@/components/fantasy/PlayerPickerSheet";
