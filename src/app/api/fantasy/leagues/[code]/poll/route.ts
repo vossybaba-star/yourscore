@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest, { params }: { params: { code: string } }) {
   const body = await req.json().catch(() => ({}));
   return withFantasyUser("league-poll", (db, userId) =>
-    postPoll(db, userId, params.code, body.question, body.options));
+    postPoll(db, userId, params.code, body.question, body.options, body.parentId));
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { code: string } }) {

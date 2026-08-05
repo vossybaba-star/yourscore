@@ -17,11 +17,16 @@ import { commentRejection } from "@/lib/moderation";
 import { HttpError } from "./server";
 import { enginePool, clientPool } from "./pool";
 import { pitchName, type BoardPlayer } from "./board";
-import { loadLeagueFeed, type FeedEvent } from "./feed";
+import { loadLeagueFeed, loadFeedEvent, isPostMediaUrl, type FeedEvent } from "./feed";
 import { notifyFantasy } from "./notify";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
+/** Loose result shape for a probe/fallback query pair whose two `.select()`
+ *  column lists differ (AC1) — TS would otherwise refuse to let the same `let`
+ *  hold both shapes. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ProbeResult = { data: any; error: any };
 
 /** The reaction set (founder's pick). Kept small and validated so the column
  *  never fills with arbitrary strings. */
@@ -58,7 +63,23 @@ export interface CompareCard { a: PlayerCard; b: PlayerCard }
 /** A GIF (from the Tenor picker) — the media URL, a lighter preview, and the
  *  natural dimensions so the bubble reserves the right space (no layout shift). */
 export interface GifCard { url: string; preview: string; width: number; height: number }
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif";
+/** One photo dropped straight into the chat (Phase 4a, AC4) — uploaded via the
+ *  same post-media pipeline the feed composer uses, one per message. */
+export interface ImageCard { url: string; width: number; height: number }
+/** A feed post shared into the chat (Phase 4a, AC5) — a compact pointer card,
+ *  resolved server-side each read so it always reflects the post's current
+ *  state (edited/deleted/still there). `available: false` renders the muted
+ *  stub instead of trusting stale text baked in at share time. */
+export interface FeedShareCard {
+  eventId: string; available: boolean;
+  actorName: string | null; actorAvatarUrl: string | null;
+  /** Up to 3 lines of the post's own text, when it has any. */
+  text: string | null;
+  /** A one-line kind marker ("shared a photo"/"a GIF"/"a poll") when the post
+   *  has no text of its own to show. */
+  summary: string | null;
+}
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed";
 
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
@@ -72,8 +93,20 @@ export interface ChatMessage {
   news?: NewsCard | null;
   compare?: CompareCard | null;
   gif?: GifCard | null;
+  image?: ImageCard | null;
+  feed?: FeedShareCard | null;
+  /** Replies (Phase 4a, AC2) — the message this one is quoting, and a resolved
+   *  {name, summary} for the quoted-context strip. Both null for a non-reply,
+   *  and parentId/replyTo both come back null wholesale when the underlying
+   *  parent_id column isn't migrated yet (ChatData.capabilities.replies). */
+  parentId?: string | null;
+  replyTo?: { name: string; summary: string } | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
+/** What this environment's schema currently supports (Phase 4a, AC1) — false
+ *  when migration 252 hasn't landed yet, so the UI can hide the reply/pin
+ *  affordances outright rather than offer a control that silently no-ops. */
+export interface ChatCapabilities { replies: boolean; pin: boolean }
 
 const MAX_POLL_OPTIONS = 4;
 
@@ -90,6 +123,8 @@ export function summariseLeagueMessage(kind: string | null, body: string, payloa
     case "news": return typeof p.title === "string" ? p.title : "shared some news";
     case "compare": return "shared a comparison";
     case "gif": return "sent a GIF";
+    case "image": return "sent a photo";
+    case "feed": return "shared a post";
     case "poll": return typeof p.question === "string" ? p.question : "started a poll";
     default: return body;
   }
@@ -203,10 +238,24 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   // Club and Founder leagues are OPEN to read (founder, 3 Aug — "go into other
   // clubs' leagues to see what they talk about"). A non-member gets the chat in
   // read-only mode with a notice; every other league stays members-only.
-  const { data: leagueRow } = await db.from("fantasy_leagues")
-    .select("id, name, owner_id, stakes, kind, club").eq("join_code", code.toUpperCase()).maybeSingle();
+  // pinned_message_id is probed with a fallback (AC1/AC6): pre-migration the
+  // column doesn't exist yet, and PostgREST fails the WHOLE select if an unknown
+  // column is named, so a first-try-then-fallback is the only way to keep the
+  // rest of the league loading while the column is absent.
+  let pinSupported = true;
+  let leagueQuery = await db.from("fantasy_leagues")
+    .select("id, name, owner_id, stakes, kind, club, pinned_message_id").eq("join_code", code.toUpperCase()).maybeSingle() as ProbeResult;
+  if (leagueQuery.error) {
+    pinSupported = false;
+    leagueQuery = await db.from("fantasy_leagues")
+      .select("id, name, owner_id, stakes, kind, club").eq("join_code", code.toUpperCase()).maybeSingle() as ProbeResult;
+  }
+  const leagueRow = leagueQuery.data;
   if (!leagueRow) throw new HttpError(404, "league not found");
-  const league = leagueRow as { id: string; name: string; owner_id: string; stakes: string | null; kind: string | null; club: string | null };
+  const league = leagueRow as {
+    id: string; name: string; owner_id: string; stakes: string | null; kind: string | null; club: string | null;
+    pinned_message_id?: string | null;
+  };
 
   const { data: member } = await db.from("fantasy_league_members")
     .select("user_id").eq("league_id", league.id).eq("user_id", userId).maybeSingle();
@@ -259,17 +308,60 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   const upper = vi >= 0 && vi < gws.length - 1 ? gws[vi + 1].window_start : null;
 
   let q = db.from("comments")
-    .select("id, user_id, body, created_at, kind, payload")
+    .select("id, user_id, body, created_at, kind, payload, parent_id")
     .eq("subject_type", "fantasy_league").eq("subject_id", league.id)
     .is("deleted_at", null);
   if (lower) q = q.gte("created_at", lower);
   if (upper) q = q.lt("created_at", upper);
-  const { data: rows } = await q.order("created_at", { ascending: false }).limit(50);
+  let rowsQuery = await q.order("created_at", { ascending: false }).limit(50) as ProbeResult;
+  // Same probe/fallback as pinned_message_id above: parent_id may not exist yet
+  // (AC1) — retry the identical query minus that one column rather than let a
+  // reply feature that hasn't shipped take the whole thread down with it.
+  let repliesSupported = true;
+  if (rowsQuery.error) {
+    repliesSupported = false;
+    let q2 = db.from("comments")
+      .select("id, user_id, body, created_at, kind, payload")
+      .eq("subject_type", "fantasy_league").eq("subject_id", league.id)
+      .is("deleted_at", null);
+    if (lower) q2 = q2.gte("created_at", lower);
+    if (upper) q2 = q2.lt("created_at", upper);
+    rowsQuery = await q2.order("created_at", { ascending: false }).limit(50) as ProbeResult;
+  }
+  const rows = rowsQuery.data;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const msgs = (rows ?? []) as { id: string; user_id: string; body: string; created_at: string; kind: string | null; payload: any }[];
+  const msgs = (rows ?? []) as { id: string; user_id: string; body: string; created_at: string; kind: string | null; payload: any; parent_id?: string | null }[];
 
-  const authorIds = Array.from(new Set(msgs.map((m) => m.user_id)));
   const msgIds = msgs.map((m) => m.id);
+  const loadedIds = new Set(msgIds);
+
+  // Replies (AC2) — msgId → its parent's id, for the messages actually loaded
+  // in this window.
+  const parentIdOf = new Map<string, string>();
+  if (repliesSupported) {
+    for (const m of msgs) if (m.parent_id) parentIdOf.set(m.id, m.parent_id);
+  }
+  // Parents that fell OUTSIDE this window (an older gw, or just off the 50-cap)
+  // still need resolving for the quoted-context strip, plus the pinned message
+  // (AC6) if it isn't one of the messages already loaded — ONE extra batched
+  // comments query covers both.
+  const pinnedId = pinSupported && league.pinned_message_id ? league.pinned_message_id : null;
+  const extraCommentIds = Array.from(new Set([
+    ...Array.from(parentIdOf.values()).filter((id) => !loadedIds.has(id)),
+    ...(pinnedId && !loadedIds.has(pinnedId) ? [pinnedId] : []),
+  ]));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let extraRows: { id: string; user_id: string; body: string; kind: string | null; payload: any }[] = [];
+  if (extraCommentIds.length) {
+    const { data } = await db.from("comments")
+      .select("id, user_id, body, kind, payload").in("id", extraCommentIds).is("deleted_at", null);
+    extraRows = (data ?? []) as typeof extraRows;
+  }
+  const commentById = new Map<string, { id: string; user_id: string; body: string; kind: string | null; payload: unknown }>();
+  for (const m of msgs) commentById.set(m.id, m);
+  for (const r of extraRows) commentById.set(r.id, r);
+
+  const authorIds = Array.from(new Set([...msgs.map((m) => m.user_id), ...extraRows.map((r) => r.user_id)]));
   const [{ data: profs }, { data: reactRows }, { data: voteRows }] = await Promise.all([
     authorIds.length
       ? db.from("profiles").select("id, display_name, username, avatar_url").in("id", authorIds)
@@ -283,6 +375,10 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   ]);
   const profOf = new Map(((profs ?? []) as { id: string; display_name: string | null; username: string | null; avatar_url: string | null }[])
     .map((p) => [p.id, p]));
+  const nameOfAuthor = (uid: string) => {
+    const p = profOf.get(uid);
+    return p?.display_name ?? (p?.username ? `@${p.username}` : "Player");
+  };
 
   // Aggregate reactions per message: emoji → count, and whether I'm in it.
   const reactOf = new Map<string, Map<string, { count: number; mine: boolean }>>();
@@ -321,7 +417,49 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
     return p ? { id: p.id, name: p.name, club: p.club, pos: p.pos, price: p.price, avatarUrl: p.avatarUrl ?? null, note } : null;
   };
 
-  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null } => {
+  // Feed-share cards (AC5) — resolved async, before cardFor (which stays sync)
+  // so a re-render never triggers an extra round of loadFeedEvent calls per
+  // message. Each shared post is re-hydrated fresh on every read (never
+  // trusting anything baked into the payload at share time beyond the id), so
+  // an edited/deleted post's card reflects reality immediately.
+  const feedEventIds = Array.from(new Set(
+    msgs.filter((m) => m.kind === "feed" && m.payload && typeof m.payload === "object")
+      .map((m) => { const id = (m.payload as { eventId?: unknown }).eventId; return typeof id === "string" ? id : ""; })
+      .filter(Boolean),
+  ));
+  const feedCardById = new Map<string, FeedShareCard>();
+  if (feedEventIds.length) {
+    const resolved = await Promise.all(feedEventIds.map(async (id) => {
+      try { return [id, await loadFeedEvent(db, userId, id)] as const; }
+      catch { return [id, null] as const; }
+    }));
+    for (const [id, ev] of resolved) {
+      if (!ev || ev.unavailable) { feedCardById.set(id, { eventId: id, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null }); continue; }
+      const summary = ev.text ? null
+        : ev.poll ? "shared a poll"
+        : ev.gif ? "shared a GIF"
+        : (ev.images?.length || ev.image) ? "shared a photo"
+        : "shared a post";
+      feedCardById.set(id, {
+        eventId: id, available: true, actorName: ev.actorName, actorAvatarUrl: ev.actorAvatar,
+        text: ev.text ? ev.text.slice(0, 300) : null, summary,
+      });
+    }
+  }
+
+  const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null; image?: ImageCard | null; feed?: FeedShareCard | null } => {
+    if (m.kind === "image" && m.payload && typeof m.payload === "object") {
+      const pl = m.payload as { url?: unknown; width?: unknown; height?: unknown };
+      const url = typeof pl.url === "string" ? pl.url : "";
+      if (!isPostMediaUrl(url)) return { kind: "text" };
+      return { kind: "image", image: { url, width: Number(pl.width) || 0, height: Number(pl.height) || 0 } };
+    }
+    if (m.kind === "feed" && m.payload && typeof m.payload === "object") {
+      const id = (m.payload as { eventId?: unknown }).eventId;
+      const eventId = typeof id === "string" ? id : "";
+      if (!eventId) return { kind: "text" };
+      return { kind: "feed", feed: feedCardById.get(eventId) ?? { eventId, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null } };
+    }
     if (m.kind === "gif" && m.payload && typeof m.payload === "object") {
       const pl = m.payload as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
       const url = typeof pl.url === "string" ? pl.url : "";
@@ -376,13 +514,34 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   // thread shows the most recent scored week's.
   const momentGw = readOnly ? viewGw : await latestScoredGw(db, memberIds);
 
+  // The quoted-context strip for a reply — the parent's author + a one-line
+  // summary, via the SAME summariser a shared card uses elsewhere (AC2). Null
+  // when the parent's gone missing (soft-deleted after the reply was sent) —
+  // the reply still renders, just without the quote strip.
+  const replyToFor = (parentId: string | undefined): { name: string; summary: string } | null => {
+    if (!parentId) return null;
+    const parent = commentById.get(parentId);
+    if (!parent) return null;
+    return { name: nameOfAuthor(parent.user_id), summary: summariseLeagueMessage(parent.kind, parent.body, parent.payload) };
+  };
+
+  // The pinned-message banner (AC6) — same shape as a reply's quote strip.
+  const pinned = pinnedId ? (() => {
+    const row = commentById.get(pinnedId);
+    if (!row) return null;
+    return { id: pinnedId, name: nameOfAuthor(row.user_id), summary: summariseLeagueMessage(row.kind, row.body, row.payload) };
+  })() : null;
+
   return {
     league: { name: league.name, stakes: league.stakes, isOwner: league.owner_id === userId },
     gw: viewGw, currentGw, readOnly, notice, gameweeks,
+    capabilities: { replies: repliesSupported, pin: pinSupported } as ChatCapabilities,
+    pinned,
     // oldest-first for a chat read
     messages: msgs.reverse().map((m): ChatMessage => {
       const p = profOf.get(m.user_id);
       const card = cardFor(m);
+      const parentId = parentIdOf.get(m.id) ?? null;
       return {
         id: m.id, userId: m.user_id,
         name: p?.display_name ?? (p?.username ? `@${p.username}` : "Player"),
@@ -391,6 +550,8 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
         reactions: reactionsFor(m.id),
         kind: card.kind, player: card.player ?? null, poll: card.poll ?? null, squad: card.squad ?? null,
         news: card.news ?? null, compare: card.compare ?? null, gif: card.gif ?? null,
+        image: card.image ?? null, feed: card.feed ?? null,
+        parentId, replyTo: replyToFor(parentId ?? undefined),
       };
     }),
     moments: momentGw != null ? await momentsForGw(db, memberIds, momentGw) : [],
@@ -421,18 +582,70 @@ export async function reactChat(
   return { ok: true };
 }
 
-export async function postChat(db: Db, userId: string, code: string, body: unknown) {
+/** True for a PostgREST "column doesn't exist" failure specifically (error
+ *  code 42703 undefined_column, or PGRST204 when the schema cache doesn't
+ *  know the column) — the ONE case insertChatMessage should degrade quietly
+ *  from, since it means migration 252 hasn't landed yet (AC1). Any other
+ *  error (a constraint violation, RLS, etc.) is a real failure and should
+ *  surface, not get swallowed as if the column were merely absent. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isMissingColumnError(error: any): boolean {
+  return error?.code === "42703" || error?.code === "PGRST204" || /column .* does not exist/i.test(String(error?.message ?? ""));
+}
+
+/** Insert one league-chat message, threading it under `parentId` when given
+ *  (AC2 — works for every ChatKind, so every posting function below routes
+ *  through here). The parent must exist, be undeleted, and belong to THIS
+ *  SAME league — a hand-crafted parentId pointing at another league's message
+ *  400s rather than quietly cross-linking threads.
+ *
+ *  comments.parent_id already exists (migration 221, for pack/debate replies)
+ *  with a trigger enforcing ONE level of depth — replying to a message that's
+ *  itself a reply raises a Postgres exception rather than nesting further.
+ *  Rather than let that exception surface as a raw 500, a reply to a reply is
+ *  flattened here to thread under the ORIGINAL top-level message (the same
+ *  IG-style flattening the trigger's own model assumes) — the UI additionally
+ *  hides the Reply control on an already-a-reply message, so this is a
+ *  belt-and-braces backstop, not the primary UX.
+ *
+ *  Degrades hidden (AC1): if the insert fails specifically because parent_id
+ *  isn't a real column (a hypothetical environment that reached this code
+ *  without migration 221), it retries once WITHOUT the column so the message
+ *  still sends — just without threading — rather than losing the send
+ *  entirely over a column that isn't there. Any other insert error (the
+ *  depth/subject trigger, RLS, a bad id) still fails loudly. */
+async function insertChatMessage(
+  db: Db, league: { id: string }, userId: string,
+  fields: { body: string; kind?: string; payload?: Record<string, unknown> },
+  parentId?: unknown,
+): Promise<{ id: string }> {
+  const base = { subject_type: "fantasy_league", subject_id: league.id, user_id: userId, ...fields };
+  const pid = typeof parentId === "string" && parentId ? parentId : null;
+  if (pid) {
+    const { data: parent } = await db.from("comments").select("id, parent_id")
+      .eq("id", pid).eq("subject_type", "fantasy_league").eq("subject_id", league.id).is("deleted_at", null).maybeSingle();
+    if (!parent) throw new HttpError(400, "That message isn't here anymore");
+    // Flatten a reply-to-a-reply to the thread's top-level message.
+    const threadRoot = (parent as { id: string; parent_id?: string | null }).parent_id || pid;
+    const withParent = await db.from("comments").insert({ ...base, parent_id: threadRoot }).select("id").single();
+    if (!withParent.error) return withParent.data as { id: string };
+    if (!isMissingColumnError(withParent.error)) throw new HttpError(500, withParent.error.message);
+    console.error("[fantasy:chat] parent_id column missing, degrading to unthreaded:", withParent.error.message);
+  }
+  const { data: inserted, error } = await db.from("comments").insert(base).select("id").single();
+  if (error) throw new HttpError(500, error.message);
+  return inserted as { id: string };
+}
+
+export async function postChat(db: Db, userId: string, code: string, body: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const text = typeof body === "string" ? body.trim() : "";
   if (!text || text.length > 280) throw new HttpError(400, "1-280 characters");
   const why = commentRejection(text);
   if (why) throw new HttpError(400, why);
-  const { data: inserted, error } = await db.from("comments")
-    .insert({ subject_type: "fantasy_league", subject_id: league.id, user_id: userId, body: text })
-    .select("id").single();
-  if (error) throw new HttpError(500, error.message);
+  const inserted = await insertChatMessage(db, league, userId, { body: text }, parentId);
   // @mentions only — never a push for every message (the spam trap). Fire-and-forget.
-  void notifyChatMentions(db, league.id, code, league.name, userId, text, (inserted as { id: string } | null)?.id ?? null);
+  void notifyChatMentions(db, league.id, code, league.name, userId, text, inserted.id);
   return { ok: true };
 }
 
@@ -516,7 +729,7 @@ export function isAllowedGifUrl(url: string): boolean {
 }
 
 /** Post a GIF into the league chat. Body is empty; the media lives in the payload. */
-export async function postGif(db: Db, userId: string, code: string, gif: unknown) {
+export async function postGif(db: Db, userId: string, code: string, gif: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const g = (gif ?? {}) as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
   const url = typeof g.url === "string" ? g.url : "";
@@ -526,16 +739,43 @@ export async function postGif(db: Db, userId: string, code: string, gif: unknown
   const height = Math.min(2000, Math.max(0, Math.round(Number(g.height) || 0)));
   // Non-empty body: the comments table's body check rejects "" (and it's the
   // graceful fallback anywhere a GIF can't render). The UI shows the media, not this.
-  const { error } = await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
-    body: "GIF", kind: "gif", payload: { url, preview, width, height },
-  });
-  if (error) throw new HttpError(500, error.message);
+  await insertChatMessage(db, league, userId, { body: "GIF", kind: "gif", payload: { url, preview, width, height } }, parentId);
+  return { ok: true };
+}
+
+/** Post one image straight into the league chat (Phase 4a, AC4) — uploaded
+ *  client-side to the post-media bucket via the same lib/postMedia.ts pipeline
+ *  the feed composer uses; re-validated here as belonging to that bucket
+ *  (isPostMediaUrl, shared with postToFeed) so a hand-crafted insert can't
+ *  smuggle an arbitrary external image into the thread. One per message. */
+export async function postImage(db: Db, userId: string, code: string, image: unknown, parentId?: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const im = (image ?? {}) as { url?: unknown; width?: unknown; height?: unknown };
+  const url = typeof im.url === "string" ? im.url.trim() : "";
+  if (!isPostMediaUrl(url)) throw new HttpError(400, "bad image");
+  const width = Math.min(4000, Math.max(0, Math.round(Number(im.width) || 0)));
+  const height = Math.min(4000, Math.max(0, Math.round(Number(im.height) || 0)));
+  await insertChatMessage(db, league, userId, { body: "Photo", kind: "image", payload: { url: url.slice(0, 500), width, height } }, parentId);
+  return { ok: true };
+}
+
+/** Share a feed post into the league chat (Phase 4a, AC5) — from the Social
+ *  feed's existing "Share to a league" sheet. The card is resolved fresh on
+ *  every read (see leagueChat's feedCardById), so only the id is stored here;
+ *  validated up front against loadFeedEvent so a dead/unavailable/non-post id
+ *  can't be shared in the first place. */
+export async function shareFeedToLeague(db: Db, userId: string, code: string, eventId: unknown, parentId?: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  const id = typeof eventId === "string" ? eventId : "";
+  if (!id) throw new HttpError(400, "nothing to share");
+  const event = await loadFeedEvent(db, userId, id);
+  if (!event || event.unavailable || event.type !== "post") throw new HttpError(404, "That post isn't available");
+  await insertChatMessage(db, league, userId, { body: "shared a post", kind: "feed", payload: { eventId: id } }, parentId);
   return { ok: true };
 }
 
 /** Post a poll into the league chat: a question and 2–4 options. */
-export async function postPoll(db: Db, userId: string, code: string, question: unknown, options: unknown) {
+export async function postPoll(db: Db, userId: string, code: string, question: unknown, options: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const q = typeof question === "string" ? question.trim().slice(0, 120) : "";
   const opts = Array.isArray(options)
@@ -545,11 +785,7 @@ export async function postPoll(db: Db, userId: string, code: string, question: u
   if (opts.length < 2) throw new HttpError(400, "A poll needs at least two options");
   const why = commentRejection([q, ...opts].join(" "));
   if (why) throw new HttpError(400, why);
-  const { error } = await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
-    body: q, kind: "poll", payload: { question: q, options: opts },
-  });
-  if (error) throw new HttpError(500, error.message);
+  await insertChatMessage(db, league, userId, { body: q, kind: "poll", payload: { question: q, options: opts } }, parentId);
   return { ok: true };
 }
 
@@ -573,18 +809,14 @@ export async function votePoll(db: Db, userId: string, code: string, commentId: 
 }
 
 /** Share a player card into a league's chat (invoked from the player's profile). */
-export async function sharePlayerToLeague(db: Db, userId: string, code: string, playerId: unknown, note: unknown) {
+export async function sharePlayerToLeague(db: Db, userId: string, code: string, playerId: unknown, note: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const pid = Number(playerId);
   if (!Number.isInteger(pid) || !enginePool().some((p) => p.id === pid)) throw new HttpError(400, "unknown player");
   const n = typeof note === "string" ? note.trim().slice(0, 200) : "";
   const why = n ? commentRejection(n) : null;
   if (why) throw new HttpError(400, why);
-  const { error } = await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
-    body: n || "shared a player", kind: "player", payload: { playerId: pid, note: n || null },
-  });
-  if (error) throw new HttpError(500, error.message);
+  await insertChatMessage(db, league, userId, { body: n || "shared a player", kind: "player", payload: { playerId: pid, note: n || null } }, parentId);
   return { ok: true };
 }
 
@@ -593,7 +825,7 @@ export async function sharePlayerToLeague(db: Db, userId: string, code: string, 
  *  feed post). Snapshot at share time — the card shows the eleven they had when it
  *  was posted. The comment is authored by the sharer; the payload carries the
  *  original manager so the card can name and link back to them. */
-export async function shareSquad(db: Db, userId: string, code: string, ofUserId?: unknown) {
+export async function shareSquad(db: Db, userId: string, code: string, ofUserId?: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const targetId = (typeof ofUserId === "string" && ofUserId) ? ofUserId : userId;
   const own = targetId === userId;
@@ -609,45 +841,38 @@ export async function shareSquad(db: Db, userId: string, code: string, ofUserId?
     ofName = (prof?.display_name ?? prof?.username ?? "a manager");
   }
   const action = own ? "shared their squad" : `shared ${ofName}'s squad`;
-  const { error } = await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+  await insertChatMessage(db, league, userId, {
     body: action, kind: "squad",
     payload: {
       xi, bench: (squad!.bench as number[]) ?? [], captain: squad!.captain ?? null, vice: squad!.vice ?? null,
       ...(own ? {} : { ofUserId: targetId, ofName }),
     },
-  });
-  if (error) throw new HttpError(500, error.message);
+  }, parentId);
   void notifyLeagueShare(db, league.id, code, league.name, userId, action);
   return { ok: true };
 }
 
 /** Share the sharer's current captain into the league chat (from the composer). */
-export async function shareCaptain(db: Db, userId: string, code: string) {
+export async function shareCaptain(db: Db, userId: string, code: string, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const { data: squad } = await db.from("fantasy_squads")
     .select("captain").eq("user_id", userId).maybeSingle();
   if (!squad || squad.captain == null) throw new HttpError(409, "pick a captain first");
-  const { error } = await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
-    body: "shared their captain", kind: "captain", payload: { playerId: squad.captain },
-  });
-  if (error) throw new HttpError(500, error.message);
+  await insertChatMessage(db, league, userId, { body: "shared their captain", kind: "captain", payload: { playerId: squad.captain } }, parentId);
   void notifyLeagueShare(db, league.id, code, league.name, userId, "shared their captain");
   return { ok: true };
 }
 
 /** Share a news article into the league chat (from the news reader). Self-contained
  *  — the article fields are stored on the payload, nothing to resolve. */
-export async function shareNews(db: Db, userId: string, code: string, article: unknown) {
+export async function shareNews(db: Db, userId: string, code: string, article: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const a = (article ?? {}) as { title?: unknown; source?: unknown; url?: unknown; image?: unknown; internal?: unknown };
   const title = typeof a.title === "string" ? a.title.trim().slice(0, 300) : "";
   if (!title) throw new HttpError(400, "nothing to share");
   const why = commentRejection(title);
   if (why) throw new HttpError(400, why);
-  const { error } = await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+  await insertChatMessage(db, league, userId, {
     body: title, kind: "news",
     payload: {
       title,
@@ -656,22 +881,45 @@ export async function shareNews(db: Db, userId: string, code: string, article: u
       image: typeof a.image === "string" ? a.image.slice(0, 500) : null,
       internal: a.internal === true,
     },
-  });
-  if (error) throw new HttpError(500, error.message);
+  }, parentId);
   return { ok: true };
 }
 
 /** Share a two-player comparison into the league chat (from the compare screen). */
-export async function shareComparison(db: Db, userId: string, code: string, aId: unknown, bId: unknown) {
+export async function shareComparison(db: Db, userId: string, code: string, aId: unknown, bId: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   const a = Number(aId), b = Number(bId);
   const pool = enginePool();
   const known = (id: number) => Number.isInteger(id) && pool.some((p) => p.id === id);
   if (!known(a) || !known(b) || a === b) throw new HttpError(400, "pick two different players");
-  const { error } = await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
-    body: "shared a comparison", kind: "compare", payload: { a, b },
-  });
-  if (error) throw new HttpError(500, error.message);
+  await insertChatMessage(db, league, userId, { body: "shared a comparison", kind: "compare", payload: { a, b } }, parentId);
+  return { ok: true };
+}
+
+// ── Phase 4a: pinned message (AC6) ───────────────────────────────────────────
+
+/** Pin a message to the top of the league chat. Owner-only; the message must
+ *  belong to THIS league. Tolerates a missing fantasy_leagues.pinned_message_id
+ *  column pre-migration (503, AC1) — same graceful-absent discipline as
+ *  feed.ts's pinPost. */
+export async function pinChatMessage(db: Db, userId: string, code: string, commentId: unknown) {
+  const league = await requireMemberLeague(db, code, userId);
+  if (league.owner_id !== userId) throw new HttpError(403, "only the league owner can pin a message");
+  const id = typeof commentId === "string" ? commentId : "";
+  if (!id) throw new HttpError(400, "bad pin");
+  const { data: c } = await db.from("comments")
+    .select("id").eq("id", id).eq("subject_type", "fantasy_league").eq("subject_id", league.id).is("deleted_at", null).maybeSingle();
+  if (!c) throw new HttpError(404, "message not found");
+  const { error } = await db.from("fantasy_leagues").update({ pinned_message_id: id }).eq("id", league.id);
+  if (error) throw new HttpError(503, "Pinning isn't available right now");
+  return { ok: true };
+}
+
+/** Unpin whatever's currently pinned (no-op if nothing was). Owner-only. */
+export async function unpinChatMessage(db: Db, userId: string, code: string) {
+  const league = await requireMemberLeague(db, code, userId);
+  if (league.owner_id !== userId) throw new HttpError(403, "only the league owner can unpin");
+  const { error } = await db.from("fantasy_leagues").update({ pinned_message_id: null }).eq("id", league.id);
+  if (error) throw new HttpError(503, "Pinning isn't available right now");
   return { ok: true };
 }

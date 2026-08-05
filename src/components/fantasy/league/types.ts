@@ -46,14 +46,33 @@ export interface SquadCard {
 export interface NewsCard { title: string; source: string; url: string; image: string | null; internal: boolean }
 export interface CompareCard { a: PlayerCard; b: PlayerCard }
 export interface GifCard { url: string; preview: string; width: number; height: number }
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif";
+/** One photo dropped straight into the chat (Phase 4a, AC4). */
+export interface ImageCard { url: string; width: number; height: number }
+/** A feed post shared into the chat (Phase 4a, AC5) — resolved fresh server-side
+ *  on every read; `available: false` renders the muted stub. */
+export interface FeedShareCard {
+  eventId: string; available: boolean;
+  actorName: string | null; actorAvatarUrl: string | null;
+  text: string | null; summary: string | null;
+}
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
   kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null;
   news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null;
+  image?: ImageCard | null; feed?: FeedShareCard | null;
+  /** Replies (Phase 4a, AC2) — the parent message's id and a resolved
+   *  {name, summary} for the quoted-context strip. Both null/undefined when
+   *  this isn't a reply, or when the schema doesn't support replies yet. */
+  parentId?: string | null;
+  replyTo?: { name: string; summary: string } | null;
 }
 export interface ChatMoment { emoji: string; text: string; gw: number }
+/** What this environment's schema currently supports (Phase 4a, AC1) — false
+ *  hides the reply/pin affordances outright rather than offering a control
+ *  that would silently no-op pre-migration. */
+export interface ChatCapabilities { replies: boolean; pin: boolean }
 export interface ChatData {
   league: { name: string; stakes: string | null; isOwner: boolean };
   /** The gameweek this thread is for, the current one, and whether it's a
@@ -67,6 +86,30 @@ export interface ChatData {
   gameweeks: number[];
   messages: ChatMessage[];
   moments: ChatMoment[];
+  capabilities: ChatCapabilities;
+  /** The pinned message banner (Phase 4a, AC6) — null when nothing's pinned,
+   *  pinning isn't supported yet, or the pinned message no longer resolves. */
+  pinned: { id: string; name: string; summary: string } | null;
+}
+
+/** Client-safe mirror of lib/fantasy/chat.ts's summariseLeagueMessage — used
+ *  for the reply composer's quoted-context preview, working off the already-
+ *  resolved card fields (no server-only payload access needed on the client).
+ *  Mirrors CHAT_EMOJI above in being duplicated rather than imported, since
+ *  chat.ts is `server-only`. */
+export function summariseChatMessage(m: Pick<ChatMessage, "kind" | "body" | "news" | "poll">): string {
+  switch (m.kind) {
+    case "player": return "shared a player";
+    case "captain": return "shared their captain";
+    case "squad": return "shared their squad";
+    case "news": return m.news?.title || "shared some news";
+    case "compare": return "shared a comparison";
+    case "gif": return "sent a GIF";
+    case "image": return "sent a photo";
+    case "feed": return "shared a post";
+    case "poll": return m.poll?.question || "started a poll";
+    default: return m.body;
+  }
 }
 
 export interface HistoryGw {
