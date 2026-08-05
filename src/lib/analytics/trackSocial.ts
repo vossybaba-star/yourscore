@@ -94,3 +94,9 @@ export function trackVideoSoundOn(): void { fire("video_sound_on"); }
 export function trackVideoQuartile(milestone: "q25" | "q50" | "q75" | "completed"): void { fire(`video_${milestone}`); }
 export function trackVideoFullscreenOpened(): void { fire("video_fullscreen_opened"); }
 export function trackVideoError(): void { fire("video_error"); }
+
+// ── external video links (video build 2D) ────────────────────────────────
+// A tap on a YouTube embed's poster (mounts the lazy iframe) vs. a tap on a
+// rich (non-YouTube) video preview, which always opens the source instead.
+export function trackVideoEmbedPlayed(): void { fire("video_embed_played"); }
+export function trackVideoSourceOpened(): void { fire("video_source_opened"); }

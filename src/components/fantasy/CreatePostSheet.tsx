@@ -49,7 +49,14 @@ function fmtDuration(ms: number): string {
   const r = s % 60;
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
-interface LinkPreview { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
+/** videoKind/youtubeId (video build 2D) ride straight through from
+ *  /api/unfurl's response into the post payload — feed.ts's postToFeed
+ *  re-validates both server-side (never trusted as-is), so this is just
+ *  plumbing, not the source of truth. */
+interface LinkPreview {
+  url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string;
+  videoKind?: "youtube" | "rich" | null; youtubeId?: string | null;
+}
 /** The post being quoted (Phase 3a) — a compact, non-removable embed pinned
  *  under the composer. Passed in already-trimmed by the caller (FeedStream's
  *  RepostControl), so this component never needs to know the FeedEvent shape. */
@@ -330,7 +337,11 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
       playerId: player ? player.id : undefined,
       fixture: fixture ? { homeClub: fixture.homeClub, awayClub: fixture.awayClub, kickoffIso: fixture.kickoffIso, gw: fixture.gw } : undefined,
       link: showLink && linkPreview
-        ? { url: linkPreview.url, title: linkPreview.title, description: linkPreview.description, siteName: linkPreview.siteName, image: linkPreview.image }
+        ? {
+            url: linkPreview.url, title: linkPreview.title, description: linkPreview.description,
+            siteName: linkPreview.siteName, image: linkPreview.image,
+            videoKind: linkPreview.videoKind ?? null, youtubeId: linkPreview.youtubeId ?? null,
+          }
         : undefined,
       quoteOf: quoting ? quoting.id : undefined,
       mentions: mentions.length ? mentions : undefined,
