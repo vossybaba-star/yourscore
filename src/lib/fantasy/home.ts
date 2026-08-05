@@ -179,8 +179,12 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ((msgRows ?? []) as any[]).forEach((m) => {
       msgCount.set(m.subject_id, (msgCount.get(m.subject_id) ?? 0) + 1);
-      if (!latestByLeague.has(m.subject_id)) latestByLeague.set(m.subject_id, m);
-      if (m.user_id !== userId) {
+      // Never the tile's headline either (see leagues.ts's myLeagues for the
+      // same fix and why).
+      if (m.kind !== "system" && !latestByLeague.has(m.subject_id)) latestByLeague.set(m.subject_id, m);
+      // A system row (Phase 4b, AC3) never counts toward unread — `kind` is
+      // already selected above, so this is a free check.
+      if (m.user_id !== userId && m.kind !== "system") {
         const line = lastReadByLeague.get(m.subject_id) ?? joinedByLeague.get(m.subject_id) ?? 0;
         if (Date.parse(m.created_at) > line) unread.set(m.subject_id, (unread.get(m.subject_id) ?? 0) + 1);
       }

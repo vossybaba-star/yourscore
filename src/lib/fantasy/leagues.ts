@@ -19,7 +19,7 @@ import { notifyFantasy } from "@/lib/fantasy/notify";
 import { notifyUsers } from "@/lib/notify";
 import { createNotification } from "@/lib/notifications";
 import { groupGwsByMonth, monthKeyOf, monthLabel } from "./months";
-import { momentsForGw, summariseLeagueMessage, type ChatMoment } from "./chat";
+import { momentsForGw, postSystemMessage, summariseLeagueMessage, type ChatMoment } from "./chat";
 import type { GwRow } from "./gameweeks";
 
 // fantasy_leagues / fantasy_league_members aren't in the generated Database
@@ -181,6 +181,10 @@ export async function joinLeague(
   const { data: existing } = await svc
     .from("fantasy_league_members")
     .select("user_id").eq("league_id", league.id).eq("user_id", userId).maybeSingle();
+  // Whether this call is a genuinely NEW join — gates the "joined the league"
+  // system chat line below so a re-join (already a member, calls join again)
+  // never re-posts it.
+  const isNewJoin = !existing;
 
   // Cap only gates NEW joins — a duplicate join by an existing member must stay
   // idempotent even if the league has since filled up.
@@ -215,6 +219,12 @@ export async function joinLeague(
       subjectType: "fantasy_league",
       subjectId: league.id,
     });
+    // A system line in the chat itself (Phase 4b, AC3b) — separate from the
+    // push above; deduped on the joiner's id so a retried call never doubles it.
+    if (isNewJoin) {
+      void postSystemMessage(svc, league.id, userId, `${who} joined the league`, "member_joined", { userId })
+        .catch((e) => console.error("[fantasy:leagues] member_joined system message failed:", e));
+    }
   }
 
   return { id: league.id, name: league.name, code: league.join_code };
@@ -329,8 +339,16 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
   const unread = new Map<string, number>();
   for (const m of (msgRows ?? []) as { subject_id: string; user_id: string; body: string; kind: string | null; payload: unknown; created_at: string }[]) {
     msgCount.set(m.subject_id, (msgCount.get(m.subject_id) ?? 0) + 1);
-    if (!latestMsg.has(m.subject_id)) latestMsg.set(m.subject_id, { userId: m.user_id, body: m.body, kind: m.kind, payload: m.payload, at: m.created_at });
-    if (m.user_id !== userId) {
+    // Never the tile's headline either — "Gameweek 5 is live" attributed to
+    // whichever id happened to carry the row would misread as that member
+    // having said it (msgRows is newest-first, so this just skips past it to
+    // the next real message; a thread of nothing but system rows falls
+    // through to the "quiet" nudge below, same as an empty thread).
+    if (m.kind !== "system" && !latestMsg.has(m.subject_id)) latestMsg.set(m.subject_id, { userId: m.user_id, body: m.body, kind: m.kind, payload: m.payload, at: m.created_at });
+    // A system row (Phase 4b, AC3) is never counted toward the unread badge —
+    // it isn't a member saying something, so it shouldn't read as "new banter".
+    // `kind` is already in this same select, so the check is free.
+    if (m.user_id !== userId && m.kind !== "system") {
       const line = lastReadByLeague.get(m.subject_id) ?? joinedByLeague.get(m.subject_id) ?? 0;
       if (Date.parse(m.created_at) > line) unread.set(m.subject_id, (unread.get(m.subject_id) ?? 0) + 1);
     }
@@ -620,6 +638,21 @@ export interface LeagueDetail {
   season: LeagueRow[];
   month: { key: string; label: string; gws: number[]; rows: LeagueRow[] };
   lastMonth: { key: string; label: string; winner: { userId: string; username: string | null; displayName: string | null; points: number } } | null;
+  /** Pre-deadline readiness (Phase 4b, AC1) — see leagueDetail's computation
+   *  for why "captain still unset" isn't a real state in this schema. Null
+   *  outside the "pre" phase, or if the one extra query fails. */
+  readiness: {
+    squadsIn: number; totalMembers: number;
+    waitingCount: number;
+    waitingAvatars: { userId: string; name: string; avatarUrl: string | null }[];
+  } | null;
+  /** Post-gameweek recap (Phase 4b, AC2) — final phase only, free-riding the
+   *  season table already built for this response. */
+  gwRecap: {
+    gw: number;
+    winner: { userId: string; name: string; avatarUrl: string | null; points: number };
+    riser: { userId: string; name: string; avatarUrl: string | null; places: number } | null;
+  } | null;
 }
 
 export async function leagueDetail(code: string, viewerId: string | null): Promise<LeagueDetail> {
@@ -718,6 +751,59 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
   const kind = league.kind ?? "private";
   const canContribute = isMember;
 
+  // ── AC1: pre-deadline readiness — one extra query, ONLY in the pre phase
+  // (nothing to show once scoring's started). fantasy_squads is written in a
+  // single upsert covering picks + xi + bench + captain + vice together
+  // (createSquad in server.ts) — there's no partial row, so "has a squad row"
+  // already means "complete". A squad's captain is likewise never left unset:
+  // smartDefaults auto-picks one (priciest outfield player) the moment the
+  // squad is built, so "captain still null" isn't a state this schema can be
+  // in — the readiness signal collapses to squad-built vs not, which is what's
+  // shown below (deviation from a literal "still picking a captain" line;
+  // documented in the Phase 4b hand-off).
+  let readiness: LeagueDetail["readiness"] = null;
+  if (phase === "pre" && ids.length) {
+    try {
+      const { data: squadRows, error: sqErr } = await svc.from("fantasy_squads").select("user_id").in("user_id", ids);
+      if (sqErr) throw sqErr;
+      const haveSquad = new Set(((squadRows ?? []) as { user_id: string }[]).map((s) => s.user_id));
+      const without = members.filter((m) => !haveSquad.has(m.user_id));
+      readiness = {
+        squadsIn: haveSquad.size, totalMembers: ids.length,
+        waitingCount: without.length,
+        waitingAvatars: without.slice(0, 5).map((m) => {
+          const p = profiles.get(m.user_id);
+          return { userId: m.user_id, name: p?.display_name ?? (p?.username ? `@${p.username}` : "Player"), avatarUrl: p?.avatar_url ?? null };
+        }),
+      };
+    } catch (e) {
+      console.error("[fantasy:leagues] readiness query failed — hiding the block:", e);
+      readiness = null;
+    }
+  }
+
+  // ── AC2: post-gameweek recap — final phase only, entirely derived from the
+  // `season` rows already built above (no extra query). `movement` on a
+  // LeagueRow is already "places gained vs the table before the latest scored
+  // gameweek" (buildRows, above), which for a final-phase gw IS "vs the
+  // previous gameweek" — so the riser is a straight read of existing data,
+  // not a recompute.
+  let gwRecap: LeagueDetail["gwRecap"] = null;
+  if (phase === "final") {
+    const recapNameOf = (r: LeagueRow) => r.displayName ?? (r.username ? `@${r.username}` : "Player");
+    const scorers = season.filter((r) => r.lastGwPoints !== null);
+    if (scorers.length) {
+      const winnerRow = scorers.reduce((a, b) => (b.lastGwPoints! > a.lastGwPoints! ? b : a));
+      const risers = season.filter((r) => r.movement !== null && r.movement > 0);
+      const riserRow = risers.length ? risers.reduce((a, b) => (b.movement! > a.movement! ? b : a)) : null;
+      gwRecap = {
+        gw: currentGw.gw,
+        winner: { userId: winnerRow.userId, name: recapNameOf(winnerRow), avatarUrl: winnerRow.avatarUrl, points: winnerRow.lastGwPoints! },
+        riser: riserRow ? { userId: riserRow.userId, name: recapNameOf(riserRow), avatarUrl: riserRow.avatarUrl, places: riserRow.movement! } : null,
+      };
+    }
+  }
+
   return {
     league: {
       id: league.id, name: league.name, code: league.join_code,
@@ -726,8 +812,121 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
       kind, club: league.club ?? null, official: league.official ?? false, canContribute,
     },
     gw: { number: currentGw.gw, phase, deadline: currentGw.deadline },
-    season, month, lastMonth,
+    season, month, lastMonth, readiness, gwRecap,
   };
+}
+
+// ── system-message broadcasts (Phase 4b, AC3a / AC3c) ───────────────────────
+// Both hang off the season tick (season.ts), touch every league at once, and
+// batch their own dedupe-check + insert (one SELECT, one INSERT — never one
+// round trip per league). Both are best-effort: caught internally, they never
+// throw, so a chat hiccup can't hold up scoring or settlement.
+
+/** "Gameweek N is live" — hooked from season.ts's scoreGameweek the FIRST time
+ *  this gw stamps any entry with scored_at (matches leagueDetail's own
+ *  pre→live rule above), so it fires once per gw across the whole platform,
+ *  not once per provisional tick. */
+export async function notifyLeaguesGwLive(gw: number): Promise<void> {
+  try {
+    const svc = db();
+    const { data: leagueRows } = await svc.from("fantasy_leagues").select("id, owner_id").range(0, 9999);
+    const leagues = (leagueRows ?? []) as { id: string; owner_id: string }[];
+    if (!leagues.length) return;
+    const ids = leagues.map((l) => l.id);
+    const { data: already } = await svc.from("comments").select("subject_id")
+      .eq("subject_type", "fantasy_league").in("subject_id", ids)
+      .eq("kind", "system").eq("payload->>event", "gw_live").eq("payload->>gw", String(gw))
+      .is("deleted_at", null);
+    const done = new Set(((already ?? []) as { subject_id: string }[]).map((r) => r.subject_id));
+    const rows = leagues.filter((l) => !done.has(l.id)).map((l) => ({
+      subject_type: "fantasy_league", subject_id: l.id, user_id: l.owner_id,
+      body: `Gameweek ${gw} is live`, kind: "system", payload: { event: "gw_live", gw },
+    }));
+    if (rows.length) await svc.from("comments").insert(rows);
+  } catch (e) { console.error("[fantasy:leagues] notifyLeaguesGwLive failed:", e); }
+}
+
+/** "X moved into first" — hooked from season.ts's finaliseGameweek, once the
+ *  gw is properly settled (not a provisional tick, which would flip-flop the
+ *  leader mid-matchday and spam the chat). Compares each league's leader
+ *  before this gw to its leader after, points then knowledge-round correct —
+ *  the season table's own primary tiebreak (buildRows, above); the table's
+ *  further tiebreaks (lastGwPoints, joined_at) aren't replayed here since this
+ *  is a chat nudge, not the table itself, so a tie this close is a rare miss,
+ *  never a wrong answer on the table that actually decides standings. */
+export async function notifyLeaguesLeadChange(gw: number): Promise<void> {
+  try {
+    const svc = db();
+    const [{ data: leagueRows }, { data: memberRows }, { data: entryRows }] = await Promise.all([
+      svc.from("fantasy_leagues").select("id, owner_id").range(0, 9999),
+      svc.from("fantasy_league_members").select("league_id, user_id").range(0, 9999),
+      svc.from("fantasy_entries").select("user_id, gw, points, round_correct").lte("gw", gw).not("scored_at", "is", null).range(0, 9999),
+    ]);
+    const leagues = (leagueRows ?? []) as { id: string; owner_id: string }[];
+    if (!leagues.length) return;
+
+    const membersByLeague = new Map<string, string[]>();
+    for (const m of (memberRows ?? []) as { league_id: string; user_id: string }[]) {
+      const arr = membersByLeague.get(m.league_id) ?? [];
+      arr.push(m.user_id);
+      membersByLeague.set(m.league_id, arr);
+    }
+    const entries = (entryRows ?? []) as { user_id: string; gw: number; points: number | null; round_correct: number | null }[];
+    const totalsThrough = (ceiling: number) => {
+      const totals = new Map<string, { points: number; knowledge: number }>();
+      for (const e of entries) {
+        if (e.gw > ceiling) continue;
+        const acc = totals.get(e.user_id) ?? { points: 0, knowledge: 0 };
+        acc.points += e.points ?? 0;
+        acc.knowledge += e.round_correct ?? 0;
+        totals.set(e.user_id, acc);
+      }
+      return totals;
+    };
+    const before = totalsThrough(gw - 1);
+    const after = totalsThrough(gw);
+    const leaderOf = (totals: Map<string, { points: number; knowledge: number }>, memberIds: string[]): string | null => {
+      let best: string | null = null, bestPts = -1, bestKnow = -1;
+      for (const id of memberIds) {
+        const t = totals.get(id);
+        if (!t) continue;
+        if (t.points > bestPts || (t.points === bestPts && t.knowledge > bestKnow)) {
+          best = id; bestPts = t.points; bestKnow = t.knowledge;
+        }
+      }
+      return best;
+    };
+
+    const changes: { leagueId: string; ownerId: string; newLeaderId: string }[] = [];
+    for (const l of leagues) {
+      const memberIds = membersByLeague.get(l.id) ?? [];
+      if (memberIds.length < 2) continue; // no "first" contest with one manager
+      const beforeLeader = leaderOf(before, memberIds);
+      const afterLeader = leaderOf(after, memberIds);
+      if (!beforeLeader || !afterLeader || beforeLeader === afterLeader) continue;
+      changes.push({ leagueId: l.id, ownerId: l.owner_id, newLeaderId: afterLeader });
+    }
+    if (!changes.length) return;
+
+    const ids = changes.map((c) => c.leagueId);
+    const { data: already } = await svc.from("comments").select("subject_id")
+      .eq("subject_type", "fantasy_league").in("subject_id", ids)
+      .eq("kind", "system").eq("payload->>event", "lead_change").eq("payload->>gw", String(gw))
+      .is("deleted_at", null);
+    const done = new Set(((already ?? []) as { subject_id: string }[]).map((r) => r.subject_id));
+    const pending = changes.filter((c) => !done.has(c.leagueId));
+    if (!pending.length) return;
+
+    const { data: profs } = await svc.from("profiles").select("id, display_name, username").in("id", pending.map((c) => c.newLeaderId));
+    const nameOf = new Map(((profs ?? []) as { id: string; display_name: string | null; username: string | null }[])
+      .map((p) => [p.id, p.display_name ?? (p.username ? `@${p.username}` : "A manager")]));
+    const rows = pending.map((c) => ({
+      subject_type: "fantasy_league", subject_id: c.leagueId, user_id: c.ownerId,
+      body: `${nameOf.get(c.newLeaderId) ?? "A manager"} moved into first`, kind: "system",
+      payload: { event: "lead_change", gw },
+    }));
+    await svc.from("comments").insert(rows);
+  } catch (e) { console.error("[fantasy:leagues] notifyLeaguesLeadChange failed:", e); }
 }
 
 // ── owner / member actions ───────────────────────────────────────────────────

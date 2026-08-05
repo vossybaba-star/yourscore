@@ -36,10 +36,27 @@ function chatGroups(messages: ChatMessage[]): { showHeader: boolean; showTimesta
     const prev = messages[i - 1];
     const next = messages[i + 1];
     const t = new Date(m.createdAt).getTime();
-    const sameAsPrev = !!prev && prev.userId === m.userId && t - new Date(prev.createdAt).getTime() <= GROUP_WINDOW_MS;
-    const sameAsNext = !!next && next.userId === m.userId && new Date(next.createdAt).getTime() - t <= GROUP_WINDOW_MS;
+    // A system row (Phase 4b, AC3) never groups with anything either side — it
+    // renders on its own (SystemLine, below) and shouldn't make the message
+    // above or below it think it's continuing a run just because the actor id
+    // happens to line up (a join line is authored by the joiner; a gw-live or
+    // lead-change line by the league owner).
+    const sameAsPrev = !!prev && prev.userId === m.userId && prev.kind !== "system" && m.kind !== "system"
+      && t - new Date(prev.createdAt).getTime() <= GROUP_WINDOW_MS;
+    const sameAsNext = !!next && next.userId === m.userId && next.kind !== "system" && m.kind !== "system"
+      && new Date(next.createdAt).getTime() - t <= GROUP_WINDOW_MS;
     return { showHeader: !sameAsPrev, showTimestamp: !sameAsNext };
   });
+}
+
+/** A system line (Phase 4b, AC3) — centred, muted, no avatar or bubble, never
+ *  tappable (no reactions/reply/pin — it isn't a member's message). */
+function SystemLine({ text }: { text: string }) {
+  return (
+    <div style={{ textAlign: "center", margin: "6px 0" }}>
+      <span style={{ fontSize: 11.5, color: MUTED }}>{text}</span>
+    </div>
+  );
 }
 
 /** Scroll a message into view if it's loaded in the current window (a reply's
@@ -574,6 +591,9 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
           <p style={{ fontSize: 12.5, color: MUTED, margin: "2px 0", textAlign: "center", padding: "18px 0" }}>Nothing said yet. Someone has to start it.</p>
         )}
         {chat.messages.map((m, i) => {
+          // System rows (Phase 4b, AC3) render on their own, before any of the
+          // bubble/avatar/reactions machinery below applies.
+          if (m.kind === "system") return <SystemLine key={m.id} text={m.body} />;
           const structured = m.kind !== "text";
           const mine = m.isMe && !structured;
           // AC3 — grouping: only the group's first bubble shows avatar/name;

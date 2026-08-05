@@ -25,6 +25,26 @@ export interface LeagueDetail {
     key: string; label: string;
     winner: { userId: string; username: string | null; displayName: string | null; points: number };
   } | null;
+  /** Pre-deadline readiness (Phase 4b, AC1) — how many members have a squad in,
+   *  and who's still to build one. Server-computed only in the "pre" phase
+   *  (one extra query); null hides the block outright — either the phase isn't
+   *  "pre" or the query came back empty-handed. */
+  readiness: {
+    squadsIn: number; totalMembers: number;
+    /** Members with no squad yet — the count is the true total (for "+k more"
+     *  math), `avatars` is capped at 5 for the rail. */
+    waitingCount: number;
+    waitingAvatars: { userId: string; name: string; avatarUrl: string | null }[];
+  } | null;
+  /** Post-gameweek recap (Phase 4b, AC2) — final phase only, derived from the
+   *  season table already computed for this response (no extra query). `riser`
+   *  is null when nobody's movement was positive (e.g. gw1, nothing to compare
+   *  against) — the card then shows the winner alone. */
+  gwRecap: {
+    gw: number;
+    winner: { userId: string; name: string; avatarUrl: string | null; points: number };
+    riser: { userId: string; name: string; avatarUrl: string | null; places: number } | null;
+  } | null;
 }
 
 export interface ChatReaction { emoji: string; count: number; mine: boolean }
@@ -55,7 +75,10 @@ export interface FeedShareCard {
   actorName: string | null; actorAvatarUrl: string | null;
   text: string | null; summary: string | null;
 }
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed";
+/** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
+ *  lead change), never authored by a member. Rendered centred and muted, no
+ *  avatar or bubble, and excluded from unread badges (see leagues.ts/home.ts). */
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
@@ -108,6 +131,7 @@ export function summariseChatMessage(m: Pick<ChatMessage, "kind" | "body" | "new
     case "image": return "sent a photo";
     case "feed": return "shared a post";
     case "poll": return m.poll?.question || "started a poll";
+    case "system": return m.body;
     default: return m.body;
   }
 }

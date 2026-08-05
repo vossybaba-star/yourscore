@@ -79,7 +79,11 @@ export interface FeedShareCard {
    *  has no text of its own to show. */
   summary: string | null;
 }
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed";
+/** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
+ *  lead change). Never authored by a member; user_id is just whoever the FK
+ *  needs (the joiner for a join line, the league owner otherwise) — the UI
+ *  never shows a system row's author. */
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "feed" | "system";
 
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
@@ -126,6 +130,7 @@ export function summariseLeagueMessage(kind: string | null, body: string, payloa
     case "image": return "sent a photo";
     case "feed": return "shared a post";
     case "poll": return typeof p.question === "string" ? p.question : "started a poll";
+    case "system": return body;
     default: return body;
   }
 }
@@ -448,6 +453,9 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   }
 
   const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null; image?: ImageCard | null; feed?: FeedShareCard | null } => {
+    // System rows (Phase 4b, AC3) carry no card — just the kind, so the client
+    // renders the plain centred/muted line instead of falling through to "text".
+    if (m.kind === "system") return { kind: "system" };
     if (m.kind === "image" && m.payload && typeof m.payload === "object") {
       const pl = m.payload as { url?: unknown; width?: unknown; height?: unknown };
       const url = typeof pl.url === "string" ? pl.url : "";
@@ -635,6 +643,35 @@ async function insertChatMessage(
   const { data: inserted, error } = await db.from("comments").insert(base).select("id").single();
   if (error) throw new HttpError(500, error.message);
   return inserted as { id: string };
+}
+
+/**
+ * Post one auto-generated system line into a league's chat (Phase 4b, AC3) —
+ * "Gameweek N is live", "X joined the league", "X moved into first". Never
+ * threaded, never moderated (it isn't user input). Deduped by `event` plus
+ * whatever's in `dedupe` already existing as an undeleted system row in this
+ * SAME league, so this is safe to call more than once for the same happening
+ * (a retried join, a re-run tick) — it only ever lands the row once.
+ *
+ * Single-league, single-row — used by the join path. The gw-live and
+ * lead-change broadcasts touch every league at once and batch their own
+ * dedupe-check + insert in leagues.ts instead, so a season-wide tick isn't
+ * one query pair per league.
+ */
+export async function postSystemMessage(
+  db: Db, leagueId: string, actorUserId: string, body: string,
+  event: string, dedupe: Record<string, string | number> = {},
+): Promise<void> {
+  let q = db.from("comments").select("id")
+    .eq("subject_type", "fantasy_league").eq("subject_id", leagueId)
+    .eq("kind", "system").eq("payload->>event", event).is("deleted_at", null);
+  for (const [k, v] of Object.entries(dedupe)) q = q.eq(`payload->>${k}`, String(v));
+  const { data: existing } = await q.limit(1);
+  if (existing && existing.length) return; // already posted — never a duplicate
+  await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: leagueId, user_id: actorUserId,
+    body: body.slice(0, 280), kind: "system", payload: { event, ...dedupe },
+  });
 }
 
 export async function postChat(db: Db, userId: string, code: string, body: unknown, parentId?: unknown) {
