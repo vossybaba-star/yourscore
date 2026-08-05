@@ -255,7 +255,7 @@ export function SocialHome() {
                 avatarUrl={user?.user_metadata?.avatar_url ?? null}
                 size={30}
               />
-              <span style={{ fontSize: 13.5, color: MUTED }}>Share your FPL take</span>
+              <span style={{ fontSize: 13.5, color: MUTED }}>What’s happening?</span>
             </button>
 
             {/* Sort the open feed by engagement (Top) or newest (Latest). */}
