@@ -25,6 +25,7 @@ import { notifyFantasy } from "./notify";
 import { loadFixtureSet, fixtureStatusFor } from "./captainAssist";
 import { isOpenForEdits, isRoundOpen, roundOpensAt, type EntryLockView, type GwRow } from "./gameweeks";
 import { FORM_WINDOW_GWS, type NewsClubRun, type NewsTickerCell, type NewsDoc } from "./news";
+import { clubKey } from "./clubKey";
 import {
   flagSquad, resolveAvailability, unwrapRead, buildPlayerProfile,
   type AvailabilityInfo, type ProfileGw, type SquadUpdateItem, type SquadUpdateStatus,
@@ -959,12 +960,20 @@ async function availabilityFor(db: Db): Promise<Map<number, AvailabilityInfo> | 
 /** This club's next few fixtures with difficulty, read from the cached news
  *  ticker. Empty array if the news doc hasn't been built — the profile just
  *  doesn't show a fixture row. */
-async function upcomingFor(db: Db, clubId: number) {
+async function upcomingFor(db: Db, clubName: string) {
   try {
-    const result = await db.from("fantasy_news").select("doc").order("created_at", { ascending: false }).limit(1);
+    // The fixtures live in fantasy_news_feed (there is no `fantasy_news` table),
+    // keyed by GW. Reading the wrong table returned nothing for EVERY player, so
+    // the profile always said "no confirmed fixtures".
+    const result = await db.from("fantasy_news_feed").select("doc")
+      .order("gw", { ascending: false }).limit(1);
     const rows = (unwrapRead(result, "news read failed") ?? []) as { doc: unknown }[];
     const doc = rows[0]?.doc as { fixtures?: { runs?: NewsClubRun[] } } | undefined;
-    const run = doc?.fixtures?.runs?.find((r) => r.clubId === clubId);
+    // Runs are keyed by SportMonks club id; the pool speaks FPL ids. Matching on
+    // clubId silently found the WRONG club (or none). Match by NAME through the
+    // shared normaliser, exactly as fantasyContext() does.
+    const key = clubKey(clubName);
+    const run = (doc?.fixtures?.runs ?? []).find((r) => clubKey(r.club) === key);
     return (run?.cells ?? []).slice(0, 3);
   } catch (e) {
     console.error("[fantasy] fixtures read failed — profile will omit them", e);
@@ -1044,7 +1053,7 @@ export async function playerProfile(db: Db, userId: string, playerId: number) {
     profile: buildPlayerProfile({
       playerId, pos: p.pos, recent, season,
       flag,
-      fixtures: await upcomingFor(db, p.clubId),
+      fixtures: await upcomingFor(db, p.club),
       lastSeasonTotals, lastSeasonLabel, projection,
     }),
   };

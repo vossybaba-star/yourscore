@@ -184,14 +184,18 @@ function RatePhotoHero() {
 
 function JoinHook() {
   const router = useRouter();
-  const go = () => router.push("/auth/sign-in?next=/fantasy");
+  // Building is open to everyone — a signed-out visitor picks a full squad and
+  // only needs an account to SAVE it (gated in the builder). So the primary CTA
+  // goes straight to the builder; only the explicit "Sign in" link goes to auth.
+  const build = () => router.push("/fantasy/build");
+  const signIn = () => router.push("/auth/sign-in?next=/fantasy");
   return (
     <div style={{ borderRadius: 16, padding: 18, background: `linear-gradient(150deg, ${tint(TEAL,"22")}, ${PANEL})`, border: `1px solid ${tint(TEAL,"55")}` }}>
       <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: TEAL }}>YOURSCORE FANTASY · FREE</div>
       <div className="font-display" style={{ fontSize: 26, color: INK, lineHeight: 1.05, margin: "8px 0 4px" }}>Pick a squad. Beat your friends.</div>
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.45 }}>Everyone gets one transfer a gameweek. What you know earns you more. Free forever.</p>
-      <Btn gold onClick={go}>Create your free squad</Btn>
-      <p style={{ fontSize: 12, color: MUTED, margin: "10px 0 0", textAlign: "center" }}>Already play? <span onClick={go} style={{ color: TEAL, fontWeight: 700, cursor: "pointer" }}>Sign in</span></p>
+      <Btn gold onClick={build}>Create your free squad</Btn>
+      <p style={{ fontSize: 12, color: MUTED, margin: "10px 0 0", textAlign: "center" }}>Already play? <span onClick={signIn} style={{ color: TEAL, fontWeight: 700, cursor: "pointer" }}>Sign in</span></p>
     </div>
   );
 }
@@ -443,7 +447,7 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {pub.moves.map((ev) => <MoveCard key={ev.id} ev={ev} />)}
               </div>
-              <div style={{ marginTop: 16 }}><Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy")}>Join in — create your squad</Btn></div>
+              <div style={{ marginTop: 16 }}><Btn gold onClick={() => router.push("/fantasy/build")}>Join in and create your squad</Btn></div>
             </>
           )}
       </main>
