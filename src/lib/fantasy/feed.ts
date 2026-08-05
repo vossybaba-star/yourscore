@@ -44,15 +44,21 @@ export const FEED_REACTIONS = ["😂", "👀", "🔥", "👏", "❤️", "😭"]
 export interface FeedReaction { emoji: string; count: number }
 
 /** A poll attached to a user post: options with running tallies, the viewer's
- *  own choice (if voted), and the total votes. */
+ *  own choice (if voted), and the total votes. `endsAt` is null for legacy
+ *  polls (written before Phase 2b) — those stay open forever, unchanged. */
 export interface FeedPoll {
   question: string;
   options: { text: string; votes: number }[];
   myChoice: number | null;
   total: number;
+  endsAt: string | null;
 }
 export const MAX_POLL_OPTIONS = 4;
 export const POST_MAX = 500;
+/** Poll durations offered in the composer (Phase 2b), in hours. Default 24h. */
+export const POLL_DURATION_HOURS = [1, 6, 24, 72] as const;
+export type PollDurationHours = typeof POLL_DURATION_HOURS[number];
+const DEFAULT_POLL_DURATION_HOURS: PollDurationHours = 24;
 /** Up to this many images on one post (Phase 2a multi-image composer). Kept in
  *  sync with MAX_POST_IMAGES in lib/postMedia.ts (that module is client-side). */
 export const MAX_POST_IMAGES = 4;
@@ -72,6 +78,26 @@ export interface FeedGif {
  *  unverified (no API key at build time) — widen this once the live response
  *  shape is confirmed. */
 export const ALLOWED_GIF_HOSTS = ["klipy.com"];
+
+/** A link preview attached to a post (Phase 2b) — the composer unfurls the
+ *  first URL in the post text via /api/unfurl; this is what got saved. */
+export interface FeedLink {
+  url: string;
+  title: string | null;
+  description: string | null;
+  siteName: string | null;
+  image: string | null;
+  domain: string;
+}
+
+/** A fixture card attached to a post (Phase 2b) — picked from the current
+ *  gameweek's fixture list in the composer. */
+export interface FeedFixture {
+  homeClub: string;
+  awayClub: string;
+  kickoffIso: string;
+  gw: number;
+}
 
 /** A quiz_result tile: the score line plus where the game lives, so the tile
  *  can send a reader off to play the same thing. */
@@ -122,6 +148,12 @@ export interface FeedEvent {
   /** An optional GIF attached to a post (Phase 2a). Mutually exclusive with
    *  image/images at the composer level, but the server doesn't enforce that. */
   gif?: FeedGif | null;
+  /** An optional link preview attached to a post (Phase 2b) — unfurled from
+   *  the first URL in the text. */
+  link?: FeedLink | null;
+  /** An optional fixture card attached to a post (Phase 2b). Mutually
+   *  exclusive with player/gif at the composer level (not server-enforced). */
+  fixture?: FeedFixture | null;
   /** A quiz_result's score card. */
   quiz?: FeedQuiz | null;
 }
@@ -274,7 +306,10 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
  *  moderation as comments. Renders in Live like any other event, and gets
  *  reactions + comments for free (they key off the event id). */
 export async function postToFeed(db: Db, userId: string, body: unknown): Promise<{ id: string }> {
-  const b = (body ?? {}) as { text?: unknown; poll?: unknown; image?: unknown; images?: unknown; gif?: unknown; playerId?: unknown };
+  const b = (body ?? {}) as {
+    text?: unknown; poll?: unknown; image?: unknown; images?: unknown; gif?: unknown; playerId?: unknown;
+    link?: unknown; fixture?: unknown;
+  };
   const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
 
   // An attached player card — must be a real pool id (the tile links to their
@@ -286,8 +321,8 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     playerId = pid;
   }
 
-  let poll: { question: string; options: string[] } | null = null;
-  const rawPoll = b.poll as { question?: unknown; options?: unknown } | undefined;
+  let poll: { question: string; options: string[]; endsAt: string } | null = null;
+  const rawPoll = b.poll as { question?: unknown; options?: unknown; durationHours?: unknown } | undefined;
   if (rawPoll && (rawPoll.question != null || Array.isArray(rawPoll.options))) {
     const question = typeof rawPoll.question === "string" ? rawPoll.question.trim().slice(0, 120) : "";
     const options = Array.isArray(rawPoll.options)
@@ -295,7 +330,13 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
       : [];
     if (!question) throw new HttpError(400, "A poll needs a question");
     if (options.length < 2) throw new HttpError(400, "A poll needs at least two options");
-    poll = { question, options };
+    // Duration is picked in the composer; anything unrecognised falls back to
+    // the default rather than rejecting the whole post over one bad field.
+    const askedHours = Number(rawPoll.durationHours);
+    const durationHours: PollDurationHours = (POLL_DURATION_HOURS as readonly number[]).includes(askedHours)
+      ? (askedHours as PollDurationHours) : DEFAULT_POLL_DURATION_HOURS;
+    const endsAt = new Date(Date.now() + durationHours * 3_600_000).toISOString();
+    poll = { question, options, endsAt };
   }
 
   // An image must live in OUR post-media bucket — never an arbitrary external URL.
@@ -339,8 +380,54 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
     gif = { mp4, webp, gifUrl, width: Number(rawGif.width) || 0, height: Number(rawGif.height) || 0 };
   }
 
-  if (!text && !poll && !image && !images.length && !gif && playerId == null) throw new HttpError(400, "Write something, add a poll or some media");
-  const why = commentRejection([text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "));
+  // A link preview (Phase 2b) — the composer already unfurled it via
+  // /api/unfurl; re-sanitised here rather than trusted, since the client sent
+  // it. og:image must itself be http(s) — same rule the unfurler applies.
+  let link: FeedLink | null = null;
+  const rawLink = b.link as { url?: unknown; title?: unknown; description?: unknown; siteName?: unknown; image?: unknown } | undefined;
+  if (rawLink && typeof rawLink.url === "string" && rawLink.url) {
+    let linkUrl: URL;
+    try { linkUrl = new URL(rawLink.url.trim()); } catch { throw new HttpError(400, "bad link"); }
+    if (linkUrl.protocol !== "http:" && linkUrl.protocol !== "https:") throw new HttpError(400, "bad link");
+    let image: string | null = null;
+    if (typeof rawLink.image === "string" && rawLink.image) {
+      try {
+        const imgUrl = new URL(rawLink.image);
+        if (imgUrl.protocol === "http:" || imgUrl.protocol === "https:") image = imgUrl.toString().slice(0, 600);
+      } catch { /* drop a bad image url, keep the rest of the card */ }
+    }
+    link = {
+      url: linkUrl.toString().slice(0, 600),
+      title: typeof rawLink.title === "string" && rawLink.title ? rawLink.title.trim().slice(0, 200) : null,
+      description: typeof rawLink.description === "string" && rawLink.description ? rawLink.description.trim().slice(0, 300) : null,
+      siteName: typeof rawLink.siteName === "string" && rawLink.siteName ? rawLink.siteName.trim().slice(0, 100) : null,
+      image,
+      domain: linkUrl.hostname.replace(/^www\./, ""),
+    };
+  }
+
+  // A fixture card (Phase 2b) — picked from the current gameweek's fixture
+  // list in the composer. Club names and kickoff are display-only (no ids to
+  // validate against), so the check is just shape + sane bounds.
+  let fixture: FeedFixture | null = null;
+  const rawFixture = b.fixture as { homeClub?: unknown; awayClub?: unknown; kickoffIso?: unknown; gw?: unknown } | undefined;
+  if (rawFixture && (rawFixture.homeClub != null || rawFixture.awayClub != null)) {
+    const homeClub = typeof rawFixture.homeClub === "string" ? rawFixture.homeClub.trim().slice(0, 40) : "";
+    const awayClub = typeof rawFixture.awayClub === "string" ? rawFixture.awayClub.trim().slice(0, 40) : "";
+    const kickoffMs = typeof rawFixture.kickoffIso === "string" ? Date.parse(rawFixture.kickoffIso) : NaN;
+    const gw = Number(rawFixture.gw);
+    if (!homeClub || !awayClub) throw new HttpError(400, "bad fixture");
+    if (Number.isNaN(kickoffMs)) throw new HttpError(400, "bad fixture");
+    if (!Number.isInteger(gw) || gw < 1 || gw > 38) throw new HttpError(400, "bad fixture");
+    fixture = { homeClub, awayClub, kickoffIso: new Date(kickoffMs).toISOString(), gw };
+  }
+
+  if (!text && !poll && !image && !images.length && !gif && playerId == null && !link && !fixture)
+    throw new HttpError(400, "Write something, add a poll or some media");
+  const why = commentRejection(
+    [text, poll?.question ?? "", ...(poll?.options ?? [])].filter(Boolean).join(" "),
+    { allowLinks: true }, // posts carry deliberate link previews now (Phase 2b)
+  );
   if (why) throw new HttpError(400, why);
 
   const payload: Record<string, unknown> = {};
@@ -350,6 +437,8 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   if (images.length) payload.images = images;
   if (gif) payload.gif = gif;
   if (playerId != null) payload.player = playerId;
+  if (link) payload.link = link;
+  if (fixture) payload.fixture = fixture;
   const { data, error } = await db.from("fantasy_feed_events")
     .insert({ actor_id: userId, type: "post", gw: null, payload })
     .select("id").single();
@@ -357,15 +446,18 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   return { id: (data as { id: string }).id };
 }
 
-/** Vote on a post's poll — one choice per user, switchable. */
+/** Vote on a post's poll — one choice per user, switchable. Rejects once the
+ *  poll's endsAt has passed; legacy polls (no endsAt) stay open forever. */
 export async function voteFeedPoll(db: Db, userId: string, eventId: unknown, optionIndex: unknown): Promise<{ ok: true }> {
   const id = typeof eventId === "string" ? eventId : "";
   const idx = Number(optionIndex);
   if (!id || !Number.isInteger(idx) || idx < 0 || idx >= MAX_POLL_OPTIONS) throw new HttpError(400, "bad vote");
   const { data: ev } = await db.from("fantasy_feed_events").select("type, payload").eq("id", id).maybeSingle();
-  const post = ev as { type: string; payload: { poll?: { options?: unknown[] } } } | null;
+  const post = ev as { type: string; payload: { poll?: { options?: unknown[]; endsAt?: string } } } | null;
   if (!post || post.type !== "post" || !Array.isArray(post.payload?.poll?.options)) throw new HttpError(404, "poll not found");
   if (idx >= post.payload.poll.options.length) throw new HttpError(400, "no such option");
+  const endsAt = post.payload.poll.endsAt;
+  if (endsAt && Date.now() > Date.parse(endsAt)) throw new HttpError(400, "Poll closed");
   const { error } = await db.from("fantasy_feed_poll_votes")
     .upsert({ event_id: id, user_id: userId, option_index: idx }, { onConflict: "event_id,user_id" });
   if (error) throw new HttpError(500, error.message);
@@ -539,13 +631,15 @@ async function hydrateEvents(
         game: payload.game === "round" ? "round" : "quiz",
       };
     }
-    // A user post carries its text, an optional image (or images / gif), and
-    // (optionally) a poll.
+    // A user post carries its text, an optional image (or images / gif / link
+    // / fixture), and (optionally) a poll.
     let text: string | null | undefined;
     let poll: FeedPoll | null | undefined;
     let image: string | null | undefined;
     let images: string[] | null | undefined;
     let gif: FeedGif | null | undefined;
+    let link: FeedLink | null | undefined;
+    let fixture: FeedFixture | null | undefined;
     if (type === "post") {
       text = typeof payload.text === "string" ? payload.text : null;
       image = typeof payload.image === "string" ? payload.image : null;
@@ -562,13 +656,37 @@ async function hydrateEvents(
             height: Number(rawGif.height) || 0,
           }
         : null;
-      const p = payload.poll as { question?: unknown; options?: unknown } | undefined;
+      const rawLink = payload.link as { url?: unknown; title?: unknown; description?: unknown; siteName?: unknown; image?: unknown; domain?: unknown } | undefined;
+      link = rawLink && typeof rawLink.url === "string"
+        ? {
+            url: rawLink.url,
+            title: typeof rawLink.title === "string" ? rawLink.title : null,
+            description: typeof rawLink.description === "string" ? rawLink.description : null,
+            siteName: typeof rawLink.siteName === "string" ? rawLink.siteName : null,
+            image: typeof rawLink.image === "string" ? rawLink.image : null,
+            domain: typeof rawLink.domain === "string" ? rawLink.domain : "",
+          }
+        : null;
+      const rawFixture = payload.fixture as { homeClub?: unknown; awayClub?: unknown; kickoffIso?: unknown; gw?: unknown } | undefined;
+      fixture = rawFixture && typeof rawFixture.homeClub === "string" && typeof rawFixture.awayClub === "string"
+        ? {
+            homeClub: rawFixture.homeClub,
+            awayClub: rawFixture.awayClub,
+            kickoffIso: typeof rawFixture.kickoffIso === "string" ? rawFixture.kickoffIso : "",
+            gw: Number(rawFixture.gw) || 0,
+          }
+        : null;
+      const p = payload.poll as { question?: unknown; options?: unknown; endsAt?: unknown } | undefined;
       if (p && Array.isArray(p.options)) {
         const opts = (p.options as unknown[]).map((o) => (typeof o === "string" ? o : "")).filter(Boolean).slice(0, MAX_POLL_OPTIONS);
         const byOpt = pollCounts.get(e.id);
         let total = 0;
         const options = opts.map((t, i) => { const c = byOpt?.get(i) ?? 0; total += c; return { text: t, votes: c }; });
-        poll = { question: typeof p.question === "string" ? p.question : "", options, myChoice: myPollChoice.has(e.id) ? myPollChoice.get(e.id)! : null, total };
+        poll = {
+          question: typeof p.question === "string" ? p.question : "", options,
+          myChoice: myPollChoice.has(e.id) ? myPollChoice.get(e.id)! : null, total,
+          endsAt: typeof p.endsAt === "string" ? p.endsAt : null,
+        };
       }
     }
     return {
@@ -593,6 +711,8 @@ async function hydrateEvents(
       image,
       images,
       gif,
+      link,
+      fixture,
       quiz,
     };
   });
