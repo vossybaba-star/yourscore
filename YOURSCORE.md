@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-05 (**Social Phase 3b (bookmarks/mentions/notification tabs/profile tabs, mig 251 applied) + Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped top entry.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
+> **Confirmed:** 2026-08-05 (**Postgame fantasy promo shipped — interstitial pop-up + inline card at every game end, see Recently Shipped top entry.** Same day: **Social Phase 3b (bookmarks/mentions/notification tabs/profile tabs, mig 251 applied) + Phase 3a (post detail + reposts + quotes) + Phase 2b (links + poll durations + player/fixture attachments, mig 250 applied) + Phase 2a rich media + Phase 1 visual upgrade shipped — see Recently Shipped.** Prior confirm 2026-08-04: **FPL-Twitter feed pass: bot personas, quiz results in the feed, Twitter-grammar cards.**
 > The fantasy feed (Social → Live) now reads like an FPL-Twitter timeline. (1) **Cards use Twitter grammar** —
 > BOLD screen name, muted non-bold `@handle` (hydrate now resolves `profiles.username`), time inline after a
 > dot, and a **⋯ overflow menu** on every card (Share post → the existing multi-channel sheet, Copy link,
@@ -806,6 +806,25 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05** — **Postgame fantasy promo SHIPPED** (branch `feat/postgame-fantasy-promo`).
+  Every game end now advertises YourScore Fantasy twice: (1) a full-screen **interstitial
+  pop-up** before the results screen — FULL TIME + the player's score always visible on top,
+  under it a gold-glow advert (mini CSS pitch with Saka/Haaland/Palmer portraits from the
+  licensed PL headshot map in `src/lib/fantasy/faces.ts`, big "FANTASY PREMIER LEAGUE / ON
+  YOURSCORE" type, founder copy, one CTA **BUILD YOUR TEAM →** — guests route via sign-in with
+  `next=/fantasy?ref=postgame-pop`); (2) a quieter inline `FantasyPromoCard` on the results
+  screen itself (CTA PLAY FANTASY → `/fantasy?ref=postgame`). Interstitial fires on EVERY game
+  end until the player owns a fantasy squad (founder call): squad owners are suppressed via one
+  `GET /api/fantasy/state` per browser session (sessionStorage cache, permanent localStorage
+  stamp once a squad is seen; fetch failure fails CLOSED). It only fires on a genuine
+  just-finished transition — each surface passes its own gate (quiz: answered this session;
+  P10: prev phase was "playing"; WC run: went active→terminal this mount; live H2H: observed a
+  pre-result phase) — so revisiting an old result or opening a shared match link never pops.
+  Surfaces: quiz solo, multiplayer quiz, Perfect 10, 38-0 quick match, WC run, live H2H
+  (+ inline card also on the public `/38-0/match/[id]` share page, pop-up deliberately not).
+  Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
+  surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
+  `FantasyPromoCard.tsx`.
 - **2026-08-05 (late, 2)** — **Social Phase 3b SHIPPED** (PR #65; **migration 251 APPLIED**:
   `fantasy_feed_bookmarks` own-row RLS + `profiles.pinned_event_id`): bookmarks (overflow
   menu, acts on the original for reposts; Saved list at /fantasy/social/saved, entry beside
