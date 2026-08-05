@@ -37,11 +37,11 @@ export function LeagueMembersView({ code, rows, viewerId, onClose }: {
     return () => { live = false; };
   }, [code]);
 
-  // /members deliberately excludes the caller (it exists to feed @mention
-  // autocomplete, where you never mention yourself — see lib/fantasy/chat.ts)
-  // — add your own row back in from the table so the member list is complete.
-  const me = rows.find((r) => r.isMe) ?? null;
-
+  // /members deliberately excludes the caller AND anyone without a username
+  // (it exists to feed @mention autocomplete — see lib/fantasy/chat.ts). The
+  // member LIST has to show everyone, so any table row missing from the
+  // roster (you, or a handle-less member) is added back in from the table.
+  // The sheet's Mention chip already hides itself for a null username.
   const full = useMemo<MemberActionMember[] | null>(() => {
     if (!roster) return null;
     const byId = new Map(rows.map((r) => [r.userId, r]));
@@ -49,14 +49,16 @@ export function LeagueMembersView({ code, rows, viewerId, onClose }: {
       const r = byId.get(m.userId);
       return { ...m, rank: r?.rank, points: r?.played ? r.points : undefined };
     });
-    if (me && !list.some((m) => m.userId === me.userId)) {
+    const seen = new Set(list.map((m) => m.userId));
+    for (const r of rows) {
+      if (seen.has(r.userId)) continue;
       list.push({
-        userId: me.userId, username: me.username, displayName: me.displayName, avatarUrl: me.avatarUrl,
-        rank: me.rank, points: me.played ? me.points : undefined,
+        userId: r.userId, username: r.username, displayName: r.displayName, avatarUrl: r.avatarUrl,
+        rank: r.rank, points: r.played ? r.points : undefined,
       });
     }
     return list;
-  }, [roster, rows, me]);
+  }, [roster, rows]);
 
   const filtered = useMemo(() => {
     if (!full) return null;
