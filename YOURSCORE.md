@@ -825,6 +825,19 @@ Confirmed preamble above and the referenced section.
   Diagnostics: `fantasy_pop_shown` / `fantasy_pop_click` / `fantasy_promo_click` with the
   surface name. Components: `src/components/fantasy/FantasyResultInterstitial.tsx`,
   `FantasyPromoCard.tsx`.
+- **2026-08-05 (late, 4)** — **Social Phase 4b hub states + system messages SHIPPED** (PR #69,
+  no migrations — comments.kind is free text): pre-deadline READINESS block on the league hub
+  ("{n} of {m} squads in" + neutral "Waiting on..." avatars; NOTE: no captain-unset state
+  exists — captain is auto-assigned at squad build, mig 200), post-gameweek recap card
+  (winner + biggest riser off the season table's movement field, unit-tested incl. GW1
+  null-movement), and three deduped SYSTEM messages in league chat (centred muted lines,
+  excluded from unread + previews): "Gameweek N is live" (scoreGameweek, once per gw),
+  "{name} joined the league" (joinLeague), "{name} moved into first" (finaliseGameweek,
+  settled only). Both scoring hooks are void fire-and-forget + swallow errors — cannot
+  block scoring. ⚠️ Hooks + recap unobservable before GW1 (nothing has ever scored):
+  **confirm system lines + recap render correctly when GW1 scores on 21 Aug.** Pre-existing
+  guest 401 on club-league chat GET flagged (spawn-task chip raised), not fixed here.
+  **PHASES 1 THROUGH 4 OF THE SOCIAL MASTER PROMPT ARE NOW COMPLETE.**
 - **2026-08-05 (late, 3)** — **Social Phase 4a league chat upgrade SHIPPED** (PR #67; **mig 252
   APPLIED** — adds only `fantasy_leagues.pinned_message_id`; replies reuse `comments.parent_id`
   live since mig 221): replies with quoted context on every chat kind (one level deep, reply-to-
