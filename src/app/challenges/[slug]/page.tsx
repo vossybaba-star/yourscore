@@ -15,6 +15,7 @@ import { QuizNotifyPrompt } from "@/components/quiz/QuizNotifyPrompt";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
 import HalftimePredictionPoll from "@/components/halftime/HalftimePredictionPoll";
 import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
+import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
 import { BeatScoreRail } from "@/components/versus/BeatScoreRail";
@@ -1351,6 +1352,12 @@ export default function ChallengePage() {
 
     return (
       <div className="min-h-screen flex flex-col bg-bg" style={{ paddingBottom: 40 }}>
+        {/* A stored prior attempt can land here without playing this session —
+            only a genuine just-finished result pops the interstitial. */}
+        {answerLog.length > 0 && (
+          <FantasyResultInterstitial surface="quiz" userId={userId} scoreLine={`${score.toLocaleString()} pts`} />
+        )}
+
         {/* Hero */}
         <div className="relative flex flex-col items-center pt-16 pb-10 px-6"
           style={{ background: isRecords

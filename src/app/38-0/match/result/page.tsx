@@ -18,9 +18,12 @@ import { liveOgQuery } from "@/lib/draft/share";
 import { AddFriendCard } from "@/components/social/AddFriendCard";
 import { trackGameComplete, trackShare, firedOnce } from "@/lib/analytics/trackGame";
 import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
+import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
+import { useUser } from "@/hooks/useUser";
 
 export default function MatchResult() {
   const router = useRouter();
+  const { user } = useUser();
   const [m, setM] = useState<LocalMatch | null>(null);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -110,6 +113,11 @@ export default function MatchResult() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       {/* ambient pitch grid */}
       <div className="pointer-events-none fixed inset-0 bg-grid-pattern bg-grid" style={{ opacity: 0.5 }} />
+
+      {/* This page only ever renders straight after a match — the last-match
+          pointer it reads from localStorage has no other route in. */}
+      <FantasyResultInterstitial surface="38-0-match" userId={user?.id ?? null}
+        scoreLine={`${won ? "WIN" : m.outcome === "draw" ? "DRAW" : "LOSS"} ${m.goals.you}-${m.goals.opp}`} />
 
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="flex items-center justify-between py-3">

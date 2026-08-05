@@ -9,6 +9,8 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { useHideGamesNav } from "@/lib/gamesNav";
 import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
+import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
+import { useUser } from "@/hooks/useUser";
 
 // "Perfect 10" — name everyone in a ranked top-10 football list. Third Quiz
 // game-type. This is the literal /play/game/perfect-10 folder, which Next.js
@@ -340,6 +342,7 @@ export default function Perfect10Game() {
   const searchParams = useSearchParams();
   const challengeToken = searchParams?.get("c") ?? null;
   const listParam = searchParams?.get("list") ?? null;
+  const { user } = useUser();
 
   const [phase, setPhase] = useState<Phase>("loading");
 
@@ -1041,6 +1044,12 @@ export default function Perfect10Game() {
 
   // ── Results ──────────────────────────────────────────────────────────────
   if (phase === "results" && list) {
+    // Read BEFORE the phase-tracking effect above updates the ref for this
+    // render — true only on the actual playing → results transition, same
+    // signal that gate already uses for trackGameComplete. A returning player
+    // who lands on results straight from load never passed through "playing"
+    // this mount, so the ref won't say so.
+    const justFinished = prevPhaseRef.current === "playing";
     const won = game.found.length >= TOTAL_RUNGS;
     const allEntries: Array<{ rank: number; label: string; solved: boolean; missed: boolean }> = list.rungs.map((r) => {
       const s = solvedByRank.get(r.rank);
@@ -1050,6 +1059,11 @@ export default function Perfect10Game() {
 
     return (
       <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
+        {justFinished && (
+          <FantasyResultInterstitial surface="p10" userId={user?.id ?? null}
+            scoreLine={won ? `PERFECT 10 · ${game.score.toLocaleString()} pts` : `${game.score.toLocaleString()} pts`} />
+        )}
+
         {/* Official result card: topic, verdict, the points — then the tower. */}
         <div
           className="relative flex flex-col items-center pt-3 pb-5 px-6"
