@@ -22,7 +22,7 @@ import { join } from "path";
 import { createClient } from "@supabase/supabase-js";
 import { validateSquad, smartDefaults, BASELINE_CREDITS_PER_GW, type PoolPlayer } from "../../src/lib/fantasy/engine";
 import { solvePreset, PRESETS, type PresetPlayer } from "../../src/lib/fantasy/presets";
-import { BOT_PERSONAS, activeBotPersonas, generateBotMove, type BotPoolPlayer } from "../../src/lib/fantasy/botContent";
+import { BOT_PERSONAS, activeBotPersonas, generateBotMove, londonHour, type BotPoolPlayer } from "../../src/lib/fantasy/botContent";
 
 const DRY = process.argv.includes("--dry");
 const TEARDOWN = process.argv.includes("--teardown");
@@ -201,12 +201,19 @@ async function main() {
       if (rows.length >= BACKFILL) break;
       const actorId = botIdByKey.get(persona.key);
       if (!actorId) continue;
-      const move = generateBotMove(persona, contentPool, usedKeys, quizTitles, rnd, WITH_QUIZ);
+      const move = generateBotMove(persona, contentPool, usedKeys, quizTitles, rnd, WITH_QUIZ, Date.now());
       if (!move) continue;
       usedKeys.add(String(move.payload.k));
-      // Spread over the past 36h, denser toward now (a feed that "warmed up").
-      const ageMs = Math.floor(Math.pow(rnd(), 1.6) * 36 * 60 * 60 * 1000);
-      rows.push({ actor_id: actorId, type: move.type, gw: null, payload: move.payload, created_at: new Date(Date.now() - ageMs).toISOString() });
+      // Spread over the past 36h, denser toward now (a feed that "warmed up"),
+      // resampled until it lands in London waking hours — nobody posts at 4am.
+      let stamp = 0;
+      for (let tries = 0; tries < 20; tries++) {
+        const ageMs = Math.floor(Math.pow(rnd(), 1.6) * 36 * 60 * 60 * 1000);
+        stamp = Date.now() - ageMs;
+        const h = londonHour(stamp);
+        if (h >= 7 && h < 23) break;
+      }
+      rows.push({ actor_id: actorId, type: move.type, gw: null, payload: move.payload, created_at: new Date(stamp).toISOString() });
     }
     console.log(`${DRY ? "[DRY] " : ""}Backfill: ${rows.length} moves${WITH_QUIZ ? " (quiz allowed)" : ""}.`);
     if (DRY) {
@@ -221,14 +228,22 @@ async function main() {
       const EMOJI = ["😂", "👀", "🔥", "👏", "❤️", "😭"];
       const likeRows: { event_id: string; user_id: string; emoji: string }[] = [];
       const voteRows: { event_id: string; user_id: string; option_index: number }[] = [];
+      // Lopsided on purpose: over half of posts get NOTHING, most of the rest
+      // one stray reaction, the odd post collects a cluster on 1–2 emojis.
       for (const ev of (inserted ?? []) as { id: string; actor_id: string; type: string; payload: { poll?: { options?: unknown[] } } }[]) {
         const others = shuffle(botIds.filter((b) => b !== ev.actor_id));
-        for (const b of others.slice(0, Math.floor(rnd() * 5))) // 0–4 reactions
-          likeRows.push({ event_id: ev.id, user_id: b, emoji: EMOJI[Math.floor(rnd() * EMOJI.length)] });
+        const r = rnd();
+        const nLikes = r < 0.55 ? 0 : r < 0.85 ? 1 : 3 + Math.floor(rnd() * 5); // 0 | 1 | 3–7
+        const cluster = nLikes > 1 ? shuffle([...EMOJI]).slice(0, 2) : EMOJI;
+        for (const b of others.slice(0, nLikes))
+          likeRows.push({ event_id: ev.id, user_id: b, emoji: cluster[Math.floor(rnd() * cluster.length)] });
         const options = ev.payload?.poll?.options;
-        if (Array.isArray(options) && options.length)
-          for (const b of others.slice(0, 3 + Math.floor(rnd() * 8))) // 3–10 votes per poll
-            voteRows.push({ event_id: ev.id, user_id: b, option_index: Math.floor(rnd() * options.length) });
+        if (Array.isArray(options) && options.length) {
+          const favoured = Math.floor(rnd() * options.length);
+          const nVotes = rnd() < 0.2 ? 6 + Math.floor(rnd() * 6) : 1 + Math.floor(rnd() * 4);
+          for (const b of others.slice(0, nVotes))
+            voteRows.push({ event_id: ev.id, user_id: b, option_index: rnd() < 0.65 ? favoured : Math.floor(rnd() * options.length) });
+        }
       }
       if (likeRows.length) await db.from("fantasy_feed_likes").upsert(likeRows, { onConflict: "event_id,user_id", ignoreDuplicates: true });
       if (voteRows.length) await db.from("fantasy_feed_poll_votes").upsert(voteRows, { onConflict: "event_id,user_id", ignoreDuplicates: true });

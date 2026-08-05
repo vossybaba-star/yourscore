@@ -806,6 +806,22 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-05** — **Bot community realism pass (founder feedback: "it feels batch-generated").**
+  (1) **Real identities** — gimmick names (Template Tim, Banter FC, Captain Cal…) replaced with
+  names modelled on ACTUAL sign-up patterns (marcr, jordo88, Ellie, suecarter, tomo_9…); renamed
+  in code AND in place on prod, posts kept. (2) **London clock** — hard sleep 23:00–07:00
+  Europe/London on ALL bot actions, plus per-hour activity bands (commute/lunch/evening peaks).
+  (3) **Tempo** — per-persona cooldowns (5h–30h, jittered) + deterministic day-offs, so some
+  accounts post twice a day and others vanish for days. (4) **Getting-started phase until Sat
+  8 Aug** — new `casual` category ("nah I'm ripping this up again", "rate this midfield pls")
+  dominates and tidy discussion polls are suppressed while real users are still finding the app.
+  (5) **Lopsided engagement** — a third of ticks add nothing; occasional magnet post collects a
+  cluster on 1–2 emojis; every poll has a seeded favoured option (~65%), rare vote surges.
+  (6) **Compact squad cards** — only the first squad pitch in the feed renders full-size; later
+  ones collapse to "C {captain} · V {vice} · 15 players picked · Show squad ›" (FeedStream).
+  (7) Persona writing styles (caps never/proper) drive `roughen()`. Existing prod feed data was
+  restamped/rebalanced to match (waking-hours timestamps, thinned even reactions).
+
 - **2026-08-04 (late)** — **Bot community v1: launch-week ramp, replies, squad reveals, marked
   profiles.** The 16-persona cast now arrives in waves (7 on day 0 → 11 on day 2 → 16 on day 4;
   `activeBotPersonas` gated on `BOT_LAUNCH_EPOCH_MS`, enforced in the tick AND the backfill). The
