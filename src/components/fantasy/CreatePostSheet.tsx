@@ -25,6 +25,7 @@ import { PlayerPickerSheet, type PickablePlayer } from "@/components/fantasy/Pla
 import { FixturePickerSheet, type PickableFixture } from "@/components/fantasy/FixturePickerSheet";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
+import { mentionQueryAt, applyMention, MentionDropdown } from "@/components/fantasy/MentionAutocomplete";
 
 interface ImageSlot { key: string; url: string | null; uploading: boolean; error: string | null }
 interface LinkPreview { url: string; title: string | null; description: string | null; siteName: string | null; image: string | null; domain: string }
@@ -73,6 +74,18 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
   const fileRef = useRef<HTMLInputElement>(null);
   const lastUrlRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // @mention autocomplete (Phase 3b) — the caret position, tracked from every
+  // event that could move it, drives the "@" + 2+ chars lookup.
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [caret, setCaret] = useState(0);
+  const mentionQuery = mentionQueryAt(text, caret);
+  const trackCaret = (e: React.SyntheticEvent<HTMLTextAreaElement>) => setCaret(e.currentTarget.selectionStart ?? 0);
+  const pickMention = (username: string) => {
+    const next = applyMention(text, caret, username);
+    setText(next.text.slice(0, 500));
+    setCaret(next.caret);
+    requestAnimationFrame(() => { textareaRef.current?.focus(); textareaRef.current?.setSelectionRange(next.caret, next.caret); });
+  };
 
   // Unfurl the first URL in the text, 600ms after typing stops. A different
   // URL re-unfurls and un-dismisses; the same URL (including after a
@@ -102,6 +115,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
     setSlots([]); setGif(null); setGifPickerOpen(false);
     setPlayer(null); setPlayerPickerOpen(false); setFixture(null); setFixturePickerOpen(false);
     setLinkPreview(null); setLinkLoading(false); setLinkDismissed(false); lastUrlRef.current = null;
+    setCaret(0);
     setErr(null);
   };
   const close = () => { reset(); onClose(); };
@@ -200,8 +214,12 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null }: {
     <Sheet onClose={close} labelledBy="create-post-title">
       <div id="create-post-title" className="font-display" style={{ fontSize: 19, color: INK, marginBottom: 10 }}>{quoting ? "Quote post" : "New post"}</div>
 
-      <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 500))} placeholder={quoting ? "Add a comment" : "Share your FPL take"} rows={4}
+      <textarea ref={textareaRef} value={text}
+        onChange={(e) => { setText(e.target.value.slice(0, 500)); trackCaret(e); }}
+        onKeyUp={trackCaret} onClick={trackCaret}
+        placeholder={quoting ? "Add a comment" : "Share your FPL take"} rows={4}
         style={{ ...input, resize: "none", lineHeight: 1.45 }} />
+      <MentionDropdown query={mentionQuery} onSelect={pickMention} />
 
       {/* The quoted post — compact, non-removable (it's the whole point of a quote). */}
       {quoting && (

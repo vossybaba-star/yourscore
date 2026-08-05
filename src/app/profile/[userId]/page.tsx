@@ -13,6 +13,7 @@ import { FollowButton } from "@/components/social/FollowButton";
 import { ProfileGameTabs } from "@/components/profile/ProfileGameTabs";
 import { AvatarLightbox } from "@/components/ui/AvatarLightbox";
 import { LegendSeal } from "@/components/ui/Seal";
+import { ProfileSocialTabs } from "@/components/fantasy/ProfileSocialTabs";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -366,6 +367,14 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
             </div>
           }
         />
+
+        {/* Social — their posts, replies, media (Social Phase 3b). Never your
+            own row here (this page redirects you to /profile above), so no
+            pin control. */}
+        <div>
+          <p className="font-body text-xs text-text-muted uppercase tracking-widest mb-3">Social</p>
+          <ProfileSocialTabs userId={userId} isOwner={false} signInNext={`/profile/${userId}`} />
+        </div>
       </div>
 
       <BottomNav />

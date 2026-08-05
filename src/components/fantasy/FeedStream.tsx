@@ -71,6 +71,10 @@ export interface FeedEvent {
   myReposted: boolean;
   /** A quote post's embedded quoted post. Null when this post isn't a quote. */
   quoteOf?: EmbeddedPost | null;
+  /** Whether the viewer has bookmarked this post (Phase 3b). */
+  myBookmarked: boolean;
+  /** Real, resolved @username mentions in this post's text (Phase 3b). */
+  mentionedUsers?: { username: string; userId: string }[] | null;
 }
 
 /** A post's GIF: mp4 renders as a looping muted autoplay video; otherwise the
@@ -160,19 +164,33 @@ function FixtureCard({ fixture }: { fixture: FeedFixture }) {
   );
 }
 
-/** Render post text with any http(s) URLs turned into safe, tappable links. */
-function LinkedText({ text }: { text: string }) {
-  const parts = text.split(/(https?:\/\/[^\s]+)/g);
+/** Render post text with any http(s) URLs turned into safe, tappable links,
+ *  plus (Phase 3b) any @username token that resolved to a real profile
+ *  (`mentions`, computed server-side in hydrateEvents) linked to it. An
+ *  unresolved handle — typo, or no such user — stays plain text. */
+function LinkedText({ text, mentions }: { text: string; mentions?: { username: string; userId: string }[] | null }) {
+  const byHandle = new Map((mentions ?? []).map((m) => [m.username.toLowerCase(), m.userId]));
+  const parts = text.split(/(https?:\/\/[^\s]+|@[a-zA-Z0-9_]{2,30})/g);
   return (
     <>
-      {parts.map((part, i) =>
-        /^https?:\/\//.test(part) ? (
-          <a key={i} href={part} target="_blank" rel="noopener noreferrer nofollow" onClick={(e) => e.stopPropagation()}
-            style={{ color: TEAL, textDecoration: "none", wordBreak: "break-all" }}>{part}</a>
-        ) : (
-          <span key={i}>{part}</span>
-        ),
-      )}
+      {parts.map((part, i) => {
+        if (/^https?:\/\//.test(part)) {
+          return (
+            <a key={i} href={part} target="_blank" rel="noopener noreferrer nofollow" onClick={(e) => e.stopPropagation()}
+              style={{ color: TEAL, textDecoration: "none", wordBreak: "break-all" }}>{part}</a>
+          );
+        }
+        if (part.startsWith("@")) {
+          const uid = byHandle.get(part.slice(1).toLowerCase());
+          if (uid) {
+            return (
+              <Link key={i} href={`/profile/${uid}`} onClick={(e) => e.stopPropagation()}
+                style={{ color: TEAL, fontWeight: 700, textDecoration: "none" }}>{part}</Link>
+            );
+          }
+        }
+        return <span key={i}>{part}</span>;
+      })}
     </>
   );
 }
@@ -351,13 +369,37 @@ function PollBlock({ ev }: { ev: FeedEvent }) {
 }
 
 /** The ⋯ overflow on every card — Twitter grammar: share lives here (and stays
- *  inline too), plus copy link, the profile, and the league invite. */
-function CardMenu({ ev, onShare, onInvite, shareUrl }: {
+ *  inline too), plus copy link, bookmark, the profile, the league invite, and
+ *  (Phase 3b, profile-owner only) pin/unpin. */
+function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl }: {
   ev: FeedEvent; onShare: () => void; onInvite: () => void; shareUrl: string;
+  /** Present only when the viewer is looking at their OWN post from a context
+   *  that tracks pin state (the profile's Posts tab) — see FeedCard. */
+  pinControl?: { pinned: boolean; onTogglePin: () => void };
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [bookmarked, setBookmarked] = useState(ev.myBookmarked);
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const router = useRouter();
+
+  const toggleBookmark = useCallback(async () => {
+    if (bookmarkBusy) return;
+    setBookmarkBusy(true);
+    const next = !bookmarked;
+    setBookmarked(next); // optimistic
+    try {
+      const res = await fetch("/api/fantasy/feed/bookmark", {
+        method: next ? "POST" : "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: ev.id }),
+      });
+      if (res.status === 401) { window.location.href = "/auth/sign-in?next=/fantasy/social"; return; }
+      if (!res.ok) setBookmarked(!next);
+    } catch { setBookmarked(!next); }
+    setBookmarkBusy(false);
+  }, [bookmarked, bookmarkBusy, ev.id]);
+
   const item = (label: string, emoji: string, fn: () => void) => (
     <button key={label} onClick={() => { setMenuOpen(false); fn(); }} style={{
       display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
@@ -385,6 +427,8 @@ function CardMenu({ ev, onShare, onInvite, shareUrl }: {
               navigator.clipboard?.writeText(shareUrl).catch(() => {});
               setCopied(true); setTimeout(() => setCopied(false), 1600);
             })}
+            {item(bookmarked ? "Remove bookmark" : "Bookmark", "🔖", toggleBookmark)}
+            {pinControl && item(pinControl.pinned ? "Unpin" : "Pin to profile", "📌", pinControl.onTogglePin)}
             {item(`View ${ev.actorName}`, "👤", () => router.push(`/profile/${ev.actorId}`))}
             {item("Invite to a league", "＋", onInvite)}
           </div>
@@ -539,7 +583,13 @@ function RepostControl({ ev, signInNext }: { ev: FeedEvent; signInNext: string }
  *  rather than duplicating its render logic. `detail` suppresses the body-tap
  *  navigation (already on the detail page) and the inline collapsed comment
  *  thread (the page renders its own, always expanded, below). */
-export function FeedCard({ ev, signInNext, detail = false }: { ev: FeedEvent; signInNext: string; detail?: boolean }) {
+export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
+  ev: FeedEvent; signInNext: string; detail?: boolean;
+  /** Pin/unpin control for this post (Phase 3b) — passed only by the profile
+   *  Posts tab, which is the one place that tracks the viewer's pinned post.
+   *  See CardMenu. */
+  pinControl?: { pinned: boolean; onTogglePin: () => void };
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -616,12 +666,14 @@ export function FeedCard({ ev, signInNext, detail = false }: { ev: FeedEvent; si
         </div>
         {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts. */}
         <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
-        <CardMenu ev={ev} shareUrl={shareUrl} onShare={() => setShareOpen(true)} onInvite={() => setInviteOpen(true)} />
+        <CardMenu ev={ev} shareUrl={shareUrl} onShare={() => setShareOpen(true)} onInvite={() => setInviteOpen(true)} pinControl={pinControl} />
       </div>
 
-      {/* A user post: the text (links tappable), an image, then a poll if any. */}
+      {/* A user post: the text (links + @mentions tappable), an image, then a poll if any. */}
       {ev.type === "post" && ev.text && (
-        <div style={{ fontSize: 14.5, color: INK, lineHeight: 1.45, marginTop: 10, whiteSpace: "pre-wrap", wordBreak: "break-word" }}><LinkedText text={ev.text} /></div>
+        <div style={{ fontSize: 14.5, color: INK, lineHeight: 1.45, marginTop: 10, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          <LinkedText text={ev.text} mentions={ev.mentionedUsers} />
+        </div>
       )}
       {ev.type === "post" && images.length > 0 && (
         <ImageGrid images={images} onOpen={(i) => setGalleryIndex(i)} />

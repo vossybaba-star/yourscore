@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
+import { mentionQueryAt, applyMention, MentionDropdown } from "@/components/fantasy/MentionAutocomplete";
 
 // Two-level (IG-style) discussion thread per subject (quiz pack or debate).
 // Top-level: newest first. Replies: oldest first within a parent, collapsed
@@ -77,6 +78,18 @@ export function DiscussionThread({
   const [total, setTotal] = useState(0);
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
+  // Real @username -> userId, resolved server-side for THIS page's comment
+  // bodies (Phase 3b, AC3) — an unresolved handle just isn't in here and
+  // renders as plain text. Same batch-resolve shape as the feed's own
+  // hydrateEvents, just returned alongside /api/comments' normal payload
+  // rather than duplicated per comment.
+  const [mentionedUsers, setMentionedUsers] = useState<Map<string, string>>(new Map());
+  // @mention autocomplete caret tracking — one for the top-level composer,
+  // one for whichever reply box is open (only one is ever open at a time).
+  const draftRef = useRef<HTMLInputElement>(null);
+  const [draftCaret, setDraftCaret] = useState(0);
+  const replyRef = useRef<HTMLInputElement>(null);
+  const [replyCaret, setReplyCaret] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [threadLoaded, setThreadLoaded] = useState(false);
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -98,6 +111,9 @@ export function DiscussionThread({
     const body = await res.json();
     setComments(body.comments ?? []);
     setTotal(body.total ?? 0);
+    setMentionedUsers(new Map(
+      ((body.mentionedUsers ?? []) as { username: string; userId: string }[]).map((m) => [m.username.toLowerCase(), m.userId]),
+    ));
     setThreadLoaded(true);
   }, [subjectType, subjectId]);
 
@@ -259,6 +275,27 @@ export function DiscussionThread({
     });
   }
 
+  /** A comment body with any @username token that resolved to a real profile
+   *  (mentionedUsers, set server-side by load()) turned into a link to that
+   *  profile. An unresolved handle (typo, or no such user) stays plain text. */
+  function renderMentionBody(body: string) {
+    const parts = body.split(/(@[a-zA-Z0-9_]{2,30})/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("@")) {
+        const uid = mentionedUsers.get(part.slice(1).toLowerCase());
+        if (uid) {
+          return (
+            <Link key={i} href={`/profile/${uid}`} onClick={(e) => e.stopPropagation()}
+              className="font-body text-sm font-bold" style={{ color: accent, textDecoration: "none" }}>
+              {part}
+            </Link>
+          );
+        }
+      }
+      return <span key={i}>{part}</span>;
+    });
+  }
+
   function renderCommentBody(c: CommentRow, opts: { onReply?: () => void; indent?: boolean } = {}) {
     return (
       <div
@@ -284,7 +321,7 @@ export function DiscussionThread({
               </button>
             )}
           </div>
-          <p className="font-body text-sm text-text-muted leading-snug break-words">{c.body}</p>
+          <p className="font-body text-sm text-text-muted leading-snug break-words">{renderMentionBody(c.body)}</p>
           <div className="flex items-center gap-3 mt-1">
             <button
               onClick={() => toggleLike(c)}
@@ -329,12 +366,22 @@ export function DiscussionThread({
   }
 
   function renderReplyComposer(parentId: string) {
+    const replyMentionQuery = mentionQueryAt(replyDraft, replyCaret);
+    const trackReplyCaret = (e: React.SyntheticEvent<HTMLInputElement>) => setReplyCaret(e.currentTarget.selectionStart ?? 0);
+    const pickReplyMention = (username: string) => {
+      const next = applyMention(replyDraft, replyCaret, username);
+      setReplyDraft(next.text.slice(0, 280));
+      setReplyCaret(next.caret);
+      requestAnimationFrame(() => { replyRef.current?.focus(); replyRef.current?.setSelectionRange(next.caret, next.caret); });
+    };
     return (
       <div className="pl-[38px] pt-1">
         <div className="flex gap-2">
           <input
+            ref={replyRef}
             value={replyDraft}
-            onChange={(e) => setReplyDraft(e.target.value.slice(0, 280))}
+            onChange={(e) => { setReplyDraft(e.target.value.slice(0, 280)); trackReplyCaret(e); }}
+            onKeyUp={trackReplyCaret} onClick={trackReplyCaret}
             onKeyDown={(e) => { if (e.key === "Enter") postReply(parentId); }}
             placeholder="Reply…"
             autoFocus
@@ -357,6 +404,7 @@ export function DiscussionThread({
             Cancel
           </button>
         </div>
+        <MentionDropdown query={replyMentionQuery} onSelect={pickReplyMention} />
         {replyError && <p className="font-body text-[11px] mt-1" style={{ color: "#f87171" }}>{replyError}</p>}
       </div>
     );
@@ -422,8 +470,11 @@ export function DiscussionThread({
       <div className="px-4 pt-2 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex gap-2">
           <input
+            ref={draftRef}
             value={draft}
-            onChange={(e) => setDraft(e.target.value.slice(0, 280))}
+            onChange={(e) => { setDraft(e.target.value.slice(0, 280)); setDraftCaret(e.currentTarget.selectionStart ?? 0); }}
+            onKeyUp={(e) => setDraftCaret(e.currentTarget.selectionStart ?? 0)}
+            onClick={(e) => setDraftCaret(e.currentTarget.selectionStart ?? 0)}
             onKeyDown={(e) => { if (e.key === "Enter") post(); }}
             disabled={!canPost}
             placeholder={!canPost ? lockedHint : user ? "Add a comment…" : "Sign in to join in…"}
@@ -439,6 +490,14 @@ export function DiscussionThread({
             POST
           </button>
         </div>
+        {canPost && (
+          <MentionDropdown query={mentionQueryAt(draft, draftCaret)} onSelect={(username) => {
+            const next = applyMention(draft, draftCaret, username);
+            setDraft(next.text.slice(0, 280));
+            setDraftCaret(next.caret);
+            requestAnimationFrame(() => { draftRef.current?.focus(); draftRef.current?.setSelectionRange(next.caret, next.caret); });
+          }} />
+        )}
         {(error || draft.length > 200) && (
           <div className="flex items-center justify-between mt-1">
             {error ? <p className="font-body text-[11px]" style={{ color: "#f87171" }}>{error}</p> : <span />}

@@ -6,6 +6,8 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 import { commentRejection } from "@/lib/moderation";
 import { createNotification, pushCommentReply, commentDeepLink } from "@/lib/notifications";
 import { dispatchEngagementEmail, displayNameOf } from "@/lib/engagement";
+import { extractMentions, resolveUsernames } from "@/lib/mentions";
+import { notifyMentions } from "@/lib/fantasy/mentions";
 
 // comments.parent_id and club_supporters are additive/not yet in the
 // generated src/types/database.ts — same untyped-client cast used across the
@@ -212,10 +214,20 @@ export async function GET(req: NextRequest) {
     ...replies.map((r) => liveRow(r, r.parent_id as string)),
   ];
 
+  // Mentions (Phase 3b, AC3) — resolve every REAL @handle across this page's
+  // comment bodies into id+username, so the client can linkify without a
+  // second round trip. Same batch-resolve shape as the feed's own
+  // hydrateEvents. Comments carry no subject-specific gating here — a debate
+  // or pack comment can mention someone too, it just doesn't NOTIFY them
+  // (that hook is fantasy_feed-only, see POST below).
+  const mentionHandles = extractMentions(comments.map((c) => c.body).join(" \n "));
+  const mentionMap = mentionHandles.length ? await resolveUsernames(svc, mentionHandles) : new Map();
+  const mentionedUsers = Array.from(mentionMap.values());
+
   // likedByMe is per-user, so this response must never be shared across
   // users by an edge/CDN cache (which keys on URL, not cookie).
   return NextResponse.json(
-    { comments, total: total ?? comments.length },
+    { comments, total: total ?? comments.length, mentionedUsers },
     { headers: { "cache-control": "private, no-store" } },
   );
 }
@@ -307,6 +319,21 @@ export async function POST(req: NextRequest) {
         url: deepLink,
       });
     }
+  }
+
+  // Mention notifications (Phase 3b, AC4) — fantasy_feed comments/replies
+  // only (pack/debate comments don't carry this yet). Fire-and-forget, same
+  // as everything else on this path — a mention notify must never fail the
+  // comment post. `id` here is the fantasy_feed subject id, i.e. the post's
+  // own event id — the notification's tap target.
+  if (type === "fantasy_feed") {
+    void notifyMentions({
+      db: createServiceClient() as unknown as SupabaseClient,
+      text: body,
+      actorId: user.id,
+      dedupeSubjectId: data.id,
+      url: `/fantasy/social/post/${id}`,
+    });
   }
 
   return NextResponse.json({ id: data.id, createdAt: data.created_at, parentId });
