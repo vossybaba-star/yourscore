@@ -78,7 +78,14 @@ test("buildEnrichment: unambiguous name+club matches; ambiguity skips", () => {
   ];
   const clubMap = new Map([[1, 9]]);
   const enr = buildEnrichment(players, sm, clubMap, NOW);
-  assert.deepEqual(enr.get(10), { nationality: "Norway", age: 25, jersey: 9, smId: 900 });
+  // photoUrl/flagUrl are part of the enrichment shape (sportmonks.ts sets them
+  // from imagePath/flagPath). These fixtures carry neither, so both come back
+  // undefined — spelled out here because the import is `node:assert/strict`,
+  // where a missing key and an explicit undefined are not the same object.
+  assert.deepEqual(enr.get(10), {
+    nationality: "Norway", age: 25, jersey: 9, smId: 900,
+    photoUrl: undefined, flagUrl: undefined,
+  });
   assert.equal(enr.has(11), false, "two FPL Silvas at the club → ambiguous → skip");
   assert.equal(enr.has(12), false);
   assert.equal(enr.has(13), false, "unmapped club → skip");
