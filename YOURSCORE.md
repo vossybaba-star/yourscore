@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-06 (**League Games Hub shipped: Games tab in every league, live games leaderboard, hub module, history results, action badge — see Recently Shipped top entry. Same day, challenge engine COMPLETE: lifecycle, Quiz Duel + Gameday adapters, rematches, result actions — see the three Recently Shipped entries. Adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
+> **Confirmed:** 2026-08-06 (**League Competitions Wave 1 shipped: League Quiz + Beat the Target league wide, official Gameday League Quiz auto created per league, owner create flow, separate competition standings — see Recently Shipped top entry. Same day, League Games Hub shipped: Games tab in every league, live games leaderboard, hub module, history results, action badge — see Recently Shipped top entry. Same day, challenge engine COMPLETE: lifecycle, Quiz Duel + Gameday adapters, rematches, result actions — see the three Recently Shipped entries. Adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
 > cancel, quiet decline, server-derived results posting into league chat, challenge
 > messages + rate limiting — see Recently Shipped top entry. Same day: video/photo
 > upload unblocked in prod (CSP + missing bucket policies).** Earlier: **Native video shipped across Social: uploads, inline +
@@ -816,6 +816,28 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-06** — **LEAGUE COMPETITIONS Wave 1 SHIPPED** (PR #88; mig 260 applied):
+  league wide games arrive. Two formats: **League Quiz** (everyone in the league plays
+  the same pack inside a shared window, highest score when it locks wins) and **Beat
+  the Target** (beat the target score to place, no cap on winners). A competition
+  never duplicates content: it reads the same quiz_attempts scorecard every quiz
+  surface writes, window scoped (playing the pack before the window opened means that
+  run does not count), QA and bot accounts excluded. Lifecycle is server
+  authoritative: scheduled and open transition lazily on read, settlement is an
+  atomic claim (locked, calculating, completed or void) so results freeze exactly
+  once into league_competition_entries; a 10 minute cron sweep opens and settles
+  quiet leagues and recovers abandoned settles. An **official Gameday League Quiz**
+  is auto created for every league (2+ members) when a gameday pack publishes,
+  idempotently, labelled Official. League owners get a guided Start a competition
+  flow on the Games tab (format, pack, target for Beat the Target, one to three day
+  window) plus Call it off while scheduled or open. Surfaces: gold competition cards
+  in league chat (one card updating in place plus one result ping), a COMPETITIONS
+  section on the Games tab with a detail sheet (live standings marked PROVISIONAL,
+  frozen standings once completed, winner banner, Play now), a hub hint line, and
+  completed competitions interleaved into History's GAMES block. Competition
+  standings stay fully separate from the H2H games leaderboard and Fantasy
+  standings. Wave 2 next: Prediction Battle + Captain Call; League Cup exists only
+  as hidden extension points (series_key, draft/live statuses).
 - **2026-08-06** — **League GAMES HUB SHIPPED** (PRs #86 + #87): every league now has a
   fifth Games tab. One overview answers who challenged me, what needs my play, what
   just happened and who leads: a Your Turn section, a quick challenge flow, open
