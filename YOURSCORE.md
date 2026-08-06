@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-06 (**Challenge lifecycle Phase 3A shipped: one-tap accept,
+> **Confirmed:** 2026-08-06 (**Challenge adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
 > cancel, quiet decline, server-derived results posting into league chat, challenge
 > messages + rate limiting — see Recently Shipped top entry. Same day: video/photo
 > upload unblocked in prod (CSP + missing bucket policies).** Earlier: **Native video shipped across Social: uploads, inline +
@@ -816,6 +816,15 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-06** — **Challenge adapters (Phase 3B) SHIPPED** (PR #82; mig 259 applied):
+  **Quiz Duel** — pick a quiz neither of you has played, you both play it fresh, best
+  score wins. Attempts are held privately (own row only) until both sides finish, so
+  nobody can see the other player's answers or score mid duel; the same server grading
+  engine as Quiz Battle scores both sides. **Gameday Quiz** challenges are live too: a
+  matchday pack head to head, riding the Quiz Battle machinery (first real pack lands
+  at GW1). The challenge sheet now opens with a game picker (Quiz Battle, Quiz Duel,
+  Gameday Quiz) plus a duel pack picker filtered to packs neither player has tried,
+  and a finished challenge always offers a fresh Challenge action alongside the result.
 - **2026-08-06** — **Challenge lifecycle (Phase 3A) SHIPPED** (PR #81; mig 258 applied):
   one-tap accept — the opponent's Play tap IS acceptance (locked), no separate Accept
   step; challenger can Cancel while pending; decline is quiet and stamped. A completed
