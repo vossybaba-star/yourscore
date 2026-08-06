@@ -304,10 +304,18 @@ export async function createCompetition(db: Db, input: CreateCompetitionInput): 
  *  publishing itself. */
 export async function ensureOfficialGamedayCompetitions(db: Db, packId: string): Promise<void> {
   // A single-column select, grouped client-side — Supabase-js has no groupBy,
-  // and this runs once per gameday pack publish, not per-request.
-  const { data: memberRows } = await db.from("fantasy_league_members").select("league_id").range(0, 49_999);
+  // and this runs once per gameday pack publish, not per-request. Paged in
+  // 1000-row steps because PostgREST's max-rows setting caps ANY read at 1000
+  // regardless of the .range() asked for — a single big range would silently
+  // truncate and quietly skip every league past the cutoff.
   const counts = new Map<string, number>();
-  for (const r of (memberRows ?? []) as { league_id: string }[]) counts.set(r.league_id, (counts.get(r.league_id) ?? 0) + 1);
+  for (let from = 0; ; from += 1000) {
+    const { data: memberRows } = await db.from("fantasy_league_members")
+      .select("league_id").order("league_id").range(from, from + 999);
+    const page = (memberRows ?? []) as { league_id: string }[];
+    for (const r of page) counts.set(r.league_id, (counts.get(r.league_id) ?? 0) + 1);
+    if (page.length < 1000) break;
+  }
   const eligibleLeagueIds = Array.from(counts.entries()).filter(([, c]) => c >= 2).map(([id]) => id);
   if (!eligibleLeagueIds.length) return;
 
@@ -590,8 +598,22 @@ export async function sweepDueCompetitions(db: Db, cap = 50): Promise<{ checked:
   let acted = 0;
   for (const row of rows) {
     try {
+      let current = row;
+      // Crash recovery: a row stuck in 'calculating' means a prior settle
+      // claimed it and died before finishing (reconcile/settle both no-op on
+      // 'calculating' by design — the claim IS the lock). A healthy settle
+      // finishes in seconds, so anything still claimed 30+ minutes after its
+      // window closed is abandoned, not in flight: CAS it back to 'locked' so
+      // this same pass can re-settle it (entry upserts are idempotent).
+      if (current.status === "calculating"
+        && Date.now() - new Date(current.closes_at).getTime() > 30 * 60 * 1000) {
+        const { data: released } = await db.from("league_competitions")
+          .update({ status: "locked" }).eq("id", current.id).eq("status", "calculating")
+          .is("settled_at", null).select("*").maybeSingle();
+        if (released) current = released as LeagueCompetitionRow;
+      }
       const before = row.status;
-      const after = await reconcileCompetition(db, row);
+      const after = await reconcileCompetition(db, current);
       if (after.status !== before) acted++;
     } catch (e) {
       console.error("[fantasy:competitions] sweep failed for", row.id, e);
