@@ -35,6 +35,14 @@ interface H2HChallenge {
   opponent_answers: { letter: Letter | null; correct: boolean }[] | null;
   created_at: string;
   expires_at: string;
+  /** Phase 3B — 'scorecard' (default, the whole page above this comment was
+   *  written for) or 'duel' (Quiz Duel: neither side had played at creation —
+   *  see the new duel_* states below). */
+  mode?: string;
+  /** Phase 3B, duel only — the sender is known at creation even though they
+   *  haven't played yet (challenger_score/correct/answers ARE null pre-play
+   *  for a duel — do not read them as 0/empty). */
+  invited_user_id?: string | null;
 }
 
 interface RawQuestion {
@@ -62,7 +70,13 @@ type PageState =
   | "results"
   | "ready_to_play"
   | "sign_in_needed"
-  | "playing";
+  | "playing"
+  // Phase 3B — Quiz Duel only; everything above is the scorecard flow,
+  // untouched. "results" above IS reused for a completed duel (see the load
+  // effect) — the score comparison UI doesn't care which mode built the row.
+  | "duel_not_participant"
+  | "duel_intro"
+  | "duel_waiting";
 
 function timerColor(ms: number): string {
   if (ms < 5_000) return "#aeea00";
@@ -182,6 +196,11 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   const [lastPoints, setLastPoints] = useState<number | null>(null);
   const [advancing, setAdvancing] = useState(false);
 
+  // Phase 3B — the viewer's OWN duel score, once they've played and are
+  // waiting on the other side (h2h_challenges itself stays null pre-
+  // completion for a duel, so this comes from h2h_duel_attempts instead).
+  const [duelOwnScore, setDuelOwnScore] = useState<{ score: number; correct: number } | null>(null);
+
   // Timer — count-up question timer shared with the solo loop (see useGameLoop).
   const { timerMs, setTimerMs, questionStartRef, stopTimer } = useGameLoop(
     pageState === "playing",
@@ -229,7 +248,46 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
       setChallenge(ch);
 
-      // Determine state
+      // ── Quiz Duel (Phase 3B) — a separate branch from the scorecard flow
+      // below. Completed (opponent_score !== null, set only once BOTH sides'
+      // h2h_duel_attempts rows are copied across — see /api/h2h/play) reuses
+      // the SAME "results" state/render as scorecard: a finished duel is just
+      // a challenger/opponent score comparison, same UI, no duplication.
+      if (ch.mode === "duel") {
+        if (ch.opponent_score !== null) {
+          setPageState("results");
+          if (ch.challenger_answers && ch.opponent_answers) {
+            const { data: pack } = await supabase
+              .from("quiz_packs").select("questions").eq("id", ch.quiz_pack_id).single();
+            if (pack?.questions) setQuestions(pack.questions as unknown as RawQuestion[]);
+          }
+          return;
+        }
+        const isParticipant = !!uid && (uid === ch.challenger_id || uid === ch.invited_user_id);
+        if (!isParticipant) {
+          // Not completed AND not a participant — nothing to show. h2h_challenges
+          // is public-read, but a duel's scores stay null until both sides
+          // finish, so there's genuinely nothing to leak here either way.
+          setPageState("duel_not_participant");
+          return;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: ownAttempt } = await (supabase as any)
+          .from("h2h_duel_attempts")
+          .select("score, correct_count")
+          .eq("h2h_id", id)
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (ownAttempt) {
+          setDuelOwnScore({ score: ownAttempt.score, correct: ownAttempt.correct_count });
+          setPageState("duel_waiting");
+        } else {
+          setPageState("duel_intro");
+        }
+        return;
+      }
+
+      // ── Scorecard (quiz_battle / gameday_quiz) — unchanged from before Phase 3B.
       if (ch.opponent_score !== null) {
         setPageState("results");
         // Pull the pack's questions so the reveal can show both players' picks —
@@ -325,7 +383,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
         if (userId) {
           // Server grades the answers against the pack and writes the score.
-          // The client can no longer set opponent_score directly.
+          // The client can no longer set opponent_score/a duel attempt directly.
           const res = await fetch("/api/h2h/play", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -340,6 +398,30 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
           if (res.ok) {
             const data = await res.json();
+
+            // ── Quiz Duel (Phase 3B) — a different response shape (yourScore/
+            // yourCorrect/done) and two possible next states, neither of which
+            // is the scorecard branch below.
+            if (challenge.mode === "duel") {
+              if (data.done === "complete") {
+                // Both sides have now played — /api/h2h/play just copied both
+                // scores onto the public row. Refetch it rather than guess its
+                // shape client-side, then reuse the existing results render.
+                const supabase = createClient();
+                const { data: freshRow } = await supabase
+                  .from("h2h_challenges").select("*").eq("id", challenge.id).single();
+                if (freshRow) setChallenge(freshRow as unknown as H2HChallenge);
+                setScore(data.yourScore);
+                setPageState("results");
+              } else {
+                setDuelOwnScore({ score: data.yourScore, correct: data.yourCorrect });
+                setScore(data.yourScore);
+                setPageState("duel_waiting");
+              }
+              setAdvancing(false);
+              return;
+            }
+
             finalScore = data.opponentScore;
             correctCount = data.opponentCorrect;
             setChallenge((prev) =>
@@ -454,6 +536,114 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
         <Button href="/challenges" variant="ghost" size="md" fullWidth>
           Play on Challenges →
+        </Button>
+      </div>
+    );
+  }
+
+  // ── Duel: not a participant (Phase 3B) ────────────────────────────────
+  // A duel's scores stay null pre-completion regardless (h2h_challenges is
+  // public-read, but there's nothing on it to see yet) — once it completes,
+  // a non-participant falls through to the shared "results" state below,
+  // same public share behaviour scorecard already has.
+  if (pageState === "duel_not_participant") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 gap-4" style={gridBg}>
+        <p className="font-display text-2xl text-white text-center">This one&apos;s a private duel</p>
+        <p className="font-body text-sm text-center" style={{ color: "#8a948f" }}>
+          Only the two players can see this challenge until it&apos;s done.
+        </p>
+        <Link
+          href="/"
+          className="rounded-2xl px-6 py-3 font-display text-sm tracking-widest"
+          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.1)", color: "#9aa39d" }}
+        >
+          ← Home
+        </Link>
+      </div>
+    );
+  }
+
+  // ── Duel: intro, hasn't played yet (Phase 3B) ─────────────────────────
+  if (pageState === "duel_intro" && challenge) {
+    return (
+      <div className="min-h-screen flex flex-col" style={gridBg}>
+        <div className="px-5 pt-6 pb-8"
+          style={{ background: "linear-gradient(175deg, #1a0e00 0%, #0d0b00 60%, transparent 100%)" }}>
+          <p className="font-display text-xs tracking-widest mb-3" style={{ color: "#ffb800" }}>
+            QUIZ DUEL
+          </p>
+          <h1 className="font-display text-4xl text-white leading-tight mb-3">
+            {challenge.quiz_pack_name}
+          </h1>
+          <p className="font-body text-sm" style={{ color: "#8a948f" }}>
+            You both play it fresh. Best score wins.
+          </p>
+        </div>
+
+        <div className="px-5 flex flex-col gap-4 pb-10">
+          <div className="rounded-2xl px-5 py-4 flex items-center justify-around"
+            style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
+            {[
+              { val: `${challenge.total_questions}`, label: "Questions" },
+              { val: "Fresh", label: "Neither's played" },
+              { val: "1×", label: "One attempt" },
+            ].map(({ val, label }) => (
+              <div key={label} className="text-center">
+                <div className="font-display text-xl text-white">{val}</div>
+                <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={startPlaying}>
+            PLAY →
+          </Button>
+
+          <p className="font-body text-xs text-center" style={{ color: "#3a423d" }}>
+            Expires {new Date(challenge.expires_at).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Duel: played, waiting on the other side (Phase 3B) ────────────────
+  // Never renders the other side's score or whether they've even started —
+  // only that the viewer is done and their own result.
+  if (pageState === "duel_waiting" && challenge) {
+    return (
+      <div className="min-h-screen flex flex-col px-5 py-12 gap-6" style={gridBg}>
+        <div>
+          <p className="font-display text-xs tracking-widest mb-1" style={{ color: "#aeea00" }}>
+            YOU&apos;RE DONE
+          </p>
+          <h1 className="font-display text-3xl text-white leading-tight">
+            {challenge.quiz_pack_name}
+          </h1>
+        </div>
+
+        <div
+          className="rounded-2xl p-5 flex items-center gap-4"
+          style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <Avatar name={opponentName} color="#aeea00" size={52} />
+          <div>
+            <p className="font-display text-3xl text-white">
+              {(duelOwnScore?.score ?? score).toLocaleString()}
+            </p>
+            <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>
+              {duelOwnScore?.correct ?? 0}/{challenge.total_questions} correct
+            </p>
+          </div>
+        </div>
+
+        <p className="font-body text-sm" style={{ color: "#8a948f" }}>
+          Waiting for the other side to play. You&apos;ll get a nudge the moment the result&apos;s in.
+        </p>
+
+        <Button href="/challenges" variant="ghost" size="md" fullWidth>
+          Back to Challenges →
         </Button>
       </div>
     );

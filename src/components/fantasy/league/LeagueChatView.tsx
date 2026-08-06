@@ -470,19 +470,29 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }
       {c.status === "pending" && !viewerIsOpponent && (
         <div>
           {mutedLine(`Waiting for ${c.opponentName}`)}
-          {viewerIsChallenger && (
-            <button disabled={busy} onClick={(e) => { e.stopPropagation(); onCancel(c.challengeId); }} style={{
-              marginTop: 5, padding: 0, fontSize: 11.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
-              background: "none", border: "none", color: MUTED, textDecoration: "underline", opacity: busy ? 0.6 : 1,
-            }}>Cancel</button>
-          )}
+          <div style={{ display: "flex", gap: 12, marginTop: 5, alignItems: "center" }}>
+            {viewerIsChallenger && (
+              <button disabled={busy} onClick={(e) => { e.stopPropagation(); onCancel(c.challengeId); }} style={{
+                padding: 0, fontSize: 11.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
+                background: "none", border: "none", color: MUTED, textDecoration: "underline", opacity: busy ? 0.6 : 1,
+              }}>Cancel</button>
+            )}
+            {/* Duel only (Phase 3B): the challenger playing their OWN side is
+                NOT acceptance — a plain link, no onAccept call, unlike the
+                opponent's Play button above (product decision, locked). */}
+            {viewerIsChallenger && c.gameMode === "duel" && c.h2hId && (
+              <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+                fontSize: 11.5, fontWeight: 700, color: GOLD, textDecoration: "none",
+              }}>Play your side</Link>
+            )}
+          </div>
         </div>
       )}
       {c.status === "active" && (
         <div>
           {mutedLine(`${c.opponentName} is on it`)}
           {/* A real play destination only — a "#" link is a dead button in
-              disguise (house rule). h2hId is always set for quiz_battle. */}
+              disguise (house rule). h2hId is always set once accepted. */}
           {viewerIsOpponent && c.h2hId && (
             <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
               display: "inline-block", marginTop: 6, fontSize: 12, fontWeight: 700, color: GOLD, textDecoration: "none",
@@ -490,6 +500,24 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }
           )}
         </div>
       )}
+      {/* Duel only (Phase 3B) — one side has played, the other hasn't. Only
+          ever names WHO'S played, never a score (challengerDone/opponentDone
+          are booleans, nothing more — see challenges.ts's challengeCardsFor). */}
+      {c.status === "awaiting_opponent" && (() => {
+        const doneName = c.challengerDone ? c.challengerName : c.opponentName;
+        const notDoneIsViewer = c.challengerDone ? viewerIsOpponent : viewerIsChallenger;
+        const notDoneName = c.challengerDone ? c.opponentName : c.challengerName;
+        return (
+          <div>
+            {mutedLine(`${doneName} has played. Waiting for ${notDoneName}.`)}
+            {notDoneIsViewer && c.h2hId && (
+              <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+                display: "inline-block", marginTop: 6, fontSize: 12, fontWeight: 700, color: GOLD, textDecoration: "none",
+              }}>Play</Link>
+            )}
+          </div>
+        );
+      })()}
       {c.status === "completed" && (
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{winnerName ? `${winnerName} won` : "It finished level"}</div>
@@ -504,7 +532,7 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }
       {c.status === "expired" && mutedLine("This one expired")}
       {c.status === "cancelled" && mutedLine(`${c.challengerName} withdrew it`)}
 
-      {c.status === "pending" && (
+      {(c.status === "pending" || c.status === "awaiting_opponent") && (
         <div style={{ fontSize: 10.5, color: MUTED, marginTop: 8 }}>{expiryLine(c.expiresAt)}</div>
       )}
     </CardShell>

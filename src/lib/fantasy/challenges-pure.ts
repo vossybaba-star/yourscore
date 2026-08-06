@@ -46,3 +46,38 @@ export const DEFAULT_CREATED_FROM = "member_action";
 export function normalizeCreatedFrom(value: unknown): string {
   return typeof value === "string" && CREATED_FROM_VALUES.has(value) ? value : DEFAULT_CREATED_FROM;
 }
+
+// ── Quiz Duel (Phase 3B) ─────────────────────────────────────────────────
+
+export interface DuelAttemptLite { userId: string; score: number }
+
+export type DuelOutcome =
+  | { status: "waiting" }
+  | { status: "completed"; winnerId: string | null };
+
+/** Pure winner derivation for a duel, off however many h2h_duel_attempts rows
+ *  exist for that h2h id. Fewer than 2 attempts (0 or 1 — one side missing)
+ *  is never a result, just "waiting" — reconcile() decides separately whether
+ *  that's still pending/active or worth flipping to awaiting_opponent. Once
+ *  both exist: higher score wins, an exact tie completes with no winner
+ *  (same tie rule as quiz_battle — no tiebreaker, no replay). */
+export function deriveDuelOutcome(attempts: DuelAttemptLite[]): DuelOutcome {
+  if (attempts.length < 2) return { status: "waiting" };
+  const [a, b] = attempts;
+  if (a.score === b.score) return { status: "completed", winnerId: null };
+  return { status: "completed", winnerId: a.score > b.score ? a.userId : b.userId };
+}
+
+// ── Gameday Quiz (Phase 3B) ──────────────────────────────────────────────
+
+/** The exact marker gameday/publish.ts's ensurePackRow stamps on a fixture
+ *  pack's quiz_packs.metadata — `{ gameday: { fixture_id, ... } }`. A recap
+ *  pack (no fixture, gameweek only) carries `metadata.recap` instead and
+ *  deliberately does NOT match, so createChallenge's gameday_quiz path can't
+ *  be pointed at a recap. quiz_packs.metadata is untyped Json, hence the
+ *  defensive shape checks rather than a straight property read. */
+export function isGamedayPack(metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== "object") return false;
+  const gameday = (metadata as Record<string, unknown>).gameday;
+  return !!gameday && typeof gameday === "object";
+}

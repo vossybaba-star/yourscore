@@ -1,13 +1,13 @@
 /**
- * The challenge game registry (Phase 1C) — the single list of games a
- * league-mate challenge can be played over. Shared by client and server (no
- * "server-only" here): the prep sheet reads it to render the one supported
- * game card, and challenges.ts reads it to gate createChallenge.
+ * The challenge game registry (Phase 1C, expanded Phase 3B) — the single list
+ * of games a league-mate challenge can be played over. Shared by client and
+ * server (no "server-only" here): the prep sheet reads it to render every
+ * supported game as a card, and challenges.ts reads it to gate createChallenge.
  *
- * UNSUPPORTED GAMES ARE NEVER RENDERED — founder's call: Quiz Battle only for
- * now, no greyed-out "coming soon" cards for gameday_quiz / 38_0. They're
- * listed here so the shape of a future adapter is documented in one place,
- * not because the UI should show them.
+ * UNSUPPORTED GAMES ARE NEVER RENDERED — founder's call: no greyed-out
+ * "coming soon" cards. They're listed here so the shape of a future adapter
+ * is documented in one place, not because the UI should show them. 38-0
+ * stays unsupported this phase.
  */
 
 export interface ChallengeGame {
@@ -27,7 +27,8 @@ export interface ChallengeGame {
 }
 
 /**
- * quiz_battle — the only playable game today.
+ * quiz_battle — send a quiz you've ALREADY played; they've got a few days to
+ * beat your stored scorecard.
  *
  * Winner: once BOTH sides have a score on the linked h2h_challenges row
  * (challenger_score always set at creation; opponent_score set the moment
@@ -54,19 +55,41 @@ export const CHALLENGE_GAMES: ChallengeGame[] = [
     supported: true,
   },
   {
-    id: "gameday_quiz",
-    name: "Gameday Quiz",
-    shortDesc: "The per-fixture matchday pack, head to head.",
+    id: "quiz_duel",
+    name: "Quiz Duel",
+    shortDesc: "Pick a quiz neither of you has played. You both play it fresh. Best score wins.",
     typicalDuration: "A few minutes",
     async: true,
-    // Not offered yet. An adapter would need: a way to create a challenge
-    // BEFORE either side has played (gameday quiz results aren't a replayable
-    // stored attempt the way quiz_attempts is — see createChallenge's Quiz
-    // Battle step, which reads an EXISTING attempt), its own result table
-    // (or a gameday-specific row on h2h_challenges) to point result_id at,
-    // and a winner rule for what happens if the fixture itself is postponed
-    // (today's expiry model assumes the game itself doesn't move).
-    supported: false,
+    // Phase 3B. The h2h_challenges row is created BEFORE anyone has a score
+    // (mode 'duel', challenger_score/correct/answers null at insert — see
+    // migration 259, which drops their NOT NULL constraints for this). Each
+    // side's play is graded and held in h2h_duel_attempts (RLS: own row only —
+    // h2h_challenges itself is public-read, so an in-progress duel score
+    // can't live there without leaking) until BOTH exist, at which point
+    // /api/h2h/play copies both onto the public h2h row and flips it
+    // complete — the ONLY moment a duel's answers/scores become world-
+    // readable. Winner: higher combined score once both attempts exist; tie
+    // → null. See deriveDuelOutcome in challenges-pure.ts.
+    supported: true,
+  },
+  {
+    id: "gameday_quiz",
+    name: "Gameday Quiz",
+    shortDesc: "A matchday pack, head to head.",
+    typicalDuration: "A few minutes",
+    async: true,
+    // Phase 3B. Same adapter as Quiz Battle end to end — an existing
+    // quiz_attempts scorecard published as an h2h_challenges row (mode
+    // 'scorecard'), scoring_version 'gameday_quiz_v1' — the only addition is
+    // createChallenge rejecting a pack that doesn't carry the gameday
+    // metadata marker (quiz_packs.metadata.gameday, set by
+    // gameday/publish.ts's ensurePackRow; recap packs carry metadata.recap
+    // instead and don't qualify). The old doc here claimed gameday needed
+    // its own result table — it doesn't: a gameday attempt is a normal
+    // quiz_attempts row (published via the same solo-complete path any other
+    // pack uses), so the "existing scorecard" trust model Quiz Battle already
+    // has just works.
+    supported: true,
   },
   {
     id: "38_0",

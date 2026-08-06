@@ -35,6 +35,22 @@ export async function GET(req: NextRequest) {
       leagueId = league?.id;
     }
     const challenge = await pairStatus(db, userId, opponentId, leagueId);
-    return { challenge };
+
+    // Phase 3B — MemberActionSheet's chip needs "who's played" for a duel
+    // (its awaiting_opponent/"Your turn" branch), which pairStatus's raw row
+    // doesn't carry. Minimal extension rather than a hydrated ChallengeCardData
+    // (challengeCardsFor) — the chip has no use for names/avatars it already
+    // has from `member`.
+    let challengerDone = false;
+    let opponentDone = false;
+    if (challenge && challenge.game_type === "quiz_duel" && challenge.result_id) {
+      const { data: attempts } = await db.from("h2h_duel_attempts")
+        .select("user_id").eq("h2h_id", challenge.result_id);
+      const doneUsers = new Set(((attempts ?? []) as { user_id: string }[]).map((a) => a.user_id));
+      challengerDone = doneUsers.has(challenge.challenger_id);
+      opponentDone = doneUsers.has(challenge.opponent_id);
+    }
+
+    return { challenge, challengerDone, opponentDone };
   });
 }
