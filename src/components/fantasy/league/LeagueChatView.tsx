@@ -19,7 +19,7 @@ import { uploadPostImage } from "@/lib/postMedia";
 import { uploadPostVideo, validateAndProbeVideo, PostVideoError } from "@/lib/postVideo";
 import { InlineVideoPlayer } from "@/components/fantasy/VideoPlayer";
 import { ReportSheet } from "@/components/social/ReportSheet";
-import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type GifCard } from "./types";
+import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type ChallengeCard, type GifCard } from "./types";
 import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished, trackVideoChatMessageSent } from "@/lib/analytics/trackSocial";
 import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
 import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
@@ -421,35 +421,46 @@ function expiryLine(iso: string): string {
   return `Expires ${new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
 }
 
-/** The league-mate challenge card (Phase 1C) — GOLD accent (a challenge is a
- *  stake, same family as the STAKES banner above). Status-aware: Accept/
- *  Decline only render for the challenged player while it's still pending —
- *  every other viewer/state gets a plain status line, never a dead button. */
-function ChallengeCardMsg({ msg, viewerId, onDecline, busy }: {
-  msg: ChatMessage; viewerId: string | null; onDecline: (challengeId: string) => void; busy: boolean;
+/** The league-mate challenge card (Phase 1C, lifecycle Phase 3A) — GOLD
+ *  accent (a challenge is a stake, same family as the STAKES banner above).
+ *  Fully status- and viewer-aware: every rendered action is real (calls the
+ *  matching /api/fantasy/challenges/[id]/* route and refreshes) — a state
+ *  with nothing actionable gets a plain status line, never a dead button.
+ *
+ *  One-tap accept (product decision, locked): "Play" IS acceptance — no
+ *  separate Accept step. Decline stays its own action. Cancel (the
+ *  challenger's withdraw) and decline are both "quiet" — no shaming line,
+ *  just a muted terminal status once they land. */
+function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }: {
+  msg: ChatMessage; viewerId: string | null;
+  onDecline: (challengeId: string) => void; onCancel: (challengeId: string) => void;
+  onAccept: (challengeId: string, h2hId: string | null) => void; busy: boolean;
 }) {
   const c = msg.challenge!;
   const viewerIsOpponent = !!viewerId && viewerId === c.opponentId;
+  const viewerIsChallenger = !!viewerId && viewerId === c.challengerId;
   const winnerName = c.winnerId === c.challengerId ? c.challengerName : c.winnerId === c.opponentId ? c.opponentName : null;
+  const mutedLine = (text: string) => <div style={{ fontSize: 12, color: MUTED }}>{text}</div>;
   return (
     <CardShell accent={GOLD}>
       <KindLabel color={GOLD} text="CHALLENGE" />
       <div className="font-display" style={{ fontSize: 14.5, fontWeight: 700, color: INK, lineHeight: 1.3, marginBottom: 3 }}>
         {c.challengerName} challenged {c.opponentName}
       </div>
+      {c.message && (
+        <div style={{
+          fontSize: 12, color: MUTED, fontStyle: "italic", lineHeight: 1.4,
+          borderLeft: `2px solid ${tint(GOLD, "66")}`, padding: "1px 0 1px 9px", margin: "2px 0 8px",
+        }}>“{c.message}”</div>
+      )}
       <div style={{ fontSize: 12, color: MUTED, marginBottom: 9 }}>{c.gameName} · {c.quizName}</div>
 
       {c.status === "pending" && viewerIsOpponent && (
         <div style={{ display: "flex", gap: 8 }}>
-          {/* Accept only renders with a real play destination — a "#" link is
-              a dead button in disguise (house rule). h2hId is always set for
-              quiz_battle; this guards a malformed row, not a normal state. */}
-          {c.h2hId && (
-            <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
-              flex: 1, textAlign: "center", padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700,
-              background: tint(GOLD, "22"), color: GOLD, border: `1px solid ${tint(GOLD, "66")}`, textDecoration: "none",
-            }}>Accept</Link>
-          )}
+          <button disabled={busy} onClick={(e) => { e.stopPropagation(); onAccept(c.challengeId, c.h2hId); }} style={{
+            flex: 1, padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
+            background: tint(GOLD, "22"), color: GOLD, border: `1px solid ${tint(GOLD, "66")}`, opacity: busy ? 0.6 : 1,
+          }}>Play</button>
           <button disabled={busy} onClick={(e) => { e.stopPropagation(); onDecline(c.challengeId); }} style={{
             flex: 1, padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
             background: PANEL_2, color: MUTED, border: `1px solid ${LINE}`, opacity: busy ? 0.6 : 1,
@@ -457,18 +468,74 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, busy }: {
         </div>
       )}
       {c.status === "pending" && !viewerIsOpponent && (
-        <div style={{ fontSize: 12, color: MUTED }}>Waiting on {c.opponentName}</div>
+        <div>
+          {mutedLine(`Waiting for ${c.opponentName}`)}
+          {viewerIsChallenger && (
+            <button disabled={busy} onClick={(e) => { e.stopPropagation(); onCancel(c.challengeId); }} style={{
+              marginTop: 5, padding: 0, fontSize: 11.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
+              background: "none", border: "none", color: MUTED, textDecoration: "underline", opacity: busy ? 0.6 : 1,
+            }}>Cancel</button>
+          )}
+        </div>
+      )}
+      {c.status === "active" && (
+        <div>
+          {mutedLine(`${c.opponentName} is on it`)}
+          {/* A real play destination only — a "#" link is a dead button in
+              disguise (house rule). h2hId is always set for quiz_battle. */}
+          {viewerIsOpponent && c.h2hId && (
+            <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+              display: "inline-block", marginTop: 6, fontSize: 12, fontWeight: 700, color: GOLD, textDecoration: "none",
+            }}>Back in</Link>
+          )}
+        </div>
       )}
       {c.status === "completed" && (
-        <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{winnerName ? `${winnerName} won` : "It finished level"}</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{winnerName ? `${winnerName} won` : "It finished level"}</div>
+          {c.h2hId && (
+            <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+              display: "inline-block", marginTop: 4, fontSize: 12, fontWeight: 700, color: GOLD, textDecoration: "none",
+            }}>See the scores</Link>
+          )}
+        </div>
       )}
-      {c.status === "declined" && <div style={{ fontSize: 12, color: MUTED }}>Declined</div>}
-      {c.status === "expired" && <div style={{ fontSize: 12, color: MUTED }}>Expired</div>}
+      {c.status === "declined" && mutedLine(`${c.opponentName} passed`)}
+      {c.status === "expired" && mutedLine("This one expired")}
+      {c.status === "cancelled" && mutedLine(`${c.challengerName} withdrew it`)}
 
       {c.status === "pending" && (
         <div style={{ fontSize: 10.5, color: MUTED, marginTop: 8 }}>{expiryLine(c.expiresAt)}</div>
       )}
     </CardShell>
+  );
+}
+
+/** The Phase 3A compact result "ping" (kind: "challenge_result") — one new
+ *  line dropped into chat when a challenge completes, distinct from the
+ *  original CHALLENGE card above updating in place (product decision,
+ *  locked: both happen). No accent shell, no actions — just the outcome and
+ *  a link, so it doesn't visually compete with the card it's reporting on. */
+function ChallengeResultLine({ challenge: c }: { challenge: ChallengeCard }) {
+  const winnerName = c.winnerId === c.challengerId ? c.challengerName : c.winnerId === c.opponentId ? c.opponentName : null;
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 8, background: PANEL, border: `1px solid ${tint(GOLD, "2a")}`,
+      borderRadius: 10, padding: "8px 11px",
+    }}>
+      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+        <path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 01-12 0V4z" />
+        <path d="M6 6H4a2 2 0 002 4M18 6h2a2 2 0 01-2 4" />
+      </svg>
+      <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>
+        {winnerName ? `${winnerName} won the challenge` : "The challenge finished level"}
+      </span>
+      {c.h2hId && (
+        <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+          marginLeft: "auto", fontSize: 11.5, fontWeight: 700, color: GOLD, textDecoration: "none", flexShrink: 0,
+        }}>See scores</Link>
+      )}
+    </div>
   );
 }
 
@@ -538,10 +605,11 @@ function PollComposer({ onPost, onCancel, busy }: { onPost: (q: string, opts: st
 /** The bubble/card for one message, minus the reactions row. `showHeader` is
  *  the sender-grouping signal (AC3) — only the first bubble of a same-sender
  *  run within 5 minutes carries the name. */
-function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, onDeclineChallenge, viewerId, readOnly, busy, showHeader = true }: {
+function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, onDeclineChallenge, onCancelChallenge, onAcceptChallenge, viewerId, readOnly, busy, showHeader = true }: {
   m: ChatMessage; onView: (id: number) => void; onOpenNews: (m: ChatMessage) => void; onVote: (i: number) => void;
   onViewImage: (url: string) => void; onViewFeed: (eventId: string) => void; onAuthor: (m: ChatMessage) => void;
-  onDeclineChallenge: (challengeId: string) => void; viewerId: string | null;
+  onDeclineChallenge: (challengeId: string) => void; onCancelChallenge: (challengeId: string) => void;
+  onAcceptChallenge: (challengeId: string, h2hId: string | null) => void; viewerId: string | null;
   readOnly?: boolean; busy?: boolean; showHeader?: boolean;
 }) {
   if ((m.kind === "player" || m.kind === "captain") && m.player) return <SharedPlayer msg={m} onView={() => onView(m.player!.id)} />;
@@ -552,7 +620,9 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, o
   if (m.kind === "image" && m.image) return <SharedImage msg={m} onView={() => onViewImage(m.image!.url)} />;
   if (m.kind === "video" && m.video) return <SharedVideo msg={m} />;
   if (m.kind === "feed" && m.feed) return <SharedFeedPost msg={m} onView={() => onViewFeed(m.feed!.eventId)} />;
-  if (m.kind === "challenge" && m.challenge) return <ChallengeCardMsg msg={m} viewerId={viewerId} onDecline={onDeclineChallenge} busy={!!busy} />;
+  if (m.kind === "challenge" && m.challenge)
+    return <ChallengeCardMsg msg={m} viewerId={viewerId} onDecline={onDeclineChallenge} onCancel={onCancelChallenge} onAccept={onAcceptChallenge} busy={!!busy} />;
+  if (m.kind === "challenge_result" && m.challenge) return <ChallengeResultLine challenge={m.challenge} />;
   if (m.kind === "poll" && m.poll) return <Poll msg={m} onVote={onVote} readOnly={readOnly} />;
   return (
     <div style={{
@@ -827,6 +897,43 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
     });
   };
 
+  // Withdraw a challenge (Phase 3A) — the challenger only, while pending.
+  // Same top-level-route shape as decline above.
+  const cancelChallenge = (challengeId: string) => {
+    setReactFor(null);
+    guard(async () => {
+      const res = await fetch(`/api/fantasy/challenges/${challengeId}/cancel`, { method: "POST" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not cancel");
+    });
+  };
+
+  // One-tap accept (Phase 3A, product decision, locked): the opponent's
+  // "Play" tap on the pending card IS acceptance — no separate Accept step.
+  // Doesn't reuse guard(): on success it navigates straight into the game
+  // rather than reloading the thread first (nothing to show — the manager's
+  // already leaving the page), and on a 409 (someone else's tap already
+  // closed it, or it's expired) it still reloads so the card never sits on a
+  // dead Play button.
+  const acceptChallenge = (challengeId: string, h2hId: string | null) => {
+    setReactFor(null);
+    setBusy(true); setErr(null);
+    (async () => {
+      try {
+        const res = await fetch(`/api/fantasy/challenges/${challengeId}/accept`, { method: "POST" });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (res.status === 409) { await load(viewGw); setBusy(false); return; }
+          throw new Error(j.error ?? "Could not accept");
+        }
+        router.push(`/h2h/${j.h2hId ?? h2hId}`);
+      } catch (e) {
+        setErr((e as Error).message);
+        await load(viewGw);
+      }
+      setBusy(false);
+    })();
+  };
+
   // Delete/Block/Mute (Phase 5a) — reuse the existing comments DELETE (soft
   // delete, ownership-checked server-side) for a message, and the same
   // report/block/mute endpoints the feed uses. guard() reloads the thread
@@ -1022,7 +1129,8 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                   : <span aria-hidden style={{ width: 22, flexShrink: 0 }} />)}
                 <MessageBody m={m} onView={(id) => router.push(`/fantasy/players/${id}`)} onOpenNews={openNews}
                   onVote={(i2) => vote(m.id, i2)} onViewImage={setGalleryUrl} onViewFeed={openFeed} onAuthor={openAuthor}
-                  onDeclineChallenge={declineChallenge} viewerId={user?.id ?? null}
+                  onDeclineChallenge={declineChallenge} onCancelChallenge={cancelChallenge} onAcceptChallenge={acceptChallenge}
+                  viewerId={user?.id ?? null}
                   readOnly={readOnly} busy={busy} showHeader={showHeader} />
               </div>
               <div style={{ maxWidth: "94%", paddingLeft: mine ? 0 : (structured ? 2 : 29) }}>

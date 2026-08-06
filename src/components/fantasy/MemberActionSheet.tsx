@@ -18,7 +18,7 @@
  * buttons). `isLeagueOwner` is kept on the prop surface for when that API
  * lands, but nothing reads it today.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, PANEL_2, Sheet, TEAL } from "@/components/fantasy/shared";
@@ -44,6 +44,13 @@ export interface MemberActionMember {
 interface RunView {
   gw: number; name: string; correct: number; total: number;
   questions: { prompt: string; picked: string | null; answer: string; right: boolean }[];
+}
+
+/** The raw row GET /api/fantasy/challenges (pairStatus) returns — snake_case,
+ *  straight off member_challenges, not the hydrated ChallengeCardData chat
+ *  cards use. Only the fields the chip's state machine needs. */
+interface PairChallengeRow {
+  id: string; status: string; challenger_id: string; opponent_id: string; result_id: string | null;
 }
 
 export const nameOfMember = (m: { username: string | null; displayName: string | null }) =>
@@ -140,10 +147,22 @@ export function MemberActionSheet({
   const [reportOpen, setReportOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [challengeOpen, setChallengeOpen] = useState(false);
-  // "pending" disables the chip (a status display, never a dead action — see
-  // ActionChip's disabled mode). Starts "loading" so the chip doesn't flash
-  // "Challenge" then immediately swap to "Pending" once the fetch lands.
-  const [pairChallengeStatus, setPairChallengeStatus] = useState<"loading" | "none" | "pending">("loading");
+  // The full pair row (Phase 3A — the chip needs status AND who's who, not
+  // just "is it pending", to pick between Pending/Your turn/Back in/In play/
+  // See result). "loading" keeps the chip's disabled placeholder up so it
+  // never flashes "Challenge" then immediately swaps once the fetch lands.
+  const [pairChallenge, setPairChallenge] = useState<PairChallengeRow | null | "loading">("loading");
+  const [acceptBusy, setAcceptBusy] = useState(false);
+
+  const refreshPairChallenge = useCallback(() => {
+    if (!leagueCode) return;
+    fetch(`/api/fantasy/challenges?with=${member.userId}&league=${encodeURIComponent(leagueCode)}`)
+      .then(async (res) => {
+        const j = await res.json().catch(() => ({}));
+        setPairChallenge((j?.challenge as PairChallengeRow | undefined) ?? null);
+      })
+      .catch(() => setPairChallenge(null));
+  }, [leagueCode, member.userId]);
 
   // The stats section: the member's completed quiz round for THIS gameweek,
   // relocated unchanged from LeagueTableView's peek() (same fetch, same 401/
@@ -176,23 +195,34 @@ export function MemberActionSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context, leagueCode, member.userId, viewerId]);
 
-  // Fetched once on open (Phase 1C, AC4) — the chip's Challenge/Pending state.
+  // Fetched once on open (Phase 1C, AC4; full row since Phase 3A) — the chip's
+  // Challenge/Pending/Your turn/Back in/In play/See result state.
   useEffect(() => {
     if (!showChallenge || !leagueCode) return;
-    let live = true;
-    setPairChallengeStatus("loading");
-    fetch(`/api/fantasy/challenges?with=${member.userId}&league=${encodeURIComponent(leagueCode)}`)
-      .then(async (res) => {
-        const j = await res.json().catch(() => ({}));
-        if (!live) return;
-        setPairChallengeStatus(j?.challenge?.status === "pending" ? "pending" : "none");
-      })
-      .catch(() => { if (live) setPairChallengeStatus("none"); });
-    return () => { live = false; };
+    setPairChallenge("loading");
+    refreshPairChallenge();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showChallenge, leagueCode, member.userId]);
 
   const signIn = () => router.push(`/auth/sign-in?next=${encodeURIComponent(pathname ?? "/")}`);
+
+  // One-tap accept from the chip (Phase 3A, product decision, locked) — same
+  // "Play IS accept" flow as LeagueChatView's Play button. On a 409 (someone
+  // else's tap already closed it) this refreshes the chip instead of leaving
+  // it looking actionable.
+  const acceptFromChip = () => {
+    if (acceptBusy || pairChallenge === "loading" || !pairChallenge) return;
+    setAcceptBusy(true);
+    fetch(`/api/fantasy/challenges/${pairChallenge.id}/accept`, { method: "POST" })
+      .then(async (res) => {
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) { refreshPairChallenge(); return; }
+        router.push(`/h2h/${j.h2hId ?? pairChallenge.result_id}`);
+        onClose();
+      })
+      .catch(() => refreshPairChallenge())
+      .finally(() => setAcceptBusy(false));
+  };
 
   const handleMention = () => {
     if (!viewerId) { signIn(); return; }
@@ -220,6 +250,40 @@ export function MemberActionSheet({
     trackMemberActionSelected("compare");
     setCompareOpen(true);
   };
+
+  const openChallenge = () => { trackMemberActionSelected("challenge"); setChallengeOpen(true); };
+
+  /** The chip's full state machine (Phase 3A) — status AND who's who, since
+   *  "pending" alone no longer says enough (challenger vs opponent see
+   *  different labels and different actions). Every branch is either a real
+   *  action/navigation or ActionChip's disabled status-display mode — never
+   *  a chip that looks tappable but does nothing. */
+  const challengeChip = (() => {
+    if (pairChallenge === "loading") return <ActionChip icon={<ChallengeIcon />} label="Challenge" disabled />;
+    if (!pairChallenge) return <ActionChip icon={<ChallengeIcon />} label="Challenge" onClick={openChallenge} />;
+
+    const viewerIsOpponent = pairChallenge.opponent_id === viewerId;
+
+    switch (pairChallenge.status) {
+      case "pending":
+        return viewerIsOpponent
+          ? <ActionChip icon={<ChallengeIcon />} label="Your turn" onClick={acceptFromChip} />
+          : <ActionChip icon={<ChallengeIcon />} label="Pending" disabled />;
+      case "active":
+      case "accepted": // legacy pre-3A transitional status — treated the same as active
+        if (viewerIsOpponent && pairChallenge.result_id)
+          return <ActionChip icon={<ChallengeIcon />} label="Back in" href={`/h2h/${pairChallenge.result_id}`} onNavigate={onClose} />;
+        // The challenger (and anyone else, defensively) — nothing to tap
+        // while the opponent's game is live.
+        return <ActionChip icon={<ChallengeIcon />} label="In play" disabled />;
+      case "completed":
+        return pairChallenge.result_id
+          ? <ActionChip icon={<ChallengeIcon />} label="See result" href={`/h2h/${pairChallenge.result_id}`} onNavigate={onClose} />
+          : <ActionChip icon={<ChallengeIcon />} label="See result" disabled />;
+      default: // declined, expired, cancelled, draft, awaiting_opponent, void — reopenable
+        return <ActionChip icon={<ChallengeIcon />} label="Challenge" onClick={openChallenge} />;
+    }
+  })();
 
   const [safetyBusy, setSafetyBusy] = useState(false);
   const blockMember = () => {
@@ -305,11 +369,7 @@ export function MemberActionSheet({
             <ActionChip icon={<SquadIcon />} label="Squad" href={`/profile/${member.userId}#fantasy-xi`} onNavigate={onClose} />
             {showMention && <ActionChip icon={<MentionIcon />} label="Mention" onClick={handleMention} />}
             {showCompare && <ActionChip icon={<CompareIcon />} label="Compare" onClick={handleCompare} />}
-            {showChallenge && (
-              pairChallengeStatus === "pending"
-                ? <ActionChip icon={<ChallengeIcon />} label="Pending" disabled />
-                : <ActionChip icon={<ChallengeIcon />} label="Challenge" onClick={() => { trackMemberActionSelected("challenge"); setChallengeOpen(true); }} />
-            )}
+            {showChallenge && challengeChip}
           </div>
 
           {/* Stats — this gameweek's quiz round, member-in-a-shared-league only. */}
@@ -367,7 +427,13 @@ export function MemberActionSheet({
         <ChallengePrepSheet
           leagueCode={leagueCode}
           opponent={{ userId: member.userId, name: displayName, avatarUrl: member.avatarUrl }}
-          onSent={() => setPairChallengeStatus("pending")}
+          createdFrom="member_action"
+          onSent={(created) => {
+            // Opening this sheet from a member always makes the viewer the
+            // challenger and `member` the opponent — enough to flip the chip
+            // straight to "Pending" without waiting on a re-fetch.
+            if (viewerId) setPairChallenge({ id: created.id, status: "pending", challenger_id: viewerId, opponent_id: member.userId, result_id: created.h2hId });
+          }}
           onClose={() => setChallengeOpen(false)}
         />
       )}
