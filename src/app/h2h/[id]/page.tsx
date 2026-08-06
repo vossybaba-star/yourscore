@@ -17,6 +17,16 @@ import {
 } from "@/lib/theme";
 import { trackChallengeCompletedViewed, trackChallengeShared } from "@/lib/analytics/trackSocial";
 
+/** How long the correct/wrong banner stays up, counted from the moment it
+ *  renders. Answers no longer live in the browser, so the verdict arrives a
+ *  round trip after the tap (~0.9s on a fast connection, more on mobile data);
+ *  a dwell tuned for an instant verdict left it feeling like a flash. */
+const REVEAL_DWELL_MS = 2600;
+
+/** Shorter, for the branch where grading failed: there is no verdict to read,
+ *  just an acknowledged tap, so sitting on it only stalls the run. */
+const UNGRADED_DWELL_MS = 1200;
+
 // ── Types ─────────────────────────────────────────────────────────────────
 
 interface H2HChallenge {
@@ -446,7 +456,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       setAnswerLog(newLog);
       setLastPoints(null);
       setAdvancing(true);
-      setTimeout(() => void advance(newLog), 900);
+      setTimeout(() => void advance(newLog), UNGRADED_DWELL_MS);
       return;
     }
 
@@ -486,7 +496,12 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     setAnswerLog(newLog);
 
     setAdvancing(true);
-    setTimeout(() => void advance(newLog), 1800);
+    // Dwell is measured from HERE, the moment the verdict renders, not from the
+    // tap — the grading round trip already happened above. It is longer than the
+    // solo loop's on purpose: in solo the verdict lands on the tap itself, so
+    // 1.8s is read from a standing start. Here the eye has just sat through the
+    // round trip, so the verdict needs longer to be read rather than glimpsed.
+    setTimeout(() => void advance(newLog), REVEAL_DWELL_MS);
 
     // Continuation shared by the graded and ungraded paths: finish the round
     // or move to the next question. Pulled out so a failed grading call can
@@ -1407,6 +1422,36 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             accent={accent}
             onAnswer={handleAnswer}
           />
+
+          {/* Grading pause. Answers are no longer in the browser, so the verdict
+              costs a round trip (measured ~0.9s on a fast connection, longer on
+              mobile data). Without something in this slot the banner appears out
+              of nowhere after the eye has already moved on, which reads as the
+              verdict flashing past. Occupying the same box keeps attention where
+              the answer is about to land, and holds the layout steady so the
+              options don't jump when it arrives. */}
+          {selected && !revealed && (
+            <div
+              className="mt-4 rounded-2xl px-5 py-4 flex items-center gap-3"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+              aria-live="polite"
+            >
+              <span
+                className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
+                style={{
+                  flexShrink: 0,
+                  borderColor: "rgba(255,255,255,0.15)",
+                  borderTopColor: "#8a948f",
+                }}
+              />
+              <span className="font-body text-xs" style={{ color: "#8a948f" }}>
+                Checking your answer
+              </span>
+            </div>
+          )}
 
           {/* Reveal banner */}
           {revealed && revealedAnswer && (
