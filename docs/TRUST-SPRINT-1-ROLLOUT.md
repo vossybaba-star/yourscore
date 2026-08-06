@@ -175,3 +175,75 @@ no application path reads through it.
    the durable boundary at "signed in", matching `fantasy_feed_events`. It does
    not encode the 4-id allowlist, which is documented in `flag.ts` as a
    visibility gate rather than a security boundary and is due to be lifted.
+
+---
+
+## CI workflow: needs a token with `workflow` scope
+
+`.github/workflows/ci.yml` is written and verified locally (`pnpm test`, `pnpm lint`
+and `pnpm build` all pass against it) but is **not in this branch**. Pushing it was
+rejected:
+
+```
+refusing to allow an OAuth App to create or update workflow
+.github/workflows/ci.yml without `workflow` scope
+```
+
+Add it yourself, either through the GitHub web UI (Add file → Create new file →
+`.github/workflows/ci.yml`) or from a local shell whose credentials carry the
+`workflow` scope. The file content is below verbatim.
+
+Once it is in, every PR runs install (frozen lockfile) → `pnpm test:ci` → `pnpm lint`
+→ `pnpm build`, and fails the job on any of them. The suite is green today
+(609 tests, 601 pass, 0 fail, 8 skipped), so it will not be red on arrival. The
+8 skips are the anon-key security probes, which skip when Supabase env vars are
+absent and therefore stay green in CI without secrets.
+
+```yaml
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test-lint-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Must run before actions/setup-node's pnpm cache step below — that
+      # step needs pnpm already on PATH to resolve the store path it caches.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test:ci
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Dummy, non-functional values — never the real project. The build
+          # only needs these two to be a syntactically valid URL/string (they
+          # feed straight into @supabase/ssr's client constructor); nothing
+          # in `next build` performs an external write, and with fake
+          # credentials it categorically cannot reach the real database.
+          # Every other NEXT_PUBLIC_* var in this app falls back safely
+          # (`?? "https://yourscore.app"` or an `if (id)` guard) when unset,
+          # so none of them are needed here.
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key-not-real
+```
