@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, PosTag, TEAL, tint } from "@/components/fantasy/shared";
+import { AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, PosTag, Sheet, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
@@ -757,6 +757,11 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   // startRematch's own doc, below, for why this view needs its own
   // ChallengePrepSheet mount rather than reusing MemberActionSheet's.
   const [rematchChallenge, setRematchChallenge] = useState<ChallengeCard | null>(null);
+  // The + tray's Challenge entry (founder, 6 Aug): tapping it first asks WHO
+  // (the league roster already loaded for mention autocomplete), then opens
+  // the same ChallengePrepSheet the member sheet and rematch use.
+  const [challengePick, setChallengePick] = useState(false);
+  const [challengeOpponent, setChallengeOpponent] = useState<{ userId: string; name: string; avatarUrl: string | null } | null>(null);
   const [viewGw, setViewGw] = useState<number | null>(initialGw);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -797,6 +802,11 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   // lighter than leagueDetail). Blocked accounts are already excluded
   // server-side.
   const [members, setMembers] = useState<MentionUser[]>([]);
+  // The FULL roster, handle-less members included — the + tray's challenge
+  // picker needs everyone (a challenge doesn't need an @handle the way a
+  // mention does; filtering here made the picker claim an occupied league
+  // was empty).
+  const [roster, setRoster] = useState<{ userId: string; displayName: string; avatarUrl: string | null }[]>([]);
   useEffect(() => {
     let live = true;
     fetch(`/api/fantasy/leagues/${code}/members`)
@@ -804,8 +814,10 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
       .then((d) => {
         if (!live) return;
         type RawMember = { userId: string; username: string | null; displayName: string | null; avatarUrl: string | null };
+        const raw = (d.members ?? []) as RawMember[];
+        setRoster(raw.map((m) => ({ userId: m.userId, displayName: m.displayName ?? (m.username ? `@${m.username}` : "Player"), avatarUrl: m.avatarUrl })));
         setMembers(
-          ((d.members ?? []) as RawMember[])
+          raw
             .filter((m): m is RawMember & { username: string } => !!m.username)
             .map((m) => ({ userId: m.userId, username: m.username, displayName: m.displayName ?? `@${m.username}`, avatarUrl: m.avatarUrl })),
         );
@@ -1260,6 +1272,41 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
         />
       )}
 
+      {/* The + tray's Challenge flow: pick the rival first (the same roster
+          mention autocomplete uses, minus yourself), then the shared prep
+          sheet. Handle-less members don't appear here (the roster fetch
+          filters them for mentions) — they're still challengeable from the
+          table and members list, where the member sheet has no such filter. */}
+      {challengePick && (
+        <Sheet onClose={() => setChallengePick(false)} labelledBy="chat-challenge-pick-title">
+          <div id="chat-challenge-pick-title" className="font-display" style={{ fontSize: 16, fontWeight: 800, color: INK, marginBottom: 10 }}>Who are you calling out?</div>
+          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            {roster.filter((m) => m.userId !== user?.id).map((m) => (
+              <button key={m.userId} onClick={() => { setChallengeOpponent({ userId: m.userId, name: m.displayName, avatarUrl: m.avatarUrl }); setChallengePick(false); }} style={{
+                display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+                minHeight: 48, background: "none", border: "none", borderTop: `1px solid ${LINE}`, padding: "9px 2px",
+              }}>
+                <PlayerAvatar name={m.displayName} avatarUrl={m.avatarUrl} size={30} />
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>{m.displayName}</span>
+                <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: GOLD }}>Challenge</span>
+              </button>
+            ))}
+            {roster.filter((m) => m.userId !== user?.id).length === 0 && (
+              <p style={{ fontSize: 13, color: MUTED, margin: "8px 0" }}>Nobody else is in this league yet. Invite a friend first.</p>
+            )}
+          </div>
+        </Sheet>
+      )}
+      {challengeOpponent && (
+        <ChallengePrepSheet
+          leagueCode={code}
+          opponent={challengeOpponent}
+          createdFrom="league_chat"
+          onSent={() => { setChallengeOpponent(null); load(viewGw); }}
+          onClose={() => setChallengeOpponent(null)}
+        />
+      )}
+
       {/* Rematch prep sheet (Phase 3C) — a completed card's Rematch tap. See
           startRematch's own doc, above, for why this is its own mount rather
           than MemberActionSheet's copy. */}
@@ -1301,12 +1348,13 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
             {gifOpen && <GifPicker onPick={sendGif} onCancel={() => setGifOpen(false)} busy={busy} />}
             {menu && !poll && !gifOpen && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                <MenuChip onClick={pickImage} accent={TEAL} disabled={busy}>📷 Photo</MenuChip>
-                <MenuChip onClick={pickVideo} accent={TEAL} disabled={busy}>Video</MenuChip>
-                <MenuChip onClick={() => { setGifOpen(true); setMenu(false); }} accent={CORAL}>GIF</MenuChip>
-                <MenuChip onClick={() => { setPoll(true); setMenu(false); }} accent={LIME}>📊 Poll</MenuChip>
-                <MenuChip onClick={shareSquad} accent={TEAL} disabled={busy}>👕 Share my squad</MenuChip>
-                <MenuChip onClick={shareCaptain} accent={GOLD} disabled={busy}>Ⓒ Share my captain</MenuChip>
+                <MenuChip icon={<ChipIcon d={CHIP_ICON.photo} />} onClick={pickImage} accent={TEAL} disabled={busy}>Photo</MenuChip>
+                <MenuChip icon={<ChipIcon d={CHIP_ICON.video} />} onClick={pickVideo} accent={TEAL} disabled={busy}>Video</MenuChip>
+                <MenuChip icon={<ChipIcon d={CHIP_ICON.gif} />} onClick={() => { setGifOpen(true); setMenu(false); }} accent={CORAL}>GIF</MenuChip>
+                <MenuChip icon={<ChipIcon d={CHIP_ICON.poll} />} onClick={() => { setPoll(true); setMenu(false); }} accent={LIME}>Poll</MenuChip>
+                <MenuChip icon={<ChipIcon d={CHIP_ICON.challenge} />} onClick={() => { setChallengePick(true); setMenu(false); }} accent={GOLD} disabled={busy}>Challenge</MenuChip>
+                <MenuChip icon={<ChipIcon d={CHIP_ICON.shirt} />} onClick={shareSquad} accent={TEAL} disabled={busy}>Share my squad</MenuChip>
+                <MenuChip icon={<ChipIcon d={CHIP_ICON.captain} />} onClick={shareCaptain} accent={GOLD} disabled={busy}>Share my captain</MenuChip>
               </div>
             )}
             <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChosen} style={{ display: "none" }} />
@@ -1339,11 +1387,34 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
 }
 
 /** A composer share option — a rounded chip carrying its target's accent. */
-function MenuChip({ children, onClick, accent, disabled }: { children: React.ReactNode; onClick: () => void; accent: string; disabled?: boolean }) {
+/** The tray chips' icons — the same bare-SVG stroke language as the timeline
+ *  composer's toolbar (CreatePostSheet's ToolIcon), sized down for a pill.
+ *  Never emoji (house rule; the tray shipped with 📷/📊/👕 before this). */
+function ChipIcon({ d }: { d: string }) {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+      <path d={d} />
+    </svg>
+  );
+}
+const CHIP_ICON = {
+  // Photo/video/GIF/poll are CreatePostSheet's own toolbar paths, verbatim.
+  photo: "M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M8.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z M21 15l-5-5L5 21",
+  video: "M3 6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z M16 9.5l5-3v11l-5-3",
+  gif: "M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z M7.5 9.5v5 M7.5 9.5h2 M7.5 12h1.5 M12 9.5v5 M17 9.5h-2.5v5",
+  poll: "M4 6h12 M4 12h16 M4 18h8",
+  shirt: "M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z",
+  captain: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M15.2 9.6a4 4 0 1 0 0 4.8",
+  // The member sheet's crossed-swords Challenge icon, flattened to one path.
+  challenge: "M4 4l7 7 M11 4l-7 7 M20 4l-7 7 M13 4l7 7 M6.5 17.5l-3 3 M17.5 17.5l3 3 M12 11l-5.5 6.5 M12 11l5.5 6.5",
+};
+
+function MenuChip({ icon, children, onClick, accent, disabled }: { icon?: React.ReactNode; children: React.ReactNode; onClick: () => void; accent: string; disabled?: boolean }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: disabled ? "default" : "pointer",
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "7px 13px", borderRadius: 999, fontSize: 12.5, fontWeight: 700, cursor: disabled ? "default" : "pointer",
       background: tint(accent, "14"), color: accent, border: `1px solid ${tint(accent, "40")}`, opacity: disabled ? 0.5 : 1,
-    }}>{children}</button>
+    }}>{icon}{children}</button>
   );
 }

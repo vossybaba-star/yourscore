@@ -202,8 +202,12 @@ export async function leagueMembers(
   const blocked = await blockedActorIds(db, userId);
   const visibleIds = memberIds.filter((id) => !blocked.has(id));
   if (!visibleIds.length) return { ownerId: league.owner_id, members: [] };
+  // No `.not("username", "is", null)` here anymore: handle-less members are
+  // real league members too — the CALLER decides what needs a handle (mention
+  // autocomplete filters client-side; the chat tray's challenge picker must
+  // see everyone, or a league of handle-less members reads as empty).
   const { data: profs } = await db.from("profiles")
-    .select("id, username, display_name, avatar_url").in("id", visibleIds).not("username", "is", null);
+    .select("id, username, display_name, avatar_url").in("id", visibleIds);
   return {
     ownerId: league.owner_id,
     members: ((profs ?? []) as { id: string; username: string | null; display_name: string | null; avatar_url: string | null }[])
