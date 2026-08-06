@@ -82,7 +82,21 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     user.id === challenge.challenger_id ||
     user.id === challenge.opponent_id ||
     user.id === challenge.invited_user_id;
-  if (!isParticipant) {
+
+  // An OPEN challenge (nobody claimed as opponent, nobody specifically invited)
+  // is the shared-link flow: someone opens a friend's link and plays it, and
+  // `opponent_id` is only stamped when they SUBMIT (/api/h2h/play sets it at
+  // scoring time, not on open). Gating those on participation alone would 403
+  // the exact person the link was made for. 35 such challenges were live in
+  // production when this was written, so this is the common path, not an edge.
+  //
+  // A prospective opponent gets the STRIPPED set only: `complete` below is
+  // false for an unclaimed challenge by definition (no opponent score yet), so
+  // there is no route by which this branch serves an answer.
+  const isOpenToAnyone =
+    challenge.opponent_id === null && challenge.invited_user_id === null;
+
+  if (!isParticipant && !isOpenToAnyone) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -96,8 +110,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     ? (pack.questions as unknown as RawQuestion[])
     : [];
 
+  // Answers require BOTH conditions, not just completeness: a finished run is
+  // reviewable by the two people who played it, never by a passer-by who
+  // happened to open the link after the fact. `isParticipant` is the load
+  // bearing half — `isOpenToAnyone` callers always fall to the stripped set.
   const complete = challenge.opponent_score !== null;
-  const questions = rawQuestions.map(complete ? withAnswer : stripAnswer);
+  const questions = rawQuestions.map(complete && isParticipant ? withAnswer : stripAnswer);
 
   return NextResponse.json({ questions });
 }
