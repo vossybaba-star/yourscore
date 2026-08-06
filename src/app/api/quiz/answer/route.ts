@@ -30,13 +30,23 @@ export async function POST(req: NextRequest) {
     data: { user },
   } = await auth.auth.getUser();
 
-  // Fired once per question — a full ~20-question round (plus a retry or two)
-  // needs generous headroom, so this caps at 300/hour rather than the tighter
-  // per-minute limits used on write-heavy routes. Keyed by user when signed
-  // in, else by IP (guest solo play has no session).
+  // KNOWN LIMIT, read this before loosening anything below. A route that says
+  // "was this letter right, and if not which was" hands over one question's key
+  // per call by construction. Rate limiting is therefore the actual control on
+  // bulk extraction, not a formality: it is what stops a scraper walking every
+  // published pack. It raises the cost and makes the attempt visible in logs; it
+  // does not make the key unobtainable. The only thing that would is withholding
+  // correctness until a run is submitted, which is a product decision about how
+  // the quiz feels, not an implementation detail.
+  //
+  // Two caps, both needed:
+  //  - per caller: a full round is ~20 calls, so 150/hour still allows about
+  //    seven quizzes an hour, well past real play, while halving farm rate.
+  //  - per caller AND pack: 60/hour is three full runs of the SAME pack, which
+  //    no real player needs, and it stops one pack being drained in a burst.
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const limitKey = user ? `quiz-answer:${user.id}` : `quiz-answer:ip:${ip}`;
-  const { ok } = await rateLimitDistributed(limitKey, 300, 60 * 60_000);
+  const caller = user ? `u:${user.id}` : `ip:${ip}`;
+  const { ok } = await rateLimitDistributed(`quiz-answer:${caller}`, 150, 60 * 60_000);
   if (!ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -57,6 +67,15 @@ export async function POST(req: NextRequest) {
   }
   if (!isLetter(letter)) {
     return NextResponse.json({ error: "Invalid letter" }, { status: 400 });
+  }
+
+  // Per-pack cap, applied only once packId is known to be well formed so a
+  // malformed body can't burn a caller's budget.
+  const { ok: packOk } = await rateLimitDistributed(
+    `quiz-answer:${caller}:${packId}`, 60, 60 * 60_000,
+  );
+  if (!packOk) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   const db = createServiceClient();
