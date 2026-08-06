@@ -142,10 +142,14 @@ export function MemberActionSheet({
   const pathname = usePathname();
   const isSelf = !!viewerId && viewerId === member.userId;
   const displayName = nameOfMember(member);
-  // Challenge (Phase 1C) — league context only, never for yourself, and only
-  // while at least one game in the registry is actually offered (today just
-  // Quiz Battle; unsupported games are never rendered, founder's call).
-  const showChallenge = context === "league" && !!leagueCode && !isSelf && !!viewerId && supportedChallengeGames().length > 0;
+  // Challenge (Phase 1C) — anywhere the sheet knows which league it's in
+  // (the table/hub AND league chat both pass leagueCode; the feed doesn't),
+  // never for yourself, and only while at least one game in the registry is
+  // actually offered (unsupported games are never rendered, founder's call).
+  // Keyed off leagueCode rather than context: gating on context === "league"
+  // silently dropped the chip from chat-author taps, which was the master
+  // prompt's league_chat entry point.
+  const showChallenge = !!leagueCode && !isSelf && !!viewerId && supportedChallengeGames().length > 0;
 
   const [mentionChoice, setMentionChoice] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -356,7 +360,9 @@ export function MemberActionSheet({
   };
 
   // Compare only makes sense against someone else's squad, in a league.
-  const showCompare = context === "league" && !!leagueCode && !isSelf;
+  // Same leagueCode-not-context rule as showChallenge above — chat passes
+  // leagueCode too, and a compare from a chat author tap is just as valid.
+  const showCompare = !!leagueCode && !isSelf;
   // Mention needs a real @handle — every destination (composer insert, the
   // chat/post routes) writes "@username", so without one this would be a tap
   // that does nothing (no dead buttons).
@@ -477,7 +483,7 @@ export function MemberActionSheet({
         <ChallengePrepSheet
           leagueCode={leagueCode}
           opponent={{ userId: member.userId, name: displayName, avatarUrl: member.avatarUrl }}
-          createdFrom="member_action"
+          createdFrom={context === "chat" ? "league_chat" : "member_action"}
           initialGame={rematchGame ?? undefined}
           rematchOf={rematchOf ?? undefined}
           onSent={(created) => {
