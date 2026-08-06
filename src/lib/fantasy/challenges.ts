@@ -782,6 +782,17 @@ export interface ChallengeCardData {
    *  gameMode alone can't distinguish (quiz_battle and gameday_quiz are both
    *  "scorecard"). */
   gameType: string;
+  /** Phase 4A (Games tab) — when this row completed, null until it does.
+   *  Already on MemberChallengeRow, just threaded through here so a caller
+   *  building a "time ago" line off the card never needs a second query. */
+  completedAt: string | null;
+  /** Phase 4A (Games tab, recent results) — the two sides' final scores,
+   *  ONLY EVER set once status is "completed" (null otherwise, always,
+   *  regardless of how far the game itself has actually progressed) — a
+   *  card must never leak either side's score ahead of the result, same
+   *  rule challengerDone/opponentDone already follow for a duel. */
+  challengerScore: number | null;
+  opponentScore: number | null;
 }
 
 /** Hydrated chat-card data for one or more challenges — batched (one query
@@ -804,10 +815,15 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
   // gameday_quiz AND quiz_duel — a duel row exists from creation, just with
   // null scores pre-completion), so this isn't game-type-gated.
   const h2hIds = Array.from(new Set(reconciled.filter((r) => r.result_id).map((r) => r.result_id as string)));
+  // challenger_score/opponent_score are read here too (Phase 4A) so
+  // recentResults can show "X 8 v 7 Y" — gated to completed rows only at
+  // the OUTPUT step below, never here (this is just the raw fetch).
   const { data: h2hRows } = h2hIds.length
-    ? await db.from("h2h_challenges").select("id, quiz_pack_name").in("id", h2hIds)
-    : { data: [] as { id: string; quiz_pack_name: string }[] };
+    ? await db.from("h2h_challenges").select("id, quiz_pack_name, challenger_score, opponent_score").in("id", h2hIds)
+    : { data: [] as { id: string; quiz_pack_name: string; challenger_score: number | null; opponent_score: number | null }[] };
   const quizNameByH2h = new Map(((h2hRows ?? []) as { id: string; quiz_pack_name: string }[]).map((r) => [r.id, r.quiz_pack_name]));
+  const scoresByH2h = new Map(((h2hRows ?? []) as { id: string; challenger_score: number | null; opponent_score: number | null }[])
+    .map((r) => [r.id, { challengerScore: r.challenger_score, opponentScore: r.opponent_score }]));
 
   // Duel done-flags — one batched .in() query for every duel h2h id in this
   // window, never per-row (see the file doc's N+1 note above). NEVER selects
@@ -836,6 +852,14 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
   for (const r of reconciled) {
     const game = challengeGame(r.game_type);
     const doneUsers = r.result_id ? duelDoneUsersByH2h.get(r.result_id) : undefined;
+    // Scores only ever leave this function once the row itself is
+    // "completed" — see ChallengeCardData's own doc for why this can't be
+    // read off "does the h2h row happen to have both scores set" instead
+    // (a scorecard's opponent_score lands the instant they submit, but the
+    // member_challenges row only flips to completed on the transition that
+    // reconcile() actually wins — same idempotency guard as everywhere else
+    // in this file).
+    const scores = r.status === "completed" && r.result_id ? scoresByH2h.get(r.result_id) : undefined;
     out.set(r.id, {
       challengeId: r.id,
       status: r.status,
@@ -852,6 +876,9 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
       challengerDone: !!doneUsers?.has(r.challenger_id),
       opponentDone: !!doneUsers?.has(r.opponent_id),
       gameType: r.game_type,
+      completedAt: r.completed_at,
+      challengerScore: scores?.challengerScore ?? null,
+      opponentScore: scores?.opponentScore ?? null,
     });
   }
   return out;
