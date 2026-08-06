@@ -11,14 +11,15 @@
  *  closes. Rendered BELOW the gameweek list rather than above: gameweek
  *  recaps stay this tab's primary, unchanged first thing a member sees;
  *  Games results are an appended section, not a promotion above them. */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, SectionLabel, Sheet } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { LeagueTableRows } from "./LeagueTableRows";
 import { formatGameResultLine } from "@/lib/fantasy/games-pure";
+import { competitionResultLine, type CompetitionFormatId } from "@/lib/fantasy/competitions-pure";
 import { trackGamesHistoryResultOpened } from "@/lib/analytics/trackSocial";
-import type { GamesHistoryEntry, HistoryGw, LeagueHistoryData } from "./types";
+import type { CompetitionHistoryEntry, GamesHistoryEntry, HistoryGw, LeagueHistoryData } from "./types";
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
@@ -64,11 +65,30 @@ function GameHistoryRow({ entry }: { entry: GamesHistoryEntry }) {
   );
 }
 
+/** A completed competition's history line (UI wave) — title + the exact same
+ *  result-line copy competitions.ts's own settle path uses (competitionResultLine),
+ *  never a second wording. No link target (a competition has no page of its
+ *  own outside the Games tab sheet) — a quiet, terminal record, same as a
+ *  gameweek recap row that's already settled. */
+function CompetitionHistoryRow({ entry }: { entry: CompetitionHistoryEntry }) {
+  const line = competitionResultLine({
+    format: entry.format as CompetitionFormatId, entrantCount: entry.entrantCount,
+    winnerName: entry.winnerName, placedCount: entry.placedCount,
+  });
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: "9px 11px" }}>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.title}</div>
+      <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{line} · {timeAgo(entry.settledAt)}</div>
+    </div>
+  );
+}
+
 export function LeagueHistoryView({ code, onOpenChat }: { code: string; onOpenChat: (gw: number) => void }) {
   const [data, setData] = useState<LeagueHistoryData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [open, setOpen] = useState<HistoryGw | null>(null);
   const [games, setGames] = useState<GamesHistoryEntry[]>([]);
+  const [competitions, setCompetitions] = useState<CompetitionHistoryEntry[]>([]);
 
   useEffect(() => {
     let live = true;
@@ -79,18 +99,35 @@ export function LeagueHistoryView({ code, onOpenChat }: { code: string; onOpenCh
     return () => { live = false; };
   }, [code]);
 
-  // GAMES block (Phase 4B) — a separate small fetch, own failure mode: if it
-  // 404s/errors the gameweek list above still renders fine, this section
-  // just stays empty (no error banner of its own — a completed-challenge
-  // list is a nice-to-have on this tab, not load-bearing).
+  // GAMES block (Phase 4B, + competitions in the UI wave) — a separate small
+  // fetch, own failure mode: if it 404s/errors the gameweek list above still
+  // renders fine, this section just stays empty (no error banner of its own
+  // — a completed-challenge/competition list is a nice-to-have on this tab,
+  // not load-bearing).
   useEffect(() => {
     let live = true;
     fetch(`/api/fantasy/leagues/${code}/games/history`)
-      .then((r) => (r.ok ? r.json() : { entries: [] }))
-      .then((d) => { if (live) setGames((d.entries ?? []) as GamesHistoryEntry[]); })
+      .then((r) => (r.ok ? r.json() : { entries: [], competitions: [] }))
+      .then((d) => {
+        if (!live) return;
+        setGames((d.entries ?? []) as GamesHistoryEntry[]);
+        setCompetitions((d.competitions ?? []) as CompetitionHistoryEntry[]);
+      })
       .catch(() => {});
     return () => { live = false; };
   }, [code]);
+
+  // The GAMES block's rows, interleaved by their own settle time (UI wave)
+  // — a challenge and a competition are differently shaped rows, so this
+  // merges pre-rendered nodes by timestamp rather than forcing one common
+  // row shape.
+  const gamesRows = useMemo(() => {
+    const rows: { at: string; node: React.ReactNode }[] = [
+      ...games.map((e) => ({ at: e.completedAt, node: <GameHistoryRow key={e.challengeId} entry={e} /> })),
+      ...competitions.map((c) => ({ at: c.settledAt, node: <CompetitionHistoryRow key={c.id} entry={c} /> })),
+    ];
+    return rows.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  }, [games, competitions]);
 
   if (err) return <p style={{ fontSize: 13, color: MUTED }}>{err}</p>;
   if (!data) return <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>;
@@ -130,11 +167,11 @@ export function LeagueHistoryView({ code, onOpenChat }: { code: string; onOpenCh
       {/* GAMES block (Phase 4B) — flat, appended below the gameweek list;
           omitted outright when this league has no completed challenges
           (house rule: no empty section headers). */}
-      {games.length > 0 && (
+      {gamesRows.length > 0 && (
         <div style={{ marginTop: 6 }}>
           <SectionLabel>GAMES</SectionLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {games.map((entry) => <GameHistoryRow key={entry.challengeId} entry={entry} />)}
+            {gamesRows.map((r) => r.node)}
           </div>
         </div>
       )}

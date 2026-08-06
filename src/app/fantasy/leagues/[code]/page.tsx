@@ -72,6 +72,9 @@ export default function LeaguePage() {
   // for exactly one LeagueGamesView mount, mirroring the openGwChat pattern
   // History already uses to deep-link into another tab with extra state.
   const [gamesAutoChallenge, setGamesAutoChallenge] = useState(false);
+  // A competition chat card's tap through (UI wave) — same deep-link shape
+  // as gamesAutoChallenge above, just carrying an id instead of a flag.
+  const [gamesAutoCompetitionId, setGamesAutoCompetitionId] = useState<string | null>(null);
 
   // Restore + persist the tab in the URL, so back from settings/a profile returns
   // to the tab you were on. `gw` deep-links a gameweek's chat (from History).
@@ -105,6 +108,12 @@ export default function LeaguePage() {
   // Games AND tell it to open the picker itself on mount.
   const openGamesChallenge = useCallback(() => {
     setGamesAutoChallenge(true);
+    goTab("games");
+  }, [goTab]);
+  // A competition card's tap through (chat card or Hub module) — switch to
+  // Games AND tell it which competition to open its detail sheet for.
+  const openGamesCompetition = useCallback((competitionId: string) => {
+    setGamesAutoCompetitionId(competitionId);
     goTab("games");
   }, [goTab]);
 
@@ -308,10 +317,16 @@ export default function LeaguePage() {
       </div>
 
       {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} onOpenGamesChallenge={openGamesChallenge} />}
-      {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder") && <LeagueChatView code={code} initialGw={chatGw} />}
+      {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder") && (
+        <LeagueChatView code={code} initialGw={chatGw} onOpenCompetition={openGamesCompetition} />
+      )}
       {tab === "table" && <LeagueTableView detail={detail} code={code} />}
       {tab === "games" && league.isMember && (
-        <LeagueGamesView code={code} autoOpenChallenge={gamesAutoChallenge} onAutoOpenChallengeHandled={() => setGamesAutoChallenge(false)} />
+        <LeagueGamesView
+          code={code} isOwner={league.isOwner}
+          autoOpenChallenge={gamesAutoChallenge} onAutoOpenChallengeHandled={() => setGamesAutoChallenge(false)}
+          autoOpenCompetitionId={gamesAutoCompetitionId} onAutoOpenCompetitionHandled={() => setGamesAutoCompetitionId(null)}
+        />
       )}
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
 
