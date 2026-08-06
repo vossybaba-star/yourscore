@@ -35,6 +35,19 @@ export async function GET(req: NextRequest) {
       .select("pack_id").in("user_id", attemptedBy);
     const excludeIds = new Set(((attempts ?? []) as Row[]).map((a) => a.pack_id));
 
+    // Past DUELS never wrote quiz_attempts, but a pack either player has
+    // duelled on is just as burned (both saw its answers on the compare
+    // screen) — createDuelChallenge rejects these server-side; excluding
+    // them here keeps the picker from offering a pack that will bounce.
+    const { data: duelPlays } = await db.from("h2h_duel_attempts")
+      .select("h2h_id").in("user_id", attemptedBy);
+    const duelH2hIds = Array.from(new Set(((duelPlays ?? []) as Row[]).map((d) => d.h2h_id)));
+    if (duelH2hIds.length) {
+      const { data: duelRows } = await db.from("h2h_challenges")
+        .select("quiz_pack_id").in("id", duelH2hIds);
+      for (const r of (duelRows ?? []) as Row[]) if (r.quiz_pack_id) excludeIds.add(r.quiz_pack_id);
+    }
+
     // Overfetch a little past the target limit so excluding already-played
     // packs doesn't starve the list down to a handful — cheap either way,
     // this is a small table scan against `status` + an order, not a join.

@@ -28,7 +28,7 @@ import { ReportSheet } from "@/components/social/ReportSheet";
 import { CompareSquadsSheet } from "@/components/fantasy/CompareSquadsSheet";
 import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
 import { supportedChallengeGames } from "@/lib/fantasy/challengeGames";
-import { trackBlockUser, trackMuteUser, trackMemberActionSelected, trackMemberSheetOpened } from "@/lib/analytics/trackSocial";
+import { trackBlockUser, trackMuteUser, trackMemberActionSelected, trackMemberSheetOpened, trackChallengeRematchStarted, trackChallengeAccepted } from "@/lib/analytics/trackSocial";
 
 export interface MemberActionMember {
   userId: string;
@@ -151,6 +151,12 @@ export function MemberActionSheet({
   const [reportOpen, setReportOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [challengeOpen, setChallengeOpen] = useState(false);
+  // Phase 3C — set only when the sheet's about to open for a Rematch tap
+  // (a completed pair's second chip), never for a fresh Challenge. Reset
+  // whenever the sheet opens fresh so a stale rematch id can't leak into
+  // the NEXT unrelated Challenge tap.
+  const [rematchOf, setRematchOf] = useState<string | null>(null);
+  const [rematchGame, setRematchGame] = useState<string | null>(null);
   // The full pair row (Phase 3A — the chip needs status AND who's who, not
   // just "is it pending", to pick between Pending/Your turn/Back in/In play/
   // See result). "loading" keeps the chip's disabled placeholder up so it
@@ -225,6 +231,7 @@ export function MemberActionSheet({
       .then(async (res) => {
         const j = await res.json().catch(() => ({}));
         if (!res.ok) { refreshPairChallenge(); return; }
+        trackChallengeAccepted(pairChallenge.game_type ?? "quiz_battle");
         router.push(`/h2h/${j.h2hId ?? pairChallenge.result_id}`);
         onClose();
       })
@@ -259,7 +266,20 @@ export function MemberActionSheet({
     setCompareOpen(true);
   };
 
-  const openChallenge = () => { trackMemberActionSelected("challenge"); setChallengeOpen(true); };
+  const openChallenge = () => { trackMemberActionSelected("challenge"); setRematchOf(null); setRematchGame(null); setChallengeOpen(true); };
+  // Phase 3C — the completed pair's second chip. Rematch = a NEW challenge
+  // linked by rematch_of_challenge_id (never a reset of the old one), so this
+  // still opens the SAME prep sheet, just preselecting the completed row's
+  // game and passing its id through as rematchOf (createChallenge validates
+  // eligibility server-side either way).
+  const openRematch = () => {
+    if (pairChallenge === "loading" || !pairChallenge) return;
+    trackMemberActionSelected("rematch");
+    trackChallengeRematchStarted(pairChallenge.game_type ?? "quiz_battle");
+    setRematchOf(pairChallenge.id);
+    setRematchGame(pairChallenge.game_type ?? null);
+    setChallengeOpen(true);
+  };
 
   /** The chip's full state machine (Phase 3A) — status AND who's who, since
    *  "pending" alone no longer says enough (challenger vs opponent see
@@ -298,14 +318,16 @@ export function MemberActionSheet({
       }
       case "completed":
         // A finished challenge must never block the NEXT one (house rule: no
-        // challenge action dead-ends) — the result link and a fresh Challenge
-        // sit side by side until the dedicated Rematch flow lands (3E).
+        // challenge action dead-ends) — the result link and Rematch sit side
+        // by side. Rematch (Phase 3C) opens the SAME prep sheet the fresh
+        // Challenge chip does, just preselecting the game and carrying the
+        // old challenge's id through — see openRematch above.
         return (
           <>
             {pairChallenge.result_id
               ? <ActionChip icon={<ChallengeIcon />} label="See result" href={`/h2h/${pairChallenge.result_id}`} onNavigate={onClose} />
               : <ActionChip icon={<ChallengeIcon />} label="See result" disabled />}
-            <ActionChip icon={<ChallengeIcon />} label="Challenge" onClick={openChallenge} />
+            <ActionChip icon={<ChallengeIcon />} label="Rematch" onClick={openRematch} />
           </>
         );
       default: // declined, expired, cancelled, draft, void — reopenable
@@ -456,13 +478,17 @@ export function MemberActionSheet({
           leagueCode={leagueCode}
           opponent={{ userId: member.userId, name: displayName, avatarUrl: member.avatarUrl }}
           createdFrom="member_action"
+          initialGame={rematchGame ?? undefined}
+          rematchOf={rematchOf ?? undefined}
           onSent={(created) => {
             // Opening this sheet from a member always makes the viewer the
             // challenger and `member` the opponent — enough to flip the chip
-            // straight to "Pending" without waiting on a re-fetch.
+            // straight to "Pending" without waiting on a re-fetch. True for a
+            // rematch too — a rematch may flip roles overall, but tapping IT
+            // from THIS member's sheet always makes the viewer the sender.
             if (viewerId) setPairChallenge({ id: created.id, status: "pending", challenger_id: viewerId, opponent_id: member.userId, result_id: created.h2hId });
           }}
-          onClose={() => setChallengeOpen(false)}
+          onClose={() => { setChallengeOpen(false); setRematchOf(null); setRematchGame(null); }}
         />
       )}
     </Sheet>

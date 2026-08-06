@@ -15,6 +15,7 @@ import {
   DIFFICULTY_COLOR as DIFF_COLOR,
   DIFFICULTY_BG as DIFF_BG,
 } from "@/lib/theme";
+import { trackChallengeCompletedViewed, trackChallengeShared } from "@/lib/analytics/trackSocial";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -201,6 +202,14 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   // completion for a duel, so this comes from h2h_duel_attempts instead).
   const [duelOwnScore, setDuelOwnScore] = useState<{ score: number; correct: number } | null>(null);
 
+  // Phase 3E — the league-mate challenge (if any) this h2h belongs to, for
+  // the results action row's "Back to the league" link. Null for a plain
+  // Versus h2h (no member_challenges row at all) OR when the viewer isn't
+  // one of the two participants — either way, no action beyond Share. See
+  // challengeByH2h's own doc (challenges.ts) for the participant gating.
+  const [leagueLink, setLeagueLink] = useState<{ leagueCode: string; gameType: string } | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
+
   // Timer — count-up question timer shared with the solo loop (see useGameLoop).
   const { timerMs, setTimerMs, questionStartRef, stopTimer } = useGameLoop(
     pageState === "playing",
@@ -309,6 +318,26 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     load();
   }, [id]);
 
+  // ── League link + completed-view tracking (Phase 3E) ────────────────────
+  // Fires once per results view, for a participant only. gameType prefers
+  // the member_challenges row's own (once leagueLink resolves) and falls
+  // back to a guess off the h2h row's mode — good enough for a plain Versus
+  // h2h, which never had a "challenge game" concept to begin with.
+  useEffect(() => {
+    if (pageState !== "results" || !challenge) { setLeagueLink(null); return; }
+    const isParticipant = !!userId && (userId === challenge.challenger_id || userId === challenge.opponent_id);
+    if (!isParticipant) { setLeagueLink(null); return; }
+    trackChallengeCompletedViewed(challenge.mode === "duel" ? "quiz_duel" : "quiz_battle");
+
+    let live = true;
+    fetch(`/api/fantasy/challenges?h2h=${challenge.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((j) => { if (live) setLeagueLink(j && j.leagueCode ? { leagueCode: j.leagueCode, gameType: j.gameType } : null); })
+      .catch(() => { if (live) setLeagueLink(null); });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageState, challenge?.id, userId]);
+
   // ── Fetch questions when transitioning to playing ──────────────────────
   async function startPlaying() {
     if (!challenge) return;
@@ -329,6 +358,29 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     setScore(0);
     setLastPoints(null);
     setPageState("playing");
+  }
+
+  // ── Share (Phase 3E) ─────────────────────────────────────────────────────
+  // Same pattern the rest of the app already uses for a share button
+  // (ShareStatsButton, the league invite sheet): navigator.share first, a
+  // clipboard-copy fallback when it's unavailable or the sheet's dismissed.
+  // No new share card infrastructure — this is the same public /h2h/[id]
+  // link ShareCard (above) already builds, just reachable from the results
+  // action row too.
+  async function handleShare() {
+    if (!challenge) return;
+    trackChallengeShared(leagueLink?.gameType ?? (challenge.mode === "duel" ? "quiz_duel" : "quiz_battle"));
+    const link = typeof window !== "undefined" ? `${window.location.origin}/h2h/${challenge.id}` : `/h2h/${challenge.id}`;
+    const text = `${challenge.quiz_pack_name} on YourScore`;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try { await navigator.share({ text, url: link }); return; }
+      catch { /* cancelled or unavailable — fall through to clipboard */ }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${link}`);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch { /* clipboard unavailable — nothing more to do */ }
   }
 
   // ── Answer handler ─────────────────────────────────────────────────────
@@ -851,6 +903,40 @@ export default function H2HPage({ params }: { params: { id: string } }) {
               </div>
             </div>
           )}
+
+          {/* Phase 3E — Share (any h2h) plus Back to the league, when this one
+              came from a league-mate challenge and the viewer took part
+              (leagueLink is null otherwise — see the effect above, and
+              challengeByH2h's own doc in challenges.ts for the participant
+              gating, enforced server side). A prep-sheet Rematch belongs on
+              the chat card and the member sheet instead, NOT here — this
+              page has no league context to open one against (which league,
+              which opponent slot), so it's deliberately left out rather than
+              half built. The pre-existing "Rematch →" button below is a
+              DIFFERENT, older flow (plain Versus, /versus/challenge) and is
+              untouched. */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleShare}
+              className="flex-1 rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform"
+              style={{
+                background: shareCopied ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.07)",
+                border: shareCopied ? "1px solid rgba(174,234,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
+                color: shareCopied ? "#aeea00" : "#9aa39d",
+              }}
+            >
+              {shareCopied ? "LINK COPIED" : "SHARE"}
+            </button>
+            {leagueLink && (
+              <Link
+                href={`/fantasy/leagues/${leagueLink.leagueCode}`}
+                className="flex-1 rounded-xl py-3 font-display text-xs tracking-widest text-center active:scale-[0.97] transition-transform"
+                style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.25)", color: "#ffb800" }}
+              >
+                BACK TO THE LEAGUE
+              </Link>
+            )}
+          </div>
 
           {(() => {
             const otherId = userId === challenge.challenger_id ? challenge.opponent_id : challenge.challenger_id;

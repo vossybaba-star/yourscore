@@ -70,6 +70,14 @@ export function trackChallengeGameSelected(gameId: string): void { fire("challen
 export function trackChallengeSent(gameId: string): void { fire("challenge_sent", { gameId }); }
 export function trackChallengeAbandoned(): void { fire("challenge_abandoned"); }
 
+// ── league-mate challenges lifecycle (Phase 3C/D/E) ──────────────────────
+export function trackChallengeAccepted(gameId: string): void { fire("challenge_accepted", { gameId }); }
+export function trackChallengeDeclined(gameId: string): void { fire("challenge_declined", { gameId }); }
+export function trackChallengeCancelled(gameId: string): void { fire("challenge_cancelled", { gameId }); }
+export function trackChallengeCompletedViewed(gameId: string): void { fire("challenge_completed_viewed", { gameId }); }
+export function trackChallengeRematchStarted(gameId: string): void { fire("challenge_rematch_started", { gameId }); }
+export function trackChallengeShared(gameId: string): void { fire("challenge_shared", { gameId }); }
+
 // ── native video (composer) ──────────────────────────────────────────────
 export function trackVideoPickerOpened(): void { fire("video_picker_opened"); }
 export function trackVideoSelected(): void { fire("video_selected"); }

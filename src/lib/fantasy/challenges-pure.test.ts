@@ -5,7 +5,7 @@
 //     && node --test /tmp/cpt/challenges-pure.test.js
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeChallengeMessage, normalizeCreatedFrom, MESSAGE_MAX_LEN, DEFAULT_CREATED_FROM, deriveDuelOutcome, isGamedayPack } from "./challenges-pure";
+import { normalizeChallengeMessage, normalizeCreatedFrom, MESSAGE_MAX_LEN, DEFAULT_CREATED_FROM, deriveDuelOutcome, isGamedayPack, checkRematchEligibility } from "./challenges-pure";
 
 // ── normalizeChallengeMessage ────────────────────────────────────────────────
 
@@ -144,4 +144,30 @@ test("isGamedayPack: null/undefined/non-object metadata does not match", () => {
 test("isGamedayPack: a falsy gameday value does not match", () => {
   assert.equal(isGamedayPack({ gameday: null }), false);
   assert.equal(isGamedayPack({ gameday: false }), false);
+});
+
+// ── checkRematchEligibility ───────────────────────────────────────────────
+
+test("checkRematchEligibility: a terminal status with the old challenger as caller passes", () => {
+  for (const status of ["completed", "declined", "expired", "cancelled"]) {
+    assert.deepEqual(checkRematchEligibility(status, "a", "a", "b"), { ok: true });
+  }
+});
+
+test("checkRematchEligibility: a terminal status with the old OPPONENT as caller also passes — a rematch may flip roles", () => {
+  assert.deepEqual(checkRematchEligibility("completed", "b", "a", "b"), { ok: true });
+});
+
+test("checkRematchEligibility: an open status is rejected as not_terminal, even for a real participant", () => {
+  for (const status of ["pending", "accepted", "active", "awaiting_opponent"]) {
+    assert.deepEqual(checkRematchEligibility(status, "a", "a", "b"), { ok: false, reason: "not_terminal" });
+  }
+});
+
+test("checkRematchEligibility: a terminal status with a stranger as caller is rejected as not_participant", () => {
+  assert.deepEqual(checkRematchEligibility("completed", "c", "a", "b"), { ok: false, reason: "not_participant" });
+});
+
+test("checkRematchEligibility: not_terminal is checked before not_participant — a stranger against an open challenge is still not_terminal", () => {
+  assert.deepEqual(checkRematchEligibility("pending", "c", "a", "b"), { ok: false, reason: "not_terminal" });
 });

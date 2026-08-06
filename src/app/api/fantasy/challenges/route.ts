@@ -1,10 +1,13 @@
 /** POST /api/fantasy/challenges — send a league-mate challenge (createChallenge).
  *  GET  /api/fantasy/challenges?with=<uuid>&league=<code> — the open (or most
  *  recent) challenge between the caller and `with`, for the MemberActionSheet
- *  chip's Challenge/Pending state. */
+ *  chip's Challenge/Pending state.
+ *  GET  /api/fantasy/challenges?h2h=<uuid> — (Phase 3E) which league-mate
+ *  challenge, if any, a given h2h_challenges id belongs to — the h2h results
+ *  page's "Back to the league" action. See challengeByH2h's own doc. */
 import type { NextRequest } from "next/server";
 import { withFantasyUser } from "@/app/api/fantasy/_lib";
-import { createChallenge, pairStatus } from "@/lib/fantasy/challenges";
+import { createChallenge, pairStatus, challengeByH2h } from "@/lib/fantasy/challenges";
 import { HttpError } from "@/lib/fantasy/server";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 
@@ -24,6 +27,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const h2hId = req.nextUrl.searchParams.get("h2h");
+  if (h2hId) {
+    return withFantasyUser("challenges-by-h2h", (db, userId) => challengeByH2h(db, userId, h2hId));
+  }
+
   const opponentId = req.nextUrl.searchParams.get("with") ?? "";
   const leagueCode = req.nextUrl.searchParams.get("league");
   return withFantasyUser("challenges-pair-status", async (db, userId) => {

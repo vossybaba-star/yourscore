@@ -105,6 +105,12 @@ export interface ChallengeCard {
    *  off these, only whether someone's played. */
   challengerDone: boolean;
   opponentDone: boolean;
+  /** Phase 3C — the raw game_type ("quiz_battle" / "quiz_duel" /
+   *  "gameday_quiz"). gameMode above only tells duel from scorecard (one
+   *  bit); a Rematch tap needs the actual game to preselect in
+   *  ChallengePrepSheet, which quiz_battle and gameday_quiz can't be told
+   *  apart by via gameMode alone (both are "scorecard"). */
+  gameType: string;
 }
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no

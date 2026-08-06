@@ -81,3 +81,30 @@ export function isGamedayPack(metadata: unknown): boolean {
   const gameday = (metadata as Record<string, unknown>).gameday;
   return !!gameday && typeof gameday === "object";
 }
+
+// ── Rematch (Phase 3C/D/E) ───────────────────────────────────────────────
+
+/** The four terminal endings a member_challenges row can reach — see
+ *  challenges.ts's OPEN_STATUSES for the complementary open set. Duplicated
+ *  as its own literal list here rather than imported, since challenges.ts is
+ *  `server-only` and imports THIS file, not the other way round (same reason
+ *  this whole module is split out — see the file doc above). */
+const REMATCH_ELIGIBLE_STATUSES = new Set(["completed", "declined", "expired", "cancelled"]);
+
+export type RematchEligibility =
+  | { ok: true }
+  | { ok: false; reason: "not_terminal" | "not_participant" };
+
+/** Pure rematch eligibility check: the OLD challenge must be done (one of the
+ *  four terminal statuses — an open challenge has nothing to rematch yet) and
+ *  the caller must have been one of its two participants. A rematch may FLIP
+ *  roles (the old opponent can be the new challenger), so either side
+ *  qualifies here, not just the old challenger — createChallenge decides
+ *  what to do with that (locked product decision, see its own doc). */
+export function checkRematchEligibility(
+  oldStatus: string, callerId: string, oldChallengerId: string, oldOpponentId: string,
+): RematchEligibility {
+  if (!REMATCH_ELIGIBLE_STATUSES.has(oldStatus)) return { ok: false, reason: "not_terminal" };
+  if (callerId !== oldChallengerId && callerId !== oldOpponentId) return { ok: false, reason: "not_participant" };
+  return { ok: true };
+}

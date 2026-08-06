@@ -30,7 +30,7 @@ import { blockedActorIds } from "@/lib/social/safety";
 import { notifyFantasy } from "@/lib/fantasy/notify";
 import { maxPointsForDifficulty } from "@/lib/scoring";
 import {
-  normalizeChallengeMessage, normalizeCreatedFrom, deriveDuelOutcome, isGamedayPack,
+  normalizeChallengeMessage, normalizeCreatedFrom, deriveDuelOutcome, isGamedayPack, checkRematchEligibility,
 } from "@/lib/fantasy/challenges-pure";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -327,7 +327,19 @@ export interface CreateChallengeInput {
   /** Phase 3A — which surface started this challenge (attribution only, see
    *  normalizeCreatedFrom); unrecognised/omitted falls back silently. */
   createdFrom?: unknown;
+  /** Phase 3C — rematch: the OLD member_challenges id this one is rematching,
+   *  when the prep sheet was opened from a Rematch tap rather than a fresh
+   *  Challenge. See createChallenge's own validation for what makes a
+   *  rematch eligible (checkRematchEligibility, pure). */
+  rematchOf?: unknown;
 }
+
+/** Resolved rematch context threaded down into whichever adapter builds the
+ *  new row — both the id being rematched and the series it belongs to (the
+ *  OLD row's own series_id if it's already mid chain, else the old row's id
+ *  itself, so a fresh rematch starts a two-link chain that a FUTURE rematch
+ *  of ITS result then extends rather than restarts). */
+interface RematchContext { id: string; seriesId: string }
 
 /** Shared post-insert bookkeeping every createChallenge path ends with — the
  *  chat card and the invite notification are identical no matter which game
@@ -364,6 +376,7 @@ async function postCreateChallenge(
 async function createScorecardChallenge(
   db: Db, userId: string, league: { id: string }, opponentId: string,
   gameType: string, game: ChallengeGame, packId: string, message: string | null, createdFrom: string,
+  rematch: RematchContext | null,
 ) {
   if (!packId) throw new HttpError(400, "Pick a quiz first");
 
@@ -427,6 +440,8 @@ async function createScorecardChallenge(
       expires_at: h2hExpiresAt,
       message,
       created_from: createdFrom,
+      rematch_of_challenge_id: rematch?.id ?? null,
+      series_id: rematch?.seriesId ?? null,
     })
     .select("id")
     .single();
@@ -452,6 +467,7 @@ async function createScorecardChallenge(
 async function createDuelChallenge(
   db: Db, userId: string, league: { id: string }, opponentId: string,
   game: ChallengeGame, packId: string, message: string | null, createdFrom: string,
+  rematch: RematchContext | null,
 ) {
   if (!packId) throw new HttpError(400, "Pick a quiz first");
 
@@ -466,6 +482,22 @@ async function createDuelChallenge(
   const { data: attempts } = await db.from("quiz_attempts")
     .select("user_id").eq("pack_id", packId).in("user_id", [userId, opponentId]);
   if ((attempts ?? []).length > 0) throw new HttpError(400, "Pick a quiz neither of you has played");
+
+  // A finished DUEL never writes quiz_attempts, so the check above alone
+  // would let a rematch reuse the exact pack both players just saw answered
+  // on the compare screen. Duel history counts as "played" too. Both ids are
+  // shape-checked before the raw .or() interpolation (house rule, same as
+  // pairStatus).
+  if (!UUID_RE.test(userId) || !UUID_RE.test(opponentId)) throw new HttpError(400, "bad user id");
+  const { data: pastDuels } = await db.from("h2h_challenges")
+    .select("id").eq("quiz_pack_id", packId).eq("mode", "duel")
+    .or(`challenger_id.in.(${userId},${opponentId}),invited_user_id.in.(${userId},${opponentId})`);
+  const pastIds = ((pastDuels ?? []) as { id: string }[]).map((d) => d.id);
+  if (pastIds.length) {
+    const { data: pastAttempts } = await db.from("h2h_duel_attempts")
+      .select("id").in("h2h_id", pastIds).in("user_id", [userId, opponentId]).limit(1);
+    if ((pastAttempts ?? []).length > 0) throw new HttpError(400, "Pick a quiz neither of you has played");
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const questions = (Array.isArray(pack.questions) ? pack.questions : []) as any[];
@@ -513,6 +545,8 @@ async function createDuelChallenge(
       expires_at: h2hExpiresAt,
       message,
       created_from: createdFrom,
+      rematch_of_challenge_id: rematch?.id ?? null,
+      series_id: rematch?.seriesId ?? null,
     })
     .select("id")
     .single();
@@ -543,6 +577,29 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
   const message = messageResult.message;
   const createdFrom = normalizeCreatedFrom(input.createdFrom);
 
+  // Rematch (Phase 3C) — resolved and validated up front, same as the
+  // message above, so a bad/ineligible rematch 400s/403s before either
+  // insert runs. checkRematchEligibility is pure (challenges-pure.ts); this
+  // is just the DB read + id-shape check wrapped around it.
+  const rematchOfRaw = typeof input.rematchOf === "string" ? input.rematchOf : "";
+  let rematch: RematchContext | null = null;
+  if (rematchOfRaw) {
+    if (!UUID_RE.test(rematchOfRaw)) throw new HttpError(400, "bad rematch id");
+    const { data: oldRow } = await db.from("member_challenges").select("*").eq("id", rematchOfRaw).maybeSingle();
+    if (!oldRow) throw new HttpError(400, "That challenge no longer exists");
+    const old = oldRow as MemberChallengeRow;
+    const eligibility = checkRematchEligibility(old.status, userId, old.challenger_id, old.opponent_id);
+    if (!eligibility.ok) {
+      throw eligibility.reason === "not_terminal"
+        ? new HttpError(400, "That challenge hasn't finished yet")
+        : new HttpError(403, "You weren't part of that challenge");
+    }
+    // A chain shares ONE series_id: the old row's own if it's already mid
+    // chain, else the old row's id itself — so a rematch of a rematch
+    // extends the same chain rather than starting a new one.
+    rematch = { id: old.id, seriesId: old.series_id ?? old.id };
+  }
+
   const game = challengeGame(gameType);
   if (!game || !game.supported) throw new HttpError(400, "That game isn't available for a challenge yet");
 
@@ -564,9 +621,9 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
   switch (gameType) {
     case "quiz_battle":
     case "gameday_quiz":
-      return createScorecardChallenge(db, userId, league, opponentId, gameType, game, packId, message, createdFrom);
+      return createScorecardChallenge(db, userId, league, opponentId, gameType, game, packId, message, createdFrom, rematch);
     case "quiz_duel":
-      return createDuelChallenge(db, userId, league, opponentId, game, packId, message, createdFrom);
+      return createDuelChallenge(db, userId, league, opponentId, game, packId, message, createdFrom, rematch);
     default:
       throw new HttpError(400, "That game isn't available for a challenge yet");
   }
@@ -718,6 +775,13 @@ export interface ChallengeCardData {
    *  there, since scorecard has no "who's played" state to show pre-result. */
   challengerDone: boolean;
   opponentDone: boolean;
+  /** Phase 3C — the raw member_challenges.game_type ("quiz_battle" /
+   *  "quiz_duel" / "gameday_quiz"), alongside gameMode above. gameMode only
+   *  tells duel from scorecard (one bit, drives the card's copy); a rematch
+   *  needs the ACTUAL game to preselect in ChallengePrepSheet, which
+   *  gameMode alone can't distinguish (quiz_battle and gameday_quiz are both
+   *  "scorecard"). */
+  gameType: string;
 }
 
 /** Hydrated chat-card data for one or more challenges — batched (one query
@@ -787,6 +851,7 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
       gameMode: r.game_type === "quiz_duel" ? "duel" : "scorecard",
       challengerDone: !!doneUsers?.has(r.challenger_id),
       opponentDone: !!doneUsers?.has(r.opponent_id),
+      gameType: r.game_type,
     });
   }
   return out;
@@ -798,4 +863,27 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
 export async function challengeCard(db: Db, _viewerId: string, challengeId: string): Promise<ChallengeCardData | null> {
   const map = await challengeCardsFor(db, [challengeId]);
   return map.get(challengeId) ?? null;
+}
+
+/** The member_challenges row (if any) a given h2h_challenges id belongs to —
+ *  the h2h results page's "Back to the league" action needs this (Phase 3E):
+ *  the h2h row itself carries no league pointer, member_challenges is the
+ *  only thing that does. Participant gated (403 for anyone else) — the h2h
+ *  row is public read, but which LEAGUE it came from is only the two
+ *  players' business. Null safe rather than a 404: a plain non-league h2h
+ *  (the older Versus/from-attempt path never touches member_challenges at
+ *  all) resolves to null, and the results page reads that as "Share only,
+ *  no league action" — it must keep working exactly as before. */
+export async function challengeByH2h(db: Db, userId: string, h2hId: string): Promise<{
+  challengeId: string; leagueCode: string; gameType: string;
+} | null> {
+  if (!UUID_RE.test(h2hId)) throw new HttpError(400, "bad h2h id");
+  const { data: row } = await db.from("member_challenges").select("*").eq("result_id", h2hId).maybeSingle();
+  if (!row) return null;
+  const mc = row as MemberChallengeRow;
+  if (mc.challenger_id !== userId && mc.opponent_id !== userId) throw new HttpError(403, "Not your challenge");
+
+  const { data: league } = await db.from("fantasy_leagues").select("join_code").eq("id", mc.league_id).maybeSingle();
+  if (!league) return null; // defensive — league_id is NOT NULL at creation, shouldn't happen
+  return { challengeId: mc.id, leagueCode: league.join_code as string, gameType: mc.game_type };
 }
