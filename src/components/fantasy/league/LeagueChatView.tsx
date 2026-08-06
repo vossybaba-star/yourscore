@@ -20,9 +20,13 @@ import { uploadPostVideo, validateAndProbeVideo, PostVideoError } from "@/lib/po
 import { InlineVideoPlayer } from "@/components/fantasy/VideoPlayer";
 import { ReportSheet } from "@/components/social/ReportSheet";
 import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type ChallengeCard, type GifCard } from "./types";
-import { trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished, trackVideoChatMessageSent } from "@/lib/analytics/trackSocial";
+import {
+  trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished, trackVideoChatMessageSent,
+  trackChallengeAccepted, trackChallengeDeclined, trackChallengeCancelled, trackChallengeRematchStarted,
+} from "@/lib/analytics/trackSocial";
 import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
 import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
+import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
 import { useUser } from "@/hooks/useUser";
 
 async function api(code: string, path: string, body: unknown, method = "POST") {
@@ -431,10 +435,14 @@ function expiryLine(iso: string): string {
  *  separate Accept step. Decline stays its own action. Cancel (the
  *  challenger's withdraw) and decline are both "quiet" — no shaming line,
  *  just a muted terminal status once they land. */
-function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }: {
+function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, onRematch, busy }: {
   msg: ChatMessage; viewerId: string | null;
-  onDecline: (challengeId: string) => void; onCancel: (challengeId: string) => void;
-  onAccept: (challengeId: string, h2hId: string | null) => void; busy: boolean;
+  onDecline: (challengeId: string, gameType: string) => void; onCancel: (challengeId: string, gameType: string) => void;
+  onAccept: (challengeId: string, h2hId: string | null, gameType: string) => void;
+  /** Phase 3C — the completed card's Rematch action, below. Always passed;
+   *  the card itself decides whether to render it (participants only). */
+  onRematch: (challenge: ChallengeCard) => void;
+  busy: boolean;
 }) {
   const c = msg.challenge!;
   const viewerIsOpponent = !!viewerId && viewerId === c.opponentId;
@@ -457,11 +465,11 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }
 
       {c.status === "pending" && viewerIsOpponent && (
         <div style={{ display: "flex", gap: 8 }}>
-          <button disabled={busy} onClick={(e) => { e.stopPropagation(); onAccept(c.challengeId, c.h2hId); }} style={{
+          <button disabled={busy} onClick={(e) => { e.stopPropagation(); onAccept(c.challengeId, c.h2hId, c.gameType); }} style={{
             flex: 1, padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
             background: tint(GOLD, "22"), color: GOLD, border: `1px solid ${tint(GOLD, "66")}`, opacity: busy ? 0.6 : 1,
           }}>Play</button>
-          <button disabled={busy} onClick={(e) => { e.stopPropagation(); onDecline(c.challengeId); }} style={{
+          <button disabled={busy} onClick={(e) => { e.stopPropagation(); onDecline(c.challengeId, c.gameType); }} style={{
             flex: 1, padding: "8px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
             background: PANEL_2, color: MUTED, border: `1px solid ${LINE}`, opacity: busy ? 0.6 : 1,
           }}>Decline</button>
@@ -472,7 +480,7 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }
           {mutedLine(`Waiting for ${c.opponentName}`)}
           <div style={{ display: "flex", gap: 12, marginTop: 5, alignItems: "center" }}>
             {viewerIsChallenger && (
-              <button disabled={busy} onClick={(e) => { e.stopPropagation(); onCancel(c.challengeId); }} style={{
+              <button disabled={busy} onClick={(e) => { e.stopPropagation(); onCancel(c.challengeId, c.gameType); }} style={{
                 padding: 0, fontSize: 11.5, fontWeight: 700, cursor: busy ? "default" : "pointer",
                 background: "none", border: "none", color: MUTED, textDecoration: "underline", opacity: busy ? 0.6 : 1,
               }}>Cancel</button>
@@ -521,11 +529,23 @@ function ChallengeCardMsg({ msg, viewerId, onDecline, onCancel, onAccept, busy }
       {c.status === "completed" && (
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{winnerName ? `${winnerName} won` : "It finished level"}</div>
-          {c.h2hId && (
-            <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
-              display: "inline-block", marginTop: 4, fontSize: 12, fontWeight: 700, color: GOLD, textDecoration: "none",
-            }}>See the scores</Link>
-          )}
+          <div style={{ display: "flex", gap: 14, marginTop: 4, alignItems: "center" }}>
+            {c.h2hId && (
+              <Link href={`/h2h/${c.h2hId}`} onClick={(e) => e.stopPropagation()} style={{
+                fontSize: 12, fontWeight: 700, color: GOLD, textDecoration: "none",
+              }}>See the scores</Link>
+            )}
+            {/* Rematch (Phase 3C) — the two participants only, same "no dead
+                ends on a finished challenge" rule the member sheet's chip
+                follows. Opens the prep sheet at the LeagueChatView level
+                (below) rather than anything owned by this card. */}
+            {(viewerIsChallenger || viewerIsOpponent) && (
+              <button onClick={(e) => { e.stopPropagation(); onRematch(c); }} style={{
+                padding: 0, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                background: "none", border: "none", color: GOLD, textDecoration: "underline",
+              }}>Rematch</button>
+            )}
+          </div>
         </div>
       )}
       {c.status === "declined" && mutedLine(`${c.opponentName} passed`)}
@@ -633,11 +653,13 @@ function PollComposer({ onPost, onCancel, busy }: { onPost: (q: string, opts: st
 /** The bubble/card for one message, minus the reactions row. `showHeader` is
  *  the sender-grouping signal (AC3) — only the first bubble of a same-sender
  *  run within 5 minutes carries the name. */
-function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, onDeclineChallenge, onCancelChallenge, onAcceptChallenge, viewerId, readOnly, busy, showHeader = true }: {
+function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, onDeclineChallenge, onCancelChallenge, onAcceptChallenge, onRematchChallenge, viewerId, readOnly, busy, showHeader = true }: {
   m: ChatMessage; onView: (id: number) => void; onOpenNews: (m: ChatMessage) => void; onVote: (i: number) => void;
   onViewImage: (url: string) => void; onViewFeed: (eventId: string) => void; onAuthor: (m: ChatMessage) => void;
-  onDeclineChallenge: (challengeId: string) => void; onCancelChallenge: (challengeId: string) => void;
-  onAcceptChallenge: (challengeId: string, h2hId: string | null) => void; viewerId: string | null;
+  onDeclineChallenge: (challengeId: string, gameType: string) => void; onCancelChallenge: (challengeId: string, gameType: string) => void;
+  onAcceptChallenge: (challengeId: string, h2hId: string | null, gameType: string) => void;
+  onRematchChallenge: (challenge: ChallengeCard) => void;
+  viewerId: string | null;
   readOnly?: boolean; busy?: boolean; showHeader?: boolean;
 }) {
   if ((m.kind === "player" || m.kind === "captain") && m.player) return <SharedPlayer msg={m} onView={() => onView(m.player!.id)} />;
@@ -649,7 +671,7 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, o
   if (m.kind === "video" && m.video) return <SharedVideo msg={m} />;
   if (m.kind === "feed" && m.feed) return <SharedFeedPost msg={m} onView={() => onViewFeed(m.feed!.eventId)} />;
   if (m.kind === "challenge" && m.challenge)
-    return <ChallengeCardMsg msg={m} viewerId={viewerId} onDecline={onDeclineChallenge} onCancel={onCancelChallenge} onAccept={onAcceptChallenge} busy={!!busy} />;
+    return <ChallengeCardMsg msg={m} viewerId={viewerId} onDecline={onDeclineChallenge} onCancel={onCancelChallenge} onAccept={onAcceptChallenge} onRematch={onRematchChallenge} busy={!!busy} />;
   if (m.kind === "challenge_result" && m.challenge) return <ChallengeResultLine challenge={m.challenge} />;
   if (m.kind === "poll" && m.poll) return <Poll msg={m} onVote={onVote} readOnly={readOnly} />;
   return (
@@ -731,6 +753,10 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   const [chat, setChat] = useState<ChatData | null>(null);
   // Member action sheet (Phase 1B) — tapping an avatar or author name.
   const [actionMember, setActionMember] = useState<MemberActionMember | null>(null);
+  // Rematch prep sheet (Phase 3C) — a completed card's Rematch tap. See
+  // startRematch's own doc, below, for why this view needs its own
+  // ChallengePrepSheet mount rather than reusing MemberActionSheet's.
+  const [rematchChallenge, setRematchChallenge] = useState<ChallengeCard | null>(null);
   const [viewGw, setViewGw] = useState<number | null>(initialGw);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -917,21 +943,23 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   // under /leagues/[code]/*, so it doesn't go through this file's api()
   // helper. guard() still reloads the thread after, so the card flips to
   // "Declined" immediately rather than waiting on the 15s poll.
-  const declineChallenge = (challengeId: string) => {
+  const declineChallenge = (challengeId: string, gameType: string) => {
     setReactFor(null);
     guard(async () => {
       const res = await fetch(`/api/fantasy/challenges/${challengeId}/decline`, { method: "POST" });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not decline");
+      trackChallengeDeclined(gameType);
     });
   };
 
   // Withdraw a challenge (Phase 3A) — the challenger only, while pending.
   // Same top-level-route shape as decline above.
-  const cancelChallenge = (challengeId: string) => {
+  const cancelChallenge = (challengeId: string, gameType: string) => {
     setReactFor(null);
     guard(async () => {
       const res = await fetch(`/api/fantasy/challenges/${challengeId}/cancel`, { method: "POST" });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not cancel");
+      trackChallengeCancelled(gameType);
     });
   };
 
@@ -942,7 +970,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
   // already leaving the page), and on a 409 (someone else's tap already
   // closed it, or it's expired) it still reloads so the card never sits on a
   // dead Play button.
-  const acceptChallenge = (challengeId: string, h2hId: string | null) => {
+  const acceptChallenge = (challengeId: string, h2hId: string | null, gameType: string) => {
     setReactFor(null);
     setBusy(true); setErr(null);
     (async () => {
@@ -953,6 +981,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
           if (res.status === 409) { await load(viewGw); setBusy(false); return; }
           throw new Error(j.error ?? "Could not accept");
         }
+        trackChallengeAccepted(gameType);
         router.push(`/h2h/${j.h2hId ?? h2hId}`);
       } catch (e) {
         setErr((e as Error).message);
@@ -961,6 +990,27 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
       setBusy(false);
     })();
   };
+
+  // Rematch (Phase 3C) — a completed card's Rematch tap. This view mounts
+  // its OWN ChallengePrepSheet (below, next to the member action sheet) —
+  // unlike every OTHER challenge action here (accept/decline/cancel), which
+  // hit a route directly, sending a challenge needs the full prep sheet
+  // (game/pack picker), and MemberActionSheet's copy is scoped to ITS OWN
+  // member tap, not this card's. Preselects the completed game and carries
+  // the old challenge's id through as rematchOf. Opponent is the OTHER
+  // participant relative to the viewer — a rematch may flip roles, so this
+  // is never just "the same opponent as last time" from the challenger's
+  // fixed seat.
+  const startRematch = (c: ChallengeCard) => {
+    setReactFor(null);
+    trackChallengeRematchStarted(c.gameType);
+    setRematchChallenge(c);
+  };
+  const rematchOpponent = rematchChallenge && user?.id
+    ? (rematchChallenge.challengerId === user.id
+        ? { userId: rematchChallenge.opponentId, name: rematchChallenge.opponentName, avatarUrl: rematchChallenge.opponentAvatarUrl }
+        : { userId: rematchChallenge.challengerId, name: rematchChallenge.challengerName, avatarUrl: rematchChallenge.challengerAvatarUrl })
+    : null;
 
   // Delete/Block/Mute (Phase 5a) — reuse the existing comments DELETE (soft
   // delete, ownership-checked server-side) for a message, and the same
@@ -1158,6 +1208,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                 <MessageBody m={m} onView={(id) => router.push(`/fantasy/players/${id}`)} onOpenNews={openNews}
                   onVote={(i2) => vote(m.id, i2)} onViewImage={setGalleryUrl} onViewFeed={openFeed} onAuthor={openAuthor}
                   onDeclineChallenge={declineChallenge} onCancelChallenge={cancelChallenge} onAcceptChallenge={acceptChallenge}
+                  onRematchChallenge={startRematch}
                   viewerId={user?.id ?? null}
                   readOnly={readOnly} busy={busy} showHeader={showHeader} />
               </div>
@@ -1206,6 +1257,21 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
           viewerId={user?.id ?? null}
           onClose={() => setActionMember(null)}
           onMention={insertMention}
+        />
+      )}
+
+      {/* Rematch prep sheet (Phase 3C) — a completed card's Rematch tap. See
+          startRematch's own doc, above, for why this is its own mount rather
+          than MemberActionSheet's copy. */}
+      {rematchChallenge && rematchOpponent && (
+        <ChallengePrepSheet
+          leagueCode={code}
+          opponent={rematchOpponent}
+          createdFrom="league_chat"
+          initialGame={rematchChallenge.gameType}
+          rematchOf={rematchChallenge.challengeId}
+          onSent={() => { setRematchChallenge(null); load(viewGw); }}
+          onClose={() => setRematchChallenge(null)}
         />
       )}
 

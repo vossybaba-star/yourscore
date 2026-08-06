@@ -45,7 +45,7 @@ type Row = any;
 
 const MESSAGE_MAX_LEN = 140;
 
-export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member_action", onSent, onClose }: {
+export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member_action", initialGame, rematchOf, onSent, onClose }: {
   leagueCode: string;
   opponent: { userId: string; name: string; avatarUrl: string | null };
   /** Phase 3A — which surface opened this sheet (attribution only, see
@@ -53,6 +53,20 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
    *  sheet has today (MemberActionSheet's Challenge chip); a future caller
    *  from another surface passes its own value. */
   createdFrom?: string;
+  /** Phase 3C — a Rematch tap preselects the completed challenge's own game
+   *  (a rematch keeps the same game, product decision, locked) and skips
+   *  straight to its pack step — the back arrow still lets the sender change
+   *  it, same as picking normally would have got them here. Matched against
+   *  supportedChallengeGames() by id; an unrecognised/omitted value falls
+   *  back to the ordinary picker (or its Phase 1C single-game skip) below. */
+  initialGame?: string;
+  /** Phase 3C — set only when this sheet was opened from a Rematch tap
+   *  (never a fresh Challenge) — passed straight through on the create POST.
+   *  createChallenge validates it server-side (checkRematchEligibility); this
+   *  sheet does no eligibility checking of its own, the caller only ever
+   *  offers Rematch where it's already known to apply (a completed card the
+   *  viewer took part in). */
+  rematchOf?: string;
   /** Fired once the challenge is actually created — lets the caller flip its
    *  chip to "Pending" without waiting on a re-fetch. */
   onSent?: (created: { id: string; h2hId: string | null }) => void;
@@ -60,12 +74,15 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
 }) {
   const router = useRouter();
   const games = supportedChallengeGames();
+  const preselectedGame = initialGame ? (games.find((g) => g.id === initialGame) ?? null) : null;
 
   const [leagueName, setLeagueName] = useState<string | null>(null);
-  // null = only one game is offered (skip the picker, Phase 1C's behaviour);
-  // "loading" state is implicit via games.length === 1 short-circuiting the
-  // picker entirely below.
-  const [selectedGame, setSelectedGame] = useState<ChallengeGame | null>(games.length === 1 ? games[0] : null);
+  // null = only one game is offered, or a rematch preselected one (skip the
+  // picker either way); "loading" state is implicit via that short-circuit
+  // below.
+  const [selectedGame, setSelectedGame] = useState<ChallengeGame | null>(
+    preselectedGame ?? (games.length === 1 ? games[0] : null),
+  );
 
   // Quiz Battle / Gameday Quiz — one shared load (the challenger's own played
   // packs), Gameday just filters it down client-side via isGamedayPack.
@@ -81,7 +98,9 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
 
   useEffect(() => {
     trackChallengeFlowOpened();
-    if (games.length === 1) trackChallengeGameSelected(games[0].id); // implicit — there's only the one
+    // implicit selection — either there's only the one game, or a rematch
+    // preselected it — neither is a real tap on the game-choice screen.
+    if (selectedGame) trackChallengeGameSelected(selectedGame.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -177,7 +196,7 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         opponentId: opponent.userId, leagueCode, gameType: selectedGame.id, packId: picked.packId,
-        message: trimmedMessage || undefined, createdFrom,
+        message: trimmedMessage || undefined, createdFrom, rematchOf,
       }),
     })
       .then(async (res) => {
