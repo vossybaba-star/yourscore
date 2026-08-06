@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-06 (**League Competitions Wave 1 shipped: League Quiz + Beat the Target league wide, official Gameday League Quiz auto created per league, owner create flow, separate competition standings — see Recently Shipped top entry. Same day, League Games Hub shipped: Games tab in every league, live games leaderboard, hub module, history results, action badge — see Recently Shipped top entry. Same day, challenge engine COMPLETE: lifecycle, Quiz Duel + Gameday adapters, rematches, result actions — see the three Recently Shipped entries. Adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
+> **Confirmed:** 2026-08-06 (**Trust Sprint 1 shipped: quiz answer keys no longer sent to the browser (the leak was a public API route, not the database), Social post comments closed to signed out readers, community accounts labelled, pnpm test + security probes added; mig 262 still to apply after verification — see Recently Shipped top entry. Same day, League Competitions Wave 1 shipped: League Quiz + Beat the Target league wide, official Gameday League Quiz auto created per league, owner create flow, separate competition standings — see Recently Shipped top entry. Same day, League Games Hub shipped: Games tab in every league, live games leaderboard, hub module, history results, action badge — see Recently Shipped top entry. Same day, challenge engine COMPLETE: lifecycle, Quiz Duel + Gameday adapters, rematches, result actions — see the three Recently Shipped entries. Adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
 > cancel, quiet decline, server-derived results posting into league chat, challenge
 > messages + rate limiting — see Recently Shipped top entry. Same day: video/photo
 > upload unblocked in prod (CSP + missing bucket policies).** Earlier: **Native video shipped across Social: uploads, inline +
@@ -816,6 +816,28 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-06** — **TRUST SPRINT 1 SHIPPED** (PR #89; mig 261 applied, **mig 262 deliberately NOT applied yet**):
+  quiz answer keys are no longer handed to the browser. The real hole was not
+  the database: `/api/challenges/pack` was a public, unauthenticated, CDN cached
+  route that returned every published pack's answers to a plain curl with no key
+  and no cookie. It now strips answers, and a new `POST /api/quiz/answer` grades
+  one question at a time, revealing only the letter for the question just
+  answered. H2H reads its questions through a participation gated route
+  (`GET /api/h2h/[id]/questions`) that includes answers only once the challenge
+  is complete AND the caller played it; open shared link challenges stay
+  playable. The live match quiz and multiplayer recovery read through an answer
+  free route instead of the browser client. Migration 261 (applied) stops Social
+  post comments being readable by anyone signed out. Migration 262 (written,
+  rollback included, **gated behind this deploy**) rebuilds the column grants on
+  quiz_packs, questions, quiz_attempts and h2h_challenges so the answer columns
+  are not readable by anon or authenticated at all. Synthetic accounts now carry
+  a "YourScore community account" label in the feed, post detail, quote embeds,
+  suggested accounts and on the profile, driven by `profiles.source` rather than
+  a hardcoded list. `pnpm test` exists for the first time (609 tests, 601 pass)
+  along with anon key security regression probes. Known and accepted: a per
+  question grading endpoint still yields one answer per call, so rate limits
+  (150/hr per caller, 60/hr per caller and pack) are the control on bulk
+  extraction, not a closure. Rollout order and rollback: `docs/TRUST-SPRINT-1-ROLLOUT.md`.
 - **2026-08-06** — **LEAGUE COMPETITIONS Wave 1 SHIPPED** (PR #88; mig 260 applied):
   league wide games arrive. Two formats: **League Quiz** (everyone in the league plays
   the same pack inside a shared window, highest score when it locks wins) and **Beat
