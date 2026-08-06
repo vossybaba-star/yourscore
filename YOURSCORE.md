@@ -6,7 +6,7 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-06 (**Challenge adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
+> **Confirmed:** 2026-08-06 (**Challenge engine COMPLETE: lifecycle, Quiz Duel + Gameday adapters, rematches, result actions — see the three Recently Shipped entries. Adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
 > cancel, quiet decline, server-derived results posting into league chat, challenge
 > messages + rate limiting — see Recently Shipped top entry. Same day: video/photo
 > upload unblocked in prod (CSP + missing bucket policies).** Earlier: **Native video shipped across Social: uploads, inline +
@@ -816,6 +816,15 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-06** — **Challenge close-out (Phases 3C/3D/3E) SHIPPED** (PR #83): Rematch
+  from the completed chat card and the member sheet — always a new linked challenge
+  (rematch chains share one series id), prep sheet opens prefilled with the game
+  preselected; a duel's pack is burned once either player has duelled on it. The h2h
+  result screen gains Share (system share sheet with copy fallback) and Back to the
+  league for the two participants. Challenge analytics events across accept, decline,
+  cancel, result views, rematches and shares. The master prompt's acceptance loop is
+  complete: pick a league rival, choose a game, send it, play, settle the result in
+  the league, run it back.
 - **2026-08-06** — **Challenge adapters (Phase 3B) SHIPPED** (PR #82; mig 259 applied):
   **Quiz Duel** — pick a quiz neither of you has played, you both play it fresh, best
   score wins. Attempts are held privately (own row only) until both sides finish, so
