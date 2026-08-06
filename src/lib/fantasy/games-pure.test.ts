@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   pointsForResult, compareLeaderboardCandidates, sortLeaderboard, deriveStreak, deriveGamesTabAction,
+  resultForParticipant, winRatePercent, formatGameResultLine,
   type LeaderboardCandidate,
 } from "./games-pure";
 
@@ -158,4 +159,54 @@ test("deriveGamesTabAction: duel awaiting_opponent — the side that hasn't play
 test("deriveGamesTabAction: completed is never actionable, for either participant or game mode", () => {
   assert.equal(deriveGamesTabAction({ ...base, status: "completed", gameMode: "scorecard" }, "opponent"), null);
   assert.equal(deriveGamesTabAction({ ...base, status: "completed", gameMode: "duel" }, "challenger"), null);
+});
+
+// ── resultForParticipant (Phase 4C) ──────────────────────────────────────
+
+test("resultForParticipant: null winner is a draw for either participant", () => {
+  assert.equal(resultForParticipant(null, "a"), "draw");
+  assert.equal(resultForParticipant(null, "b"), "draw");
+});
+
+test("resultForParticipant: the winner gets a win, the other side a loss", () => {
+  assert.equal(resultForParticipant("a", "a"), "win");
+  assert.equal(resultForParticipant("a", "b"), "loss");
+});
+
+// ── winRatePercent (Phase 4C) ─────────────────────────────────────────────
+
+test("winRatePercent: null when nobody's played yet", () => {
+  assert.equal(winRatePercent(0, 0), null);
+});
+
+test("winRatePercent: rounds to the nearest whole percent", () => {
+  assert.equal(winRatePercent(1, 3), 33);
+  assert.equal(winRatePercent(2, 3), 67);
+  assert.equal(winRatePercent(5, 5), 100);
+  assert.equal(winRatePercent(0, 5), 0);
+});
+
+// ── formatGameResultLine (Phase 4B/C/D) ──────────────────────────────────
+
+function line(over: Partial<Parameters<typeof formatGameResultLine>[0]> = {}) {
+  return formatGameResultLine({
+    challengerId: "c", opponentId: "o", challengerName: "Chris", opponentName: "Olu",
+    challengerScore: null, opponentScore: null, winnerId: null, ...over,
+  });
+}
+
+test("formatGameResultLine: null winner reads as level, both names, no score", () => {
+  assert.equal(line(), "Chris and Olu finished level");
+});
+
+test("formatGameResultLine: a winner with scores reads 'X beat Y N v N'", () => {
+  assert.equal(line({ winnerId: "c", challengerScore: 8, opponentScore: 7 }), "Chris beat Olu 8 v 7");
+});
+
+test("formatGameResultLine: the OPPONENT winning still leads with the winner's name", () => {
+  assert.equal(line({ winnerId: "o", challengerScore: 4, opponentScore: 9 }), "Olu beat Chris 9 v 4");
+});
+
+test("formatGameResultLine: a winner with no scores omits the score entirely, never prints 0 v 0", () => {
+  assert.equal(line({ winnerId: "c" }), "Chris beat Olu");
 });

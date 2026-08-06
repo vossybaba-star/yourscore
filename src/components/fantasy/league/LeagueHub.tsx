@@ -2,7 +2,7 @@
 /** The League Hub — the default screen. Tells the league's story right now:
  *  the gameweek state, where you stand, the key moments, and the latest banter.
  *  Not a full table or a full chat — it points at both. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { LeagueTableRows } from "./LeagueTableRows";
@@ -10,8 +10,21 @@ import { LeagueRecentRail } from "./LeagueRecentRail";
 import { LeagueMembersView } from "./LeagueMembersView";
 import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
 import { useUser } from "@/hooks/useUser";
-import type { ChatData, ChatMessage, LeagueDetail, LeagueRow } from "./types";
+import { trackGamesHubModuleOpened } from "@/lib/analytics/trackSocial";
+import type { ChatData, ChatMessage, GamesPulse, LeagueDetail, LeagueRow } from "./types";
 import { nameOf } from "./types";
+
+/** The Games module's status line (Phase 4B) — three fixed states, in
+ *  priority order: the viewer's own action-required items come first (most
+ *  urgent to THEM), then whether anything's open league-wide, then the
+ *  quiet default. `lastResultLine` (a completed result, if any) is never the
+ *  PRIMARY line — it's a secondary caption under it, so it never competes
+ *  with the three states above for the headline. */
+function gamesStatusLine(pulse: GamesPulse): string {
+  if (pulse.myActionCount > 0) return `${pulse.myActionCount} waiting on you`;
+  if (pulse.openCount > 0) return `${pulse.openCount} open challenge${pulse.openCount === 1 ? "" : "s"}`;
+  return "Settle it on the pitch.";
+}
 
 /** A one-line summary of a message for the hub preview. A structured card can't
  *  show its whole self here, so it says what it is in plain words — never the raw
@@ -46,15 +59,36 @@ const PHASE = {
   final: { label: "FINAL", accent: GOLD },
 } as const;
 
-export function LeagueHub({ detail, chat, onTab }: {
+export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
   detail: LeagueDetail;
   chat: ChatData | null;
-  onTab: (t: "chat" | "table" | "history") => void;
+  onTab: (t: "chat" | "table" | "games" | "history") => void;
+  /** Games module's "Challenge someone" (Phase 4B) — mirrors History's own
+   *  onOpenChat pattern (a dedicated callback from page.tsx alongside onTab,
+   *  rather than onTab growing an options bag every module needs a flag). */
+  onOpenGamesChallenge: () => void;
 }) {
   const { user } = useUser();
   const viewerId = user?.id ?? null;
   const [selected, setSelected] = useState<MemberActionMember | null>(null);
   const [membersOpen, setMembersOpen] = useState(false);
+
+  // Games module pulse (Phase 4B) — a small, dedicated fetch (own useEffect,
+  // own load, independent of page.tsx's own pulse fetch for the tab badge)
+  // so the module works whether or not the viewer ever visits the badge's
+  // code path. Member-only (games is a member-only tab); null hides the
+  // module outright while loading or on a failed fetch — same "hide clean"
+  // idiom Readiness/GwRecap already use above, no skeleton for one line.
+  const [gamesPulse, setGamesPulse] = useState<GamesPulse | null>(null);
+  useEffect(() => {
+    if (!detail.league.isMember) return;
+    let live = true;
+    fetch(`/api/fantasy/leagues/${detail.league.code}/games/pulse`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (live && d) setGamesPulse(d); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [detail.league.code, detail.league.isMember]);
   const openMember = (r: LeagueRow) => {
     if (!detail.league.isMember) return;
     setSelected({ userId: r.userId, username: r.username, displayName: r.displayName, avatarUrl: r.avatarUrl, rank: r.rank, points: r.played ? r.points : undefined });
@@ -225,6 +259,32 @@ export function LeagueHub({ detail, chat, onTab }: {
         )}
         <Btn onClick={() => onTab("chat")}>Open league chat</Btn>
       </Card>
+
+      {/* GAMES MODULE — after the hub's primary content (Phase 4B), same
+          Card/SectionLabel weight as CHAT above it, never dominating the
+          screen. Hidden outright until the pulse actually loads. */}
+      {detail.league.isMember && gamesPulse && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>GAMES</span>
+          </div>
+          <Card style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 4 }}>League games</div>
+            <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 4px", lineHeight: 1.4 }}>{gamesStatusLine(gamesPulse)}</p>
+            {gamesPulse.lastResultLine && (
+              <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.4 }}>{gamesPulse.lastResultLine}</p>
+            )}
+            <div style={{ display: "flex", gap: 8, marginTop: gamesPulse.lastResultLine ? 0 : 8 }}>
+              <div style={{ flex: 1 }}>
+                <Btn onClick={() => { trackGamesHubModuleOpened(); onTab("games"); }}>Open Games</Btn>
+              </div>
+              <div style={{ flex: 1 }}>
+                <Btn gold onClick={() => { trackGamesHubModuleOpened(); onOpenGamesChallenge(); }}>Challenge someone</Btn>
+              </div>
+            </div>
+          </Card>
+        </>
+      )}
 
       {selected && (
         <MemberActionSheet

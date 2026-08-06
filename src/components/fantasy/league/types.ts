@@ -134,7 +134,9 @@ export interface GamesSummary {
   open: number; wins: number; losses: number; draws: number;
   streakType: "win" | "draw" | "loss" | null; streakCount: number;
 }
-export interface GamesAvailableGame { id: string; name: string; shortDesc: string; typicalDuration: string }
+/** `howItWorks` (Phase 4D) — the 2-3 line breakdown the game detail sheet
+ *  renders verbatim, mirroring games.ts's own GamesAvailableGame. */
+export interface GamesAvailableGame { id: string; name: string; shortDesc: string; typicalDuration: string; howItWorks: string[] }
 export interface GamesOverview {
   actionRequired: GamesActionCard[];
   open: ChallengeCard[];
@@ -142,6 +144,27 @@ export interface GamesOverview {
   leaderboard: GamesLeaderboardRow[];
   mySummary: GamesSummary | null;
   availableGames: GamesAvailableGame[];
+}
+
+// ── Hub Games module pulse (Phase 4B) / History "GAMES" block ────────────
+// Mirror games.ts's GamesPulse / GamesHistoryEntry, same duplication idiom
+// as the rest of this file (games.ts is `server-only`).
+
+export interface GamesPulse {
+  openCount: number;
+  myActionCount: number;
+  lastResultLine: string | null;
+}
+
+export interface GamesHistoryEntry {
+  challengeId: string;
+  h2hId: string | null;
+  gameId: string; gameName: string;
+  challengerId: string; challengerName: string; challengerAvatarUrl: string | null;
+  opponentId: string; opponentName: string; opponentAvatarUrl: string | null;
+  winnerId: string | null;
+  challengerScore: number | null; opponentScore: number | null;
+  completedAt: string;
 }
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no

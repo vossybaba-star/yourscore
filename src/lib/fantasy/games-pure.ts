@@ -134,3 +134,51 @@ export function deriveGamesTabAction(card: ActionableChallenge, viewerId: string
   }
   return null;
 }
+
+// ── Phase 4B/C/D — Games hub finishing pieces ────────────────────────────
+
+/** win/draw/loss FOR ONE PARTICIPANT of a completed row. Only ever called on
+ *  a row already known to be "completed" — winnerId is meaningless (and
+ *  never read) for anything still open. Was a private `resultFor` duplicated
+ *  in games.ts and re-derived ad hoc client-side (member gaming summary,
+ *  Phase 4C) — pulled up here (no `server-only` import) so BOTH sides call
+ *  the same one function rather than two copies drifting apart. */
+export function resultForParticipant(winnerId: string | null, participantId: string): GameResult {
+  if (winnerId === null) return "draw";
+  return winnerId === participantId ? "win" : "loss";
+}
+
+/** Win rate as a whole-number percent — null when nobody's played yet (the
+ *  member gaming summary sheet only shows this line when played > 0, per the
+ *  4C brief; a 0/0 percentage has no honest value to print). */
+export function winRatePercent(wins: number, played: number): number | null {
+  if (played <= 0) return null;
+  return Math.round((wins / played) * 100);
+}
+
+/** "X beat Y 8 v 7" / "X and Y finished level" — the one line describing a
+ *  completed challenge's outcome, shared by the Games hub module's status
+ *  line (games.ts's leagueGamesPulse), the league History "GAMES" block, and
+ *  the Games tab itself, so a result reads identically everywhere it's
+ *  quoted (house rule: no duplicated status logic). Never includes the game
+ *  name or a timestamp — callers that want either append their own. */
+export interface GameResultLineInput {
+  challengerId: string;
+  opponentId: string;
+  challengerName: string;
+  opponentName: string;
+  challengerScore: number | null;
+  opponentScore: number | null;
+  winnerId: string | null;
+}
+export function formatGameResultLine(c: GameResultLineInput): string {
+  if (c.winnerId === null) return `${c.challengerName} and ${c.opponentName} finished level`;
+  const winnerIsChallenger = c.winnerId === c.challengerId;
+  const winnerName = winnerIsChallenger ? c.challengerName : c.opponentName;
+  const loserName = winnerIsChallenger ? c.opponentName : c.challengerName;
+  const hasScores = typeof c.challengerScore === "number" && typeof c.opponentScore === "number";
+  if (!hasScores) return `${winnerName} beat ${loserName}`;
+  const winnerScore = winnerIsChallenger ? c.challengerScore : c.opponentScore;
+  const loserScore = winnerIsChallenger ? c.opponentScore : c.challengerScore;
+  return `${winnerName} beat ${loserName} ${winnerScore} v ${loserScore}`;
+}

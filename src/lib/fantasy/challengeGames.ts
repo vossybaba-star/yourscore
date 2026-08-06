@@ -24,6 +24,10 @@ export interface ChallengeGame {
   /** Whether createChallenge (challenges.ts) and the prep sheet will
    *  actually let you start one. False = documented, not offered. */
   supported: boolean;
+  /** 2-3 short lines for the Games tab's game detail sheet (Phase 4D) —
+   *  written straight off this file's own adapter doc comments above each
+   *  entry, so the detail sheet never hardcodes game copy of its own. */
+  howItWorks: string[];
 }
 
 /**
@@ -52,6 +56,11 @@ export const CHALLENGE_GAMES: ChallengeGame[] = [
     shortDesc: "Send a quiz you've already played. They've got a few days to beat your score.",
     typicalDuration: "A few minutes",
     async: true,
+    howItWorks: [
+      "Send a scorecard you've already played.",
+      "They've got a few days to beat it, or not.",
+      "Higher score wins. Level scores finish level.",
+    ],
     supported: true,
   },
   {
@@ -60,6 +69,11 @@ export const CHALLENGE_GAMES: ChallengeGame[] = [
     shortDesc: "Pick a quiz neither of you has played. You both play it fresh. Best score wins.",
     typicalDuration: "A few minutes",
     async: true,
+    howItWorks: [
+      "A fresh pack. Neither of you has played it.",
+      "Scores stay private until you've both finished.",
+      "Best score wins.",
+    ],
     // Phase 3B. The h2h_challenges row is created BEFORE anyone has a score
     // (mode 'duel', challenger_score/correct/answers null at insert — see
     // migration 259, which drops their NOT NULL constraints for this). Each
@@ -78,6 +92,11 @@ export const CHALLENGE_GAMES: ChallengeGame[] = [
     shortDesc: "A matchday pack, head to head.",
     typicalDuration: "A few minutes",
     async: true,
+    howItWorks: [
+      "A matchday pack, head to head.",
+      "Same rules as Quiz Battle. Beat their stored score.",
+      "Higher score wins. Level scores finish level.",
+    ],
     // Phase 3B. Same adapter as Quiz Battle end to end — an existing
     // quiz_attempts scorecard published as an h2h_challenges row (mode
     // 'scorecard'), scoring_version 'gameday_quiz_v1' — the only addition is
@@ -97,6 +116,7 @@ export const CHALLENGE_GAMES: ChallengeGame[] = [
     shortDesc: "Head to head on a 38-0 run.",
     typicalDuration: "A few minutes",
     async: true,
+    howItWorks: ["Not offered yet."],
     // Not offered yet. 38-0 has no stored "attempt" table today the way quiz
     // packs have quiz_attempts, so there's nothing for createChallenge to
     // read at challenge time — an adapter needs its own authoritative score
