@@ -160,11 +160,13 @@ no application path reads through it.
    anon/authenticated until it is added to the grant list in 262.** This is the
    safe default and it is deliberate, but it will surprise whoever adds the
    column. Symptom: a PostgREST 403 mentioning the new column name.
-2. **`rooms.answers_json`** is a legacy column with zero references in `src/`,
-   superseded by the `room_answers` table. `src/app/play/[roomId]/page.tsx` does
-   `.from("rooms").select("*")` from the browser, so if any old row still holds
-   data there, it is readable. Confirm it is null across the table and drop it.
-   Not done here because dropping a column is destructive and was out of scope.
+2. **`rooms.answers_json` does not exist in production.** It appears in the
+   generated types (`src/types/database.ts`) and looked like a live leak via
+   `src/app/play/[roomId]/page.tsx`'s browser-side `.from("rooms").select("*")`.
+   Checked directly: `select count(answers_json) from rooms` errors with
+   `42703: column "answers_json" does not exist`. So there is nothing to drop;
+   the generated types are simply stale and should be regenerated. Recorded here
+   because the stale type is what made it look like a risk in the first place.
 3. **Completed H2H answer logs** are withheld from the browser by 262 and served
    by the participation-checked route instead. The share-link use case (a
    signed-out viewer opening someone's result) still shows scores, since those
