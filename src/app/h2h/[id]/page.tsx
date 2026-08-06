@@ -46,10 +46,14 @@ interface H2HChallenge {
   invited_user_id?: string | null;
 }
 
+// `answer` only exists once /api/h2h/[id]/questions decides, server-side, that
+// the challenge is complete (both sides scored) — while playing it is
+// STRIPPED, so per-question correctness during the round comes from
+// /api/quiz/answer instead of reading this field directly.
 interface RawQuestion {
   question: string;
   options: { A: string; B: string; C: string; D: string };
-  answer: string;
+  answer?: string;
   difficulty: string;
   category: string;
 }
@@ -192,6 +196,9 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selected, setSelected] = useState<Letter | null>(null);
   const [revealed, setRevealed] = useState(false);
+  // Correct letter for the CURRENT question while playing, filled in by
+  // /api/quiz/answer's response — the pack never carries it mid-round.
+  const [revealedAnswer, setRevealedAnswer] = useState<Letter | null>(null);
   const [answerLog, setAnswerLog] = useState<AnswerRecord[]>([]);
   const [score, setScore] = useState(0);
   const [lastPoints, setLastPoints] = useState<number | null>(null);
@@ -215,6 +222,27 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     pageState === "playing",
     currentIdx,
   );
+
+  // Answer-free while the challenge is still being played, answer-included
+  // once it's complete — decided server-side by /api/h2h/[id]/questions (see
+  // that route's own doc). Replaces a direct `quiz_packs.select("questions")`
+  // browser read, which shipped the full answer key with the anon key alone.
+  async function loadQuestions(challengeId: string): Promise<RawQuestion[] | null> {
+    try {
+      const res = await fetch(`/api/h2h/${challengeId}/questions`);
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.questions)) {
+          const qs = json.questions as RawQuestion[];
+          setQuestions(qs);
+          return qs;
+        }
+      }
+    } catch {
+      /* reveal/results stays empty rather than crashing the page */
+    }
+    return null;
+  }
 
   // ── Initial load ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -266,9 +294,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         if (ch.opponent_score !== null) {
           setPageState("results");
           if (ch.challenger_answers && ch.opponent_answers) {
-            const { data: pack } = await supabase
-              .from("quiz_packs").select("questions").eq("id", ch.quiz_pack_id).single();
-            if (pack?.questions) setQuestions(pack.questions as unknown as RawQuestion[]);
+            await loadQuestions(id);
           }
           return;
         }
@@ -302,9 +328,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         // Pull the pack's questions so the reveal can show both players' picks —
         // only when we actually have per-question data for both sides.
         if (ch.challenger_answers && ch.opponent_answers) {
-          const { data: pack } = await supabase
-            .from("quiz_packs").select("questions").eq("id", ch.quiz_pack_id).single();
-          if (pack?.questions) setQuestions(pack.questions as unknown as RawQuestion[]);
+          await loadQuestions(id);
         }
       } else if (uid === ch.challenger_id) {
         setPageState("own_challenge");
@@ -341,19 +365,12 @@ export default function H2HPage({ params }: { params: { id: string } }) {
   // ── Fetch questions when transitioning to playing ──────────────────────
   async function startPlaying() {
     if (!challenge) return;
-    const supabase = createClient();
-    const { data: pack } = await supabase
-      .from("quiz_packs")
-      .select("questions")
-      .eq("id", challenge.quiz_pack_id)
-      .single();
-
-    if (!pack?.questions) return;
-
-    setQuestions(pack.questions as unknown as RawQuestion[]);
+    const qs = await loadQuestions(challenge.id);
+    if (!qs || qs.length === 0) return;
     setCurrentIdx(0);
     setSelected(null);
     setRevealed(false);
+    setRevealedAnswer(null);
     setAnswerLog([]);
     setScore(0);
     setLastPoints(null);
@@ -388,10 +405,52 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     if (!challenge || selected || revealed || advancing) return;
     const currentQ = questions[currentIdx];
     if (!currentQ) return;
+    // Captured once, non-null: `advance` below is a nested function
+    // declaration, which TS's control-flow narrowing doesn't reach into, even
+    // though `challenge` (a const) can't actually change mid-closure.
+    const ch = challenge;
 
     stopTimer();
     const elapsed = Date.now() - questionStartRef.current;
-    const isCorrect = letter === (currentQ.answer as Letter);
+    const qIdx = currentIdx;
+
+    // Show the tap immediately — the pack never told us the answer while
+    // playing (see /api/h2h/[id]/questions), so this is a selection, not a
+    // verdict. Correct/incorrect styling waits for the grading round trip.
+    setSelected(letter);
+
+    let graded: { correct: boolean; answer: Letter } | null = null;
+    try {
+      const res = await fetch("/api/quiz/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ packId: challenge.quiz_pack_id, idx: qIdx, letter }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (typeof json.correct === "boolean" && ["A", "B", "C", "D"].includes(json.answer)) {
+          graded = { correct: json.correct, answer: json.answer as Letter };
+        }
+      }
+    } catch {
+      /* network blip — handled by the ungraded branch below */
+    }
+
+    if (!graded) {
+      // Grading failed. Never guess correctness client-side: record the pick
+      // as ungraded (no points, no reveal colours) and keep the run moving.
+      // /api/h2h/play re-grades every answer authoritatively at the end, so a
+      // dropped request here costs UX polish, not score integrity.
+      const record: AnswerRecord = { idx: qIdx, selected: letter, correct: false, points: 0, elapsed_ms: elapsed };
+      const newLog = [...answerLog, record];
+      setAnswerLog(newLog);
+      setLastPoints(null);
+      setAdvancing(true);
+      setTimeout(() => void advance(newLog), 900);
+      return;
+    }
+
+    const isCorrect = graded.correct;
 
     // Score with the shared engine so this live preview matches what
     // /api/h2h/play computes server-side (base × difficulty × speed + bonuses).
@@ -411,13 +470,13 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       windowMs: H2H_QUESTION_WINDOW_MS,
     });
 
-    setSelected(letter);
+    setRevealedAnswer(graded.answer);
     setRevealed(true);
     setLastPoints(isCorrect ? pts : null);
     if (pts > 0) setScore((s) => s + pts);
 
     const record: AnswerRecord = {
-      idx: currentIdx,
+      idx: qIdx,
       selected: letter,
       correct: isCorrect,
       points: pts,
@@ -427,8 +486,13 @@ export default function H2HPage({ params }: { params: { id: string } }) {
     setAnswerLog(newLog);
 
     setAdvancing(true);
-    setTimeout(async () => {
-      if (currentIdx + 1 >= questions.length) {
+    setTimeout(() => void advance(newLog), 1800);
+
+    // Continuation shared by the graded and ungraded paths: finish the round
+    // or move to the next question. Pulled out so a failed grading call can
+    // still advance the run instead of leaving it stuck.
+    async function advance(newLog: AnswerRecord[]) {
+      if (qIdx + 1 >= questions.length) {
         // Local tally for immediate display; the server re-grades authoritatively.
         let finalScore = newLog.reduce((s, r) => s + r.points, 0);
         let correctCount = newLog.filter((r) => r.correct).length;
@@ -440,7 +504,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              challengeId: challenge.id,
+              challengeId: ch.id,
               answers: newLog.map((r) => ({
                 letter: r.selected,
                 elapsedMs: r.elapsed_ms,
@@ -454,14 +518,14 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             // ── Quiz Duel (Phase 3B) — a different response shape (yourScore/
             // yourCorrect/done) and two possible next states, neither of which
             // is the scorecard branch below.
-            if (challenge.mode === "duel") {
+            if (ch.mode === "duel") {
               if (data.done === "complete") {
                 // Both sides have now played — /api/h2h/play just copied both
                 // scores onto the public row. Refetch it rather than guess its
                 // shape client-side, then reuse the existing results render.
                 const supabase = createClient();
                 const { data: freshRow } = await supabase
-                  .from("h2h_challenges").select("*").eq("id", challenge.id).single();
+                  .from("h2h_challenges").select("*").eq("id", ch.id).single();
                 if (freshRow) setChallenge(freshRow as unknown as H2HChallenge);
                 setScore(data.yourScore);
                 setPageState("results");
@@ -495,10 +559,11 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         setCurrentIdx((i) => i + 1);
         setSelected(null);
         setRevealed(false);
+        setRevealedAnswer(null);
         setLastPoints(null);
       }
       setAdvancing(false);
-    }, 1800);
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────
@@ -1333,7 +1398,10 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           <AnswerButtons
             key={currentIdx}
             options={currentQ.options}
-            answer={currentQ.answer}
+            // Only meaningful once `revealed` is true; the pack carries no
+            // answer while playing, so this is "" (matches no letter) until
+            // the grading response for THIS question lands.
+            answer={revealedAnswer ?? ""}
             selected={selected}
             revealed={revealed}
             accent={accent}
@@ -1341,16 +1409,16 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           />
 
           {/* Reveal banner */}
-          {revealed && (
+          {revealed && revealedAnswer && (
             <div
               className="mt-4 rounded-2xl px-5 py-4 flex items-center justify-between"
               style={{
                 background:
-                  selected === (currentQ.answer as Letter)
+                  selected === revealedAnswer
                     ? "rgba(174,234,0,0.08)"
                     : "rgba(255,71,87,0.08)",
                 border: `1px solid ${
-                  selected === (currentQ.answer as Letter)
+                  selected === revealedAnswer
                     ? "rgba(174,234,0,0.22)"
                     : "rgba(255,71,87,0.22)"
                 }`,
@@ -1361,23 +1429,23 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                   className="font-display text-lg tracking-wider"
                   style={{
                     color:
-                      selected === (currentQ.answer as Letter)
+                      selected === revealedAnswer
                         ? "#aeea00"
                         : "#ff4757",
                   }}
                 >
-                  {selected === (currentQ.answer as Letter)
+                  {selected === revealedAnswer
                     ? "✓ CORRECT"
                     : "✗ WRONG"}
                 </span>
-                {selected !== (currentQ.answer as Letter) && (
+                {selected !== revealedAnswer && (
                   <p
                     className="font-body text-xs mt-0.5"
                     style={{ color: "#8a948f" }}
                   >
                     Answer:{" "}
                     <span style={{ color: "#ffffff" }}>
-                      {currentQ.options[currentQ.answer as Letter]}
+                      {currentQ.options[revealedAnswer]}
                     </span>
                   </p>
                 )}
