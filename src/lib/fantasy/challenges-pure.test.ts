@@ -5,7 +5,7 @@
 //     && node --test /tmp/cpt/challenges-pure.test.js
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeChallengeMessage, normalizeCreatedFrom, MESSAGE_MAX_LEN, DEFAULT_CREATED_FROM } from "./challenges-pure";
+import { normalizeChallengeMessage, normalizeCreatedFrom, MESSAGE_MAX_LEN, DEFAULT_CREATED_FROM, deriveDuelOutcome, isGamedayPack } from "./challenges-pure";
 
 // ── normalizeChallengeMessage ────────────────────────────────────────────────
 
@@ -79,4 +79,69 @@ test("normalizeCreatedFrom: missing/non-string input falls back to the default",
   assert.equal(normalizeCreatedFrom(undefined), DEFAULT_CREATED_FROM);
   assert.equal(normalizeCreatedFrom(null), DEFAULT_CREATED_FROM);
   assert.equal(normalizeCreatedFrom(123), DEFAULT_CREATED_FROM);
+});
+
+// ── deriveDuelOutcome ─────────────────────────────────────────────────────
+
+test("deriveDuelOutcome: zero attempts is waiting", () => {
+  assert.deepEqual(deriveDuelOutcome([]), { status: "waiting" });
+});
+
+test("deriveDuelOutcome: one side missing is waiting, not a result", () => {
+  assert.deepEqual(deriveDuelOutcome([{ userId: "a", score: 900 }]), { status: "waiting" });
+});
+
+test("deriveDuelOutcome: higher score wins once both attempts exist", () => {
+  assert.deepEqual(
+    deriveDuelOutcome([{ userId: "a", score: 900 }, { userId: "b", score: 700 }]),
+    { status: "completed", winnerId: "a" },
+  );
+  // Order-independent — the second attempt in can still be the higher score.
+  assert.deepEqual(
+    deriveDuelOutcome([{ userId: "a", score: 500 }, { userId: "b", score: 800 }]),
+    { status: "completed", winnerId: "b" },
+  );
+});
+
+test("deriveDuelOutcome: an exact tie completes with no winner", () => {
+  assert.deepEqual(
+    deriveDuelOutcome([{ userId: "a", score: 650 }, { userId: "b", score: 650 }]),
+    { status: "completed", winnerId: null },
+  );
+});
+
+test("deriveDuelOutcome: a third stray attempt row is ignored (only the first two count)", () => {
+  // Defensive — the unique(h2h_id, user_id) constraint means this shouldn't
+  // happen, but the pure function shouldn't blow up if it somehow did.
+  assert.deepEqual(
+    deriveDuelOutcome([{ userId: "a", score: 900 }, { userId: "b", score: 100 }, { userId: "c", score: 999 }]),
+    { status: "completed", winnerId: "a" },
+  );
+});
+
+// ── isGamedayPack ─────────────────────────────────────────────────────────
+
+test("isGamedayPack: a fixture pack's metadata.gameday marker matches", () => {
+  assert.equal(isGamedayPack({ gameday: { fixture_id: 123, home: "Arsenal", away: "Chelsea" } }), true);
+});
+
+test("isGamedayPack: a recap pack's metadata.recap does NOT match", () => {
+  assert.equal(isGamedayPack({ recap: { season_id: 1, gameweek: 5 } }), false);
+});
+
+test("isGamedayPack: an ordinary pack with no metadata.gameday does not match", () => {
+  assert.equal(isGamedayPack({ cover_image: "x.png" }), false);
+  assert.equal(isGamedayPack({}), false);
+});
+
+test("isGamedayPack: null/undefined/non-object metadata does not match", () => {
+  assert.equal(isGamedayPack(null), false);
+  assert.equal(isGamedayPack(undefined), false);
+  assert.equal(isGamedayPack("gameday"), false);
+  assert.equal(isGamedayPack(42), false);
+});
+
+test("isGamedayPack: a falsy gameday value does not match", () => {
+  assert.equal(isGamedayPack({ gameday: null }), false);
+  assert.equal(isGamedayPack({ gameday: false }), false);
 });

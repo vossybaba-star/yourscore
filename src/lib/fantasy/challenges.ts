@@ -1,11 +1,22 @@
 import "server-only";
 /**
- * League-mate challenges (Phase 1C) — the game-agnostic wrapper around
- * challengeGames.ts's registry. member_challenges tracks WHO challenged WHOM,
- * over WHICH game, and its lifecycle; the game itself (today only
- * quiz_battle) does its own scoring elsewhere and is pointed at via
- * result_id. See challengeGames.ts's file doc for the winner/tie/expiry
- * rules this reads off Quiz Battle's h2h_challenges row.
+ * League-mate challenges (Phase 1C, adapters expanded Phase 3B) — the
+ * game-agnostic wrapper around challengeGames.ts's registry. member_challenges
+ * tracks WHO challenged WHOM, over WHICH game, and its lifecycle; the game
+ * itself does its own scoring elsewhere and is pointed at via result_id. See
+ * challengeGames.ts's file doc for each game's winner/tie/expiry rules.
+ *
+ * Three adapters today, two shapes:
+ *   - quiz_battle / gameday_quiz ("scorecard" mode) — an EXISTING quiz_attempts
+ *     scorecard published as an h2h_challenges row at creation; only the
+ *     opponent has anything left to play. gameday_quiz is the identical path
+ *     plus a pack-metadata gate (isGamedayPack).
+ *   - quiz_duel ("duel" mode) — the h2h row is created before EITHER side has
+ *     played; both grade through h2h_duel_attempts (kept off the public,
+ *     RLS-open h2h_challenges row until both exist — see migration 259).
+ * reconcile() and challengeCardsFor() branch on game_type/mode to stay
+ * correct for both shapes without duplicating the shared bookkeeping
+ * (idempotent completion, chat ping, notifications).
  *
  * Security posture matches migration 61 / 255: every write here runs with
  * the service-role client, and member_challenges carries no client write
@@ -14,17 +25,28 @@ import "server-only";
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { HttpError } from "@/lib/fantasy/server";
-import { challengeGame } from "@/lib/fantasy/challengeGames";
+import { challengeGame, type ChallengeGame } from "@/lib/fantasy/challengeGames";
 import { blockedActorIds } from "@/lib/social/safety";
 import { notifyFantasy } from "@/lib/fantasy/notify";
-import { normalizeChallengeMessage, normalizeCreatedFrom } from "@/lib/fantasy/challenges-pure";
+import { maxPointsForDifficulty } from "@/lib/scoring";
+import {
+  normalizeChallengeMessage, normalizeCreatedFrom, deriveDuelOutcome, isGamedayPack,
+} from "@/lib/fantasy/challenges-pure";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
 
 const H2H_EXPIRY_MS = 3 * 24 * 60 * 60 * 1000; // matches /api/h2h/from-attempt's own 3-day expiry
 
-const OPEN_STATUSES = new Set(["pending", "accepted", "active"]);
+// awaiting_opponent is OPEN, not terminal — a duel sits here between "one side
+// has played" and "both have" (see reconcileDuel), and must stay reconcilable
+// forward to completed rather than being treated as a dead end.
+const OPEN_STATUSES = new Set(["pending", "accepted", "active", "awaiting_opponent"]);
+
+/** quiz_battle and gameday_quiz ride the exact same h2h_challenges "scorecard"
+ *  shape (mode 'scorecard', challenger already played) — one reconcile path
+ *  for both, differing only in the scoring_version stamped on completion. */
+const SCORECARD_GAME_TYPES = new Set(["quiz_battle", "gameday_quiz"]);
 
 // Same shape as safety.ts's UUID_RE — validated before any id is interpolated
 // into a raw PostgREST .or() filter string (pairStatus), never passed through unchecked.
@@ -76,11 +98,13 @@ async function isLeagueMember(db: Db, leagueId: string, userId: string): Promise
   return !!data;
 }
 
-/** Fetch the human-readable name of the quiz a quiz_battle challenge rides,
- *  best-effort ("a quiz" if the linked h2h row or its name is missing —
- *  notifications must never throw over a cosmetic lookup). */
+/** Fetch the human-readable name of the quiz a challenge rides, best-effort
+ *  ("a quiz" if the linked h2h row or its name is missing — notifications
+ *  must never throw over a cosmetic lookup). Every adapter today (quiz_battle,
+ *  gameday_quiz, quiz_duel) points result_id at an h2h_challenges row, so this
+ *  isn't game-type-gated — only "is there a result_id to look up". */
 async function quizNameFor(db: Db, row: MemberChallengeRow): Promise<string> {
-  if (row.game_type !== "quiz_battle" || !row.result_id) return "a quiz";
+  if (!row.result_id) return "a quiz";
   const { data: h2h } = await db.from("h2h_challenges").select("quiz_pack_name").eq("id", row.result_id).maybeSingle();
   return (h2h?.quiz_pack_name as string | undefined) ?? "a quiz";
 }
@@ -137,52 +161,31 @@ async function notifyExpired(db: Db, won: MemberChallengeRow) {
   });
 }
 
-/** Status derived at read time from the linked game session, persisted when it
- *  changes so lists stay cheap (no join-and-recompute on every subsequent
- *  read). Only ever moves a row OUT of pending/accepted/active — a terminal
- *  status (declined/expired/completed/cancelled) is never revisited. */
-export async function reconcile(db: Db, row: MemberChallengeRow): Promise<MemberChallengeRow> {
-  if (!OPEN_STATUSES.has(row.status)) return row;
+/** Quiz Duel's "your turn" nudge (Phase 3B, product decision, locked): fired
+ *  only on the transition INTO awaiting_opponent (reconcileDuel's own
+ *  win-guard), to whichever side hasn't played yet. No chat post — that's
+ *  reserved for the challenge card's own pending/active copy and the eventual
+ *  completed ping, not a second event mid-flight. */
+async function notifyDuelTurn(db: Db, won: MemberChallengeRow, doneUserId: string, notDoneUserId: string) {
+  const { data: profile } = await db.from("profiles").select("display_name").eq("id", doneUserId).maybeSingle();
+  const doneName = profile?.display_name ?? "Someone";
+  const quizName = await quizNameFor(db, won);
+  void notifyFantasy({
+    userIds: [notDoneUserId],
+    title: `${doneName} has played. Your turn`,
+    body: quizName,
+    url: `/h2h/${won.result_id}`,
+    dedupeKey: `challenge_turn:${won.id}`,
+    type: "challenge_your_turn",
+    subjectType: "member_challenge",
+    subjectId: won.id,
+  });
+}
 
-  if (row.game_type === "quiz_battle" && row.result_id) {
-    const { data: h2h } = await db.from("h2h_challenges")
-      .select("challenger_id, challenger_score, opponent_score, expires_at")
-      .eq("id", row.result_id).maybeSingle();
-    if (h2h && h2h.opponent_score !== null) {
-      const winnerId = h2h.opponent_score > h2h.challenger_score
-        ? row.opponent_id
-        : h2h.opponent_score < h2h.challenger_score
-          ? row.challenger_id
-          : null; // a tie completes with no winner
-      const patch = {
-        status: "completed", winner_id: winnerId, completed_at: new Date().toISOString(),
-        scoring_version: "quiz_battle_v1",
-      };
-      const { data: updated } = await db.from("member_challenges")
-        .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
-      // The update returning a row IS the "I won the transition" signal — a
-      // losing racer gets null back here and must NOT post/notify (that's
-      // the whole idempotency mechanism, no separate lock needed). Awaited,
-      // not fire-and-forget: the chat insert is a real write that must land
-      // before this request/serverless invocation ends, unlike notifyFantasy
-      // itself (best-effort by design, see notify.ts's file doc).
-      if (updated) await postCompletedResult(db, updated as MemberChallengeRow);
-      return (updated as MemberChallengeRow) ?? { ...row, ...patch };
-    }
-    // Not played — expiry rides the h2h row's OWN expires_at (challengeGames.ts's
-    // doc comment), not member_challenges.expires_at, which is only a copy taken
-    // at creation for cheap listing.
-    if (h2h && new Date(h2h.expires_at) < new Date()) {
-      const patch = { status: "expired" };
-      const { data: updated } = await db.from("member_challenges")
-        .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
-      if (updated) await notifyExpired(db, updated as MemberChallengeRow);
-      return (updated as MemberChallengeRow) ?? { ...row, ...patch };
-    }
-  }
-
-  // Fallback: no linked session found, or a future game_type with no adapter
-  // wired in here yet — fall back to member_challenges' own expiry.
+/** member_challenges' own expiry copy (set to match the h2h row's at
+ *  creation) — the shared tail every adapter below falls through to when it
+ *  found nothing worth completing. */
+async function expiryFallback(db: Db, row: MemberChallengeRow): Promise<MemberChallengeRow> {
   if (new Date(row.expires_at) < new Date()) {
     const patch = { status: "expired" };
     const { data: updated } = await db.from("member_challenges")
@@ -191,6 +194,100 @@ export async function reconcile(db: Db, row: MemberChallengeRow): Promise<Member
     return (updated as MemberChallengeRow) ?? { ...row, ...patch };
   }
   return row;
+}
+
+/** quiz_battle / gameday_quiz — both ride h2h_challenges' "scorecard" shape
+ *  (challenger_score always set at creation; opponent_score set the moment
+ *  the opponent plays). Expiry rides the h2h row's OWN expires_at
+ *  (challengeGames.ts's doc comment), not member_challenges.expires_at, which
+ *  is only a copy taken at creation for cheap listing — kept as-is from
+ *  Phase 1C rather than switched to expiryFallback, since a pre-3A h2h row
+ *  can predate the member_challenges copy. */
+async function reconcileScorecard(db: Db, row: MemberChallengeRow): Promise<MemberChallengeRow> {
+  const { data: h2h } = await db.from("h2h_challenges")
+    .select("challenger_id, challenger_score, opponent_score, expires_at")
+    .eq("id", row.result_id!).maybeSingle();
+  if (h2h && h2h.opponent_score !== null) {
+    const winnerId = h2h.opponent_score > h2h.challenger_score
+      ? row.opponent_id
+      : h2h.opponent_score < h2h.challenger_score
+        ? row.challenger_id
+        : null; // a tie completes with no winner
+    const patch = {
+      status: "completed", winner_id: winnerId, completed_at: new Date().toISOString(),
+      scoring_version: row.game_type === "gameday_quiz" ? "gameday_quiz_v1" : "quiz_battle_v1",
+    };
+    const { data: updated } = await db.from("member_challenges")
+      .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
+    // The update returning a row IS the "I won the transition" signal — a
+    // losing racer gets null back here and must NOT post/notify (that's
+    // the whole idempotency mechanism, no separate lock needed). Awaited,
+    // not fire-and-forget: the chat insert is a real write that must land
+    // before this request/serverless invocation ends, unlike notifyFantasy
+    // itself (best-effort by design, see notify.ts's file doc).
+    if (updated) await postCompletedResult(db, updated as MemberChallengeRow);
+    return (updated as MemberChallengeRow) ?? { ...row, ...patch };
+  }
+  if (h2h && new Date(h2h.expires_at) < new Date()) {
+    const patch = { status: "expired" };
+    const { data: updated } = await db.from("member_challenges")
+      .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
+    if (updated) await notifyExpired(db, updated as MemberChallengeRow);
+    return (updated as MemberChallengeRow) ?? { ...row, ...patch };
+  }
+  return expiryFallback(db, row);
+}
+
+/** quiz_duel — reads h2h_duel_attempts (service role, bypasses its own-row-only
+ *  RLS) rather than h2h_challenges, since a duel's scores don't land on the
+ *  public row until both sides have played (see migration 259's file doc).
+ *  Two attempts → complete (deriveDuelOutcome, pure). Exactly one → the OPEN
+ *  awaiting_opponent status, with a "your turn" nudge to whoever hasn't
+ *  played (only on the transition that actually lands it — same win-guard
+ *  idempotency as everywhere else here). Zero → falls through to expiry. */
+async function reconcileDuel(db: Db, row: MemberChallengeRow): Promise<MemberChallengeRow> {
+  const { data: attempts } = await db.from("h2h_duel_attempts")
+    .select("user_id, score").eq("h2h_id", row.result_id!);
+  const rows = (attempts ?? []) as { user_id: string; score: number }[];
+  const outcome = deriveDuelOutcome(rows.map((r) => ({ userId: r.user_id, score: r.score })));
+
+  if (outcome.status === "completed") {
+    const patch = {
+      status: "completed", winner_id: outcome.winnerId, completed_at: new Date().toISOString(),
+      scoring_version: "quiz_duel_v1",
+    };
+    const { data: updated } = await db.from("member_challenges")
+      .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
+    if (updated) await postCompletedResult(db, updated as MemberChallengeRow);
+    return (updated as MemberChallengeRow) ?? { ...row, ...patch };
+  }
+
+  if (rows.length === 1 && (row.status === "pending" || row.status === "active")) {
+    const doneId = rows[0].user_id;
+    const notDoneId = doneId === row.challenger_id ? row.opponent_id : row.challenger_id;
+    const patch = { status: "awaiting_opponent" };
+    const { data: updated } = await db.from("member_challenges")
+      .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
+    if (updated) await notifyDuelTurn(db, updated as MemberChallengeRow, doneId, notDoneId);
+    return (updated as MemberChallengeRow) ?? { ...row, ...patch };
+  }
+
+  return expiryFallback(db, row);
+}
+
+/** Status derived at read time from the linked game session, persisted when it
+ *  changes so lists stay cheap (no join-and-recompute on every subsequent
+ *  read). Moves a row out of pending/accepted/active/awaiting_opponent only —
+ *  a terminal status (declined/expired/completed/cancelled) is never
+ *  revisited. Adapter dispatch keyed on game_type; a future game_type with no
+ *  adapter wired in here yet falls straight to the shared expiry fallback. */
+export async function reconcile(db: Db, row: MemberChallengeRow): Promise<MemberChallengeRow> {
+  if (!OPEN_STATUSES.has(row.status)) return row;
+
+  if (row.result_id && SCORECARD_GAME_TYPES.has(row.game_type)) return reconcileScorecard(db, row);
+  if (row.result_id && row.game_type === "quiz_duel") return reconcileDuel(db, row);
+
+  return expiryFallback(db, row);
 }
 
 /** The open (or most recent) challenge between two members, either direction
@@ -232,42 +329,42 @@ export interface CreateChallengeInput {
   createdFrom?: unknown;
 }
 
-/** Create a league-mate challenge. Today only quiz_battle is supported (the
- *  registry backstops that — an unsupported/unknown gameType 400s). */
-export async function createChallenge(db: Db, userId: string, input: CreateChallengeInput) {
-  const opponentId = typeof input.opponentId === "string" ? input.opponentId : "";
-  const leagueCode = typeof input.leagueCode === "string" ? input.leagueCode : "";
-  const gameType = typeof input.gameType === "string" ? input.gameType : "";
-  const packId = typeof input.packId === "string" ? input.packId : "";
-  if (!opponentId || !leagueCode || !gameType) throw new HttpError(400, "missing fields");
-  if (opponentId === userId) throw new HttpError(400, "You can't challenge yourself");
+/** Shared post-insert bookkeeping every createChallenge path ends with — the
+ *  chat card and the invite notification are identical no matter which game
+ *  adapter built the row. */
+async function postCreateChallenge(
+  db: Db, userId: string, league: { id: string }, opponentId: string,
+  mc: { id: string }, h2h: { id: string }, game: ChallengeGame, challengerName: string, quizName: string,
+) {
+  // Chat card — a raw insert rather than chat.ts's insertChatMessage (kept
+  // private to that file; importing it here would make chat.ts and
+  // challenges.ts import each other). Same base shape that helper writes.
+  await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
+    body: "Challenge", kind: "challenge", payload: { challengeId: mc.id },
+  });
 
-  // Validated up front — a bad message 400s before anything is written (the
-  // h2h + member_challenges inserts below), rather than after.
-  const messageResult = normalizeChallengeMessage(input.message);
-  if (!messageResult.ok) throw new HttpError(400, messageResult.error);
-  const message = messageResult.message;
-  const createdFrom = normalizeCreatedFrom(input.createdFrom);
+  void notifyFantasy({
+    userIds: [opponentId],
+    title: `${challengerName} challenged you`,
+    body: `${game.name} · ${quizName}`,
+    url: `/h2h/${h2h.id}`,
+    dedupeKey: `challenge:${mc.id}`,
+    type: "challenge_invite",
+    actorId: userId,
+    subjectType: "member_challenge",
+    subjectId: mc.id,
+  });
+}
 
-  const game = challengeGame(gameType);
-  if (!game || !game.supported) throw new HttpError(400, "That game isn't available for a challenge yet");
-
-  const league = await requireMemberLeagueByCode(db, leagueCode, userId);
-  if (!(await isLeagueMember(db, league.id, opponentId)))
-    throw new HttpError(403, "They're not in this league");
-
-  const blocked = await blockedActorIds(db, userId);
-  if (blocked.has(opponentId)) throw new HttpError(403, "You can't challenge them");
-
-  // Friendly pre-check — the partial unique index (migration 255) is the real
-  // backstop against a race, this just avoids a raw constraint-violation 500
-  // for the common case of tapping Challenge twice.
-  const existing = await pairStatus(db, userId, opponentId, league.id);
-  if (existing && existing.status === "pending" && existing.challenger_id === userId && existing.game_type === gameType) {
-    throw new HttpError(409, "You already have an open challenge with them");
-  }
-
-  if (gameType !== "quiz_battle") throw new HttpError(400, "That game isn't available for a challenge yet");
+/** quiz_battle / gameday_quiz: publish an EXISTING quiz_attempts scorecard as
+ *  an h2h_challenges row — only the opponent has anything left to play.
+ *  gameday_quiz is byte-identical except the pack must carry the gameday
+ *  metadata marker (isGamedayPack). */
+async function createScorecardChallenge(
+  db: Db, userId: string, league: { id: string }, opponentId: string,
+  gameType: string, game: ChallengeGame, packId: string, message: string | null, createdFrom: string,
+) {
   if (!packId) throw new HttpError(400, "Pick a quiz first");
 
   // Same authoritative-attempt read as /api/h2h/from-attempt: your own stored
@@ -277,8 +374,11 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
     .eq("user_id", userId).eq("pack_id", packId).maybeSingle();
   if (!attempt) throw new HttpError(400, "Play that quiz first, then send the challenge");
 
-  const { data: pack } = await db.from("quiz_packs").select("name, questions").eq("id", packId).maybeSingle();
+  const { data: pack } = await db.from("quiz_packs").select("name, questions, metadata").eq("id", packId).maybeSingle();
   if (!pack) throw new HttpError(404, "Quiz not found");
+  if (gameType === "gameday_quiz" && !isGamedayPack(pack.metadata)) {
+    throw new HttpError(400, "Pick a Gameday pack for this one");
+  }
   const totalQuestions = Array.isArray(pack.questions) ? pack.questions.length : 0;
 
   const { data: profile } = await db.from("profiles").select("display_name").eq("id", userId).maybeSingle();
@@ -293,7 +393,8 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
 
   const h2hExpiresAt = new Date(Date.now() + H2H_EXPIRY_MS).toISOString();
 
-  // Insert the h2h row exactly as from-attempt does — same shape, same mode.
+  // Insert the h2h row exactly as from-attempt does — same shape, same mode
+  // ('scorecard', the column default) — for both quiz_battle and gameday_quiz.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: h2h, error: h2hError } = await (db as any)
     .from("h2h_challenges")
@@ -336,27 +437,139 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
     throw new HttpError(500, "Could not create the challenge");
   }
 
-  // Chat card — a raw insert rather than chat.ts's insertChatMessage (kept
-  // private to that file; importing it here would make chat.ts and
-  // challenges.ts import each other). Same base shape that helper writes.
-  await db.from("comments").insert({
-    subject_type: "fantasy_league", subject_id: league.id, user_id: userId,
-    body: "Challenge", kind: "challenge", payload: { challengeId: mc.id },
-  });
-
-  void notifyFantasy({
-    userIds: [opponentId],
-    title: `${challengerName} challenged you`,
-    body: `${game.name} · ${pack.name}`,
-    url: `/h2h/${h2h.id}`,
-    dedupeKey: `challenge:${mc.id}`,
-    type: "challenge_invite",
-    actorId: userId,
-    subjectType: "member_challenge",
-    subjectId: mc.id,
-  });
-
+  await postCreateChallenge(db, userId, league, opponentId, mc, h2h, game, challengerName, pack.name);
   return { id: mc.id, h2hId: h2h.id as string };
+}
+
+/** quiz_duel: neither side has played yet. The h2h row is created up front
+ *  (mode 'duel') with EVERY score/correct/answers field null — migration 259
+ *  drops the NOT NULL constraints that assumed a scorecard shape — and picks
+ *  up real values only once /api/h2h/play copies both h2h_duel_attempts rows
+ *  across on completion. max_score is derived from the pack's own questions
+ *  (maxPointsForDifficulty summed, no perfect-round bonus) rather than read
+ *  off a stored attempt — same convention quiz/solo-complete's own max_score
+ *  column uses, so a duel's % bar reads the same as any other quiz's. */
+async function createDuelChallenge(
+  db: Db, userId: string, league: { id: string }, opponentId: string,
+  game: ChallengeGame, packId: string, message: string | null, createdFrom: string,
+) {
+  if (!packId) throw new HttpError(400, "Pick a quiz first");
+
+  const { data: pack } = await db.from("quiz_packs").select("name, questions, status").eq("id", packId).maybeSingle();
+  if (!pack || pack.status !== "published") throw new HttpError(404, "Quiz not found");
+
+  // Neither participant may have an existing scorecard for this pack — that's
+  // the whole point of a duel (both play it fresh). Checked for both sides at
+  // creation; the /api/h2h/play submit path never re-checks this (an attempt
+  // already existing there just means they've already played their DUEL side,
+  // handled by the h2h_duel_attempts unique constraint instead).
+  const { data: attempts } = await db.from("quiz_attempts")
+    .select("user_id").eq("pack_id", packId).in("user_id", [userId, opponentId]);
+  if ((attempts ?? []).length > 0) throw new HttpError(400, "Pick a quiz neither of you has played");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const questions = (Array.isArray(pack.questions) ? pack.questions : []) as any[];
+  const totalQuestions = questions.length;
+  const maxScore = questions.reduce((s, q) => s + maxPointsForDifficulty(q?.difficulty ?? "medium"), 0);
+
+  const { data: profile } = await db.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+  const challengerName = profile?.display_name ?? "Someone";
+
+  const h2hExpiresAt = new Date(Date.now() + H2H_EXPIRY_MS).toISOString();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: h2h, error: h2hError } = await (db as any)
+    .from("h2h_challenges")
+    .insert({
+      quiz_pack_id: packId,
+      quiz_pack_name: pack.name,
+      challenger_id: userId,
+      // The sender IS known at creation — only their SCORE isn't (they
+      // haven't played yet) — so this is populated same as scorecard, unlike
+      // challenger_score/correct/answers below.
+      challenger_name: challengerName,
+      challenger_score: null,
+      challenger_correct: null,
+      challenger_answers: null,
+      total_questions: totalQuestions,
+      max_score: maxScore,
+      invited_user_id: opponentId,
+      status: "awaiting_opponent",
+      expires_at: h2hExpiresAt,
+      mode: "duel",
+    })
+    .select("id")
+    .single();
+  if (h2hError || !h2h) throw new HttpError(500, "Could not create the challenge");
+
+  const { data: mc, error: mcError } = await db.from("member_challenges")
+    .insert({
+      challenger_id: userId,
+      opponent_id: opponentId,
+      league_id: league.id,
+      game_type: "quiz_duel",
+      status: "pending",
+      result_id: h2h.id,
+      expires_at: h2hExpiresAt,
+      message,
+      created_from: createdFrom,
+    })
+    .select("id")
+    .single();
+  if (mcError || !mc) {
+    if (mcError?.code === "23505") throw new HttpError(409, "You already have an open challenge with them");
+    throw new HttpError(500, "Could not create the challenge");
+  }
+
+  await postCreateChallenge(db, userId, league, opponentId, mc, h2h, game, challengerName, pack.name);
+  return { id: mc.id, h2hId: h2h.id as string };
+}
+
+/** Create a league-mate challenge — dispatches to the game's adapter once the
+ *  shared checks (membership, blocks, duplicate-open-challenge) pass. The
+ *  registry backstops an unsupported/unknown gameType with a 400. */
+export async function createChallenge(db: Db, userId: string, input: CreateChallengeInput) {
+  const opponentId = typeof input.opponentId === "string" ? input.opponentId : "";
+  const leagueCode = typeof input.leagueCode === "string" ? input.leagueCode : "";
+  const gameType = typeof input.gameType === "string" ? input.gameType : "";
+  const packId = typeof input.packId === "string" ? input.packId : "";
+  if (!opponentId || !leagueCode || !gameType) throw new HttpError(400, "missing fields");
+  if (opponentId === userId) throw new HttpError(400, "You can't challenge yourself");
+
+  // Validated up front — a bad message 400s before anything is written (the
+  // h2h + member_challenges inserts below), rather than after.
+  const messageResult = normalizeChallengeMessage(input.message);
+  if (!messageResult.ok) throw new HttpError(400, messageResult.error);
+  const message = messageResult.message;
+  const createdFrom = normalizeCreatedFrom(input.createdFrom);
+
+  const game = challengeGame(gameType);
+  if (!game || !game.supported) throw new HttpError(400, "That game isn't available for a challenge yet");
+
+  const league = await requireMemberLeagueByCode(db, leagueCode, userId);
+  if (!(await isLeagueMember(db, league.id, opponentId)))
+    throw new HttpError(403, "They're not in this league");
+
+  const blocked = await blockedActorIds(db, userId);
+  if (blocked.has(opponentId)) throw new HttpError(403, "You can't challenge them");
+
+  // Friendly pre-check — the partial unique index (migration 255) is the real
+  // backstop against a race, this just avoids a raw constraint-violation 500
+  // for the common case of tapping Challenge twice.
+  const existing = await pairStatus(db, userId, opponentId, league.id);
+  if (existing && existing.status === "pending" && existing.challenger_id === userId && existing.game_type === gameType) {
+    throw new HttpError(409, "You already have an open challenge with them");
+  }
+
+  switch (gameType) {
+    case "quiz_battle":
+    case "gameday_quiz":
+      return createScorecardChallenge(db, userId, league, opponentId, gameType, game, packId, message, createdFrom);
+    case "quiz_duel":
+      return createDuelChallenge(db, userId, league, opponentId, game, packId, message, createdFrom);
+    default:
+      throw new HttpError(400, "That game isn't available for a challenge yet");
+  }
 }
 
 /** One-tap accept (product decision, locked): there is no separate Accept
@@ -495,6 +708,16 @@ export interface ChallengeCardData {
    *  card header (LeagueChatView's ChallengeCardMsg). Null if none was sent. */
   message: string | null;
   createdAt: string;
+  /** Phase 3B — "duel" for quiz_duel, "scorecard" for quiz_battle/gameday_quiz.
+   *  Lets the chat card render duel's "who's played" copy without hard-coding
+   *  game_type strings into the component. */
+  gameMode: "duel" | "scorecard";
+  /** Phase 3B, duel only — has each side finished THEIR OWN attempt yet
+   *  (h2h_duel_attempts, never the public h2h row's scores, which stay null
+   *  pre-completion). Always false for a scorecard challenge — never read
+   *  there, since scorecard has no "who's played" state to show pre-result. */
+  challengerDone: boolean;
+  opponentDone: boolean;
 }
 
 /** Hydrated chat-card data for one or more challenges — batched (one query
@@ -513,11 +736,28 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
 
   const reconciled = await Promise.all(mcRows.map((r) => reconcile(db, r)));
 
-  const h2hIds = Array.from(new Set(reconciled.filter((r) => r.game_type === "quiz_battle" && r.result_id).map((r) => r.result_id as string)));
+  // Every adapter today points result_id at an h2h_challenges row (quiz_battle,
+  // gameday_quiz AND quiz_duel — a duel row exists from creation, just with
+  // null scores pre-completion), so this isn't game-type-gated.
+  const h2hIds = Array.from(new Set(reconciled.filter((r) => r.result_id).map((r) => r.result_id as string)));
   const { data: h2hRows } = h2hIds.length
     ? await db.from("h2h_challenges").select("id, quiz_pack_name").in("id", h2hIds)
     : { data: [] as { id: string; quiz_pack_name: string }[] };
   const quizNameByH2h = new Map(((h2hRows ?? []) as { id: string; quiz_pack_name: string }[]).map((r) => [r.id, r.quiz_pack_name]));
+
+  // Duel done-flags — one batched .in() query for every duel h2h id in this
+  // window, never per-row (see the file doc's N+1 note above). NEVER selects
+  // score here — challengerDone/opponentDone are booleans only; a chat card
+  // must not leak either side's score before the row itself completes.
+  const duelH2hIds = Array.from(new Set(reconciled.filter((r) => r.game_type === "quiz_duel" && r.result_id).map((r) => r.result_id as string)));
+  const { data: duelAttemptRows } = duelH2hIds.length
+    ? await db.from("h2h_duel_attempts").select("h2h_id, user_id").in("h2h_id", duelH2hIds)
+    : { data: [] as { h2h_id: string; user_id: string }[] };
+  const duelDoneUsersByH2h = new Map<string, Set<string>>();
+  for (const a of (duelAttemptRows ?? []) as { h2h_id: string; user_id: string }[]) {
+    if (!duelDoneUsersByH2h.has(a.h2h_id)) duelDoneUsersByH2h.set(a.h2h_id, new Set());
+    duelDoneUsersByH2h.get(a.h2h_id)!.add(a.user_id);
+  }
 
   const userIds = Array.from(new Set(reconciled.flatMap((r) => [r.challenger_id, r.opponent_id])));
   const { data: profs } = userIds.length
@@ -531,6 +771,7 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
 
   for (const r of reconciled) {
     const game = challengeGame(r.game_type);
+    const doneUsers = r.result_id ? duelDoneUsersByH2h.get(r.result_id) : undefined;
     out.set(r.id, {
       challengeId: r.id,
       status: r.status,
@@ -543,6 +784,9 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
       winnerId: r.winner_id,
       message: r.message ?? null,
       createdAt: r.created_at,
+      gameMode: r.game_type === "quiz_duel" ? "duel" : "scorecard",
+      challengerDone: !!doneUsers?.has(r.challenger_id),
+      opponentDone: !!doneUsers?.has(r.opponent_id),
     });
   }
   return out;

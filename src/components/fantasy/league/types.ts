@@ -96,6 +96,15 @@ export interface ChallengeCard {
   /** Phase 3A — the challenger's optional line, quoted under the header. */
   message: string | null;
   createdAt: string;
+  /** Phase 3B — "duel" for Quiz Duel, "scorecard" for Quiz Battle/Gameday
+   *  Quiz. Drives ChallengeCardMsg's duel-aware pending/active/awaiting_opponent
+   *  copy without hard-coding game_type strings into the component. */
+  gameMode: "duel" | "scorecard";
+  /** Phase 3B, duel only — has each side finished THEIR OWN attempt yet.
+   *  Always false (and unused) for a scorecard card — never render a score
+   *  off these, only whether someone's played. */
+  challengerDone: boolean;
+  opponentDone: boolean;
 }
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no

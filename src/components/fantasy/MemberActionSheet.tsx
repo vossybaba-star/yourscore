@@ -51,6 +51,10 @@ interface RunView {
  *  cards use. Only the fields the chip's state machine needs. */
 interface PairChallengeRow {
   id: string; status: string; challenger_id: string; opponent_id: string; result_id: string | null;
+  /** Phase 3B — needed to tell a duel's awaiting_opponent apart from a
+   *  scorecard's (which never reaches that status today). Optional so a
+   *  locally-constructed row (onSent below) doesn't need to fake it. */
+  game_type?: string;
 }
 
 export const nameOfMember = (m: { username: string | null; displayName: string | null }) =>
@@ -153,6 +157,9 @@ export function MemberActionSheet({
   // never flashes "Challenge" then immediately swaps once the fetch lands.
   const [pairChallenge, setPairChallenge] = useState<PairChallengeRow | null | "loading">("loading");
   const [acceptBusy, setAcceptBusy] = useState(false);
+  // Phase 3B, duel only — who's played, for the awaiting_opponent chip branch
+  // below. Never carries a score, only booleans (see GET /api/fantasy/challenges).
+  const [duelDone, setDuelDone] = useState<{ challengerDone: boolean; opponentDone: boolean }>({ challengerDone: false, opponentDone: false });
 
   const refreshPairChallenge = useCallback(() => {
     if (!leagueCode) return;
@@ -160,6 +167,7 @@ export function MemberActionSheet({
       .then(async (res) => {
         const j = await res.json().catch(() => ({}));
         setPairChallenge((j?.challenge as PairChallengeRow | undefined) ?? null);
+        setDuelDone({ challengerDone: !!j?.challengerDone, opponentDone: !!j?.opponentDone });
       })
       .catch(() => setPairChallenge(null));
   }, [leagueCode, member.userId]);
@@ -276,11 +284,31 @@ export function MemberActionSheet({
         // The challenger (and anyone else, defensively) — nothing to tap
         // while the opponent's game is live.
         return <ActionChip icon={<ChallengeIcon />} label="In play" disabled />;
-      case "completed":
+      // Quiz Duel only (Phase 3B) — one side has played, the other hasn't.
+      // Plain navigate for whoever's still to play — NOT acceptFromChip;
+      // the duel's opponent already accepted to get here (pending→active),
+      // and the challenger playing their own side was never an accept at
+      // all (product decision, locked — see challenges.ts's createDuelChallenge).
+      case "awaiting_opponent": {
+        const viewerDone = viewerIsOpponent ? duelDone.opponentDone : duelDone.challengerDone;
+        if (viewerDone) return <ActionChip icon={<ChallengeIcon />} label="Waiting" disabled />;
         return pairChallenge.result_id
-          ? <ActionChip icon={<ChallengeIcon />} label="See result" href={`/h2h/${pairChallenge.result_id}`} onNavigate={onClose} />
-          : <ActionChip icon={<ChallengeIcon />} label="See result" disabled />;
-      default: // declined, expired, cancelled, draft, awaiting_opponent, void — reopenable
+          ? <ActionChip icon={<ChallengeIcon />} label="Your turn" href={`/h2h/${pairChallenge.result_id}`} onNavigate={onClose} />
+          : <ActionChip icon={<ChallengeIcon />} label="Your turn" disabled />;
+      }
+      case "completed":
+        // A finished challenge must never block the NEXT one (house rule: no
+        // challenge action dead-ends) — the result link and a fresh Challenge
+        // sit side by side until the dedicated Rematch flow lands (3E).
+        return (
+          <>
+            {pairChallenge.result_id
+              ? <ActionChip icon={<ChallengeIcon />} label="See result" href={`/h2h/${pairChallenge.result_id}`} onNavigate={onClose} />
+              : <ActionChip icon={<ChallengeIcon />} label="See result" disabled />}
+            <ActionChip icon={<ChallengeIcon />} label="Challenge" onClick={openChallenge} />
+          </>
+        );
+      default: // declined, expired, cancelled, draft, void — reopenable
         return <ActionChip icon={<ChallengeIcon />} label="Challenge" onClick={openChallenge} />;
     }
   })();
