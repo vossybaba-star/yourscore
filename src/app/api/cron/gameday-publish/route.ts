@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cancelStaleFixture, getDueRows, publishFixture } from "@/lib/gameday/publish";
 import { getScheduledFixtureIds } from "@/lib/gameday/sportmonks";
+import { createServiceClient } from "@/lib/supabase/service";
+import { ensureOfficialGamedayCompetitions } from "@/lib/fantasy/competitions";
 
 /**
  * GET /api/cron/gameday-publish — Vercel cron, 08:00 AND 09:00 UTC daily
@@ -100,6 +102,18 @@ export async function GET(req: NextRequest) {
     const out = await publishFixture(row.fixture_id);
     if (out.published) published.push(row.fixture_id);
     else if (!out.already) failed.push({ fixtureId: row.fixture_id, reason: out.reason });
+
+    // League-wide competitions (Wave 1) — one official league_quiz per
+    // fantasy league with >=2 members, keyed off this pack so a re-run never
+    // duplicates it. Failure-isolated: a competitions bug must never take a
+    // gameday pack publish down with it.
+    if (out.published && out.packId) {
+      try {
+        await ensureOfficialGamedayCompetitions(createServiceClient(), out.packId);
+      } catch (e) {
+        console.error("[gameday-publish] ensureOfficialGamedayCompetitions failed", row.fixture_id, e);
+      }
+    }
   }
 
   return NextResponse.json({
