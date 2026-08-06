@@ -59,7 +59,11 @@ const nextConfig = {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https:",
       "connect-src 'self' https: wss: blob:",
-      "media-src 'self' https:",
+      // blob: is load-bearing: postVideo.ts probes the picked file and captures
+      // its poster through a blob URL before upload — without it every native
+      // video upload fails "format isn't supported" (Chrome: "Media load
+      // rejected by URL safety check").
+      "media-src 'self' blob: https:",
       "frame-src 'self' https:",
       "frame-ancestors 'none'",
       "base-uri 'self'",

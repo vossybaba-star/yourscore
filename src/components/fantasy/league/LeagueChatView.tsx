@@ -212,8 +212,11 @@ function SharedVideo({ msg }: { msg: ChatMessage }) {
   const v = msg.video!;
   const [open, setOpen] = useState(false);
   if (open) {
+    // Explicit width, not just maxWidth — the chat bubble sizes to content, and
+    // the player's aspect-ratio box resolves against an auto-width parent as
+    // ~0px (it collapsed to a 2px sliver on tap before this).
     return (
-      <div style={{ maxWidth: 240 }}>
+      <div style={{ width: "min(240px, 72vw)" }}>
         {!msg.isMe && <div style={{ fontSize: 10.5, color: TEAL, fontWeight: 700, marginBottom: 3 }}>{msg.name}</div>}
         <InlineVideoPlayer video={v} autoPlay={false} />
       </div>
