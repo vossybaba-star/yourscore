@@ -76,10 +76,13 @@ const CLUB_TOPIC_LABEL: Record<string, string> = {
   "rivalries-derbies": "Rivalries",
 };
 
+// NO `answer` field — the pack route (/api/challenges/pack) strips it before
+// this ever reaches the client. Grading + the correct-letter reveal come from
+// /api/quiz/answer, one question at a time. Do not add `answer` back here; a
+// future reader with a wider type would silently reopen the leak.
 interface RawQuestion {
   question: string;
   options: { A: string; B: string; C: string; D: string };
-  answer: string;
   difficulty: string;
   category: string;
 }
@@ -541,6 +544,9 @@ export default function ChallengePage() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selected, setSelected] = useState<Letter | null>(null);
   const [revealed, setRevealed] = useState(false);
+  // Correct letter for the CURRENT question only, filled in by /api/quiz/answer's
+  // response. Never sourced from the pack — the pack never carries it.
+  const [revealedAnswer, setRevealedAnswer] = useState<Letter | null>(null);
   const [answerLog, setAnswerLog] = useState<AnswerRecord[]>([]);
   const [score, setScore] = useState(0);
   const [lastPoints, setLastPoints] = useState<number | null>(null);
@@ -794,9 +800,50 @@ export default function ChallengePage() {
 
     stopTimer();
     const elapsed = Date.now() - questionStartRef.current;
-    const isCorrect = letter === (currentQ.answer as Letter);
     const difficulty = currentQ.difficulty ?? "medium";
+    const qIdx = currentIdx;
 
+    // Show the tap immediately — the pack never told us the answer, so this is
+    // a selection, not a verdict. Correct/incorrect styling waits for the
+    // grading round trip below.
+    setSelected(letter);
+
+    let graded: { correct: boolean; answer: Letter } | null = null;
+    if (pack) {
+      try {
+        const res = await fetch("/api/quiz/answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ packId: pack.id, idx: qIdx, letter }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (typeof json.correct === "boolean" && ["A", "B", "C", "D"].includes(json.answer)) {
+            graded = { correct: json.correct, answer: json.answer as Letter };
+          }
+        }
+      } catch {
+        /* network blip — handled by the ungraded branch below */
+      }
+    }
+
+    if (!graded) {
+      // Grading failed. Never guess correctness client-side: record the pick
+      // as ungraded (no points, no reveal colours) and keep the run moving.
+      // /api/quiz/solo-complete re-grades every answer authoritatively at the
+      // end, so a dropped request here costs UX polish, not score integrity.
+      const record: AnswerRecord = { idx: qIdx, selected: letter, correct: false, points: 0, elapsed_ms: elapsed };
+      const newLog = [...answerLog, record];
+      setAnswerLog(newLog);
+      setLastPoints(null);
+      setLastSpeedLabel(null);
+      setLastStreakBonus(0);
+      setAdvancing(true);
+      setTimeout(() => void advance(newLog), 900);
+      return;
+    }
+
+    const isCorrect = graded.correct;
     const { points: pts, streakBonus, comebackBonus, nextCorrectStreak, nextWrongStreak } =
       scoreAnswer({
         isCorrect,
@@ -812,20 +859,25 @@ export default function ChallengePage() {
     setWrongStreak(nextWrongStreak);
 
     void haptic(isCorrect ? "correct" : "wrong"); // native-only buzz on reveal
-    setSelected(letter);
+    setRevealedAnswer(graded.answer);
     setRevealed(true);
     setLastPoints(isCorrect ? pts : null);
     setLastSpeedLabel(isCorrect ? getSpeedLabel(elapsed, CHALLENGE_WINDOW_MS) : null);
     setLastStreakBonus(streakBonus + comebackBonus);
     if (isCorrect) setScore((s) => s + pts);
 
-    const record: AnswerRecord = { idx: currentIdx, selected: letter, correct: isCorrect, points: pts, elapsed_ms: elapsed };
+    const record: AnswerRecord = { idx: qIdx, selected: letter, correct: isCorrect, points: pts, elapsed_ms: elapsed };
     const newLog = [...answerLog, record];
     setAnswerLog(newLog);
 
     setAdvancing(true);
-    setTimeout(async () => {
-      if (currentIdx + 1 >= questions.length) {
+    setTimeout(() => void advance(newLog), 1800);
+
+    // Continuation shared by the graded and ungraded paths: finish the round
+    // or move to the next question. Pulled out so a failed grading call can
+    // still advance the run instead of leaving it stuck.
+    async function advance(newLog: AnswerRecord[]) {
+      if (qIdx + 1 >= questions.length) {
         const correctCount = newLog.filter((r) => r.correct).length;
         if (correctCount === questions.length) void haptic("win"); // perfect round
         const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
@@ -908,12 +960,13 @@ export default function ChallengePage() {
         setCurrentIdx((i) => i + 1);
         setSelected(null);
         setRevealed(false);
+        setRevealedAnswer(null);
         setLastPoints(null);
         setLastSpeedLabel(null);
         setLastStreakBonus(0);
       }
       setAdvancing(false);
-    }, 1800);
+    }
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────
@@ -1220,7 +1273,10 @@ export default function ChallengePage() {
           <AnswerButtons
             key={currentIdx}
             options={currentQ.options}
-            answer={currentQ.answer}
+            // Only meaningful once `revealed` is true; the pack never carries
+            // an answer, so this is "" (matches no letter) until the grading
+            // response for THIS question lands.
+            answer={revealedAnswer ?? ""}
             selected={selected}
             revealed={revealed}
             accent={accent}
@@ -1228,20 +1284,20 @@ export default function ChallengePage() {
           />
 
           {/* Reveal banner */}
-          {revealed && (
+          {revealed && revealedAnswer && (
             <div className="mt-4 rounded-2xl px-5 py-4 flex items-center justify-between"
               style={{
-                background: selected === (currentQ.answer as Letter) ? "rgba(174,234,0,0.08)" : "rgba(255,71,87,0.08)",
-                border: `1px solid ${selected === (currentQ.answer as Letter) ? "rgba(174,234,0,0.22)" : "rgba(255,71,87,0.22)"}`,
+                background: selected === revealedAnswer ? "rgba(174,234,0,0.08)" : "rgba(255,71,87,0.08)",
+                border: `1px solid ${selected === revealedAnswer ? "rgba(174,234,0,0.22)" : "rgba(255,71,87,0.22)"}`,
               }}>
               <div>
                 <span className="font-display text-lg tracking-wider"
-                  style={{ color: selected === (currentQ.answer as Letter) ? "#aeea00" : "#ff4757" }}>
-                  {selected === (currentQ.answer as Letter) ? "✓ CORRECT" : "✗ WRONG"}
+                  style={{ color: selected === revealedAnswer ? "#aeea00" : "#ff4757" }}>
+                  {selected === revealedAnswer ? "✓ CORRECT" : "✗ WRONG"}
                 </span>
-                {selected !== (currentQ.answer as Letter) && (
+                {selected !== revealedAnswer && (
                   <p className="font-body text-xs mt-0.5 text-text-muted">
-                    Answer: <span className="text-white">{currentQ.options[currentQ.answer as Letter]}</span>
+                    Answer: <span className="text-white">{currentQ.options[revealedAnswer]}</span>
                   </p>
                 )}
               </div>
