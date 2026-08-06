@@ -93,11 +93,18 @@ export interface ChallengeCard {
   expiresAt: string;
   h2hId: string | null;
   winnerId: string | null;
+  /** Phase 3A — the challenger's optional line, quoted under the header. */
+  message: string | null;
+  createdAt: string;
 }
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no
  *  avatar or bubble, and excluded from unread badges (see leagues.ts/home.ts). */
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge";
+/** "challenge_result" (Phase 3A) — the separate, compact "ping" posted once
+ *  when a challenge completes, on top of the original "challenge" card
+ *  updating in place (see challenges.ts's postCompletedResult). Carries the
+ *  same `challenge` card payload as "challenge", just rendered smaller. */
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge" | "challenge_result";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
@@ -157,6 +164,7 @@ export function summariseChatMessage(m: Pick<ChatMessage, "kind" | "body" | "new
     case "feed": return "shared a post";
     case "poll": return m.poll?.question || "started a poll";
     case "challenge": return "sent a challenge";
+    case "challenge_result": return "posted a challenge result";
     case "system": return m.body;
     default: return m.body;
   }

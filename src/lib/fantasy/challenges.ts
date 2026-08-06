@@ -17,6 +17,7 @@ import { HttpError } from "@/lib/fantasy/server";
 import { challengeGame } from "@/lib/fantasy/challengeGames";
 import { blockedActorIds } from "@/lib/social/safety";
 import { notifyFantasy } from "@/lib/fantasy/notify";
+import { normalizeChallengeMessage, normalizeCreatedFrom } from "@/lib/fantasy/challenges-pure";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -43,6 +44,16 @@ export interface MemberChallengeRow {
   expires_at: string;
   started_at: string | null;
   completed_at: string | null;
+  // Phase 3A (migration 258)
+  message: string | null;
+  created_from: string | null;
+  created_from_entity_id: string | null;
+  rematch_of_challenge_id: string | null;
+  series_id: string | null;
+  sent_at: string;
+  declined_at: string | null;
+  cancelled_at: string | null;
+  scoring_version: string | null;
 }
 
 /** Same membership check chat.ts's requireMemberLeague performs, duplicated
@@ -65,6 +76,67 @@ async function isLeagueMember(db: Db, leagueId: string, userId: string): Promise
   return !!data;
 }
 
+/** Fetch the human-readable name of the quiz a quiz_battle challenge rides,
+ *  best-effort ("a quiz" if the linked h2h row or its name is missing —
+ *  notifications must never throw over a cosmetic lookup). */
+async function quizNameFor(db: Db, row: MemberChallengeRow): Promise<string> {
+  if (row.game_type !== "quiz_battle" || !row.result_id) return "a quiz";
+  const { data: h2h } = await db.from("h2h_challenges").select("quiz_pack_name").eq("id", row.result_id).maybeSingle();
+  return (h2h?.quiz_pack_name as string | undefined) ?? "a quiz";
+}
+
+/** Phase 3A result publication (product decision, locked): a completed
+ *  challenge gets ONE new compact chat message on top of the original card
+ *  updating in place — the card itself is re-derived live from the row
+ *  (challengeCardsFor), this is the separate "ping" everyone in chat sees.
+ *  Only ever called from the update that WON the completed transition —
+ *  reconcile's guard above is the entire idempotency mechanism here. */
+async function postCompletedResult(db: Db, won: MemberChallengeRow) {
+  await db.from("comments").insert({
+    subject_type: "fantasy_league", subject_id: won.league_id, user_id: won.challenger_id,
+    body: "Challenge result", kind: "challenge_result", payload: { challengeId: won.id },
+  });
+
+  const { data: profs } = await db.from("profiles").select("id, display_name")
+    .in("id", [won.challenger_id, won.opponent_id]);
+  const nameOf = (id: string) => ((profs ?? []) as { id: string; display_name: string | null }[])
+    .find((p) => p.id === id)?.display_name ?? "Someone";
+  const winnerName = won.winner_id ? nameOf(won.winner_id) : null;
+  const game = challengeGame(won.game_type);
+  const quizName = await quizNameFor(db, won);
+
+  void notifyFantasy({
+    userIds: [won.challenger_id, won.opponent_id],
+    title: winnerName ? `${winnerName} won the challenge` : "The challenge finished level",
+    body: `${game?.name ?? won.game_type} · ${quizName}`,
+    url: `/h2h/${won.result_id}`,
+    dedupeKey: `challenge_result:${won.id}`,
+    type: "challenge_result",
+    subjectType: "member_challenge",
+    subjectId: won.id,
+  });
+}
+
+/** Discreet expiry notice (product decision, locked): no chat post — an
+ *  expired, never-played challenge isn't a result worth a card — just a
+ *  quiet nudge to the challenger. Same win-guard idempotency as
+ *  postCompletedResult: only the update that actually flipped the row calls
+ *  this. */
+async function notifyExpired(db: Db, won: MemberChallengeRow) {
+  const { data: profile } = await db.from("profiles").select("display_name").eq("id", won.opponent_id).maybeSingle();
+  const opponentName = profile?.display_name ?? "Someone";
+  const quizName = await quizNameFor(db, won);
+  void notifyFantasy({
+    userIds: [won.challenger_id],
+    title: `Your challenge to ${opponentName} expired`,
+    body: quizName,
+    dedupeKey: `challenge_expire:${won.id}`,
+    type: "challenge_expired",
+    subjectType: "member_challenge",
+    subjectId: won.id,
+  });
+}
+
 /** Status derived at read time from the linked game session, persisted when it
  *  changes so lists stay cheap (no join-and-recompute on every subsequent
  *  read). Only ever moves a row OUT of pending/accepted/active — a terminal
@@ -82,9 +154,19 @@ export async function reconcile(db: Db, row: MemberChallengeRow): Promise<Member
         : h2h.opponent_score < h2h.challenger_score
           ? row.challenger_id
           : null; // a tie completes with no winner
-      const patch = { status: "completed", winner_id: winnerId, completed_at: new Date().toISOString() };
+      const patch = {
+        status: "completed", winner_id: winnerId, completed_at: new Date().toISOString(),
+        scoring_version: "quiz_battle_v1",
+      };
       const { data: updated } = await db.from("member_challenges")
         .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
+      // The update returning a row IS the "I won the transition" signal — a
+      // losing racer gets null back here and must NOT post/notify (that's
+      // the whole idempotency mechanism, no separate lock needed). Awaited,
+      // not fire-and-forget: the chat insert is a real write that must land
+      // before this request/serverless invocation ends, unlike notifyFantasy
+      // itself (best-effort by design, see notify.ts's file doc).
+      if (updated) await postCompletedResult(db, updated as MemberChallengeRow);
       return (updated as MemberChallengeRow) ?? { ...row, ...patch };
     }
     // Not played — expiry rides the h2h row's OWN expires_at (challengeGames.ts's
@@ -94,6 +176,7 @@ export async function reconcile(db: Db, row: MemberChallengeRow): Promise<Member
       const patch = { status: "expired" };
       const { data: updated } = await db.from("member_challenges")
         .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
+      if (updated) await notifyExpired(db, updated as MemberChallengeRow);
       return (updated as MemberChallengeRow) ?? { ...row, ...patch };
     }
   }
@@ -104,6 +187,7 @@ export async function reconcile(db: Db, row: MemberChallengeRow): Promise<Member
     const patch = { status: "expired" };
     const { data: updated } = await db.from("member_challenges")
       .update(patch).eq("id", row.id).eq("status", row.status).select("*").maybeSingle();
+    if (updated) await notifyExpired(db, updated as MemberChallengeRow);
     return (updated as MemberChallengeRow) ?? { ...row, ...patch };
   }
   return row;
@@ -140,6 +224,12 @@ export interface CreateChallengeInput {
   leagueCode: unknown;
   gameType: unknown;
   packId: unknown;
+  /** Phase 3A — an optional line the challenger attaches, shown quoted under
+   *  the chat card's header. See normalizeChallengeMessage. */
+  message?: unknown;
+  /** Phase 3A — which surface started this challenge (attribution only, see
+   *  normalizeCreatedFrom); unrecognised/omitted falls back silently. */
+  createdFrom?: unknown;
 }
 
 /** Create a league-mate challenge. Today only quiz_battle is supported (the
@@ -151,6 +241,13 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
   const packId = typeof input.packId === "string" ? input.packId : "";
   if (!opponentId || !leagueCode || !gameType) throw new HttpError(400, "missing fields");
   if (opponentId === userId) throw new HttpError(400, "You can't challenge yourself");
+
+  // Validated up front — a bad message 400s before anything is written (the
+  // h2h + member_challenges inserts below), rather than after.
+  const messageResult = normalizeChallengeMessage(input.message);
+  if (!messageResult.ok) throw new HttpError(400, messageResult.error);
+  const message = messageResult.message;
+  const createdFrom = normalizeCreatedFrom(input.createdFrom);
 
   const game = challengeGame(gameType);
   if (!game || !game.supported) throw new HttpError(400, "That game isn't available for a challenge yet");
@@ -227,6 +324,8 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
       status: "pending",
       result_id: h2h.id,
       expires_at: h2hExpiresAt,
+      message,
+      created_from: createdFrom,
     })
     .select("id")
     .single();
@@ -260,6 +359,95 @@ export async function createChallenge(db: Db, userId: string, input: CreateChall
   return { id: mc.id, h2hId: h2h.id as string };
 }
 
+/** One-tap accept (product decision, locked): there is no separate Accept
+ *  step — the opponent's "Play" tap in chat/MemberActionSheet calls this,
+ *  then navigates into /h2h/[id] on success. Only the opponent, only from
+ *  'pending'. Idempotent for a genuine repeat tap (double network request,
+ *  navigating back and tapping Play again): if the row is ALREADY active
+ *  with accepted_at set for this same opponent, this returns ok silently —
+ *  no second notification, matching the atomic update's own idempotency
+ *  guard in reconcile(). Any other state 409s ("isn't open anymore") rather
+ *  than leaving the caller's Play button looking like it worked. */
+export async function acceptChallenge(db: Db, userId: string, challengeId: unknown) {
+  const id = typeof challengeId === "string" ? challengeId : "";
+  if (!id) throw new HttpError(400, "bad challenge id");
+  const { data: row } = await db.from("member_challenges").select("*").eq("id", id).maybeSingle();
+  if (!row) throw new HttpError(404, "challenge not found");
+  const mc = row as MemberChallengeRow;
+  if (mc.opponent_id !== userId) throw new HttpError(403, "only the challenged player can accept");
+
+  if (mc.status === "active" && mc.accepted_at) return { ok: true, h2hId: mc.result_id };
+  if (mc.status !== "pending") throw new HttpError(409, "This challenge isn't open anymore");
+
+  const now = new Date().toISOString();
+  const { data: updated, error } = await db.from("member_challenges")
+    .update({ status: "active", accepted_at: now, started_at: now })
+    .eq("id", id).eq("status", "pending").select("*").maybeSingle();
+  if (error) throw new HttpError(500, error.message);
+  if (!updated) throw new HttpError(409, "This challenge isn't open anymore");
+  const won = updated as MemberChallengeRow;
+
+  // Notify only on the FIRST successful transition — the atomic .eq("status",
+  // "pending") above is what guarantees this branch runs once.
+  const { data: profile } = await db.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+  const opponentName = profile?.display_name ?? "Someone";
+  const game = challengeGame(won.game_type);
+  const quizName = await quizNameFor(db, won);
+  void notifyFantasy({
+    userIds: [won.challenger_id],
+    title: `${opponentName} accepted your challenge`,
+    body: `${game?.name ?? won.game_type} · ${quizName}`,
+    url: `/h2h/${won.result_id}`,
+    dedupeKey: `challenge_accept:${won.id}`,
+    type: "challenge_accepted",
+    actorId: userId,
+    subjectType: "member_challenge",
+    subjectId: won.id,
+  });
+
+  return { ok: true, h2hId: won.result_id };
+}
+
+/** Only the challenger can withdraw, and only while it's still 'pending' —
+ *  once the opponent has accepted there's a live game underway on their
+ *  side, cancel no longer applies (see the OPEN_STATUSES/status machine). */
+export async function cancelChallenge(db: Db, userId: string, challengeId: unknown) {
+  const id = typeof challengeId === "string" ? challengeId : "";
+  if (!id) throw new HttpError(400, "bad challenge id");
+  const { data: row } = await db.from("member_challenges").select("*").eq("id", id).maybeSingle();
+  if (!row) throw new HttpError(404, "challenge not found");
+  const mc = row as MemberChallengeRow;
+  if (mc.challenger_id !== userId) throw new HttpError(403, "only the challenger can cancel");
+  if (mc.status !== "pending") throw new HttpError(409, "This challenge can't be cancelled anymore");
+
+  const now = new Date().toISOString();
+  const { data: updated, error } = await db.from("member_challenges")
+    .update({ status: "cancelled", cancelled_at: now }).eq("id", id).eq("status", "pending").select("*").maybeSingle();
+  if (error) throw new HttpError(500, error.message);
+  if (!updated) throw new HttpError(409, "This challenge can't be cancelled anymore");
+  const won = updated as MemberChallengeRow;
+
+  // Discreet (product decision, locked) — a quiet notice, no chat card change.
+  const { data: profile } = await db.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+  const challengerName = profile?.display_name ?? "Someone";
+  const quizName = await quizNameFor(db, won);
+  void notifyFantasy({
+    userIds: [won.opponent_id],
+    title: `${challengerName} withdrew their challenge`,
+    body: quizName,
+    dedupeKey: `challenge_cancel:${won.id}`,
+    type: "challenge_cancelled",
+    actorId: userId,
+    subjectType: "member_challenge",
+    subjectId: won.id,
+  });
+
+  return { ok: true };
+}
+
+/** Decline is discreet (product decision, locked): the challenger gets a
+ *  quiet notification, never a shaming chat message — the card itself just
+ *  flips to a muted terminal line (LeagueChatView's ChallengeCardMsg). */
 export async function declineChallenge(db: Db, userId: string, challengeId: unknown) {
   const id = typeof challengeId === "string" ? challengeId : "";
   if (!id) throw new HttpError(400, "bad challenge id");
@@ -269,10 +457,27 @@ export async function declineChallenge(db: Db, userId: string, challengeId: unkn
   if (mc.opponent_id !== userId) throw new HttpError(403, "only the challenged player can decline");
   if (mc.status !== "pending") throw new HttpError(409, "This challenge can't be declined anymore");
 
+  const now = new Date().toISOString();
   const { data: updated, error } = await db.from("member_challenges")
-    .update({ status: "declined" }).eq("id", id).eq("status", "pending").select("id").maybeSingle();
+    .update({ status: "declined", declined_at: now }).eq("id", id).eq("status", "pending").select("*").maybeSingle();
   if (error) throw new HttpError(500, error.message);
   if (!updated) throw new HttpError(409, "This challenge can't be declined anymore");
+  const won = updated as MemberChallengeRow;
+
+  const { data: profile } = await db.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+  const opponentName = profile?.display_name ?? "Someone";
+  const quizName = await quizNameFor(db, won);
+  void notifyFantasy({
+    userIds: [won.challenger_id],
+    title: `${opponentName} passed on your challenge`,
+    body: quizName,
+    dedupeKey: `challenge_decline:${won.id}`,
+    type: "challenge_declined",
+    actorId: userId,
+    subjectType: "member_challenge",
+    subjectId: won.id,
+  });
+
   return { ok: true };
 }
 
@@ -286,6 +491,10 @@ export interface ChallengeCardData {
   expiresAt: string;
   h2hId: string | null;
   winnerId: string | null;
+  /** Phase 3A — the challenger's optional line, rendered quoted under the
+   *  card header (LeagueChatView's ChallengeCardMsg). Null if none was sent. */
+  message: string | null;
+  createdAt: string;
 }
 
 /** Hydrated chat-card data for one or more challenges — batched (one query
@@ -332,6 +541,8 @@ export async function challengeCardsFor(db: Db, ids: string[]): Promise<Map<stri
       expiresAt: r.expires_at,
       h2hId: r.result_id,
       winnerId: r.winner_id,
+      message: r.message ?? null,
+      createdAt: r.created_at,
     });
   }
   return out;

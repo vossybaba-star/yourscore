@@ -23,12 +23,19 @@ interface Scorecard { packId: string; name: string; score: number; correct: numb
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = any;
 
-export function ChallengePrepSheet({ leagueCode, opponent, onSent, onClose }: {
+const MESSAGE_MAX_LEN = 140;
+
+export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member_action", onSent, onClose }: {
   leagueCode: string;
   opponent: { userId: string; name: string; avatarUrl: string | null };
+  /** Phase 3A — which surface opened this sheet (attribution only, see
+   *  challenges.ts's normalizeCreatedFrom). Defaults to the one caller this
+   *  sheet has today (MemberActionSheet's Challenge chip); a future caller
+   *  from another surface passes its own value. */
+  createdFrom?: string;
   /** Fired once the challenge is actually created — lets the caller flip its
    *  chip to "Pending" without waiting on a re-fetch. */
-  onSent?: () => void;
+  onSent?: (created: { id: string; h2hId: string | null }) => void;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -37,6 +44,7 @@ export function ChallengePrepSheet({ leagueCode, opponent, onSent, onClose }: {
   const [leagueName, setLeagueName] = useState<string | null>(null);
   const [cards, setCards] = useState<Scorecard[] | null>(null);
   const [picked, setPicked] = useState<Scorecard | null>(null);
+  const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -101,16 +109,20 @@ export function ChallengePrepSheet({ leagueCode, opponent, onSent, onClose }: {
   const send = () => {
     if (!picked || !game || sending) return;
     setSending(true); setErr(null);
+    const trimmedMessage = message.trim();
     fetch("/api/fantasy/challenges", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ opponentId: opponent.userId, leagueCode, gameType: game.id, packId: picked.packId }),
+      body: JSON.stringify({
+        opponentId: opponent.userId, leagueCode, gameType: game.id, packId: picked.packId,
+        message: trimmedMessage || undefined, createdFrom,
+      }),
     })
       .then(async (res) => {
         const j = await res.json().catch(() => ({}));
         if (!res.ok) { setErr(j.error ?? "Could not send the challenge"); return; }
         trackChallengeSent(game.id);
         setSent(true);
-        onSent?.();
+        onSent?.({ id: j.id, h2hId: j.h2hId ?? null });
       })
       .catch(() => setErr("Could not send the challenge"))
       .finally(() => setSending(false));
@@ -198,6 +210,21 @@ export function ChallengePrepSheet({ leagueCode, opponent, onSent, onClose }: {
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {picked && (
+        <div style={{ marginBottom: 16 }}>
+          <input
+            value={message}
+            maxLength={MESSAGE_MAX_LEN}
+            placeholder="Add a message if you like"
+            onChange={(e) => setMessage(e.target.value.replace(/[\r\n]+/g, " "))}
+            style={{
+              width: "100%", boxSizing: "border-box", fontSize: 13, padding: "10px 12px", borderRadius: 10,
+              background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none",
+            }}
+          />
         </div>
       )}
 

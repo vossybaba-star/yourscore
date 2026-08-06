@@ -95,7 +95,7 @@ export interface FeedShareCard {
  *  lead change). Never authored by a member; user_id is just whoever the FK
  *  needs (the joiner for a join line, the league owner otherwise) — the UI
  *  never shows a system row's author. */
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge";
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge" | "challenge_result";
 
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
@@ -516,8 +516,10 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
 
   // Challenge cards (Phase 1C) — batched exactly like feedCardById above, one
   // query set for every challenge referenced in this window rather than N+1.
+  // Covers both "challenge" (the original card) and "challenge_result" (Phase
+  // 3A's compact result ping) — same payload shape, same card data.
   const challengeIds = Array.from(new Set(
-    msgs.filter((m) => m.kind === "challenge" && m.payload && typeof m.payload === "object")
+    msgs.filter((m) => (m.kind === "challenge" || m.kind === "challenge_result") && m.payload && typeof m.payload === "object")
       .map((m) => { const id = (m.payload as { challengeId?: unknown }).challengeId; return typeof id === "string" ? id : ""; })
       .filter(Boolean),
   ));
@@ -549,11 +551,11 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
       if (!eventId) return { kind: "text" };
       return { kind: "feed", feed: feedCardById.get(eventId) ?? { eventId, available: false, actorName: null, actorAvatarUrl: null, text: null, summary: null, image: null } };
     }
-    if (m.kind === "challenge" && m.payload && typeof m.payload === "object") {
+    if ((m.kind === "challenge" || m.kind === "challenge_result") && m.payload && typeof m.payload === "object") {
       const id = (m.payload as { challengeId?: unknown }).challengeId;
       const challengeId = typeof id === "string" ? id : "";
       const card = challengeId ? challengeCardById.get(challengeId) : undefined;
-      return card ? { kind: "challenge", challenge: card } : { kind: "text" };
+      return card ? { kind: m.kind as ChatKind, challenge: card } : { kind: "text" };
     }
     if (m.kind === "gif" && m.payload && typeof m.payload === "object") {
       const pl = m.payload as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
