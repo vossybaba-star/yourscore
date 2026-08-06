@@ -318,8 +318,18 @@ export default function RoomPage() {
     q = (stored[idx] as Record<string, unknown>) ?? null;
 
     if (!q && ev.question_id) {
-      const { data } = await sb.from("questions").select("*").eq("id", ev.question_id).single();
-      q = data ?? null;
+      // Rare fallback (the primary path above reads the already answer-free
+      // rooms.questions_json) — this used to read the full `questions` bank
+      // row, `answer` included, straight off the anon key.
+      try {
+        const res = await fetch(`/api/questions/for-event?eventId=${ev.id}`);
+        if (res.ok) {
+          const json = await res.json();
+          q = (json.question as Record<string, unknown> | null) ?? null;
+        }
+      } catch {
+        /* fall through — the `if (!q) return;` below handles it */
+      }
     }
 
     if (!q) return;
