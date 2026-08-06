@@ -105,7 +105,22 @@ yet applied**:
 
 If any of 1 to 6 fail, stop. Do not apply 262. Fix forward or revert the deploy.
 
-### Step 4 — apply migration 262
+### Step 4 — apply migration 262 — ✅ APPLIED 2026-08-06
+
+Applied to production and verified. Results:
+
+- All four answer paths now return `401 / 42501` to the public key: pack
+  questions, the question bank's `answer` column, attempt answer logs, and h2h
+  per question picks.
+- Legitimate reads unaffected: pack names and metadata, question text and
+  options, leaderboard scores, and h2h share card scores all still return.
+- Gameplay re-verified on production AFTER the revoke, in a browser at 375px:
+  a full 20 question run start to finish, correct answers scoring (+113 on a
+  correct pick), wrong answers revealing the right option, FULL TIME screen with
+  score and accuracy, and the pack leaderboard still rendering on reload.
+- Tap to verdict measured at **462ms** on production including a transatlantic
+  hop, so lower for a UK player.
+
 
 Only once step 3 is fully green.
 
