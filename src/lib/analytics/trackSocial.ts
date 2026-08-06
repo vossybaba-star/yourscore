@@ -78,6 +78,12 @@ export function trackChallengeCompletedViewed(gameId: string): void { fire("chal
 export function trackChallengeRematchStarted(gameId: string): void { fire("challenge_rematch_started", { gameId }); }
 export function trackChallengeShared(gameId: string): void { fire("challenge_shared", { gameId }); }
 
+// ── league Games tab (Phase 4A) ──────────────────────────────────────────
+export function trackGamesTabViewed(): void { fire("games_tab_viewed"); }
+export function trackGamesQuickChallengeOpened(): void { fire("games_quick_challenge_opened"); }
+export function trackGamesActionRequiredOpened(gameType: string): void { fire("games_action_required_opened", { gameType }); }
+export function trackGamesLeaderboardViewed(): void { fire("games_leaderboard_viewed"); }
+
 // ── native video (composer) ──────────────────────────────────────────────
 export function trackVideoPickerOpened(): void { fire("video_picker_opened"); }
 export function trackVideoSelected(): void { fire("video_selected"); }

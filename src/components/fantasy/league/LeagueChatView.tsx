@@ -22,8 +22,9 @@ import { ReportSheet } from "@/components/social/ReportSheet";
 import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type ChallengeCard, type GifCard } from "./types";
 import {
   trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished, trackVideoChatMessageSent,
-  trackChallengeAccepted, trackChallengeDeclined, trackChallengeCancelled, trackChallengeRematchStarted,
+  trackChallengeRematchStarted,
 } from "@/lib/analytics/trackSocial";
+import { acceptChallengeAction, declineChallengeAction, cancelChallengeAction, ChallengeActionConflict } from "@/lib/fantasy/challengeClientActions";
 import { mentionQueryAt, applyMention, MentionDropdown, type MentionUser, type MentionEntity } from "@/components/fantasy/MentionAutocomplete";
 import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
 import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
@@ -953,26 +954,19 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
 
   // Decline a challenge card (Phase 1C) — a dedicated top-level route, not
   // under /leagues/[code]/*, so it doesn't go through this file's api()
-  // helper. guard() still reloads the thread after, so the card flips to
+  // helper (see challengeClientActions.ts, shared with the Games tab, Phase
+  // 4A). guard() still reloads the thread after, so the card flips to
   // "Declined" immediately rather than waiting on the 15s poll.
   const declineChallenge = (challengeId: string, gameType: string) => {
     setReactFor(null);
-    guard(async () => {
-      const res = await fetch(`/api/fantasy/challenges/${challengeId}/decline`, { method: "POST" });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not decline");
-      trackChallengeDeclined(gameType);
-    });
+    guard(() => declineChallengeAction(challengeId, gameType));
   };
 
   // Withdraw a challenge (Phase 3A) — the challenger only, while pending.
-  // Same top-level-route shape as decline above.
+  // Same shared-helper shape as decline above.
   const cancelChallenge = (challengeId: string, gameType: string) => {
     setReactFor(null);
-    guard(async () => {
-      const res = await fetch(`/api/fantasy/challenges/${challengeId}/cancel`, { method: "POST" });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not cancel");
-      trackChallengeCancelled(gameType);
-    });
+    guard(() => cancelChallengeAction(challengeId, gameType));
   };
 
   // One-tap accept (Phase 3A, product decision, locked): the opponent's
@@ -987,15 +981,11 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
     setBusy(true); setErr(null);
     (async () => {
       try {
-        const res = await fetch(`/api/fantasy/challenges/${challengeId}/accept`, { method: "POST" });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          if (res.status === 409) { await load(viewGw); setBusy(false); return; }
-          throw new Error(j.error ?? "Could not accept");
-        }
-        trackChallengeAccepted(gameType);
-        router.push(`/h2h/${j.h2hId ?? h2hId}`);
+        const { h2hId: gotH2hId } = await acceptChallengeAction(challengeId, gameType);
+        router.push(`/h2h/${gotH2hId ?? h2hId}`);
+        return; // navigating away — no need to clear busy or reload the thread
       } catch (e) {
+        if (e instanceof ChallengeActionConflict) { await load(viewGw); setBusy(false); return; }
         setErr((e as Error).message);
         await load(viewGw);
       }

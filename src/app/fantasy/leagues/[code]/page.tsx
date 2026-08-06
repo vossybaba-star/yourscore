@@ -33,11 +33,12 @@ function InviteRow({ onClick, accent, label, sub, icon }: { onClick: () => void;
 import { LeagueHub } from "@/components/fantasy/league/LeagueHub";
 import { LeagueChatView } from "@/components/fantasy/league/LeagueChatView";
 import { LeagueTableView } from "@/components/fantasy/league/LeagueTableView";
+import { LeagueGamesView } from "@/components/fantasy/league/LeagueGamesView";
 import { LeagueHistoryView } from "@/components/fantasy/league/LeagueHistoryView";
 import type { ChatData, LeagueDetail } from "@/components/fantasy/league/types";
 
-type Tab = "hub" | "chat" | "table" | "history";
-const TABS: [Tab, string][] = [["hub", "Hub"], ["chat", "Chat"], ["table", "Table"], ["history", "History"]];
+type Tab = "hub" | "chat" | "table" | "games" | "history";
+const TABS: [Tab, string][] = [["hub", "Hub"], ["chat", "Chat"], ["table", "Table"], ["games", "Games"], ["history", "History"]];
 
 async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, init);
@@ -65,7 +66,7 @@ export default function LeaguePage() {
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const t = sp.get("t");
-    if (t === "chat" || t === "table" || t === "history") setTab(t);
+    if (t === "chat" || t === "table" || t === "games" || t === "history") setTab(t);
     const gw = sp.get("gw");
     if (gw && /^\d+$/.test(gw)) setChatGw(Number(gw));
   }, []);
@@ -234,18 +235,21 @@ export default function LeaguePage() {
         </Card>
       )}
 
-      {/* Internal tabs — slim, one thumb-height row. */}
+      {/* Internal tabs — slim, one thumb-height row. Five tabs now (Games,
+          Phase 4A) — font/padding trimmed slightly from the four-tab sizing
+          so "History" still fits at 375px without wrapping or truncating
+          (house rule: no scrolling tab bar, no icon-only tabs). */}
       <div style={{ display: "flex", gap: 3, margin: "10px 0 12px", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: 3 }}>
         {TABS.map(([k, label]) => {
           const active = tab === k;
           // Chat opens to anyone for a club/Founder league (browse what they talk
-          // about); History still needs membership. Everywhere else both need it.
+          // about); History and Games still need membership. Everywhere else both need it.
           const chatOpen = league.isMember || league.kind === "club" || league.kind === "founder";
-          const locked = (k === "chat" && !chatOpen) || (k === "history" && !league.isMember);
+          const locked = (k === "chat" && !chatOpen) || ((k === "history" || k === "games") && !league.isMember);
           if (locked) return null;
           return (
             <button key={k} onClick={() => goTab(k)} style={{
-              flex: 1, padding: "5px 4px", borderRadius: 7, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+              flex: 1, padding: "5px 2px", borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: "pointer",
               background: active ? tint(TEAL, "22") : "transparent", color: active ? TEAL : MUTED,
               border: `1px solid ${active ? tint(TEAL, "55") : "transparent"}`,
             }}>{label}</button>
@@ -256,6 +260,7 @@ export default function LeaguePage() {
       {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} />}
       {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder") && <LeagueChatView code={code} initialGw={chatGw} />}
       {tab === "table" && <LeagueTableView detail={detail} code={code} />}
+      {tab === "games" && league.isMember && <LeagueGamesView code={code} />}
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
 
       {inviteOpen && (

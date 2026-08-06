@@ -111,6 +111,37 @@ export interface ChallengeCard {
    *  ChallengePrepSheet, which quiz_battle and gameday_quiz can't be told
    *  apart by via gameMode alone (both are "scorecard"). */
   gameType: string;
+  /** Phase 4A (Games tab) — when this row completed, null until it does. */
+  completedAt: string | null;
+  /** Phase 4A (Games tab, recent results) — the two sides' final scores,
+   *  ONLY EVER set once status is "completed" (null otherwise, always). */
+  challengerScore: number | null;
+  opponentScore: number | null;
+}
+
+// ── Games tab (Phase 4A) ──────────────────────────────────────────────────
+// Mirrors lib/fantasy/games.ts's own return shapes, same duplication idiom
+// as everything else in this file (games.ts is `server-only`).
+
+export interface GamesActionCard extends ChallengeCard {
+  action: "decline_or_play" | "play" | "resume";
+}
+export interface GamesLeaderboardRow {
+  userId: string; name: string; avatarUrl: string | null;
+  played: number; wins: number; draws: number; losses: number; points: number;
+}
+export interface GamesSummary {
+  open: number; wins: number; losses: number; draws: number;
+  streakType: "win" | "draw" | "loss" | null; streakCount: number;
+}
+export interface GamesAvailableGame { id: string; name: string; shortDesc: string; typicalDuration: string }
+export interface GamesOverview {
+  actionRequired: GamesActionCard[];
+  open: ChallengeCard[];
+  recentResults: ChallengeCard[];
+  leaderboard: GamesLeaderboardRow[];
+  mySummary: GamesSummary | null;
+  availableGames: GamesAvailableGame[];
 }
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no
