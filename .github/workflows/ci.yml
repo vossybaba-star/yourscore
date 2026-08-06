@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test-lint-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Must run before actions/setup-node's pnpm cache step below — that
+      # step needs pnpm already on PATH to resolve the store path it caches.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test
+        run: pnpm test:ci
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Dummy, non-functional values — never the real project. The build
+          # only needs these two to be a syntactically valid URL/string (they
+          # feed straight into @supabase/ssr's client constructor); nothing
+          # in `next build` performs an external write, and with fake
+          # credentials it categorically cannot reach the real database.
+          # Every other NEXT_PUBLIC_* var in this app falls back safely
+          # (`?? "https://yourscore.app"` or an `if (id)` guard) when unset,
+          # so none of them are needed here.
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key-not-real
