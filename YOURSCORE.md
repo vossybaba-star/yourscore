@@ -6,7 +6,10 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-06 (**Native video shipped across Social: uploads, inline +
+> **Confirmed:** 2026-08-06 (**Challenge lifecycle Phase 3A shipped: one-tap accept,
+> cancel, quiet decline, server-derived results posting into league chat, challenge
+> messages + rate limiting — see Recently Shipped top entry. Same day: video/photo
+> upload unblocked in prod (CSP + missing bucket policies).** Earlier: **Native video shipped across Social: uploads, inline +
 > fullscreen playback, video in replies and league chat, YouTube embeds and rich video
 > previews, football-context combos — see Recently Shipped top entry.** Same day:
 > **People layer shipped, all 3 phases: structured @mentions
@@ -813,6 +816,23 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-06** — **Challenge lifecycle (Phase 3A) SHIPPED** (PR #81; mig 258 applied):
+  one-tap accept — the opponent's Play tap IS acceptance (locked), no separate Accept
+  step; challenger can Cancel while pending; decline is quiet and stamped. A completed
+  challenge posts one compact result message into league chat on top of the card
+  updating in place (locked), with the winner calculated server-side off the linked h2h
+  row and `scoring_version` stamped. Challenges carry an optional 140-character message
+  (quoted on the card) and created-from attribution, and creation is rate limited to 10
+  an hour. The member action sheet chip is now a state machine (Challenge / Pending /
+  Your turn / Back in / In play / See result). Locked roster for the next phase (3B):
+  Quiz Duel (both play fresh after accept, rides h2h `mode`) + Gameday pack adapter;
+  38-0 deferred. NOTE: all challenge notifications ride `notifyFantasy`, which is still
+  dark on prod until `FANTASY_NOTIFY_ENABLED` is flipped in Vercel.
+- **2026-08-06** — **Native video upload UNBLOCKED in prod** (PR #80): CSP `media-src`
+  was missing `blob:` so every native upload failed at the client probe, and the
+  `post-media` bucket had lost its insert/delete policies (photo uploads had never
+  worked — 0 objects ever). Both fixed and browser-verified end to end; league chat
+  video card no longer collapses on tap.
 - **2026-08-06** — **Native video SHIPPED across Social** (PRs #77/#78/#79; migs 256+257
   applied; `post-videos` bucket + project upload cap 100MB): direct upload from iPhone
   (60s / 100MB / one per post, MIME-sniffed, progress + retry + cancel, client-captured
