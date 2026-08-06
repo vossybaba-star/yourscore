@@ -18,14 +18,17 @@ import {
 import { trackChallengeCompletedViewed, trackChallengeShared } from "@/lib/analytics/trackSocial";
 
 /** How long the correct/wrong banner stays up, counted from the moment it
- *  renders. Answers no longer live in the browser, so the verdict arrives a
- *  round trip after the tap (~0.9s on a fast connection, more on mobile data);
- *  a dwell tuned for an instant verdict left it feeling like a flash. */
-const REVEAL_DWELL_MS = 2600;
+ *  renders (the grading round trip has already happened by then).
+ *
+ *  Longer than the solo loop's 1.8s, and only that: the reported problem was
+ *  not being able to SEE whether the answer was right, so this is the dial that
+ *  fixes it. Everything else stays as quick as it was — the grading route is
+ *  what got faster, not the pacing. */
+const REVEAL_DWELL_MS = 2400;
 
 /** Shorter, for the branch where grading failed: there is no verdict to read,
  *  just an acknowledged tap, so sitting on it only stalls the run. */
-const UNGRADED_DWELL_MS = 1200;
+const UNGRADED_DWELL_MS = 1000;
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -1423,35 +1426,15 @@ export default function H2HPage({ params }: { params: { id: string } }) {
             onAnswer={handleAnswer}
           />
 
-          {/* Grading pause. Answers are no longer in the browser, so the verdict
-              costs a round trip (measured ~0.9s on a fast connection, longer on
-              mobile data). Without something in this slot the banner appears out
-              of nowhere after the eye has already moved on, which reads as the
-              verdict flashing past. Occupying the same box keeps attention where
-              the answer is about to land, and holds the layout steady so the
-              options don't jump when it arrives. */}
-          {selected && !revealed && (
-            <div
-              className="mt-4 rounded-2xl px-5 py-4 flex items-center gap-3"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-              aria-live="polite"
-            >
-              <span
-                className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
-                style={{
-                  flexShrink: 0,
-                  borderColor: "rgba(255,255,255,0.15)",
-                  borderTopColor: "#8a948f",
-                }}
-              />
-              <span className="font-body text-xs" style={{ color: "#8a948f" }}>
-                Checking your answer
-              </span>
-            </div>
-          )}
+          {/* No waiting state here on purpose. An earlier attempt put a
+              "Checking your answer" spinner in this slot; the founder's read was
+              that it made the whole thing feel slower, and he is right — the
+              complaint was never about the wait, it was about not SEEING the
+              verdict. The fix belongs in /api/quiz/answer, which now caches the
+              answer key in memory and runs its remaining network work
+              concurrently, so the banner lands fast enough that there is nothing
+              to fill. If grading ever gets slow again, make it fast; do not
+              decorate the delay. */}
 
           {/* Reveal banner */}
           {revealed && revealedAnswer && (
