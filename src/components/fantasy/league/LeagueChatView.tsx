@@ -19,7 +19,8 @@ import { uploadPostImage } from "@/lib/postMedia";
 import { uploadPostVideo, validateAndProbeVideo, PostVideoError } from "@/lib/postVideo";
 import { InlineVideoPlayer } from "@/components/fantasy/VideoPlayer";
 import { ReportSheet } from "@/components/social/ReportSheet";
-import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type ChallengeCard, type GifCard } from "./types";
+import { CHAT_EMOJI, summariseChatMessage, type ChatData, type ChatMessage, type ChallengeCard, type CompetitionCard, type GifCard } from "./types";
+import { competitionResultLine, type CompetitionFormatId } from "@/lib/fantasy/competitions-pure";
 import {
   trackBlockUser, trackMuteUser, trackPollVoted, trackReactionAdded, trackMentionAutocompleteOpened, trackMentionSelected, trackMentionPublished, trackVideoChatMessageSent,
   trackChallengeRematchStarted,
@@ -588,6 +589,156 @@ function ChallengeResultLine({ challenge: c }: { challenge: ChallengeCard }) {
   );
 }
 
+/** "3rd of 8" — same ordinal idiom LeagueHub/LeagueHistoryView/LeagueTableView
+ *  each already carry their own copy of (per-file duplication, this
+ *  codebase's own established idiom for a one-line display helper). */
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/** A competition's opens/closes line — the exact same no-dash, day-month
+ *  date expression expiryLine (above) already uses for a challenge, just
+ *  parameterised for "Opens"/"Closes" rather than a fixed "Expires". */
+function competitionWindowLine(prefix: string, iso: string): string {
+  return `${prefix} ${new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
+}
+
+/** "You scored 42. You're 3rd of 8. Provisional." — a live/pre-lock read
+ *  only (c.provisional is always true whenever myEntry is non-null here); a
+ *  live position must never read as a final result (house rule). */
+function myCompetitionLine(c: CompetitionCard): string | null {
+  const e = c.myEntry;
+  if (!e) return null;
+  if (c.format === "beat_target") {
+    return e.result === "placed"
+      ? `You scored ${e.score}. You've beaten the target. Provisional.`
+      : `You scored ${e.score}. Short of the target so far. Provisional.`;
+  }
+  const pos = e.rank != null ? `${ordinal(e.rank)} of ${c.entrantCount}` : `of ${c.entrantCount}`;
+  return `You scored ${e.score}. You're ${pos}. Provisional.`;
+}
+
+/** The settled outcome line — off the SAME competitionResultLine
+ *  competitions.ts's own settle path uses for the chat result ping and the
+ *  notification body, so this card never grows a second copy of that
+ *  wording. */
+function competitionOutcomeLine(c: CompetitionCard): string {
+  return competitionResultLine({
+    format: c.format as CompetitionFormatId,
+    entrantCount: c.entrantCount,
+    winnerName: c.winner?.name ?? null,
+    placedCount: c.placedCount,
+  });
+}
+
+/** The completed card's top three — rank/name/score, GOLD for the format's
+ *  actual winner(s) (league_quiz rank 1, beat_target every "placed" entry). */
+function CompetitionTopThree({ entries }: { entries: CompetitionEntryRow[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 6 }}>
+      {entries.map((e, i) => {
+        const won = e.result === "winner" || e.result === "placed";
+        return (
+          <div key={e.userId} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12 }}>
+            <span style={{ width: 14, flexShrink: 0, color: won ? GOLD : MUTED, fontWeight: 700 }}>{i + 1}</span>
+            <span style={{ flex: 1, minWidth: 0, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.name}</span>
+            <span style={{ color: won ? GOLD : MUTED, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{e.score}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+type CompetitionEntryRow = NonNullable<ChatMessage["competition"]>["topThree"][number];
+
+/** A league-wide competition card (UI wave) — GOLD accent, same games-family
+ *  language as ChallengeCardMsg above. Status- and viewer-aware: whatever's
+ *  actionable is a real control, everything else is a quiet, terminal muted
+ *  line (house rule: no dead ends). The whole card taps through to the Games
+ *  tab's competition detail via `onOpen` — a role="button" wrapper around the
+ *  title/status block only, never the whole CardShell, so it never nests
+ *  inside the "Play now" link below it (LeagueGamesView's own rule: no
+ *  interactive element inside another). */
+function CompetitionCardMsg({ msg, onOpen }: { msg: ChatMessage; onOpen: (id: string) => void }) {
+  const c = msg.competition!;
+  const mutedLine = (text: string) => <div style={{ fontSize: 12, color: MUTED }}>{text}</div>;
+  const openBody = () => onOpen(c.id);
+  return (
+    <CardShell accent={GOLD}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 3 }}>
+        <KindLabel color={GOLD} text="COMPETITION" />
+        {c.source === "official" && (
+          <span className="font-display tracking-widest" style={{
+            fontSize: 9, fontWeight: 700, color: GOLD, background: tint(GOLD, "18"),
+            border: `1px solid ${tint(GOLD, "44")}`, borderRadius: 999, padding: "2px 7px",
+          }}>OFFICIAL</span>
+        )}
+      </div>
+      <div role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openBody(); }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openBody(); } }}
+        style={{ cursor: "pointer" }}>
+        <div className="font-display" style={{ fontSize: 14.5, fontWeight: 700, color: INK, lineHeight: 1.3, marginBottom: 6 }}>{c.title}</div>
+
+        {c.status === "scheduled" && mutedLine(competitionWindowLine("Opens", c.opensAt))}
+
+        {c.status === "open" && (
+          <div>
+            {mutedLine(competitionWindowLine("Closes", c.closesAt))}
+            {c.myEntry && mutedLine(myCompetitionLine(c) ?? "")}
+          </div>
+        )}
+
+        {(c.status === "locked" || c.status === "calculating") && mutedLine("Results on the way")}
+
+        {c.status === "completed" && (
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: GOLD }}>{competitionOutcomeLine(c)}</div>
+            {c.topThree.length > 0 && <CompetitionTopThree entries={c.topThree} />}
+          </div>
+        )}
+
+        {c.status === "void" && mutedLine(competitionOutcomeLine(c))}
+        {c.status === "cancelled" && mutedLine("Called off")}
+      </div>
+
+      {/* Play now — a sibling control, not nested inside the role="button"
+          block above (same "never nest an interactive element" rule the
+          Games tab's own game cards follow). Only while open and the viewer
+          hasn't entered yet — a real play destination, never a dead link. */}
+      {c.status === "open" && !c.myEntry && c.packId && (
+        <Link href={`/play/new?packId=${c.packId}`} onClick={(e) => e.stopPropagation()} style={{
+          display: "inline-block", marginTop: 8, fontSize: 12, fontWeight: 700, color: GOLD, textDecoration: "none",
+        }}>Play now</Link>
+      )}
+    </CardShell>
+  );
+}
+
+/** The compact settle "ping" (kind "competition_result") — one new line
+ *  dropped into chat when a competition completes, distinct from the
+ *  original COMPETITION card above updating in place (same product shape as
+ *  ChallengeResultLine). No accent shell, no actions — the outcome and a
+ *  link through to the detail. */
+function CompetitionResultLine({ competition: c, onOpen }: { competition: CompetitionCard; onOpen: (id: string) => void }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 8, background: PANEL, border: `1px solid ${tint(GOLD, "2a")}`,
+      borderRadius: 10, padding: "8px 11px",
+    }}>
+      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+        <path d="M8 21h8M12 17v4M6 4h12v3a6 6 0 01-12 0V4z" />
+        <path d="M6 6H4a2 2 0 002 4M18 6h2a2 2 0 01-2 4" />
+      </svg>
+      <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>{competitionOutcomeLine(c)}</span>
+      <button onClick={(e) => { e.stopPropagation(); onOpen(c.id); }} style={{
+        marginLeft: "auto", padding: 0, fontSize: 11.5, fontWeight: 700, cursor: "pointer",
+        background: "none", border: "none", color: GOLD, textDecoration: "none", flexShrink: 0,
+      }}>See it</button>
+    </div>
+  );
+}
+
 function Poll({ msg, onVote, readOnly }: { msg: ChatMessage; onVote: (i: number) => void; readOnly?: boolean }) {
   const poll = msg.poll!;
   const total = poll.totalVotes;
@@ -654,12 +805,13 @@ function PollComposer({ onPost, onCancel, busy }: { onPost: (q: string, opts: st
 /** The bubble/card for one message, minus the reactions row. `showHeader` is
  *  the sender-grouping signal (AC3) — only the first bubble of a same-sender
  *  run within 5 minutes carries the name. */
-function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, onDeclineChallenge, onCancelChallenge, onAcceptChallenge, onRematchChallenge, viewerId, readOnly, busy, showHeader = true }: {
+function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, onAuthor, onDeclineChallenge, onCancelChallenge, onAcceptChallenge, onRematchChallenge, onOpenCompetition, viewerId, readOnly, busy, showHeader = true }: {
   m: ChatMessage; onView: (id: number) => void; onOpenNews: (m: ChatMessage) => void; onVote: (i: number) => void;
   onViewImage: (url: string) => void; onViewFeed: (eventId: string) => void; onAuthor: (m: ChatMessage) => void;
   onDeclineChallenge: (challengeId: string, gameType: string) => void; onCancelChallenge: (challengeId: string, gameType: string) => void;
   onAcceptChallenge: (challengeId: string, h2hId: string | null, gameType: string) => void;
   onRematchChallenge: (challenge: ChallengeCard) => void;
+  onOpenCompetition: (competitionId: string) => void;
   viewerId: string | null;
   readOnly?: boolean; busy?: boolean; showHeader?: boolean;
 }) {
@@ -674,6 +826,8 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, o
   if (m.kind === "challenge" && m.challenge)
     return <ChallengeCardMsg msg={m} viewerId={viewerId} onDecline={onDeclineChallenge} onCancel={onCancelChallenge} onAccept={onAcceptChallenge} onRematch={onRematchChallenge} busy={!!busy} />;
   if (m.kind === "challenge_result" && m.challenge) return <ChallengeResultLine challenge={m.challenge} />;
+  if (m.kind === "competition" && m.competition) return <CompetitionCardMsg msg={m} onOpen={onOpenCompetition} />;
+  if (m.kind === "competition_result" && m.competition) return <CompetitionResultLine competition={m.competition} onOpen={onOpenCompetition} />;
   if (m.kind === "poll" && m.poll) return <Poll msg={m} onVote={onVote} readOnly={readOnly} />;
   return (
     <div style={{
@@ -748,7 +902,14 @@ function GifPicker({ onPick, onCancel, busy }: { onPick: (g: GifCard) => void; o
   );
 }
 
-export function LeagueChatView({ code, initialGw = null }: { code: string; initialGw?: number | null }) {
+export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
+  code: string; initialGw?: number | null;
+  /** A competition card's tap through to the Games tab detail (UI wave) —
+   *  mirrors page.tsx's openGamesChallenge deep-link pattern: the parent
+   *  switches tabs AND tells LeagueGamesView which competition to open, so
+   *  this view never needs to know anything about that sheet's own state. */
+  onOpenCompetition: (competitionId: string) => void;
+}) {
   const router = useRouter();
   const { user } = useUser();
   const [chat, setChat] = useState<ChatData | null>(null);
@@ -1211,6 +1372,7 @@ export function LeagueChatView({ code, initialGw = null }: { code: string; initi
                   onVote={(i2) => vote(m.id, i2)} onViewImage={setGalleryUrl} onViewFeed={openFeed} onAuthor={openAuthor}
                   onDeclineChallenge={declineChallenge} onCancelChallenge={cancelChallenge} onAcceptChallenge={acceptChallenge}
                   onRematchChallenge={startRematch}
+                  onOpenCompetition={onOpenCompetition}
                   viewerId={user?.id ?? null}
                   readOnly={readOnly} busy={busy} showHeader={showHeader} />
               </div>
