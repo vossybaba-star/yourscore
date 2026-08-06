@@ -14,6 +14,14 @@ import { rateLimitDistributed } from "@/lib/ratelimit";
 // writes a score), so a dropped or spoofed call here costs UX polish, never
 // score integrity.
 //
+// LATENCY IS A FEATURE REQUIREMENT HERE, NOT A NICE TO HAVE. This sits between a
+// player's tap and seeing whether they were right, so every millisecond is felt.
+// The first cut did four network round trips in series (auth, two rate limits,
+// then the pack read) and measured ~800ms from a dev machine, which read as the
+// verdict arriving late and being missed. Keep the shape below: the answer key
+// is cached in module memory, and everything that must hit the network runs
+// concurrently. Do not reintroduce a sequential await chain.
+//
 // Solo quiz is playable signed out, so this route must not require a session.
 
 const PACK_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,33 +32,39 @@ function isLetter(v: unknown): v is Letter {
   return typeof v === "string" && (LETTERS as readonly string[]).includes(v);
 }
 
+/** Answer letters per published pack, keyed by pack id.
+ *
+ *  Safe to hold in memory: a published pack's questions are static content (the
+ *  pack loader already serves them CDN-cached for an hour), and only the LETTERS
+ *  live here, never question text. Per-instance and lost on redeploy, which is
+ *  exactly the refresh behaviour an edited pack needs. */
+const answerKeyCache = new Map<string, { letters: (Letter | null)[]; at: number }>();
+const ANSWER_KEY_TTL_MS = 10 * 60_000;
+
+async function answerKeyFor(packId: string): Promise<(Letter | null)[] | null> {
+  const hit = answerKeyCache.get(packId);
+  if (hit && Date.now() - hit.at < ANSWER_KEY_TTL_MS) return hit.letters;
+
+  const db = createServiceClient();
+  const { data: pack } = await db
+    .from("quiz_packs")
+    .select("questions, status")
+    .eq("id", packId)
+    .single();
+
+  if (!pack || pack.status !== "published" || !Array.isArray(pack.questions)) return null;
+
+  const letters = (pack.questions as Array<{ answer?: unknown }>).map((q) => {
+    const up = String(q?.answer ?? "").toUpperCase();
+    return isLetter(up) ? up : null;
+  });
+  answerKeyCache.set(packId, { letters, at: Date.now() });
+  return letters;
+}
+
 export async function POST(req: NextRequest) {
-  const auth = await createClient();
-  const {
-    data: { user },
-  } = await auth.auth.getUser();
-
-  // KNOWN LIMIT, read this before loosening anything below. A route that says
-  // "was this letter right, and if not which was" hands over one question's key
-  // per call by construction. Rate limiting is therefore the actual control on
-  // bulk extraction, not a formality: it is what stops a scraper walking every
-  // published pack. It raises the cost and makes the attempt visible in logs; it
-  // does not make the key unobtainable. The only thing that would is withholding
-  // correctness until a run is submitted, which is a product decision about how
-  // the quiz feels, not an implementation detail.
-  //
-  // Two caps, both needed:
-  //  - per caller: a full round is ~20 calls, so 150/hour still allows about
-  //    seven quizzes an hour, well past real play, while halving farm rate.
-  //  - per caller AND pack: 60/hour is three full runs of the SAME pack, which
-  //    no real player needs, and it stops one pack being drained in a burst.
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const caller = user ? `u:${user.id}` : `ip:${ip}`;
-  const { ok } = await rateLimitDistributed(`quiz-answer:${caller}`, 150, 60 * 60_000);
-  if (!ok) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
-
+  // Body first: it is local, and the pack id it carries is needed to start the
+  // network work below.
   let body: { packId?: unknown; idx?: unknown; letter?: unknown };
   try {
     body = await req.json();
@@ -69,29 +83,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid letter" }, { status: 400 });
   }
 
-  // Per-pack cap, applied only once packId is known to be well formed so a
-  // malformed body can't burn a caller's budget.
-  const { ok: packOk } = await rateLimitDistributed(
-    `quiz-answer:${caller}:${packId}`, 60, 60 * 60_000,
-  );
-  if (!packOk) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
+  // Session lookup and the answer key are independent, so they overlap. The key
+  // is usually a cache hit, which leaves the session as the only real wait.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const [user, letters] = await Promise.all([
+    createClient()
+      .then((c) => c.auth.getUser())
+      .then((r) => r.data.user)
+      .catch(() => null),
+    answerKeyFor(packId),
+  ]);
 
-  const db = createServiceClient();
-  const { data: pack } = await db
-    .from("quiz_packs")
-    .select("questions, status")
-    .eq("id", packId)
-    .single();
-
-  const questions = pack?.questions as unknown as Array<{ answer: string }> | undefined;
-  if (!pack || pack.status !== "published" || !questions || idx >= questions.length) {
+  if (!letters || idx >= letters.length) {
     return NextResponse.json({ error: "Question not found" }, { status: 404 });
   }
 
-  const correctLetter = String(questions[idx].answer).toUpperCase();
-  if (!isLetter(correctLetter)) {
+  // KNOWN LIMIT, read this before loosening anything. A route that says "was
+  // this letter right, and if not which was" hands over one question's key per
+  // call by construction. Rate limiting is therefore the actual control on bulk
+  // extraction, not a formality: it is what stops a scraper walking every
+  // published pack. It raises the cost and makes the attempt visible in logs; it
+  // does not make the key unobtainable. The only thing that would is withholding
+  // correctness until a run is submitted, which is a product decision about how
+  // the quiz feels, not an implementation detail.
+  //
+  // Two caps, run together so they cost one round trip rather than two:
+  //  - per caller: a full round is ~20 calls, so 150/hour still allows about
+  //    seven quizzes an hour, well past real play, while halving farm rate.
+  //  - per caller AND pack: 60/hour is three full runs of the SAME pack, which
+  //    no real player needs, and it stops one pack being drained in a burst.
+  const caller = user ? `u:${user.id}` : `ip:${ip}`;
+  const [callerLimit, packLimit] = await Promise.all([
+    rateLimitDistributed(`quiz-answer:${caller}`, 150, 60 * 60_000),
+    rateLimitDistributed(`quiz-answer:${caller}:${packId}`, 60, 60 * 60_000),
+  ]);
+  if (!callerLimit.ok || !packLimit.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  const correctLetter = letters[idx];
+  if (!correctLetter) {
     return NextResponse.json({ error: "Question not found" }, { status: 404 });
   }
 
