@@ -20,6 +20,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { HttpError } from "@/lib/fantasy/server";
 import { reconcile, challengeCardsFor, type MemberChallengeRow, type ChallengeCardData } from "@/lib/fantasy/challenges";
+import { deriveCompetitionStatus } from "@/lib/fantasy/competitions-pure";
 import { supportedChallengeGames } from "@/lib/fantasy/challengeGames";
 import { syntheticActors } from "@/lib/fantasy/feed";
 import {
@@ -220,6 +221,12 @@ export interface GamesPulse {
    *  primary line is always one of the three fixed states in
    *  LeagueHub's gamesStatusLine(). */
   lastResultLine: string | null;
+  /** The soonest-closing scheduled/open league competition, or null (UI
+   *  wave) — a single cheap query, status DERIVED via the pure
+   *  deriveCompetitionStatus (no DB write, no reconcile): this is a hint for
+   *  the Hub module's extra line, never authority — the Games tab's own
+   *  competitionsForLeague read (competitions.ts) is that. */
+  activeCompetition: { id: string; title: string; status: string; closesAt: string } | null;
 }
 
 /** GET /api/fantasy/leagues/[code]/games/pulse's whole job — a few numbers,
@@ -261,10 +268,26 @@ export async function leagueGamesPulse(db: Db, userId: string, code: string): Pr
     if (action) myActionCount += 1;
   }
 
+  // Active competition hint (UI wave) — one cheap query, soonest-closing
+  // scheduled/open row across the whole league; status DERIVED (pure, no
+  // write) so a scheduled row whose opens_at already passed still reads
+  // "open" here without needing a full reconcileCompetition round trip.
+  const { data: compRows } = await db.from("league_competitions")
+    .select("id, title, status, opens_at, closes_at")
+    .eq("league_id", league.id).in("status", ["scheduled", "open"])
+    .order("closes_at", { ascending: true }).limit(1);
+  const compRow = ((compRows ?? []) as { id: string; title: string; status: string; opens_at: string; closes_at: string }[])[0];
+  const activeCompetition = compRow ? {
+    id: compRow.id, title: compRow.title,
+    status: deriveCompetitionStatus({ status: compRow.status, opensAt: compRow.opens_at, closesAt: compRow.closes_at }, new Date()),
+    closesAt: compRow.closes_at,
+  } : null;
+
   return {
     openCount,
     myActionCount,
     lastResultLine: latestCompleted ? formatGameResultLine(latestCompleted.card) : null,
+    activeCompetition,
   };
 }
 
@@ -307,5 +330,62 @@ export async function leagueGamesHistory(db: Db, userId: string, code: string): 
     winnerId: card.winnerId,
     challengerScore: card.challengerScore, opponentScore: card.opponentScore,
     completedAt: row.completed_at ?? row.created_at,
+  }));
+}
+
+/** A completed competition in the History tab's flat "GAMES" block (UI wave)
+ *  — one compact line each (title + result line), interleaved client-side by
+ *  settledAt with GamesHistoryEntry above (LeagueHistoryView's own merge —
+ *  two differently-shaped rows, so this stays a sibling list rather than one
+ *  forced-common shape). */
+export interface CompetitionHistoryEntry {
+  id: string; format: string; title: string;
+  winnerName: string | null; placedCount: number; entrantCount: number;
+  settledAt: string;
+}
+
+/** GET /api/fantasy/leagues/[code]/games/history's second list — completed
+ *  (never void/cancelled — nothing worth a permanent history line) league
+ *  competitions, capped at HISTORY_RESULTS_LIMIT, newest-settled-first. No
+ *  reconcile needed: 'completed' is a terminal, DB-driven status
+ *  (settleCompetition's own CAS), so a row that reads 'completed' here is
+ *  never going to change again. */
+export async function leagueCompetitionsHistory(db: Db, userId: string, code: string): Promise<CompetitionHistoryEntry[]> {
+  const league = await requireMemberLeagueByCode(db, code, userId);
+
+  const { data: rows } = await db.from("league_competitions")
+    .select("id, format, title, winner_user_id, entrant_count, settled_at")
+    .eq("league_id", league.id).eq("status", "completed")
+    .order("settled_at", { ascending: false }).limit(HISTORY_RESULTS_LIMIT);
+  const compRows = (rows ?? []) as { id: string; format: string; title: string; winner_user_id: string | null; entrant_count: number | null; settled_at: string | null }[];
+  if (!compRows.length) return [];
+
+  const winnerIds = Array.from(new Set(compRows.filter((r) => r.winner_user_id).map((r) => r.winner_user_id as string)));
+  const { data: profs } = winnerIds.length
+    ? await db.from("profiles").select("id, display_name, username").in("id", winnerIds)
+    : { data: [] as { id: string; display_name: string | null; username: string | null }[] };
+  const profRows = (profs ?? []) as { id: string; display_name: string | null; username: string | null }[];
+  const nameOf = (id: string) => {
+    const p = profRows.find((x) => x.id === id);
+    return p?.display_name ?? (p?.username ? `@${p.username}` : "Player");
+  };
+
+  // placedCount (beat_target only) — the full count, not a topThree slice
+  // (mirrors competitions.ts's own toCardDTO reasoning for the same field).
+  const beatTargetIds = compRows.filter((r) => r.format === "beat_target").map((r) => r.id);
+  const { data: placedRows } = beatTargetIds.length
+    ? await db.from("league_competition_entries").select("competition_id").in("competition_id", beatTargetIds).eq("result", "placed")
+    : { data: [] as { competition_id: string }[] };
+  const placedCountOf = new Map<string, number>();
+  for (const r of (placedRows ?? []) as { competition_id: string }[]) {
+    placedCountOf.set(r.competition_id, (placedCountOf.get(r.competition_id) ?? 0) + 1);
+  }
+
+  return compRows.map((r) => ({
+    id: r.id, format: r.format, title: r.title,
+    winnerName: r.winner_user_id ? nameOf(r.winner_user_id) : null,
+    placedCount: placedCountOf.get(r.id) ?? 0,
+    entrantCount: r.entrant_count ?? 0,
+    settledAt: r.settled_at ?? "",
   }));
 }

@@ -20,6 +20,14 @@ import { nameOf } from "./types";
  *  quiet default. `lastResultLine` (a completed result, if any) is never the
  *  PRIMARY line — it's a secondary caption under it, so it never competes
  *  with the three states above for the headline. */
+/** "League Quiz · Closes 5 Aug" — the pulse only ever carries closesAt (the
+ *  soonest-closing scheduled/open competition), so this reads off that
+ *  regardless of whether it's open yet or still scheduled — either way,
+ *  that's when the window shuts. Plain date, no dashes (house rule). */
+function competitionHintLine(c: NonNullable<GamesPulse["activeCompetition"]>): string {
+  return `${c.title} · Closes ${new Date(c.closesAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
+}
+
 function gamesStatusLine(pulse: GamesPulse): string {
   if (pulse.myActionCount > 0) return `${pulse.myActionCount} waiting on you`;
   if (pulse.openCount > 0) return `${pulse.openCount} open challenge${pulse.openCount === 1 ? "" : "s"}`;
@@ -274,7 +282,15 @@ export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
             {gamesPulse.lastResultLine && (
               <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.4 }}>{gamesPulse.lastResultLine}</p>
             )}
-            <div style={{ display: "flex", gap: 8, marginTop: gamesPulse.lastResultLine ? 0 : 8 }}>
+            {/* Active competition hint (UI wave) — one extra line, tapping
+                goes to Games exactly like "Open Games" below (same onTab). */}
+            {gamesPulse.activeCompetition && (
+              <button onClick={() => { trackGamesHubModuleOpened(); onTab("games"); }} style={{
+                display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer",
+                padding: 0, margin: "0 0 12px", fontSize: 11.5, color: GOLD, fontWeight: 600, lineHeight: 1.4,
+              }}>{competitionHintLine(gamesPulse.activeCompetition)}</button>
+            )}
+            <div style={{ display: "flex", gap: 8, marginTop: (gamesPulse.lastResultLine || gamesPulse.activeCompetition) ? 0 : 8 }}>
               <div style={{ flex: 1 }}>
                 <Btn onClick={() => { trackGamesHubModuleOpened(); onTab("games"); }}>Open Games</Btn>
               </div>

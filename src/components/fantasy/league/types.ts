@@ -119,6 +119,41 @@ export interface ChallengeCard {
   opponentScore: number | null;
 }
 
+// ── League competitions (UI wave) ─────────────────────────────────────────
+// Mirrors lib/fantasy/competitions.ts's CompetitionCardDTO/CompetitionDetailDTO
+// (server-only, so re-declared here). competitionFormats.ts and
+// competitions-pure.ts carry no `server-only` import, so components import
+// those two directly (supportedCompetitionFormats/competitionFormat,
+// competitionResultLine) rather than mirroring them here too.
+
+export interface CompetitionEntry {
+  userId: string; name: string; avatarUrl: string | null; score: number; rank: number | null; result: string;
+}
+/** A league-wide competition card — mirrors CompetitionCardDTO. Hydrated
+ *  fresh on every read; `provisional` is true for every live/pre-lock read
+ *  (topThree/myEntry are a live preview then, never a final result). */
+export interface CompetitionCard {
+  id: string; format: string; title: string; status: string; source: string;
+  opensAt: string; closesAt: string; packId: string | null; targetScore: number | null;
+  myEntry: { score: number; rank: number | null; result: string } | null;
+  entrantCount: number;
+  topThree: CompetitionEntry[];
+  winner: { userId: string; name: string } | null;
+  provisional: boolean;
+  /** beat_target only — how many of the FULL standings placed (topThree is
+   *  capped at 3 and can't answer "how many total" alone). Always 0 for
+   *  league_quiz. */
+  placedCount: number;
+}
+/** One competition's full standings — mirrors CompetitionDetailDTO. */
+export interface CompetitionDetail {
+  id: string; format: string; title: string; status: string; source: string;
+  opensAt: string; closesAt: string; packId: string | null; targetScore: number | null;
+  standings: CompetitionEntry[];
+  winner: { userId: string; name: string } | null;
+  provisional: boolean;
+}
+
 // ── Games tab (Phase 4A) ──────────────────────────────────────────────────
 // Mirrors lib/fantasy/games.ts's own return shapes, same duplication idiom
 // as everything else in this file (games.ts is `server-only`).
@@ -154,6 +189,10 @@ export interface GamesPulse {
   openCount: number;
   myActionCount: number;
   lastResultLine: string | null;
+  /** The soonest-closing scheduled/open competition, or null (UI wave) — a
+   *  hint for the hub module's extra line, not authority (see games.ts's own
+   *  doc on leagueGamesPulse). */
+  activeCompetition: { id: string; title: string; status: string; closesAt: string } | null;
 }
 
 export interface GamesHistoryEntry {
@@ -166,6 +205,13 @@ export interface GamesHistoryEntry {
   challengerScore: number | null; opponentScore: number | null;
   completedAt: string;
 }
+/** A completed competition in the History tab's flat "GAMES" block (UI wave)
+ *  — interleaved with GamesHistoryEntry by settledAt, one compact line each. */
+export interface CompetitionHistoryEntry {
+  id: string; format: string; title: string;
+  winnerName: string | null; placedCount: number; entrantCount: number;
+  settledAt: string;
+}
 /** "system" (Phase 4b, AC3) — an auto-posted line (gw live / member joined /
  *  lead change), never authored by a member. Rendered centred and muted, no
  *  avatar or bubble, and excluded from unread badges (see leagues.ts/home.ts). */
@@ -173,13 +219,16 @@ export interface GamesHistoryEntry {
  *  when a challenge completes, on top of the original "challenge" card
  *  updating in place (see challenges.ts's postCompletedResult). Carries the
  *  same `challenge` card payload as "challenge", just rendered smaller. */
-export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge" | "challenge_result";
+export type ChatKind = "text" | "player" | "poll" | "captain" | "squad" | "news" | "compare" | "gif" | "image" | "video" | "feed" | "system" | "challenge" | "challenge_result" | "competition" | "competition_result";
 export interface ChatMessage {
   id: string; userId: string; name: string; avatarUrl: string | null;
   body: string; createdAt: string; isMe: boolean; reactions: ChatReaction[];
   kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null;
   news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null;
   image?: ImageCard | null; video?: VideoCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCard | null;
+  /** A league-wide competition card (UI wave) — set for kind "competition"
+   *  (the original card) and "competition_result" (the compact settle ping). */
+  competition?: CompetitionCard | null;
   /** Replies (Phase 4a, AC2) — the parent message's id and a resolved
    *  {name, summary} for the quoted-context strip. Both null/undefined when
    *  this isn't a reply, or when the schema doesn't support replies yet. */
@@ -234,6 +283,8 @@ export function summariseChatMessage(m: Pick<ChatMessage, "kind" | "body" | "new
     case "poll": return m.poll?.question || "started a poll";
     case "challenge": return "sent a challenge";
     case "challenge_result": return "posted a challenge result";
+    case "competition": return m.body; // body already carries the title
+    case "competition_result": return m.body; // body already carries the result line
     case "system": return m.body;
     default: return m.body;
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { tickSeason } from "@/lib/fantasy/season";
+import { sweepDueCompetitions } from "@/lib/fantasy/competitions";
 
 /**
  * The heartbeat of the live season: lock at the deadline, ingest the matches,
@@ -25,7 +26,19 @@ export async function GET(req: NextRequest) {
     // "waiting" is the normal state for most of the week — don't log it as work.
     const acted = report.filter((r) => r.action !== "waiting");
     if (acted.length) console.log("[fantasy-tick]", JSON.stringify(acted));
-    return NextResponse.json({ ok: true, report });
+
+    // League competitions status sweep (Wave 1) — failure-isolated: a bug in
+    // here must never take the season's own heartbeat down with it.
+    let competitions: { checked: number; acted: number } | { error: string };
+    try {
+      competitions = await sweepDueCompetitions(createServiceClient());
+      if (competitions.acted) console.log("[fantasy-tick] competitions", JSON.stringify(competitions));
+    } catch (e) {
+      console.error("[fantasy-tick] competitions sweep FAILED", e);
+      competitions = { error: (e as Error).message };
+    }
+
+    return NextResponse.json({ ok: true, report, competitions });
   } catch (e) {
     // A throw here means the season stopped moving — that is the loudest possible
     // failure in this game, so make sure it shows up as a 500, not a silent ok.

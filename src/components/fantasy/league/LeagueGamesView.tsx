@@ -27,11 +27,17 @@ import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
 import { acceptChallengeAction, declineChallengeAction, cancelChallengeAction, ChallengeActionConflict } from "@/lib/fantasy/challengeClientActions";
 import { useUser } from "@/hooks/useUser";
 import { resultForParticipant, deriveStreak, winRatePercent } from "@/lib/fantasy/games-pure";
+import { supportedCompetitionFormats, competitionFormat, type CompetitionFormat } from "@/lib/fantasy/competitionFormats";
+import { competitionResultLine, type CompetitionFormatId } from "@/lib/fantasy/competitions-pure";
+import { coverUrl } from "@/lib/img";
 import {
   trackGamesTabViewed, trackGamesQuickChallengeOpened, trackGamesActionRequiredOpened, trackGamesLeaderboardViewed,
   trackGamesLeaderboardFullOpened, trackGamesMemberSummaryOpened, trackGameDetailOpened,
 } from "@/lib/analytics/trackSocial";
-import type { ChallengeCard, GamesActionCard, GamesAvailableGame, GamesLeaderboardRow, GamesOverview } from "@/components/fantasy/league/types";
+import type {
+  ChallengeCard, CompetitionCard, CompetitionDetail, CompetitionEntry,
+  GamesActionCard, GamesAvailableGame, GamesLeaderboardRow, GamesOverview,
+} from "@/components/fantasy/league/types";
 
 async function apiGamesOverview(code: string): Promise<GamesOverview> {
   const res = await fetch(`/api/fantasy/leagues/${code}/games`);
@@ -65,6 +71,20 @@ function timeAgo(iso: string): string {
   if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
   const weeks = Math.round(days / 7);
   return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+}
+
+/** "3rd" — same ordinal idiom every other league surface already carries
+ *  its own copy of (per-file duplication, this codebase's established idiom
+ *  for a small display helper). */
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/** "5 Aug" — date-only, no dashes, same expression expiryLine's own date
+ *  formatting already uses. */
+function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
 /** "2 open · 4 wins · 2 win streak" — omits zero parts, middle dots never
@@ -207,6 +227,454 @@ function ResultRow({ card, viewerId, onRematch }: { card: ChallengeCard; viewerI
         </div>
       </div>
     </div>
+  );
+}
+
+// ── League competitions (UI wave) ─────────────────────────────────────────
+// A league-wide, game-agnostic wrapper (competitions.ts) sitting above the
+// 1v1 challenge machinery this whole file otherwise serves — everyone in the
+// league plays the SAME pack inside a shared window, as opposed to a
+// challenge's two-player shape. GOLD accent (same family the challenge
+// cards already use — competitions are games too, just league-wide).
+
+/** The small "OFFICIAL" pill an official (cron-created Gameday) competition
+ *  wears, distinguishing it from one an owner started by hand (source
+ *  "admin"). */
+function OfficialTag() {
+  return (
+    <span className="font-display tracking-widest" style={{
+      fontSize: 9, fontWeight: 700, color: GOLD, background: tint(GOLD, "18"),
+      border: `1px solid ${tint(GOLD, "44")}`, borderRadius: 999, padding: "2px 7px", flexShrink: 0,
+    }}>OFFICIAL</span>
+  );
+}
+
+/** "You scored 42. You're 3rd of 8." / "You scored 42. Beaten the target." —
+ *  a live/pre-lock read only (never phrased as final — house rule: no live
+ *  position ever reads as settled). Null once there's no entry to report,
+ *  or the competition isn't open. */
+function myCompetitionLine(c: CompetitionCard): string | null {
+  if (c.status !== "open" || !c.myEntry) return null;
+  if (c.format === "beat_target") {
+    return c.myEntry.result === "placed"
+      ? `You scored ${c.myEntry.score}. Beaten the target.`
+      : `You scored ${c.myEntry.score}. Not there yet.`;
+  }
+  const pos = c.myEntry.rank != null ? `${ordinal(c.myEntry.rank)} of ${c.entrantCount}` : `of ${c.entrantCount}`;
+  return `You scored ${c.myEntry.score}. You're ${pos}.`;
+}
+
+/** "Opens 5 Aug" / "Expires in 3 hours" / "Results on the way" — the
+ *  window/status line every active competition row carries. Reuses this
+ *  file's own expiryLine for the closing countdown (the exact helper the
+ *  challenge cards in this file already use), rather than a second one. */
+function competitionStatusLine(c: CompetitionCard): string {
+  if (c.status === "scheduled") return `Opens ${shortDate(c.opensAt)}`;
+  if (c.status === "open") return expiryLine(c.closesAt);
+  return "Results on the way"; // locked / calculating
+}
+
+/** The settled outcome line — the SAME competitionResultLine
+ *  competitions.ts's own settle path writes to the chat result ping and the
+ *  notification body, never a second copy of that wording anywhere in the
+ *  UI. */
+function competitionOutcomeLine(entrantCount: number, format: string, winnerName: string | null, placedCount: number): string {
+  return competitionResultLine({ format: format as CompetitionFormatId, entrantCount, winnerName, placedCount });
+}
+
+/** An active (scheduled/open/locked/calculating) competition — title,
+ *  Official tag, status line, my position or Play now, entrant count. The
+ *  whole row opens the detail sheet; there's no separate Play control here
+ *  (open its own Play now, since the row is already the one interactive
+ *  element — same "never nest a control inside another" rule the GAMES
+ *  cards below already follow). */
+function CompetitionRow({ card, onOpen }: { card: CompetitionCard; onOpen: () => void }) {
+  const mine = myCompetitionLine(card);
+  const playNow = card.status === "open" && !card.myEntry;
+  return (
+    <button onClick={onOpen} style={{
+      display: "block", width: "100%", textAlign: "left", cursor: "pointer",
+      background: `linear-gradient(100deg, ${tint(GOLD, "12")}, ${PANEL} 60%)`,
+      border: `1px solid ${tint(GOLD, "3a")}`, borderLeft: `3px solid ${GOLD}`, borderRadius: 12, padding: 11,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</div>
+        {card.source === "official" && <OfficialTag />}
+      </div>
+      <div style={{ fontSize: 11.5, color: MUTED, marginBottom: playNow || mine ? 4 : 0 }}>
+        {competitionStatusLine(card)} · {card.entrantCount} entrant{card.entrantCount === 1 ? "" : "s"}
+      </div>
+      {playNow && <div style={{ fontSize: 12, fontWeight: 700, color: GOLD }}>Play now</div>}
+      {!playNow && mine && <div style={{ fontSize: 12, color: MUTED }}>{mine}</div>}
+    </button>
+  );
+}
+
+/** A completed/void competition — compact, winner/placed line off the same
+ *  competitionResultLine wording, still tappable through to the detail
+ *  (house rule: no dead ends, even on a settled record). */
+function CompetitionCompactRow({ card, onOpen }: { card: CompetitionCard; onOpen: () => void }) {
+  const line = competitionOutcomeLine(card.entrantCount, card.format, card.winner?.name ?? null, card.placedCount);
+  return (
+    <button onClick={onOpen} style={{
+      display: "block", width: "100%", textAlign: "left", cursor: "pointer",
+      background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: "9px 11px",
+    }}>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{card.title}</div>
+      <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{line}</div>
+    </button>
+  );
+}
+
+/** The full standings list (detail sheet) — rank/name/avatar/score, the
+ *  viewer's own row highlighted. beat_target groups "placed" entries above
+ *  "played" ones with a subtle divider (no rank column meaning there — see
+ *  competitions-pure.ts's own doc on resolveBeatTarget); league_quiz is a
+ *  strict 1..N order throughout. */
+function CompetitionStandings({ standings, format, viewerId }: { standings: CompetitionEntry[]; format: string; viewerId: string | null }) {
+  if (!standings.length) return <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>No one has played yet.</p>;
+
+  const row = (s: CompetitionEntry, i: number) => (
+    <div key={s.userId} style={{
+      display: "flex", alignItems: "center", gap: 9, padding: "7px 9px", borderRadius: 10,
+      background: s.userId === viewerId ? tint(TEAL, "10") : "transparent",
+    }}>
+      <span style={{ width: 20, textAlign: "center", fontSize: 12, color: MUTED, fontWeight: 700, flexShrink: 0 }}>{s.rank ?? i + 1}</span>
+      <PlayerAvatar name={s.name} avatarUrl={s.avatarUrl} size={26} />
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {s.name}{s.userId === viewerId ? " · you" : ""}
+      </span>
+      <span style={{ fontSize: 13, fontWeight: 800, color: GOLD, fontVariantNumeric: "tabular-nums" }}>{s.score}</span>
+    </div>
+  );
+
+  if (format !== "beat_target") {
+    return <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>{standings.map(row)}</div>;
+  }
+  const placed = standings.filter((s) => s.result === "placed");
+  const played = standings.filter((s) => s.result !== "placed");
+  return (
+    <div>
+      {placed.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>{placed.map(row)}</div>}
+      {placed.length > 0 && played.length > 0 && <div style={{ height: 1, background: LINE, margin: "8px 0" }} />}
+      {played.length > 0 && <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>{played.map(row)}</div>}
+    </div>
+  );
+}
+
+/** One competition's full detail (UI wave) — format's howItWorks off the
+ *  registry (never hardcoded here, same rule GameDetailSheet follows for a
+ *  challenge game), window, full standings, a winner banner once completed,
+ *  Play now when open and the viewer hasn't entered, and (owner, admin-
+ *  sourced, scheduled/open only) a quiet Call it off. */
+function CompetitionDetailSheet({ code, competitionId, viewerId, isOwner, onClose, onChanged }: {
+  code: string; competitionId: string; viewerId: string | null; isOwner: boolean;
+  onClose: () => void;
+  /** Refresh the Games tab's competitions list after a cancel (same
+   *  action-then-reload shape every challenge action in this file already
+   *  follows). */
+  onChanged: () => void;
+}) {
+  const [detail, setDetail] = useState<CompetitionDetail | null>(null);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelErr, setCancelErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    fetch(`/api/fantasy/leagues/${code}/competitions/${competitionId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Could not load this competition"))))
+      .then((d) => { if (live) setDetail(d); })
+      .catch((e) => { if (live) setLoadErr((e as Error).message); });
+    return () => { live = false; };
+  }, [code, competitionId]);
+
+  const cancel = async () => {
+    if (cancelling) return;
+    setCancelling(true); setCancelErr(null);
+    try {
+      const res = await fetch(`/api/fantasy/leagues/${code}/competitions/${competitionId}/cancel`, { method: "POST" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? "Could not call it off");
+      onChanged();
+      onClose();
+    } catch (e) {
+      setCancelErr((e as Error).message);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const format = detail ? competitionFormat(detail.format) : undefined;
+  const hasMyEntry = !!detail && !!viewerId && detail.standings.some((s) => s.userId === viewerId);
+  const placedCount = detail && detail.format === "beat_target" ? detail.standings.filter((s) => s.result === "placed").length : 0;
+
+  return (
+    <Sheet onClose={onClose} labelledBy="competition-detail-title">
+      {!detail && !loadErr && <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>}
+      {loadErr && <p style={{ fontSize: 13, color: MUTED }}>{loadErr}</p>}
+      {detail && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <div id="competition-detail-title" className="font-display" style={{ fontSize: 19, color: INK, lineHeight: 1.1 }}>{detail.title}</div>
+            {detail.source === "official" && <OfficialTag />}
+          </div>
+          <p style={{ fontSize: 12, color: MUTED, margin: "0 0 14px" }}>{shortDate(detail.opensAt)} to {shortDate(detail.closesAt)}</p>
+
+          {format && format.howItWorks.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <SectionLabel>HOW IT WORKS</SectionLabel>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {format.howItWorks.map((line, i) => (
+                  <p key={i} style={{ fontSize: 12.5, color: INK, margin: 0, lineHeight: 1.45 }}>{line}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {detail.status === "completed" && (
+            <div style={{
+              borderRadius: 12, padding: 12, marginBottom: 14,
+              background: `linear-gradient(100deg, ${tint(GOLD, "14")}, ${PANEL} 60%)`, border: `1px solid ${tint(GOLD, "3a")}`,
+            }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: GOLD }}>
+                {competitionOutcomeLine(detail.standings.length, detail.format, detail.winner?.name ?? null, placedCount)}
+              </div>
+            </div>
+          )}
+          {detail.status === "void" && (
+            <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px" }}>
+              {competitionOutcomeLine(0, detail.format, null, 0)}
+            </p>
+          )}
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+              <SectionLabel>STANDINGS</SectionLabel>
+              {detail.provisional && (
+                <span style={{ fontSize: 9.5, letterSpacing: "0.08em", color: MUTED }}>PROVISIONAL</span>
+              )}
+            </div>
+            <CompetitionStandings standings={detail.standings} format={detail.format} viewerId={viewerId} />
+          </div>
+
+          {detail.status === "open" && !hasMyEntry && detail.packId && (
+            <div style={{ marginBottom: 12 }}>
+              <Link href={`/play/new?packId=${detail.packId}`} onClick={onClose} style={{ display: "block" }}>
+                <Btn gold>Play now</Btn>
+              </Link>
+            </div>
+          )}
+
+          {isOwner && detail.source === "admin" && (detail.status === "scheduled" || detail.status === "open") && (
+            <div>
+              {cancelErr && <p style={{ fontSize: 12, color: "#E08A6B", margin: "0 0 8px" }}>{cancelErr}</p>}
+              <button disabled={cancelling} onClick={cancel} style={{
+                padding: 0, fontSize: 12, fontWeight: 700, cursor: cancelling ? "default" : "pointer",
+                background: "none", border: "none", color: MUTED, textDecoration: "underline", opacity: cancelling ? 0.6 : 1,
+              }}>Call it off</button>
+            </div>
+          )}
+        </>
+      )}
+    </Sheet>
+  );
+}
+
+/** A pack the create sheet's picker can offer — same DuelPack shape
+ *  ChallengePrepSheet's own Quiz Duel step already fetches (a pack neither
+ *  side has played), reused here via the SAME route rather than a second
+ *  pack source (see the route's own doc on why: a competition needs a fresh
+ *  pack, not the owner's played scorecard). */
+interface CreatePack { packId: string; name: string; cover: string | null; total: number }
+
+/** League owner only — starts a competition. Three steps: format, pack,
+ *  then (beat_target only) a target score + the window picker, then
+ *  Publish. Same "Sent" confirmation shape ChallengePrepSheet's own send
+ *  step uses. */
+function CompetitionCreateSheet({ code, onClose, onCreated }: { code: string; onClose: () => void; onCreated: () => void }) {
+  const formats = supportedCompetitionFormats();
+  const [format, setFormat] = useState<CompetitionFormat | null>(formats.length === 1 ? formats[0] : null);
+  const [packs, setPacks] = useState<CreatePack[] | null>(null);
+  const [pickedPack, setPickedPack] = useState<CreatePack | null>(null);
+  const [targetScore, setTargetScore] = useState("");
+  const [windowHours, setWindowHours] = useState<24 | 48 | 72>(24);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!format || packs !== null) return;
+    fetch(`/api/fantasy/challenges/packs?game=duel`)
+      .then((r) => r.json())
+      .then((j) => setPacks(((j?.packs as CreatePack[] | undefined) ?? [])))
+      .catch(() => setPacks([]));
+  }, [format, packs]);
+
+  const needsTarget = format?.id === "beat_target";
+  const canPublish = !!format && !!pickedPack && (!needsTarget || (targetScore.trim() !== "" && Number(targetScore) > 0));
+
+  const publish = () => {
+    if (!canPublish || sending) return;
+    setSending(true); setErr(null);
+    const now = Date.now();
+    fetch(`/api/fantasy/leagues/${code}/competitions`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        format: format!.id, packId: pickedPack!.packId,
+        targetScore: needsTarget ? Number(targetScore) : undefined,
+        opensAt: new Date(now).toISOString(), closesAt: new Date(now + windowHours * 3_600_000).toISOString(),
+      }),
+    })
+      .then(async (res) => {
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) { setErr(j.error ?? "Could not start the competition"); return; }
+        setSent(true);
+        onCreated();
+      })
+      .catch(() => setErr("Could not start the competition"))
+      .finally(() => setSending(false));
+  };
+
+  // ── Sent ──
+  if (sent) {
+    return (
+      <Sheet onClose={onClose} labelledBy="competition-sent-title">
+        <div style={{ textAlign: "center", padding: "10px 0" }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 999, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center",
+            background: tint(GOLD, "18"), border: `1px solid ${tint(GOLD, "50")}`,
+          }}>
+            <svg width={24} height={24} viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6" stroke={GOLD} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </div>
+          <div id="competition-sent-title" className="font-display" style={{ fontSize: 19, color: INK, marginBottom: 4 }}>Competition started</div>
+          <p style={{ fontSize: 13, color: MUTED, margin: "0 0 18px" }}>Everyone in the league can see it and play now.</p>
+          <button onClick={onClose} style={{
+            width: "100%", padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer",
+            background: tint(GOLD, "18"), color: GOLD, border: `1px solid ${tint(GOLD, "50")}`,
+          }}>Done</button>
+        </div>
+      </Sheet>
+    );
+  }
+
+  // ── Format choice ──
+  if (!format) {
+    return (
+      <Sheet onClose={onClose} labelledBy="competition-create-title">
+        <div id="competition-create-title" className="font-display" style={{ fontSize: 18, color: INK, marginBottom: 14 }}>Start a competition</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {formats.map((f) => (
+            <button key={f.id} onClick={() => setFormat(f)} style={{
+              textAlign: "left", cursor: "pointer", borderRadius: 12, padding: 12,
+              background: `linear-gradient(100deg, ${tint(GOLD, "12")}, ${PANEL} 60%)`,
+              border: `1px solid ${tint(GOLD, "3a")}`, borderLeft: `3px solid ${GOLD}`,
+            }}>
+              <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: GOLD, marginBottom: 5 }}>{f.name.toUpperCase()}</div>
+              <p style={{ fontSize: 12.5, color: INK, margin: 0, lineHeight: 1.4 }}>{f.shortDesc}</p>
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose} style={{
+          width: "100%", marginTop: 16, padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
+          background: "transparent", color: MUTED, border: `1px solid ${LINE}`,
+        }}>Close</button>
+      </Sheet>
+    );
+  }
+
+  // ── Pack, target (beat_target only), window ──
+  return (
+    <Sheet onClose={onClose} labelledBy="competition-create-title">
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        {formats.length > 1 && (
+          <button onClick={() => { setFormat(null); setPickedPack(null); }} aria-label="Change format" style={{
+            display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 999,
+            background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED, cursor: "pointer", flexShrink: 0, padding: 0,
+          }}>←</button>
+        )}
+        <div id="competition-create-title" className="font-display" style={{ fontSize: 18, color: INK }}>{format.name}</div>
+      </div>
+
+      <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.1em", color: MUTED, marginBottom: 8 }}>
+        {pickedPack ? "QUIZ" : "PICK A QUIZ"}
+      </div>
+      {pickedPack ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 10, marginBottom: 16 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: pickedPack.cover ? `center/cover url(${coverUrl(pickedPack.cover, 40)})` : tint(TEAL, "18") }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pickedPack.name}</div>
+            <div style={{ fontSize: 11.5, color: MUTED }}>{pickedPack.total} questions</div>
+          </div>
+          <button onClick={() => setPickedPack(null)} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Change</button>
+        </div>
+      ) : packs === null ? (
+        <p style={{ fontSize: 12.5, color: MUTED, margin: "6px 0 16px" }}>Loading packs…</p>
+      ) : packs.length === 0 ? (
+        <div style={{ textAlign: "center", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: "20px 16px", marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: INK, margin: 0, fontWeight: 600 }}>No fresh packs to run this on right now.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16, maxHeight: 260, overflowY: "auto" }}>
+          {packs.map((p) => (
+            <button key={p.packId} onClick={() => setPickedPack(p)} style={{
+              display: "flex", alignItems: "center", gap: 10, textAlign: "left", cursor: "pointer",
+              background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 9,
+            }}>
+              <div style={{ width: 38, height: 38, borderRadius: 9, flexShrink: 0, background: p.cover ? `center/cover url(${coverUrl(p.cover, 38)})` : tint(TEAL, "18") }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: MUTED }}>{p.total} questions</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {needsTarget && (
+        <div style={{ marginBottom: 16 }}>
+          <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.1em", color: MUTED, marginBottom: 8 }}>TARGET SCORE</div>
+          <input
+            inputMode="numeric" value={targetScore} placeholder="e.g. 500"
+            onChange={(e) => setTargetScore(e.target.value.replace(/[^0-9]/g, ""))}
+            style={{
+              width: "100%", boxSizing: "border-box", fontSize: 14, padding: "10px 12px", borderRadius: 10,
+              background: PANEL, border: `1px solid ${LINE}`, color: INK, outline: "none",
+            }}
+          />
+        </div>
+      )}
+
+      <div style={{ marginBottom: 16 }}>
+        <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.1em", color: MUTED, marginBottom: 8 }}>WINDOW</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {([24, 48, 72] as const).map((h) => {
+            const on = windowHours === h;
+            const label = h === 24 ? "One day" : h === 48 ? "Two days" : "Three days";
+            return (
+              <button key={h} onClick={() => setWindowHours(h)} style={{
+                flex: 1, padding: "9px 6px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                background: on ? tint(GOLD, "22") : PANEL_2, color: on ? GOLD : MUTED, border: `1px solid ${on ? tint(GOLD, "55") : LINE}`,
+              }}>{label}</button>
+            );
+          })}
+        </div>
+      </div>
+
+      {err && <p style={{ fontSize: 12.5, color: "#E08A6B", margin: "0 0 10px" }}>{err}</p>}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button disabled={!canPublish || sending} onClick={publish} style={{
+          flex: 1, padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 700,
+          cursor: canPublish && !sending ? "pointer" : "default",
+          background: canPublish ? GOLD : PANEL_2, color: canPublish ? "#3a2600" : MUTED,
+          border: `1px solid ${canPublish ? GOLD : LINE}`, opacity: sending ? 0.7 : 1,
+        }}>{sending ? "Starting…" : "Publish"}</button>
+        <button onClick={onClose} style={{
+          padding: "12px 16px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer",
+          background: "transparent", color: MUTED, border: `1px solid ${LINE}`,
+        }}>Close</button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -379,8 +847,15 @@ function GameDetailSheet({ game, recentResults, viewerId, onChallenge, onRematch
 
 type PrepTarget = { opponent: { userId: string; name: string; avatarUrl: string | null }; initialGame?: string; rematchOf?: string };
 
-export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHandled }: {
+export function LeagueGamesView({
+  code, isOwner, autoOpenChallenge, onAutoOpenChallengeHandled, autoOpenCompetitionId, onAutoOpenCompetitionHandled,
+}: {
   code: string;
+  /** The league page already knows this off leagueDetail() (leagues.ts) —
+   *  same isOwner the header/settings gate already reads (page.tsx's
+   *  `league.isOwner`), just threaded down here for the competitions
+   *  section's owner-only "Start a competition" action. */
+  isOwner: boolean;
   /** Set by the League Hub's "Challenge someone" module action (Phase 4B) —
    *  page.tsx switches to this tab AND flips this true in the same tap, so
    *  the rival picker opens itself here rather than the hub needing to know
@@ -389,6 +864,12 @@ export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHa
    *  and back to Games never re-opens it uninvited. */
   autoOpenChallenge?: boolean;
   onAutoOpenChallengeHandled?: () => void;
+  /** A competition chat card's tap through (UI wave) — mirrors
+   *  autoOpenChallenge above exactly, just carrying an id: page.tsx switches
+   *  to this tab AND tells this view which competition's detail sheet to
+   *  open. Cleared the same way once acted on. */
+  autoOpenCompetitionId?: string | null;
+  onAutoOpenCompetitionHandled?: () => void;
 }) {
   const router = useRouter();
   const { user } = useUser();
@@ -397,6 +878,15 @@ export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHa
   const [overview, setOverview] = useState<GamesOverview | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // League competitions (UI wave) — a separate fetch alongside the overview
+  // above (own load/refresh cycle, same focus+interval triggers), since it
+  // reads a different table entirely (league_competitions, not
+  // member_challenges) via its own route.
+  const [competitions, setCompetitions] = useState<CompetitionCard[] | null>(null);
+  const [compErr, setCompErr] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [detailCompetitionId, setDetailCompetitionId] = useState<string | null>(null);
 
   // The rival picker (Quick Challenge / a per-game "Challenge someone") and
   // the prep sheet it (or a Rematch tap) hands off to — one PrepTarget state
@@ -449,6 +939,41 @@ export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHa
       clearInterval(t);
     };
   }, [load]);
+
+  const loadCompetitions = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/fantasy/leagues/${code}/competitions`);
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `HTTP ${res.status}`);
+      setCompetitions(await res.json());
+      setCompErr(null);
+    } catch (e) {
+      setCompErr((e as Error).message);
+    }
+  }, [code]);
+
+  useEffect(() => { void loadCompetitions(); }, [loadCompetitions]);
+  useEffect(() => {
+    const onFocus = () => { if (document.visibilityState === "visible") void loadCompetitions(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    const t = setInterval(() => { if (document.visibilityState === "visible") void loadCompetitions(); }, 30_000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      clearInterval(t);
+    };
+  }, [loadCompetitions]);
+
+  // The chat card / Hub module deep-link (UI wave) — open the detail sheet
+  // for the competition id the parent flagged, then tell it it's handled so
+  // navigating away and back never re-opens it uninvited (same shape as
+  // autoOpenChallenge below).
+  useEffect(() => {
+    if (!autoOpenCompetitionId) return;
+    setDetailCompetitionId(autoOpenCompetitionId);
+    onAutoOpenCompetitionHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenCompetitionId]);
 
   // The league roster (Quick Challenge's picker) — same lighter-than-
   // leagueDetail fetch the chat tray's Challenge entry uses, fetched once.
@@ -547,6 +1072,14 @@ export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHa
   const summary = overview ? summaryLine(overview.mySummary) : null;
   const empty = overview && !overview.actionRequired.length && !overview.open.length && !overview.recentResults.length;
 
+  // Competitions split into active (scheduled/open/locked/calculating) and
+  // recent completed/void — competitionsForLeague (competitions.ts) already
+  // returns exactly these two families (never "cancelled", which that read
+  // excludes outright), so this is a plain status partition, not a second
+  // query.
+  const activeCompetitions = (competitions ?? []).filter((c) => c.status !== "completed" && c.status !== "void");
+  const completedCompetitions = (competitions ?? []).filter((c) => c.status === "completed" || c.status === "void").slice(0, 3);
+
   return (
     <div>
       {summary && <div style={{ fontSize: 12.5, color: MUTED, marginBottom: 12 }}>{summary}</div>}
@@ -572,6 +1105,59 @@ export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHa
             background: PANEL_2, color: TEAL, border: `1px solid ${tint(TEAL, "44")}`,
           }}>Try again</button>
         </Card>
+      )}
+
+      {/* COMPETITIONS (UI wave) — above the 1v1 sections below (challenges
+          are all two-player; a competition is league-wide). Hidden outright
+          when there are none and the viewer isn't the owner (house rule: no
+          empty shell section) — the owner still gets a small entry point
+          near Quick Challenge in that case. */}
+      {compErr && (
+        <Card style={{ marginBottom: 14, border: "1px solid rgba(224,138,107,0.4)" }}>
+          <div style={{ fontSize: 13, color: INK, marginBottom: 8 }}>Competitions didn&apos;t load.</div>
+          <button onClick={() => { setCompErr(null); void loadCompetitions(); }} style={{
+            padding: "8px 14px", borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+            background: PANEL_2, color: TEAL, border: `1px solid ${tint(TEAL, "44")}`,
+          }}>Try again</button>
+        </Card>
+      )}
+      {competitions && competitions.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+            <SectionLabel>COMPETITIONS</SectionLabel>
+            {isOwner && (
+              <button onClick={() => setCreateOpen(true)} style={{ background: "none", border: "none", color: GOLD, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+                Start a competition
+              </button>
+            )}
+          </div>
+          {activeCompetitions.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {activeCompetitions.map((c) => (
+                <CompetitionRow key={c.id} card={c} onOpen={() => setDetailCompetitionId(c.id)} />
+              ))}
+            </div>
+          )}
+          {completedCompetitions.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: activeCompetitions.length > 0 ? 8 : 0 }}>
+              {completedCompetitions.map((c) => (
+                <CompetitionCompactRow key={c.id} card={c} onOpen={() => setDetailCompetitionId(c.id)} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {competitions !== null && competitions.length === 0 && isOwner && (
+        <div style={{ marginBottom: 18 }}>
+          <button onClick={() => setCreateOpen(true)} style={{
+            width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            background: PANEL, color: GOLD, border: `1px solid ${tint(GOLD, "44")}`, textAlign: "left",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+          }}>
+            Start a league competition
+            <span aria-hidden style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+          </button>
+        </div>
       )}
 
       {overview && (
@@ -736,6 +1322,23 @@ export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHa
           rematchOf={prep.rematchOf}
           onSent={() => { setPrep(null); void load(); }}
           onClose={() => setPrep(null)}
+        />
+      )}
+
+      {/* Competitions (UI wave) — detail sheet (any row) and, owner only,
+          the create sheet. */}
+      {detailCompetitionId && (
+        <CompetitionDetailSheet
+          code={code} competitionId={detailCompetitionId} viewerId={viewerId} isOwner={isOwner}
+          onClose={() => setDetailCompetitionId(null)}
+          onChanged={() => void loadCompetitions()}
+        />
+      )}
+      {createOpen && (
+        <CompetitionCreateSheet
+          code={code}
+          onClose={() => setCreateOpen(false)}
+          onCreated={() => void loadCompetitions()}
         />
       )}
     </div>
