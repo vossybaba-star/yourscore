@@ -21,15 +21,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, GOLD, INK, LINE, MUTED, PANEL, PANEL_2, SectionLabel, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
+import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, PANEL_2, SectionLabel, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
 import { acceptChallengeAction, declineChallengeAction, cancelChallengeAction, ChallengeActionConflict } from "@/lib/fantasy/challengeClientActions";
 import { useUser } from "@/hooks/useUser";
+import { resultForParticipant, deriveStreak, winRatePercent } from "@/lib/fantasy/games-pure";
 import {
   trackGamesTabViewed, trackGamesQuickChallengeOpened, trackGamesActionRequiredOpened, trackGamesLeaderboardViewed,
+  trackGamesLeaderboardFullOpened, trackGamesMemberSummaryOpened, trackGameDetailOpened,
 } from "@/lib/analytics/trackSocial";
-import type { ChallengeCard, GamesActionCard, GamesLeaderboardRow, GamesOverview } from "@/components/fantasy/league/types";
+import type { ChallengeCard, GamesActionCard, GamesAvailableGame, GamesLeaderboardRow, GamesOverview } from "@/components/fantasy/league/types";
 
 async function apiGamesOverview(code: string): Promise<GamesOverview> {
   const res = await fetch(`/api/fantasy/leagues/${code}/games`);
@@ -208,7 +210,12 @@ function ResultRow({ card, viewerId, onRematch }: { card: ChallengeCard; viewerI
   );
 }
 
-function LeaderboardPreview({ rows, viewerId }: { rows: GamesLeaderboardRow[]; viewerId: string | null }) {
+/** Both the Games tab's top-8 preview AND the full-table Sheet (Phase 4C) —
+ *  same rows shape, same styling, the caller just passes more of them and a
+ *  taller container. `onRowClick` (Phase 4C) opens the member gaming
+ *  summary; omitted nowhere here — every row is always tappable, own row
+ *  included (its sheet just comes back with no Challenge action). */
+function LeaderboardPreview({ rows, viewerId, onRowClick }: { rows: GamesLeaderboardRow[]; viewerId: string | null; onRowClick: (row: GamesLeaderboardRow) => void }) {
   const headCell: React.CSSProperties = { width: 22, textAlign: "center", flexShrink: 0 };
   const cell: React.CSSProperties = { width: 22, textAlign: "center", flexShrink: 0, fontSize: 12, color: MUTED };
   return (
@@ -223,10 +230,11 @@ function LeaderboardPreview({ rows, viewerId }: { rows: GamesLeaderboardRow[]; v
         <span style={{ width: 34, textAlign: "right", flexShrink: 0 }}>PTS</span>
       </div>
       {rows.map((r, i) => (
-        <div key={r.userId} style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "8px 11px",
+        <button key={r.userId} onClick={() => onRowClick(r)} style={{
+          display: "flex", alignItems: "center", gap: 8, padding: "8px 11px", width: "100%", cursor: "pointer",
           background: r.userId === viewerId ? tint(TEAL, "10") : "transparent",
-          borderBottom: i < rows.length - 1 ? `1px solid ${LINE}` : "none",
+          borderTop: "none", borderLeft: "none", borderRight: "none",
+          borderBottom: i < rows.length - 1 ? `1px solid ${LINE}` : "none", textAlign: "left",
         }}>
           <span style={{ ...headCell, fontSize: 12, color: MUTED, fontWeight: 700 }}>{i + 1}</span>
           <span style={{ flex: 1, display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
@@ -238,15 +246,150 @@ function LeaderboardPreview({ rows, viewerId }: { rows: GamesLeaderboardRow[]; v
           <span style={cell}>{r.draws}</span>
           <span style={cell}>{r.losses}</span>
           <span style={{ width: 34, textAlign: "right", flexShrink: 0, fontSize: 13, fontWeight: 800, color: GOLD }}>{r.points}</span>
-        </div>
+        </button>
       ))}
     </div>
   );
 }
 
+/** Member gaming summary (Phase 4C) — opened from any leaderboard row, preview
+ *  or full table. Aggregate record (played/wins/draws/losses/win rate) comes
+ *  off the leaderboard row itself (comprehensive, every completed game this
+ *  league has). Recent results and the streak are derived from
+ *  overview.recentResults instead — that list is capped at 12 league-wide
+ *  (games.ts's RECENT_RESULTS_LIMIT), so a member whose games get pushed out
+ *  of that window by OTHER pairs' more-recent results will show fewer
+ *  results (and a possibly-undercounted streak) here than their true record.
+ *  No extra fetch to fix that this phase (brief, Phase 4C) — this sheet only
+ *  ever reads what the Games tab already has on the client. */
+function MemberSummarySheet({ row, viewerId, recentResults, onChallenge, onClose }: {
+  row: GamesLeaderboardRow; viewerId: string | null; recentResults: ChallengeCard[];
+  onChallenge: (row: GamesLeaderboardRow) => void; onClose: () => void;
+}) {
+  const isSelf = viewerId === row.userId;
+  const rate = winRatePercent(row.wins, row.played);
+  const myResults = recentResults
+    .filter((c) => c.challengerId === row.userId || c.opponentId === row.userId)
+    .map((c) => ({ card: c, result: resultForParticipant(c.winnerId, row.userId), completedAt: c.completedAt ?? c.createdAt }));
+  const streak = deriveStreak(myResults);
+
+  return (
+    <Sheet onClose={onClose} labelledBy="member-summary-title">
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <PlayerAvatar name={row.name} avatarUrl={row.avatarUrl} size={48} />
+        <div id="member-summary-title" className="font-display" style={{ fontSize: 18, color: INK, lineHeight: 1.1 }}>
+          {row.name}{isSelf ? <span style={{ color: TEAL, fontWeight: 700 }}> · you</span> : ""}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        <StatChip label="Played" value={`${row.played}`} />
+        <StatChip label="Wins" value={`${row.wins}`} />
+        <StatChip label="Draws" value={`${row.draws}`} />
+        <StatChip label="Losses" value={`${row.losses}`} />
+        {rate !== null && <StatChip label="Win rate" value={`${rate}%`} accent={GOLD} />}
+      </div>
+
+      {streak && streak.count > 1 && (
+        <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 14px" }}>
+          {streak.count} {streak.type} streak
+        </p>
+      )}
+
+      {myResults.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <SectionLabel>RECENT RESULTS</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {myResults.map(({ card }) => (
+              <ResultRow key={card.challengeId} card={card} viewerId={viewerId} onRematch={() => {}} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        {!isSelf && <div style={{ flex: 1 }}><Btn gold onClick={() => onChallenge(row)}>Challenge</Btn></div>}
+        <div style={{ flex: 1 }}><Link href={`/profile/${row.userId}`} onClick={onClose} style={{ display: "block" }}><Btn>View profile</Btn></Link></div>
+        <div style={{ flex: 1 }}><Link href={`/profile/${row.userId}#fantasy-xi`} onClick={onClose} style={{ display: "block" }}><Btn>View squad</Btn></Link></div>
+      </div>
+    </Sheet>
+  );
+}
+
+function StatChip({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: "7px 11px", minWidth: 60 }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: accent ?? INK }}>{value}</div>
+      <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+/** Game detail sheet (Phase 4D) — opened by tapping a game's name/body (not
+ *  its "Challenge someone" button) in the GAMES section below. Copy comes
+ *  straight off the registry (challengeGames.ts's howItWorks) — nothing
+ *  hardcoded here. The tie rule is the one line true of every game this
+ *  registry offers today (single-shot, no replay), so it's fixed text rather
+ *  than a registry field. */
+function GameDetailSheet({ game, recentResults, viewerId, onChallenge, onRematch, onClose }: {
+  game: GamesAvailableGame; recentResults: ChallengeCard[]; viewerId: string | null;
+  onChallenge: (gameId: string) => void; onRematch: (card: ChallengeCard) => void; onClose: () => void;
+}) {
+  const results = recentResults.filter((c) => c.gameType === game.id).slice(0, 3);
+  return (
+    <Sheet onClose={onClose} labelledBy="game-detail-title">
+      <div id="game-detail-title" className="font-display" style={{ fontSize: 20, color: INK, lineHeight: 1.1, marginBottom: 6 }}>{game.name}</div>
+      <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.45 }}>{game.shortDesc}</p>
+
+      <div style={{ marginBottom: 14 }}>
+        <SectionLabel>HOW IT WORKS</SectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {game.howItWorks.map((line, i) => (
+            <p key={i} style={{ fontSize: 12.5, color: INK, margin: 0, lineHeight: 1.45 }}>{line}</p>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 16, marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: "0.1em", color: MUTED, marginBottom: 4 }}>DURATION</div>
+          <div style={{ fontSize: 12.5, color: INK, fontWeight: 600 }}>{game.typicalDuration}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: "0.1em", color: MUTED, marginBottom: 4 }}>TIE RULE</div>
+          <div style={{ fontSize: 12.5, color: INK, fontWeight: 600 }}>Level scores finish level. No tiebreaker.</div>
+        </div>
+      </div>
+
+      {results.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <SectionLabel>RECENT RESULTS</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {results.map((c) => (
+              <ResultRow key={c.challengeId} card={c} viewerId={viewerId} onRematch={() => onRematch(c)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Btn gold onClick={() => onChallenge(game.id)}>Challenge someone</Btn>
+    </Sheet>
+  );
+}
+
 type PrepTarget = { opponent: { userId: string; name: string; avatarUrl: string | null }; initialGame?: string; rematchOf?: string };
 
-export function LeagueGamesView({ code }: { code: string }) {
+export function LeagueGamesView({ code, autoOpenChallenge, onAutoOpenChallengeHandled }: {
+  code: string;
+  /** Set by the League Hub's "Challenge someone" module action (Phase 4B) —
+   *  page.tsx switches to this tab AND flips this true in the same tap, so
+   *  the rival picker opens itself here rather than the hub needing to know
+   *  anything about the picker's own state. Cleared via
+   *  onAutoOpenChallengeHandled the moment it's acted on, so navigating away
+   *  and back to Games never re-opens it uninvited. */
+  autoOpenChallenge?: boolean;
+  onAutoOpenChallengeHandled?: () => void;
+}) {
   const router = useRouter();
   const { user } = useUser();
   const viewerId = user?.id ?? null;
@@ -262,6 +405,14 @@ export function LeagueGamesView({ code }: { code: string }) {
   const [picking, setPicking] = useState(false);
   const [pendingGameId, setPendingGameId] = useState<string | null>(null);
   const [prep, setPrep] = useState<PrepTarget | null>(null);
+
+  // Full table (Phase 4C) — every leaderboard row, not just the top-8
+  // preview. Member gaming summary (Phase 4C) — the row that's been tapped,
+  // preview or full table, null while closed. Game detail (Phase 4D) — the
+  // GAMES card whose name/body (not its Challenge someone button) was tapped.
+  const [fullTableOpen, setFullTableOpen] = useState(false);
+  const [memberSheet, setMemberSheet] = useState<GamesLeaderboardRow | null>(null);
+  const [gameDetail, setGameDetail] = useState<GamesAvailableGame | null>(null);
 
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
   const [actionErr, setActionErr] = useState<string | null>(null);
@@ -322,6 +473,16 @@ export function LeagueGamesView({ code }: { code: string }) {
     }
   }, [overview]);
 
+  // The Hub module's "Challenge someone" deep-link (Phase 4B) — open the
+  // same Quick Challenge picker the button below does, then tell the parent
+  // it's been handled so the flag doesn't fire again on its own.
+  useEffect(() => {
+    if (!autoOpenChallenge) return;
+    openPicker(null);
+    onAutoOpenChallengeHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenChallenge]);
+
   const openPicker = (gameId: string | null) => {
     trackGamesQuickChallengeOpened();
     setPendingGameId(gameId);
@@ -336,6 +497,20 @@ export function LeagueGamesView({ code }: { code: string }) {
     if (!opp) return;
     setPrep({ opponent: opp, initialGame: card.gameType, rematchOf: card.challengeId });
   };
+
+  // Member gaming summary (Phase 4C) — a leaderboard row's own Challenge
+  // action preselects that member as opponent, same PrepTarget shape as
+  // pickOpponent above, just skipping the rival picker entirely.
+  const openMemberSheet = (row: GamesLeaderboardRow) => { trackGamesMemberSummaryOpened(); setMemberSheet(row); };
+  const challengeFromMemberSheet = (row: GamesLeaderboardRow) => {
+    setMemberSheet(null);
+    setPrep({ opponent: { userId: row.userId, name: row.name, avatarUrl: row.avatarUrl } });
+  };
+
+  // Game detail (Phase 4D) — "Challenge someone" inside the sheet is the
+  // same per-game entry point the card's own button offers.
+  const openGameDetail = (g: GamesAvailableGame) => { trackGameDetailOpened(g.id); setGameDetail(g); };
+  const challengeFromGameDetail = (gameId: string) => { setGameDetail(null); openPicker(gameId); };
 
   const play = async (card: GamesActionCard) => {
     trackGamesActionRequiredOpened(card.gameType);
@@ -458,8 +633,15 @@ export function LeagueGamesView({ code }: { code: string }) {
 
           {overview.leaderboard.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <SectionLabel>GAMES TABLE</SectionLabel>
-              <LeaderboardPreview rows={overview.leaderboard.slice(0, 8)} viewerId={viewerId} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                <SectionLabel>GAMES TABLE</SectionLabel>
+                {overview.leaderboard.length > 8 && (
+                  <button onClick={() => { trackGamesLeaderboardFullOpened(); setFullTableOpen(true); }} style={{
+                    background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0,
+                  }}>Full table →</button>
+                )}
+              </div>
+              <LeaderboardPreview rows={overview.leaderboard.slice(0, 8)} viewerId={viewerId} onRowClick={openMemberSheet} />
             </div>
           )}
 
@@ -468,9 +650,17 @@ export function LeagueGamesView({ code }: { code: string }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {overview.availableGames.map((g) => (
                 <div key={g.id} style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 3 }}>{g.name}</div>
-                  <p style={{ fontSize: 12, color: MUTED, margin: "0 0 4px", lineHeight: 1.4 }}>{g.shortDesc}</p>
-                  <div style={{ fontSize: 11, color: MUTED, marginBottom: 9 }}>{g.typicalDuration}</div>
+                  {/* Name/body opens the game detail sheet (Phase 4D) — the
+                      Challenge someone button below stays a separate,
+                      sibling control so this never nests an interactive
+                      element inside another. */}
+                  <div role="button" tabIndex={0} onClick={() => openGameDetail(g)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openGameDetail(g); } }}
+                    style={{ cursor: "pointer" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 3 }}>{g.name}</div>
+                    <p style={{ fontSize: 12, color: MUTED, margin: "0 0 4px", lineHeight: 1.4 }}>{g.shortDesc}</p>
+                    <div style={{ fontSize: 11, color: MUTED, marginBottom: 9 }}>{g.typicalDuration}</div>
+                  </div>
                   <button onClick={() => openPicker(g.id)} style={{
                     padding: "7px 13px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
                     background: tint(TEAL, "14"), color: TEAL, border: `1px solid ${tint(TEAL, "40")}`,
@@ -480,6 +670,38 @@ export function LeagueGamesView({ code }: { code: string }) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Full table (Phase 4C) — every leaderboard row, same styling as the
+          preview above (LeaderboardPreview handles both). Sheet's own
+          maxHeight:100%-of-viewport scroll already gives this a full-height
+          feel without a bespoke container. */}
+      {fullTableOpen && overview && (
+        <Sheet onClose={() => setFullTableOpen(false)} labelledBy="full-table-title">
+          <div id="full-table-title" className="font-display" style={{ fontSize: 16, fontWeight: 800, color: INK, marginBottom: 10 }}>Games table</div>
+          <LeaderboardPreview rows={overview.leaderboard} viewerId={viewerId} onRowClick={(r) => { setFullTableOpen(false); openMemberSheet(r); }} />
+        </Sheet>
+      )}
+
+      {memberSheet && (
+        <MemberSummarySheet
+          row={memberSheet}
+          viewerId={viewerId}
+          recentResults={overview?.recentResults ?? []}
+          onChallenge={challengeFromMemberSheet}
+          onClose={() => setMemberSheet(null)}
+        />
+      )}
+
+      {gameDetail && (
+        <GameDetailSheet
+          game={gameDetail}
+          recentResults={overview?.recentResults ?? []}
+          viewerId={viewerId}
+          onChallenge={challengeFromGameDetail}
+          onRematch={(c) => { setGameDetail(null); startRematch(c); }}
+          onClose={() => setGameDetail(null)}
+        />
       )}
 
       {/* Rival picker — the same roster the chat tray's Challenge entry

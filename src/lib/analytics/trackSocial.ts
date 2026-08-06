@@ -84,6 +84,13 @@ export function trackGamesQuickChallengeOpened(): void { fire("games_quick_chall
 export function trackGamesActionRequiredOpened(gameType: string): void { fire("games_action_required_opened", { gameType }); }
 export function trackGamesLeaderboardViewed(): void { fire("games_leaderboard_viewed"); }
 
+// ── league Games hub finishing pieces (Phase 4B/C/D) ─────────────────────
+export function trackGamesLeaderboardFullOpened(): void { fire("games_leaderboard_full_opened"); }
+export function trackGamesMemberSummaryOpened(): void { fire("games_member_summary_opened"); }
+export function trackGamesHubModuleOpened(): void { fire("games_hub_module_opened"); }
+export function trackGameDetailOpened(gameId: string): void { fire("game_detail_opened", { gameId }); }
+export function trackGamesHistoryResultOpened(): void { fire("games_history_result_opened"); }
+
 // ── native video (composer) ──────────────────────────────────────────────
 export function trackVideoPickerOpened(): void { fire("video_picker_opened"); }
 export function trackVideoSelected(): void { fire("video_selected"); }

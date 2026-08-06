@@ -35,7 +35,7 @@ import { LeagueChatView } from "@/components/fantasy/league/LeagueChatView";
 import { LeagueTableView } from "@/components/fantasy/league/LeagueTableView";
 import { LeagueGamesView } from "@/components/fantasy/league/LeagueGamesView";
 import { LeagueHistoryView } from "@/components/fantasy/league/LeagueHistoryView";
-import type { ChatData, LeagueDetail } from "@/components/fantasy/league/types";
+import type { ChatData, GamesPulse, LeagueDetail } from "@/components/fantasy/league/types";
 
 type Tab = "hub" | "chat" | "table" | "games" | "history";
 const TABS: [Tab, string][] = [["hub", "Hub"], ["chat", "Chat"], ["table", "Table"], ["games", "Games"], ["history", "History"]];
@@ -61,6 +61,18 @@ export default function LeaguePage() {
   const [tab, setTab] = useState<Tab>("hub");
   const [chatGw, setChatGw] = useState<number | null>(null);
 
+  // Games tab badge (Phase 4A follow-through) + Hub module deep-link
+  // (Phase 4B) — one pulse fetch, piggybacked on league load (NOT a new
+  // heavy call: leagueDetail already loads here, this rides alongside it).
+  // Badge rule (documented per the brief): a numeric count of the VIEWER'S
+  // OWN action-required items only — never league-wide open-challenge
+  // activity, which belongs to the Hub module's own status line instead.
+  const [gamesPulse, setGamesPulse] = useState<GamesPulse | null>(null);
+  // "Challenge someone" from the Hub's Games module (Phase 4B) — flips true
+  // for exactly one LeagueGamesView mount, mirroring the openGwChat pattern
+  // History already uses to deep-link into another tab with extra state.
+  const [gamesAutoChallenge, setGamesAutoChallenge] = useState(false);
+
   // Restore + persist the tab in the URL, so back from settings/a profile returns
   // to the tab you were on. `gw` deep-links a gameweek's chat (from History).
   useEffect(() => {
@@ -73,6 +85,10 @@ export default function LeaguePage() {
   const goTab = useCallback((t: Tab) => {
     setTab(t);
     if (t === "chat") setChatGw(null); // the tab bar always opens the live thread
+    // Opening Games clears its own badge — the viewer's seen what was
+    // waiting on them. Not a re-fetch: the count just goes quiet until the
+    // next league load picks up anything genuinely new.
+    if (t === "games") setGamesPulse((p) => (p ? { ...p, myActionCount: 0 } : p));
     const u = new URL(window.location.href);
     u.searchParams.set("t", t);
     if (t === "chat") u.searchParams.delete("gw");
@@ -85,6 +101,12 @@ export default function LeaguePage() {
     u.searchParams.set("t", "chat"); u.searchParams.set("gw", String(gw));
     window.history.replaceState(null, "", u);
   }, []);
+  // From the Hub's Games module "Challenge someone" (Phase 4B): switch to
+  // Games AND tell it to open the picker itself on mount.
+  const openGamesChallenge = useCallback(() => {
+    setGamesAutoChallenge(true);
+    goTab("games");
+  }, [goTab]);
 
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
@@ -94,6 +116,20 @@ export default function LeaguePage() {
     }
   }, [code]);
   useEffect(() => { load(); }, [load]);
+
+  // Games tab badge — piggybacked on league load, member-only (the games
+  // route itself 403s otherwise), fetched once (not polled: this is a small
+  // nudge, not a live counter, and the Games tab's own view refetches for
+  // real when it's actually open).
+  useEffect(() => {
+    if (!detail?.league.isMember) return;
+    let live = true;
+    fetch(`/api/fantasy/leagues/${code}/games/pulse`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (live && d) setGamesPulse(d); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [code, detail?.league.isMember]);
 
   const loadChat = useCallback(async () => {
     try { setChat(await apiRaw<ChatData>(`leagues/${code}/chat`)); }
@@ -247,20 +283,36 @@ export default function LeaguePage() {
           const chatOpen = league.isMember || league.kind === "club" || league.kind === "founder";
           const locked = (k === "chat" && !chatOpen) || ((k === "history" || k === "games") && !league.isMember);
           if (locked) return null;
+          // Games tab badge (Phase 4A follow-through) — a small gold dot with
+          // the viewer's own action-required count, never league-wide open
+          // activity (see gamesPulse's own doc above). No badge at zero.
+          const gamesBadge = k === "games" && gamesPulse && gamesPulse.myActionCount > 0 ? gamesPulse.myActionCount : null;
           return (
             <button key={k} onClick={() => goTab(k)} style={{
               flex: 1, padding: "5px 2px", borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: "pointer",
               background: active ? tint(TEAL, "22") : "transparent", color: active ? TEAL : MUTED,
               border: `1px solid ${active ? tint(TEAL, "55") : "transparent"}`,
-            }}>{label}</button>
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+            }}>
+              {label}
+              {gamesBadge !== null && (
+                <span aria-label={`${gamesBadge} action${gamesBadge === 1 ? "" : "s"} needed`} style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  minWidth: 15, height: 15, borderRadius: 999, padding: "0 4px",
+                  background: GOLD, color: "#2A1F00", fontSize: 9.5, fontWeight: 800, lineHeight: 1,
+                }}>{gamesBadge}</span>
+              )}
+            </button>
           );
         })}
       </div>
 
-      {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} />}
+      {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} onOpenGamesChallenge={openGamesChallenge} />}
       {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder") && <LeagueChatView code={code} initialGw={chatGw} />}
       {tab === "table" && <LeagueTableView detail={detail} code={code} />}
-      {tab === "games" && league.isMember && <LeagueGamesView code={code} />}
+      {tab === "games" && league.isMember && (
+        <LeagueGamesView code={code} autoOpenChallenge={gamesAutoChallenge} onAutoOpenChallengeHandled={() => setGamesAutoChallenge(false)} />
+      )}
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
 
       {inviteOpen && (
