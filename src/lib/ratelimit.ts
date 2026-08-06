@@ -24,13 +24,19 @@ export function rateLimit(key: string, max: number, windowMs: number): { ok: boo
   return { ok: true, remaining: max - entry.count };
 }
 
-// Clean up expired entries every 5 minutes to avoid memory leak
+// Clean up expired entries every 5 minutes to avoid memory leak. `.unref()`
+// so this timer never by itself keeps a process alive — a live server has
+// other handles (its HTTP listener) doing that job; without it, anything
+// that merely IMPORTS this module (e.g. `node --test`, which loads it
+// transitively through squadRating.ts) hangs forever waiting for a timer
+// that only exists for housekeeping (found running Trust sprint 1's test
+// task: pnpm test never exited).
 setInterval(() => {
   const now = Date.now();
   store.forEach((v, k) => {
     if (now > v.resetAt) store.delete(k);
   });
-}, 5 * 60 * 1000);
+}, 5 * 60 * 1000).unref();
 
 // Distributed rate limiter backed by Postgres (shared across all serverless
 // instances). Returns { ok }. Fails OPEN on infrastructure error so a limiter

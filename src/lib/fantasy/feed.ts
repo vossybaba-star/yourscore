@@ -156,6 +156,9 @@ export interface EmbeddedPost {
    *  the video's poster (as `image`) with a play glyph, and never inline-plays
    *  it; tap goes to the post's own detail page instead. */
   hasVideo?: boolean;
+  /** Disclosure flag (Trust sprint 1) — same as FeedEvent.actorIsCommunity,
+   *  for the quoted post's author. */
+  actorIsCommunity?: boolean;
 }
 const EMBED_TEXT_MAX = 280;
 
@@ -241,6 +244,11 @@ export interface FeedEvent {
    *  shows beside them), falling back to their captain's club if they've not
    *  picked one. Null → no crest. */
   actorClub: string | null;
+  /** Disclosure flag (Trust sprint 1) — true when this event's actor is one of
+   *  the synthetic community accounts, derived from `profiles.source ===
+   *  "bot"`. Drives the "YourScore community account" label on the client;
+   *  never a hardcoded id list. */
+  actorIsCommunity: boolean;
   type: FeedType;
   gw: number | null;
   sentence: string;
@@ -283,8 +291,10 @@ export interface FeedEvent {
   quiz?: FeedQuiz | null;
   /** Set when this row is a REPOST: who reposted it, rendered as a compact
    *  "Reposted by {name}" line above the original's full card (which is what
-   *  the rest of this event's fields already carry — see `id`/`rowKey`). */
-  repostedBy?: { id: string; name: string } | null;
+   *  the rest of this event's fields already carry — see `id`/`rowKey`).
+   *  `isCommunity` is the same disclosure flag as `actorIsCommunity`, for the
+   *  reposter rather than the original author. */
+  repostedBy?: { id: string; name: string; isCommunity: boolean } | null;
   /** True when this row is a repost/quote whose target no longer resolves
    *  (missing, or by a bot/health-check account). The card renders a muted
    *  "This post is unavailable" stub instead of crashing. */
@@ -969,7 +979,7 @@ async function hydrateEvents(
     { data: profs }, { data: reactionRows }, { data: commentRows }, { data: squadRows }, { data: pollVoteRows }, { data: supporterRows },
     { data: repostRows }, { data: bookmarkRows }, mentionMap,
   ] = await Promise.all([
-    db.from("profiles").select("id, display_name, avatar_url, username").in("id", actorIds),
+    db.from("profiles").select("id, display_name, avatar_url, username, source").in("id", actorIds),
     db.from("fantasy_feed_likes").select("event_id, user_id, emoji").in("event_id", reactionCommentIds),
     db.from("comments").select("subject_id").eq("subject_type", "fantasy_feed").in("subject_id", reactionCommentIds).is("deleted_at", null),
     db.from("fantasy_squads").select("user_id, captain").in("user_id", actorIds),
@@ -999,9 +1009,12 @@ async function hydrateEvents(
 
   const myBookmarkedSet = new Set<string>(((bookmarkRows ?? []) as { event_id: string }[]).map((r) => r.event_id));
 
-  const profById = new Map<string, { display_name: string | null; avatar_url: string | null; username: string | null }>();
+  const profById = new Map<string, { display_name: string | null; avatar_url: string | null; username: string | null; source: string | null }>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (profs ?? []).forEach((p: any) => profById.set(p.id, p));
+  // Disclosure flag (Trust sprint 1) — canonical source of truth is
+  // `profiles.source === "bot"`, never a hardcoded id list.
+  const isCommunity = (actorId: string) => profById.get(actorId)?.source === "bot";
 
   // Repost tallies per content id, plus whether the viewer is one of the reposters.
   const repostCountByTarget = new Map<string, number>();
@@ -1040,6 +1053,7 @@ async function hydrateEvents(
       image: thumb,
       isQuoteOfQuote: typeof p.quoteOf === "string" && !!p.quoteOf,
       hasVideo: !!rawVideo,
+      actorIsCommunity: isCommunity(t.actor_id),
     };
   };
 
@@ -1109,9 +1123,10 @@ async function hydrateEvents(
         actorUsername: profById.get(e.actor_id)?.username ?? null,
         actorAvatar: profById.get(e.actor_id)?.avatar_url ?? null,
         actorClub: clubByActor.get(e.actor_id) ?? null,
+        actorIsCommunity: isCommunity(e.actor_id),
         type, gw: e.gw ?? null, sentence: "posted", createdAt: e.created_at,
         reactions: [], myEmoji: null, commentCount: 0,
-        repostedBy: { id: e.actor_id, name: profById.get(e.actor_id)?.display_name ?? "A manager" },
+        repostedBy: { id: e.actor_id, name: profById.get(e.actor_id)?.display_name ?? "A manager", isCommunity: isCommunity(e.actor_id) },
         unavailable: true, repostCount: 0, myReposted: false,
         myBookmarked: false, mentionedUsers: null,
       } satisfies FeedEvent;
@@ -1122,7 +1137,11 @@ async function hydrateEvents(
     const contentCreatedAt: string = repostOfId && repostTarget ? repostTarget.created_at : e.created_at;
     const contentId: string = repostOfId ?? e.id;
     const repostedBy = repostOfId
-      ? { id: e.actor_id, name: profById.get(e.actor_id)?.display_name ?? (profById.get(e.actor_id)?.username ? `@${profById.get(e.actor_id)!.username}` : "A manager") }
+      ? {
+          id: e.actor_id,
+          name: profById.get(e.actor_id)?.display_name ?? (profById.get(e.actor_id)?.username ? `@${profById.get(e.actor_id)!.username}` : "A manager"),
+          isCommunity: isCommunity(e.actor_id),
+        }
       : null;
 
     // squad_complete tiles render the real pitch board; shortlist/squad_update
@@ -1268,6 +1287,7 @@ async function hydrateEvents(
       actorUsername: profById.get(contentActorId)?.username ?? null,
       actorAvatar: profById.get(contentActorId)?.avatar_url ?? null,
       actorClub: clubByActor.get(contentActorId) ?? null,
+      actorIsCommunity: isCommunity(contentActorId),
       type,
       gw: e.gw ?? null,
       sentence: sentenceFor(type, payload, e.gw ?? null, nameOf),

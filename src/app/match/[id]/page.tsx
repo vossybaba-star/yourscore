@@ -29,6 +29,17 @@ interface MatchData {
   away_score: number;
 }
 
+// The answer-free shape returned by GET /api/questions/for-event. NO `answer` —
+// see that route's own doc.
+interface ForEventQuestion {
+  id: string;
+  question: string;
+  options: Record<string, string> | null;
+  difficulty: "easy" | "medium" | "hard";
+  category: string | null;
+  verification_note: string | null;
+}
+
 // Shape of a match_scores row joined with profiles, as selected at runtime.
 // The match_scores↔profiles relation isn't expressed in the generated DB types,
 // so the joined select is coerced to this local type at the query boundary.
@@ -292,10 +303,14 @@ export default function MatchPage({ params }: { params: { id: string } }) {
         }, async (payload) => {
           const event = payload.new;
           if (event.status !== "live") return;
-          const { data: q } = await sb.from("questions").select("*").eq("id", event.question_id).single();
+          // Answer-free lookup — the full bank row (with `answer`) used to be
+          // read straight off the anon key here. Grading stays server-side at
+          // /api/answer, unchanged.
+          const res = await fetch(`/api/questions/for-event?eventId=${event.id}`);
+          const q = res.ok ? ((await res.json()).question as ForEventQuestion | null) : null;
           if (!q) return;
-          // Bank questions store options as a jsonb {A,B,C,D} map and the answer
-          // as a letter — map them onto the QuestionCard's flat fields.
+          // Bank questions store options as a jsonb {A,B,C,D} map — map them
+          // onto the QuestionCard's flat fields.
           const opts = (q.options ?? {}) as Record<string, string>;
           setActiveQuestion({
             eventId: event.id, questionId: q.id, questionText: q.question,

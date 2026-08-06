@@ -33,6 +33,7 @@ import { InlineVideoPlayer, VideoPosterPreview, type PostVideo } from "@/compone
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
 import { useUser } from "@/hooks/useUser";
 import { ReportSheet } from "@/components/social/ReportSheet";
+import { CommunityBadge } from "@/components/social/CommunityBadge";
 import {
   trackBlockUser, trackBookmarkAdded, trackMuteUser, trackPollVoted, trackPostOpened,
   trackQuoteCreated, trackReactionAdded, trackRepostCreated, trackShareOpened,
@@ -75,6 +76,10 @@ export interface EmbeddedPost {
   /** True when the embedded target carries a video — the compact embed shows
    *  its poster (as `image`) with a play glyph, never inline-plays it. */
   hasVideo?: boolean;
+  /** Disclosure flag (Trust sprint 1) — true when the quoted post's author is
+   *  a synthetic community account (`profiles.source === "bot"`). Kept in
+   *  sync with EmbeddedPost in lib/fantasy/feed.ts. */
+  actorIsCommunity?: boolean;
 }
 export interface FeedEvent {
   id: string;
@@ -82,6 +87,11 @@ export interface FeedEvent {
    *  `id` for every event except a repost pointer row. */
   rowKey: string;
   actorId: string; actorName: string; actorUsername: string | null; actorAvatar: string | null; actorClub: string | null;
+  /** Disclosure flag (Trust sprint 1) — true when this event's actor is one of
+   *  the synthetic community accounts, derived server-side from
+   *  `profiles.source === "bot"`. Drives the "YourScore community account"
+   *  label — never a hardcoded id list on the client. */
+  actorIsCommunity: boolean;
   type: string; gw: number | null; sentence: string; createdAt: string;
   reactions: FeedReaction[]; myEmoji: string | null; commentCount: number;
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
@@ -91,7 +101,7 @@ export interface FeedEvent {
   video?: PostVideo | null;
   link?: FeedLink | null; fixture?: FeedFixture | null; quiz?: FeedQuiz | null;
   /** Set when this row is a repost: who reposted it. */
-  repostedBy?: { id: string; name: string } | null;
+  repostedBy?: { id: string; name: string; isCommunity: boolean } | null;
   /** True when this row is a repost/quote whose target no longer resolves. */
   unavailable?: boolean;
   repostCount: number;
@@ -645,17 +655,20 @@ function CardMenu({ ev, onShare, onInvite, shareUrl, pinControl, viewerId, onHid
 /** The reposted-by attribution line — a compact "↻ Reposted by {name}" strip
  *  above the ORIGINAL post's full card. Plain (non-interactive) row, since the
  *  card underneath already links everywhere that matters. */
-function RepostedByLine({ repostedBy }: { repostedBy: { id: string; name: string } }) {
+function RepostedByLine({ repostedBy }: { repostedBy: { id: string; name: string; isCommunity: boolean } }) {
   return (
-    <Link href={`/profile/${repostedBy.id}`} onClick={(e) => e.stopPropagation()}
-      style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 700, color: MUTED, textDecoration: "none" }}>
-      <span aria-hidden style={{ fontSize: 13 }}>↻</span>Reposted by {repostedBy.name}
-    </Link>
+    <div style={{ marginBottom: 8 }}>
+      <Link href={`/profile/${repostedBy.id}`} onClick={(e) => e.stopPropagation()}
+        style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: MUTED, textDecoration: "none" }}>
+        <span aria-hidden style={{ fontSize: 13 }}>↻</span>Reposted by {repostedBy.name}
+      </Link>
+      {repostedBy.isCommunity && <div style={{ marginTop: 2 }}><CommunityBadge compact /></div>}
+    </div>
   );
 }
 
 /** A repost/quote whose target no longer resolves (AC6) — muted stub, no crash. */
-function UnavailableStub({ repostedBy }: { repostedBy?: { id: string; name: string } | null }) {
+function UnavailableStub({ repostedBy }: { repostedBy?: { id: string; name: string; isCommunity: boolean } | null }) {
   return (
     <div style={{ padding: "12px 0", borderBottom: `1px solid ${LINE}` }}>
       {repostedBy && <RepostedByLine repostedBy={repostedBy} />}
@@ -696,6 +709,7 @@ function QuoteEmbedCard({ embed }: { embed: EmbeddedPost }) {
         <span style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{embed.actorName}</span>
         {embed.createdAt && <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>· {timeAgo(embed.createdAt)}</span>}
       </div>
+      {embed.actorIsCommunity && <div style={{ marginTop: 2 }}><CommunityBadge compact /></div>}
       {embed.text && (
         <div style={{ fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.4, marginTop: 4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {embed.text}
@@ -886,6 +900,7 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
             )}
             <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}>· {timeAgo(ev.createdAt)}</span>
           </div>
+          {ev.actorIsCommunity && <div style={{ marginTop: 1 }}><CommunityBadge compact /></div>}
           {ev.type !== "post" && (
             <div style={{ fontSize: 13, color: "#c7d0cb", marginTop: 1, lineHeight: 1.4 }}>{ev.sentence}</div>
           )}

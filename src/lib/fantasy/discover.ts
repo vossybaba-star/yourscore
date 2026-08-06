@@ -30,6 +30,10 @@ export interface DiscoverManager {
   following: number;
   /** Their squad as a board, so a suggestion can render as an activity tile. */
   board: DiscoverBoard | null;
+  /** Disclosure flag (Trust sprint 1) — true for a synthetic community
+   *  account (`profiles.source === "bot"`). Drives the "YourScore community
+   *  account" label — never a hardcoded id list. */
+  isCommunity: boolean;
 }
 
 export async function fantasyDiscover(db: Db, userId: string, limit = 16): Promise<DiscoverManager[]> {
@@ -51,11 +55,11 @@ export async function fantasyDiscover(db: Db, userId: string, limit = 16): Promi
 
   const ids = rows.map((s) => s.user_id);
   const [{ data: profs }, { data: followerRows }, { data: followingRows }] = await Promise.all([
-    db.from("profiles").select("id, display_name, username, avatar_url").in("id", ids),
+    db.from("profiles").select("id, display_name, username, avatar_url, source").in("id", ids),
     db.from("user_follows").select("followee_id").in("followee_id", ids),
     db.from("user_follows").select("follower_id").in("follower_id", ids),
   ]);
-  const profById = new Map<string, { display_name: string | null; username: string | null; avatar_url: string | null }>();
+  const profById = new Map<string, { display_name: string | null; username: string | null; avatar_url: string | null; source: string | null }>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (profs ?? []).forEach((p: any) => profById.set(p.id, p));
   const followerCount = new Map<string, number>();
@@ -96,6 +100,7 @@ export async function fantasyDiscover(db: Db, userId: string, limit = 16): Promi
       followers: followerCount.get(s.user_id) ?? 0,
       following: followingCount.get(s.user_id) ?? 0,
       board: { players: [...s.xi, ...bench].map(markerOf), xi: s.xi, bench, captain: s.captain, vice: s.vice },
+      isCommunity: prof?.source === "bot",
     };
   });
 

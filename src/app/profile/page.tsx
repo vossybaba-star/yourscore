@@ -127,7 +127,13 @@ export default async function ProfilePage() {
     sb.from("club_supporters").select("club").eq("user_id", userId).limit(1),
     // PAC comes from real answer times; the graded answers array already carries
     // elapsed_ms per question, so no extra column is needed.
-    sb.from("quiz_attempts").select("answers").eq("user_id", userId).limit(50),
+    // Read through the SERVICE client, not `sb`: migration 262 withholds
+    // quiz_attempts.answers from anon/authenticated (it is the sharpest
+    // answer-key reconstruction path), so the user-scoped client can no longer
+    // select it even for the owner's own rows. Still scoped to `userId`, which
+    // is this signed-in user, so nothing widens here. Only elapsed_ms is used;
+    // the array never leaves this function.
+    createServiceClient().from("quiz_attempts").select("answers").eq("user_id", userId).limit(50),
     sb.from("quiz_attempts").select("id", { count: "exact", head: true }).eq("user_id", userId),
     sb.from("draft_wc_runs").select("id", { count: "exact", head: true }).eq("user_id", userId),
     sb.from("draft_wc_runs").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("status", "champion"),

@@ -18,6 +18,29 @@ import { slugify } from "@/lib/utils";
 // would be validated against those types. (TODO: regenerate src/types/database.ts.)
 const PACK_COLS: string = "id, name, type, parameter, question_count, description, questions, metadata";
 
+/** What the client is allowed to see per question. NO `answer`.
+ *
+ *  Answers are served only by the just-in-time grading route (/api/quiz/answer,
+ *  and /api/h2h/[id]/questions once a challenge is complete) — never here. This
+ *  response is CDN-cached (see CACHE_HEADERS below) and shared across every
+ *  visitor to this pack, so it must never carry per-user OR per-answer data:
+ *  either one baked into a cached response would leak to everyone who hits the
+ *  same edge cache entry. */
+function stripAnswers(pack: Record<string, unknown>): Record<string, unknown> {
+  const rawQuestions = Array.isArray(pack.questions)
+    ? (pack.questions as Array<Record<string, unknown>>)
+    : [];
+  // Named-field rebuild, never a spread — a spread would carry `answer`
+  // straight through the moment the generator adds a field to the pool.
+  const questions = rawQuestions.map((q) => ({
+    question: q.question,
+    options: q.options,
+    difficulty: q.difficulty,
+    category: q.category,
+  }));
+  return { ...pack, questions };
+}
+
 // Cache the rendered response at the CDN edge for an hour, serving stale for a day
 // while it revalidates in the background.
 const CACHE_HEADERS = {
@@ -76,5 +99,5 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ pack }, { headers: CACHE_HEADERS });
+  return NextResponse.json({ pack: stripAnswers(pack) }, { headers: CACHE_HEADERS });
 }

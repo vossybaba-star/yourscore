@@ -16,6 +16,7 @@ import { LegendSeal } from "@/components/ui/Seal";
 import { ProfileSocialTabs } from "@/components/fantasy/ProfileSocialTabs";
 import { ProfileSafetyMenu } from "@/components/social/ProfileSafetyMenu";
 import { blockStatus } from "@/lib/social/safety";
+import { CommunityBadge } from "@/components/social/CommunityBadge";
 
 // Public player profile — any signed-in player can look up any other player:
 // their rank + record, the quizzes they've done, their recent head-to-heads,
@@ -221,12 +222,7 @@ export default async function PublicProfilePage({ params }: { params: { userId: 
               <p className="font-body text-sm truncate" style={{ color: "#8a948f", marginTop: 2 }}>@{profile.username}</p>
             )}
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {profile.source === "bot" && (
-                <span className="font-body text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: "rgba(138,148,143,0.12)", color: "#8a948f", border: "1px solid rgba(138,148,143,0.25)" }}>
-                  🤖 Automated community account
-                </span>
-              )}
+              {profile.source === "bot" && <CommunityBadge />}
               {rank && (
                 <span className="font-body text-xs px-2 py-0.5 rounded-full"
                   style={{ background: "rgba(174,234,0,0.12)", color: LIME, border: "1px solid rgba(174,234,0,0.2)" }}>

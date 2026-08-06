@@ -6,5 +6,6 @@ allowBuilds:
   # then ended in ERR_PNPM_IGNORED_BUILDS, and because `pnpm run <script>`
   # shells out to install for its deps check, `pnpm build` failed outright.
   core-js: false
+  esbuild: true
   sharp: true
   unrs-resolver: true
