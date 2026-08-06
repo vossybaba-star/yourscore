@@ -33,7 +33,6 @@ import { InlineVideoPlayer, VideoPosterPreview, type PostVideo } from "@/compone
 import { CreatePostSheet } from "@/components/fantasy/CreatePostSheet";
 import { useUser } from "@/hooks/useUser";
 import { ReportSheet } from "@/components/social/ReportSheet";
-import { CommunityBadge } from "@/components/social/CommunityBadge";
 import {
   trackBlockUser, trackBookmarkAdded, trackMuteUser, trackPollVoted, trackPostOpened,
   trackQuoteCreated, trackReactionAdded, trackRepostCreated, trackShareOpened,
@@ -662,7 +661,6 @@ function RepostedByLine({ repostedBy }: { repostedBy: { id: string; name: string
         style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: MUTED, textDecoration: "none" }}>
         <span aria-hidden style={{ fontSize: 13 }}>↻</span>Reposted by {repostedBy.name}
       </Link>
-      {repostedBy.isCommunity && <div style={{ marginTop: 2 }}><CommunityBadge compact /></div>}
     </div>
   );
 }
@@ -709,7 +707,6 @@ function QuoteEmbedCard({ embed }: { embed: EmbeddedPost }) {
         <span style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{embed.actorName}</span>
         {embed.createdAt && <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>· {timeAgo(embed.createdAt)}</span>}
       </div>
-      {embed.actorIsCommunity && <div style={{ marginTop: 2 }}><CommunityBadge compact /></div>}
       {embed.text && (
         <div style={{ fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.4, marginTop: 4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {embed.text}
@@ -900,7 +897,6 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
             )}
             <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}>· {timeAgo(ev.createdAt)}</span>
           </div>
-          {ev.actorIsCommunity && <div style={{ marginTop: 1 }}><CommunityBadge compact /></div>}
           {ev.type !== "post" && (
             <div style={{ fontSize: 13, color: "#c7d0cb", marginTop: 1, lineHeight: 1.4 }}>{ev.sentence}</div>
           )}

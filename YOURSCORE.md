@@ -830,10 +830,10 @@ Confirmed preamble above and the referenced section.
   post comments being readable by anyone signed out. Migration 262 (written,
   rollback included, **gated behind this deploy**) rebuilds the column grants on
   quiz_packs, questions, quiz_attempts and h2h_challenges so the answer columns
-  are not readable by anon or authenticated at all. Synthetic accounts now carry
-  a "YourScore community account" label in the feed, post detail, quote embeds,
-  suggested accounts and on the profile, driven by `profiles.source` rather than
-  a hardcoded list. `pnpm test` exists for the first time (609 tests, 601 pass)
+  are not readable by anon or authenticated at all. Synthetic accounts carry
+  a "YourScore community account" label on the profile page only (feed, post
+  detail, quote embed and suggested-account labels removed 6 Aug by founder
+  decision), driven by `profiles.source` rather than a hardcoded list. `pnpm test` exists for the first time (609 tests, 601 pass)
   along with anon key security regression probes. Known and accepted: a per
   question grading endpoint still yields one answer per call, so rate limits
   (150/hr per caller, 60/hr per caller and pack) are the control on bulk

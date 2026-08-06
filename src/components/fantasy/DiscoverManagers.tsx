@@ -17,7 +17,6 @@ import { Crest } from "@/components/ui/Crest";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { FollowButton } from "@/components/social/FollowButton";
 import { InviteToLeagueButton } from "@/components/fantasy/InviteToLeagueButton";
-import { CommunityBadge } from "@/components/social/CommunityBadge";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 
 interface DiscoverBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain: number | null; vice: number | null }
@@ -62,7 +61,6 @@ function ManagerHead({ m }: { m: Manager }) {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.displayName}</div>
           {m.username && <div style={{ fontSize: 11.5, color: MUTED }}>@{m.username}</div>}
-          {m.isCommunity && <div style={{ marginTop: 2 }}><CommunityBadge compact /></div>}
           <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>
             <b style={{ color: INK, fontWeight: 700 }}>{m.followers.toLocaleString()}</b> followers · <b style={{ color: INK, fontWeight: 700 }}>{m.following.toLocaleString()}</b> following
           </div>
