@@ -446,6 +446,12 @@ export interface CompetitionCardDTO {
    *  challengerScore/opponentScore follow. */
   winner: { userId: string; name: string } | null;
   provisional: boolean;
+  /** beat_target only — how many of the FULL standings (not just topThree)
+   *  scored >= target, i.e. how many actually placed. Always 0 for
+   *  league_quiz (the format has no "placed" concept beyond its single
+   *  winner) — a card needs this alongside topThree because topThree is
+   *  capped at 3 and can't answer "how many total" on its own. */
+  placedCount: number;
 }
 
 async function toCardDTO(db: Db, comp: LeagueCompetitionRow, viewerId: string): Promise<CompetitionCardDTO> {
@@ -453,6 +459,7 @@ async function toCardDTO(db: Db, comp: LeagueCompetitionRow, viewerId: string): 
   const standings: StandingRow[] = isFrozen ? await frozenStandings(db, comp.id) : await computeStandings(db, comp);
 
   const top = standings.slice(0, 3);
+  const placedCount = comp.format === "beat_target" ? standings.filter((s) => s.result === "placed").length : 0;
   const profileIds = [...top.map((s) => s.userId), ...(comp.winner_user_id ? [comp.winner_user_id] : [])];
   const profOf = await profilesById(db, profileIds);
   const mine = standings.find((s) => s.userId === viewerId) ?? null;
@@ -470,6 +477,7 @@ async function toCardDTO(db: Db, comp: LeagueCompetitionRow, viewerId: string): 
       ? { userId: comp.winner_user_id, name: nameFromProfile(profOf.get(comp.winner_user_id)) }
       : null,
     provisional: !isFrozen,
+    placedCount,
   };
 }
 
@@ -508,6 +516,28 @@ export async function competitionsForLeague(db: Db, userId: string, code: string
   const rows = [...((activeRows ?? []) as LeagueCompetitionRow[]), ...((recentRows ?? []) as LeagueCompetitionRow[])];
   const reconciled = await Promise.all(rows.map((r) => reconcileCompetition(db, r)));
   return Promise.all(reconciled.map((r) => toCardDTO(db, r, userId)));
+}
+
+/** Hydrated chat-card data for one or more competitions — batched (one query
+ *  set per id list) rather than N+1, mirroring challenges.ts's
+ *  challengeCardsFor for the exact same reason (a chat window can reference
+ *  several competitions across its message window). Reconciles each row
+ *  first (a chat card must never show a stale status), then reuses the SAME
+ *  toCardDTO every other card-shaped read in this file goes through — one
+ *  card shape, not a second one drifting apart for chat specifically. */
+export async function competitionCardsByIds(db: Db, ids: string[], viewerId: string): Promise<Map<string, CompetitionCardDTO>> {
+  const out = new Map<string, CompetitionCardDTO>();
+  const uniqueIds = Array.from(new Set(ids)).filter(Boolean);
+  if (!uniqueIds.length) return out;
+
+  const { data: rows } = await db.from("league_competitions").select("*").in("id", uniqueIds);
+  const compRows = (rows ?? []) as LeagueCompetitionRow[];
+  if (!compRows.length) return out;
+
+  const reconciled = await Promise.all(compRows.map((r) => reconcileCompetition(db, r)));
+  const cards = await Promise.all(reconciled.map((r) => toCardDTO(db, r, viewerId)));
+  for (const c of cards) out.set(c.id, c);
+  return out;
 }
 
 export interface CompetitionDetailDTO {
