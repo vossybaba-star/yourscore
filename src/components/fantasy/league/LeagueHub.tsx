@@ -208,8 +208,9 @@ export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
       {/* GAMEWEEK RECAP — final phase only (AC2). */}
       {gw.phase === "final" && detail.gwRecap && <GwRecap recap={detail.gwRecap} />}
 
-      {/* MINI TABLE — Season / This month toggle, so both are visible up front. */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 }}>
+      {/* MINI TABLE — Season / This month toggle, so both are visible up front.
+          Wraps on narrow screens so the right-hand links never clip (founder 8 Aug). */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8, flexWrap: "wrap", rowGap: 8 }}>
         <div style={{ display: "flex", gap: 4, padding: 3, borderRadius: 10, background: PANEL, border: `1px solid ${LINE}` }}>
           {(["season", "month"] as const).map((t) => {
             const on = tableTab === t;
@@ -223,7 +224,7 @@ export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
             );
           })}
         </div>
-        <span style={{ display: "flex", gap: 10, flexShrink: 0 }}>
+        <span style={{ display: "flex", gap: 10, flexShrink: 0, marginLeft: "auto" }}>
           {detail.league.isMember && (
             <button onClick={() => setMembersOpen(true)} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
               Members →
@@ -427,26 +428,31 @@ function waitingCopy(waitingCount: number, waitingAvatars: { name: string }[]): 
 /** READINESS — pre-deadline only (AC1). Squads in / total, plus who's still
  *  to build one. `detail.readiness` is null outside the pre phase or if the
  *  server's one extra query came back empty-handed — either way, hide clean. */
+// A slim status STRIP, not a card (founder 8 Aug: kill oversized containers).
+// "All in" is a quiet one-liner; only an actual wait — the actionable state —
+// brings out the faces and a nudge line.
 function Readiness({ readiness }: { readiness: NonNullable<LeagueDetail["readiness"]> }) {
+  const allIn = readiness.waitingCount === 0;
   return (
-    <Card style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>READINESS</div>
-      <p style={{ fontSize: 13.5, color: INK, margin: 0, lineHeight: 1.5 }}>
-        {readiness.squadsIn} of {readiness.totalMembers} squads in
-      </p>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 12px", background: tint(allIn ? TEAL : GOLD, "10"), borderRadius: 10 }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: allIn ? TEAL : INK, flexShrink: 0 }}>
+        {allIn ? "✓ " : ""}{readiness.squadsIn}/{readiness.totalMembers} squads in
+      </span>
       {readiness.waitingCount > 0 && (
-        <>
-          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-            {readiness.waitingAvatars.map((w) => (
-              <PlayerAvatar key={w.userId} name={w.name} avatarUrl={w.avatarUrl} size={26} />
+        <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <span style={{ display: "flex" }}>
+            {readiness.waitingAvatars.slice(0, 4).map((w, i) => (
+              <span key={w.userId} style={{ marginLeft: i === 0 ? 0 : -8, borderRadius: "50%", border: "2px solid #0a0f0c" }}>
+                <PlayerAvatar name={w.name} avatarUrl={w.avatarUrl} size={24} />
+              </span>
             ))}
-          </div>
-          <p style={{ fontSize: 12, color: MUTED, margin: "8px 0 0" }}>
+          </span>
+          <span style={{ fontSize: 11.5, color: MUTED, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {waitingCopy(readiness.waitingCount, readiness.waitingAvatars)}
-          </p>
-        </>
+          </span>
+        </span>
       )}
-    </Card>
+    </div>
   );
 }
 
