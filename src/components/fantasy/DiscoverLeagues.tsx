@@ -15,20 +15,66 @@ import { useRouter } from "next/navigation";
 import { INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { VerifiedTick } from "@/components/ui/Seal";
 
+/** A league's social links (migration 263) — Discord-like community chips.
+ *  Re-declared locally, same shape as the API/lib/fantasy/leagues.ts DTO. */
+interface LeagueLinks {
+  discord?: string; x?: string; instagram?: string; tiktok?: string; website?: string;
+}
 interface Row {
   id: string; name: string; code: string; memberCount: number; imageUrl?: string | null;
   official?: boolean; kind?: string; club?: string | null; isMember?: boolean; canContribute?: boolean;
+  bio?: string | null; links?: LeagueLinks;
 }
 interface Groups { featured: Row[]; clubs: Row[]; open: Row[] }
 
-function LeagueCrest({ imageUrl }: { imageUrl?: string | null }) {
+// Community-card sized (founder, 7 Aug) — Discover gets the fullest treatment,
+// so the crest is the biggest anywhere leagues render (72-88px, rounded-2xl);
+// the shield fallback scales up with it rather than looking lost next to a
+// bigger frame.
+function LeagueCrest({ imageUrl, size = 84 }: { imageUrl?: string | null; size?: number }) {
+  const r = Math.round(size * 0.23);
   if (imageUrl) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={imageUrl} alt="" width={40} height={40} style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />;
+    return <img src={imageUrl} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: r, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />;
   }
   return (
-    <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
+    <span style={{ width: size, height: size, flexShrink: 0, borderRadius: r, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width={size * 0.48} height={size * 0.48} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
+    </span>
+  );
+}
+
+const LINK_META: { key: keyof LeagueLinks; label: string; accent: string; icon: React.ReactNode }[] = [
+  { key: "discord", label: "Discord", accent: "#5865F2", icon: <path d="M8 8.5C10.3 7.3 13.7 7.3 16 8.5M6.5 9c-1.4 2.8-1.4 5.6 0 8.5 1.4.5 2.8.3 3.8-.6M17.5 9c1.4 2.8 1.4 5.6 0 8.5-1.4.5-2.8.3-3.8-.6M9 13a1.2 1.2 0 102.4 0 1.2 1.2 0 00-2.4 0zM12.6 13a1.2 1.2 0 102.4 0 1.2 1.2 0 00-2.4 0z" /> },
+  { key: "x", label: "X", accent: "#eef2f0", icon: <><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></> },
+  { key: "instagram", label: "Instagram", accent: "#E1306C", icon: <><rect x="4.5" y="4.5" width="15" height="15" rx="5" /><circle cx="12" cy="12" r="3.4" /><circle cx="16" cy="8" r="0.6" fill="currentColor" stroke="none" /></> },
+  { key: "tiktok", label: "TikTok", accent: "#25F4EE", icon: <path d="M14 4v9.6a3 3 0 11-2.6-2.97M14 4a4.6 4.6 0 004.5 4.5" /> },
+  { key: "website", label: "Website", accent: TEAL, icon: <><circle cx="12" cy="12" r="8" /><line x1="4" y1="12" x2="20" y2="12" /><path d="M12 4c2 2.2 3 5 3 8s-1 5.8-3 8c-2-2.2-3-5-3-8s1-5.8 3-8z" /></> },
+];
+const hasLinks = (links?: LeagueLinks | null) => !!links && LINK_META.some((m) => links[m.key]);
+/** Icon-only circular chips — stopPropagation so tapping one opens the link in
+ *  a new tab instead of triggering the row's own onClick (Open/Join). */
+function SocialChips({ links, size = 24 }: { links?: LeagueLinks | null; size?: number }) {
+  if (!hasLinks(links)) return null;
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      {LINK_META.filter((m) => links![m.key]).map(({ key, label, accent, icon }) => (
+        <span
+          key={key} role="button" tabIndex={0} aria-label={label}
+          onClick={(e) => { e.stopPropagation(); window.open(links![key], "_blank", "noopener,noreferrer"); }}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault(); e.stopPropagation(); window.open(links![key], "_blank", "noopener,noreferrer");
+          }}
+          style={{
+            width: size, height: size, flexShrink: 0, borderRadius: "50%", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: tint(accent, "1c"), border: `1px solid ${tint(accent, "44")}`, color: accent,
+          }}
+        >
+          <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+        </span>
+      ))}
     </span>
   );
 }
@@ -84,13 +130,19 @@ export function DiscoverLeagues() {
     const sub = l.kind === "club" && l.club
       ? `${l.memberCount} member${l.memberCount === 1 ? "" : "s"} · ${l.club} fans`
       : `${l.memberCount} member${l.memberCount === 1 ? "" : "s"}${l.official ? " · Official" : ""}`;
+    // Discover gets the fullest treatment (founder, 7 Aug: leagues read as
+    // communities) — the biggest crest anywhere leagues render, the bio
+    // prominent (not truncated to one line), chips below. The card is a plain
+    // <div> (not a <button> root, unlike the My Leagues tile), so the open
+    // button + action button + chips can all sit as independent controls.
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 10, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 11 }}>
-        <button onClick={() => open(l.code)} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0, cursor: "pointer", background: "none", border: "none", textAlign: "left", padding: 0 }}>
-          <LeagueCrest imageUrl={l.imageUrl} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 16, padding: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button onClick={() => open(l.code)} style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, cursor: "pointer", background: "none", border: "none", textAlign: "left", padding: 0 }}>
+          <LeagueCrest imageUrl={l.imageUrl} size={84} />
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
               {l.official && <VerifiedTick size={14} />}
             </div>
             <div style={{ fontSize: 11.5, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
@@ -107,6 +159,18 @@ export function DiscoverLeagues() {
             background: "transparent", color: TEAL, border: `1px solid ${tint(TEAL, "55")}`,
           }}>{mode === "open" ? "Open" : "View"}</button>
         )}
+      </div>
+      {(l.bio || hasLinks(l.links)) && (
+        <div style={{ marginLeft: 96, display: "flex", flexDirection: "column", gap: 8 }}>
+          {l.bio && (
+            <p style={{
+              fontSize: 12.5, color: MUTED, lineHeight: 1.45, margin: 0,
+              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+            }}>{l.bio}</p>
+          )}
+          {hasLinks(l.links) && <SocialChips links={l.links} size={26} />}
+        </div>
+      )}
       </div>
     );
   };

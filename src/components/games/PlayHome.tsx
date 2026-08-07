@@ -62,7 +62,24 @@ export function QuickPlayGrid() {
                   style={{ objectFit: "cover", objectPosition: "center 32%" }}
                 />
               ) : (
-                <PitchArt />
+                <>
+                  <PitchArt />
+                  {/* The signature game wears its name (founder 2026-08-07:
+                      "make the actual image like a big 38-0") — instantly
+                      findable, like the marketing hero's 38-0 lockup. */}
+                  <span
+                    className="absolute inset-0 flex items-center justify-center font-display"
+                    style={{
+                      fontSize: 52,
+                      lineHeight: 1,
+                      color: "#aeea00",
+                      letterSpacing: "0.01em",
+                      textShadow: "0 2px 18px rgba(10,15,10,0.85)",
+                    }}
+                  >
+                    38-0
+                  </span>
+                </>
               )}
               <span
                 className="absolute bottom-1.5 right-1.5 font-body text-[10px] font-semibold px-2 py-0.5 rounded-full"

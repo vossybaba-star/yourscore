@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,12 +10,14 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { coverUrl } from "@/lib/img";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
+import { useUser } from "@/hooks/useUser";
 import { DebateCard } from "@/components/debate/DebateCard";
 import { GamedayCard } from "@/components/home/GamedayCard";
 import { trackShare } from "@/lib/analytics/trackGame";
 import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import { SeasonSection } from "@/components/home/SeasonSection";
 import { BriefingTile } from "@/components/matchweek/BriefingTile";
+import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import type { PlBriefing } from "@/lib/pl/briefing";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
 
@@ -26,9 +29,20 @@ const FeedStream = dynamic(
   { ssr: false, loading: () => null }
 );
 
+// CreatePostSheet is the composer — same reasoning as FeedStream above, it
+// only loads once someone opens the Feed tab and taps the composer pill.
+const CreatePostSheet = dynamic(
+  () => import("@/components/fantasy/CreatePostSheet").then((m) => m.CreatePostSheet),
+  { ssr: false, loading: () => null }
+);
+
 const LIME = "#aeea00";
 const TEAL = "#00d8c0";
 const GOLD = "#ffc233";
+const PANEL = "#0e1611";
+const LINE = "rgba(255,255,255,0.07)";
+const MUTED = "#8a948f";
+const SIGN_IN = "/auth/sign-in?next=/";
 
 // ── Data contract ─────────────────────────────────────────────────────────────
 
@@ -417,6 +431,7 @@ function NewsSection() {
 // mounted here, posting stays on the feed's own surfaces.
 
 type FeedTab = "global" | "following";
+type FeedSort = "top" | "recent";
 
 function FeedToggle({ tab, onChange }: { tab: FeedTab; onChange: (t: FeedTab) => void }) {
   const opts: { id: FeedTab; label: string }[] = [
@@ -510,12 +525,59 @@ function LeagueHighlightCard() {
 }
 
 function FeedSection() {
+  const router = useRouter();
+  const { user } = useUser();
   const [tab, setTab] = useState<FeedTab>("global");
+  const [sort, setSort] = useState<FeedSort>("top");
+  // The composer + a key that reloads For You after a new post lands (same
+  // pattern as SocialHome's liveKey).
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [liveKey, setLiveKey] = useState(0);
+
   return (
     <div className="d-5">
       <SectionHead title="Around the game" />
+
+      {/* Composer entry point — write a post to the public feed. Home only
+          renders this signed in, but keep the sign-in guard for the rare case
+          the session drops out from under the tab. */}
+      <button onClick={() => (user ? setComposeOpen(true) : router.push(SIGN_IN))} style={{
+        width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+        padding: "9px 12px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, marginBottom: 12,
+      }}>
+        <PlayerAvatar
+          name={user?.user_metadata?.display_name ?? "You"}
+          avatarUrl={user?.user_metadata?.avatar_url ?? null}
+          size={30}
+        />
+        <span style={{ fontSize: 13.5, color: MUTED }}>What&apos;s happening?</span>
+      </button>
+
       <FeedToggle tab={tab} onChange={setTab} />
-      <FeedStream embedded chrome={false} controlledScope={tab} controlledSort="recent" signInNext="/" />
+
+      {/* Sort the open feed by engagement (Top) or newest (Latest). Following
+          stays newest-first — same split as SocialHome. */}
+      {tab === "global" && (
+        <div className="flex items-center justify-end gap-1 mb-3">
+          {([["top", "Top"], ["recent", "Latest"]] as [FeedSort, string][]).map(([s, label]) => {
+            const active = sort === s;
+            return (
+              <button key={s} onClick={() => setSort(s)} style={{
+                padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                background: active ? "rgba(0,216,192,0.14)" : "transparent", color: active ? TEAL : MUTED,
+                border: `1px solid ${active ? "rgba(0,216,192,0.55)" : LINE}`,
+              }}>{label}</button>
+            );
+          })}
+        </div>
+      )}
+
+      <FeedStream key={tab === "global" ? liveKey : "following"} embedded chrome={false} controlledScope={tab}
+        controlledSort={tab === "global" ? sort : "recent"} signInNext="/" />
+
+      <CreatePostSheet open={composeOpen}
+        onClose={() => setComposeOpen(false)}
+        onPosted={() => setLiveKey((k) => k + 1)} />
     </div>
   );
 }

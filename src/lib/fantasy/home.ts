@@ -38,6 +38,10 @@ export interface HomeYou {
   gapToFirst: number | null;
   /** The viewer's XI as a pitch board — so "Your squad is in" shows the squad. */
   board: HomeBoard | null;
+  /** Transfer credits banked (engine `squad.credits`, capped at `CREDIT_CAP` in
+   *  lib/fantasy/engine.ts). Null when there's no squad yet — the card renders
+   *  without pips rather than faking a count. */
+  bank: number | null;
 }
 
 export interface HomeLeagueCard {
@@ -49,6 +53,8 @@ export interface HomeLeagueCard {
   msgCount: number;
   /** Messages from other members since the viewer last opened this chat. */
   unread: number;
+  /** League display picture — null falls back to a drawn shield in the client. */
+  imageUrl: string | null;
 }
 
 export interface FantasyHomeData {
@@ -57,8 +63,6 @@ export interface FantasyHomeData {
   moves: FeedEvent[];
   movesScope: "following" | "global";
   followingCount: number;
-  /** The Scout's picks this week — a highlight rail on the home. */
-  scout: HomeScoutPick[];
   /** A ready-made legal squad for someone who hasn't picked yet — shown on the
    *  home so they can adopt it in one tap and start playing. Null once they have
    *  a squad (or if the pool is too thin to solve one). */
@@ -104,11 +108,11 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
   // ── current gameweek + squad presence ──────────────────────────────────────
   const [{ data: gwRows }, { data: squadRow }] = await Promise.all([
     db.from("fantasy_gameweeks").select("gw, deadline, status, mode").eq("mode", "live").order("gw", { ascending: true }),
-    db.from("fantasy_squads").select("xi, bench, captain, vice").eq("user_id", userId).maybeSingle(),
+    db.from("fantasy_squads").select("xi, bench, captain, vice, credits").eq("user_id", userId).maybeSingle(),
   ]);
   const gws = (gwRows ?? []) as { gw: number; deadline: string | null; status: string }[];
   const current = gws.find((g) => g.status !== "final") ?? gws[gws.length - 1] ?? null;
-  const sq = squadRow as { xi?: number[]; bench?: number[]; captain?: number | null; vice?: number | null } | null;
+  const sq = squadRow as { xi?: number[]; bench?: number[]; captain?: number | null; vice?: number | null; credits?: number } | null;
   const hasSquad = !!sq && Array.isArray(sq.xi) && sq.xi.length > 0;
 
   // The viewer's XI as a pitch board, resolved from the pool (never trust the row
@@ -141,17 +145,8 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
     totalPlayers: standings.totalPlayers,
     gapToFirst: you && leader && you.played > 0 ? Math.max(0, leader.points - you.points) : null,
     board,
+    bank: hasSquad ? sq!.credits ?? 0 : null,
   };
-
-  // ── Scout highlight — this week's four picks, as a home rail ────────────────
-  let scout: HomeScoutPick[] = [];
-  try {
-    const picks = await loadPublishedScoutPicks(db);
-    scout = picks.filter((p) => !p.isBackup).map((p) => {
-      const face = poolById.get(p.player.id);
-      return { category: p.category, id: p.player.id, name: p.player.name, club: p.player.club, pos: p.player.pos, price: p.player.priceTenths / 10, avatarUrl: face?.avatarUrl ?? null };
-    });
-  } catch { /* no picks published yet — the tile just doesn't render */ }
 
   // ── league summary cards ───────────────────────────────────────────────────
   const { data: memberships } = await db.from("fantasy_league_members").select("league_id, joined_at").eq("user_id", userId);
@@ -161,7 +156,7 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
   let leagues: HomeLeagueCard[] = [];
   if (leagueIds.length) {
     const [{ data: leagueRows }, { data: memberRows }, { data: msgRows }, { data: readRows }] = await Promise.all([
-      db.from("fantasy_leagues").select("id, name, join_code").in("id", leagueIds),
+      db.from("fantasy_leagues").select("id, name, join_code, image_url").in("id", leagueIds),
       db.from("fantasy_league_members").select("league_id").in("league_id", leagueIds),
       db.from("comments").select("subject_id, user_id, body, kind, payload, created_at")
         .eq("subject_type", "fantasy_league").in("subject_id", leagueIds).is("deleted_at", null)
@@ -201,6 +196,7 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
       const latest = latestByLeague.get(l.id);
       return {
         code: l.join_code, name: l.name, memberCount: counts.get(l.id) ?? 1,
+        imageUrl: l.image_url ?? null,
         msgCount: msgCount.get(l.id) ?? 0,
         unread: unread.get(l.id) ?? 0,
         latest: latest ? { author: profById.get(latest.user_id) ?? "A manager", preview: previewOf(latest.kind, latest.body, latest.payload) } : null,
@@ -223,7 +219,6 @@ export async function fantasyHome(db: Db, userId: string): Promise<FantasyHomeDa
     moves,
     movesScope: "global",
     followingCount: global.followingCount,
-    scout,
     proposed: hasSquad ? null : buildProposedSquad(markerOf),
     todo: { squad: !hasSquad, league: leagueIds.length === 0, follow: global.followingCount === 0 },
   };

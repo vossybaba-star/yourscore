@@ -35,7 +35,53 @@ import { LeagueChatView } from "@/components/fantasy/league/LeagueChatView";
 import { LeagueTableView } from "@/components/fantasy/league/LeagueTableView";
 import { LeagueGamesView } from "@/components/fantasy/league/LeagueGamesView";
 import { LeagueHistoryView } from "@/components/fantasy/league/LeagueHistoryView";
-import type { ChatData, GamesPulse, LeagueDetail } from "@/components/fantasy/league/types";
+import type { ChatData, GamesPulse, LeagueDetail as BaseLeagueDetail } from "@/components/fantasy/league/types";
+
+/** league.bio / league.links (migration 263) — not yet on the shared
+ *  league/types.ts DTO, so extended locally here rather than widening that
+ *  file for every consumer. The API always returns both (null/{} pre-
+ *  migration or before the owner's set anything), so this is a type-only
+ *  extension, not a runtime assumption. */
+interface LeagueLinks {
+  discord?: string; x?: string; instagram?: string; tiktok?: string; website?: string;
+}
+type LeagueDetail = BaseLeagueDetail & { league: BaseLeagueDetail["league"] & { bio: string | null; links: LeagueLinks } };
+
+const LINK_META: { key: keyof LeagueLinks; label: string; accent: string; icon: React.ReactNode }[] = [
+  { key: "discord", label: "Discord", accent: "#5865F2", icon: <path d="M8 8.5C10.3 7.3 13.7 7.3 16 8.5M6.5 9c-1.4 2.8-1.4 5.6 0 8.5 1.4.5 2.8.3 3.8-.6M17.5 9c1.4 2.8 1.4 5.6 0 8.5-1.4.5-2.8.3-3.8-.6M9 13a1.2 1.2 0 102.4 0 1.2 1.2 0 00-2.4 0zM12.6 13a1.2 1.2 0 102.4 0 1.2 1.2 0 00-2.4 0z" /> },
+  { key: "x", label: "X", accent: "#eef2f0", icon: <><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></> },
+  { key: "instagram", label: "Instagram", accent: "#E1306C", icon: <><rect x="4.5" y="4.5" width="15" height="15" rx="5" /><circle cx="12" cy="12" r="3.4" /><circle cx="16" cy="8" r="0.6" fill="currentColor" stroke="none" /></> },
+  { key: "tiktok", label: "TikTok", accent: "#25F4EE", icon: <path d="M14 4v9.6a3 3 0 11-2.6-2.97M14 4a4.6 4.6 0 004.5 4.5" /> },
+  { key: "website", label: "Website", accent: TEAL, icon: <><circle cx="12" cy="12" r="8" /><line x1="4" y1="12" x2="20" y2="12" /><path d="M12 4c2 2.2 3 5 3 8s-1 5.8-3 8c-2-2.2-3-5-3-8s1-5.8 3-8z" /></> },
+];
+const hasLinks = (links?: LeagueLinks | null) => !!links && LINK_META.some((m) => links[m.key]);
+/** Icon-only circular chips in the league header — stopPropagation isn't load-
+ *  bearing here (the header has no click-through), kept anyway for consistency
+ *  with the tile-list versions of this same component. */
+function SocialChips({ links, size = 24 }: { links?: LeagueLinks | null; size?: number }) {
+  if (!hasLinks(links)) return null;
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      {LINK_META.filter((m) => links![m.key]).map(({ key, label, accent, icon }) => (
+        <span
+          key={key} role="button" tabIndex={0} aria-label={label}
+          onClick={(e) => { e.stopPropagation(); window.open(links![key], "_blank", "noopener,noreferrer"); }}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault(); e.stopPropagation(); window.open(links![key], "_blank", "noopener,noreferrer");
+          }}
+          style={{
+            width: size, height: size, flexShrink: 0, borderRadius: "50%", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: tint(accent, "1c"), border: `1px solid ${tint(accent, "44")}`, color: accent,
+          }}
+        >
+          <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+        </span>
+      ))}
+    </span>
+  );
+}
 
 type Tab = "hub" | "chat" | "table" | "games" | "history";
 // History lost its pill (product model 2026-08-07: four permanent tabs max).
@@ -169,9 +215,11 @@ export default function LeaguePage() {
     try { setChat(await apiRaw<ChatData>(`leagues/${code}/chat`)); }
     catch { /* non-member / signed out — no chat */ }
   }, [code]);
-  // Club and Founder leagues are open to read, so browse their chat even as a
-  // non-member (read-only). Every other league needs membership.
-  const canReadChat = !!detail && (detail.league.isMember || detail.league.kind === "club" || detail.league.kind === "founder");
+  // Club/Founder leagues and any PUBLIC league are open to read, so browse
+  // their chat even signed out (founder, 7 Aug — leagues read as communities).
+  // A genuinely private league still needs membership — leagueChat enforces
+  // the real gate; this just mirrors it so the client doesn't fetch a 403.
+  const canReadChat = !!detail && (detail.league.isMember || detail.league.kind === "club" || detail.league.kind === "founder" || detail.league.isPublic);
   useEffect(() => {
     if (!canReadChat) return;
     loadChat();
@@ -247,15 +295,16 @@ export default function LeaguePage() {
     <main data-fantasy style={page}>
       <Header exit={{ label: "Leagues", onClick: () => router.push("/fantasy/leagues") }} />
 
-      {/* Header: name, private label + members, invite, settings. */}
+      {/* Header: crest, name, private label + members, bio + social chips
+          (compact — migration 263), invite, settings. */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minWidth: 0 }}>
           {league.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={league.imageUrl} alt="" width={44} height={44} style={{ width: 44, height: 44, borderRadius: 12, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
+            <img src={league.imageUrl} alt="" width={64} height={64} style={{ width: 64, height: 64, borderRadius: 15, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
           ) : (
-            <span style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
+            <span style={{ width: 64, height: 64, flexShrink: 0, borderRadius: 15, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={31} height={31} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
             </span>
           )}
           <div style={{ minWidth: 0 }}>
@@ -266,6 +315,13 @@ export default function LeaguePage() {
             <div style={{ fontSize: 12.5, color: MUTED, marginTop: 3 }}>
               {league.kind === "club" ? `${league.club ?? "Club"} fans` : league.kind === "founder" ? "Founder League" : league.isPublic ? "Public league" : "Private league"} · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
             </div>
+            {league.bio && (
+              <p style={{
+                fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.4, margin: "5px 0 0",
+                display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+              }}>{league.bio}</p>
+            )}
+            {hasLinks(league.links) && <div style={{ marginTop: 6 }}><SocialChips links={league.links} size={24} /></div>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
@@ -312,9 +368,10 @@ export default function LeaguePage() {
       <div style={{ display: "flex", gap: 3, margin: "10px 0 12px", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: 3 }}>
         {TABS.map(([k, label]) => {
           const active = tab === k;
-          // Chat opens to anyone for a club/Founder league (browse what they talk
-          // about); History and Games still need membership. Everywhere else both need it.
-          const chatOpen = league.isMember || league.kind === "club" || league.kind === "founder";
+          // Chat opens to anyone for a club/Founder league or any PUBLIC league
+          // (browse what they talk about, signed out included); History and
+          // Games still need membership.
+          const chatOpen = league.isMember || league.kind === "club" || league.kind === "founder" || league.isPublic;
           const locked = (k === "chat" && !chatOpen) || ((k === "history" || k === "games") && !league.isMember);
           if (locked) return null;
           // Games tab badge (Phase 4A follow-through) — a small gold dot with
@@ -342,7 +399,7 @@ export default function LeaguePage() {
       </div>
 
       {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} onOpenGamesChallenge={openGamesChallenge} />}
-      {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder") && (
+      {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder" || league.isPublic) && (
         <LeagueChatView code={code} initialGw={chatGw} onOpenCompetition={openGamesCompetition} />
       )}
       {tab === "table" && <LeagueTableView detail={detail} code={code} />}

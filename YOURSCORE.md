@@ -6,7 +6,20 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-07 late (**Home Feed tab + iPhone safe-area sweep** (PR #100):
+> **Confirmed:** 2026-08-08 (**Community polish** (PR #101, migration 263 APPLIED to prod):
+> the Home Feed tab got its composer back (avatar + "What's happening?" pill →
+> CreatePostSheet, Top | Latest sort, post refreshes For You). **Leagues present as
+> communities**: `fantasy_leagues` gained `bio` + `links` (mig 263); tiles carry big
+> display pictures (76-84px, monogram fallback), bio lines and validated social chips
+> (discord/x/instagram/tiktok/website), owner-edited in league settings; the league
+> header inside carries the same identity. **Chat reads opened to guests/non-members for
+> public + club + founder leagues (GET only; writes still gated; private leagues stay
+> members-only by design).** Fantasy Home: EARN TRANSFERS card with the REAL five-slot
+> bank pips (`fantasy_squads.credits` via the home payload — zero banked renders zero
+> lit, nothing faked), YOUR LEAGUES rows carry 56px art, SCOUT SAYS removed from the
+> member view. Play: the 38-0 Quick Play card wears a big lime 38-0 wordmark.)
+>
+> **Previously confirmed:** 2026-08-07 late (**Home Feed tab + iPhone safe-area sweep** (PR #100):
 > Home's sticky header gains a **TODAY | FEED** switch — Today keeps the football-happening
 > modules, Feed gives AROUND THE GAME its own full-height tab (`?view=feed` deep-links;
 > FeedStream still lazy-mounts only when opened). **Back controls cleared of the iPhone
@@ -935,6 +948,10 @@ Confirmed preamble above and the referenced section.
   404), 38-0 feed events (no sentence template fits a football match), and fixture
   postponement (wiring it would add SportMonks calls on days gameday-publish promises
   zero, and a health check asserts that).
+- **2026-08-08** — **Community polish** (PR #101, mig 263 applied). Feed composer back on
+  Home; league community tiles (big art, bio, social chips, owner settings); public-league
+  chat reads open to everyone; EARN TRANSFERS real 5-pip bank on Fantasy Home; 38-0
+  wordmark on Quick Play.
 - **2026-08-07 late** — **Home Feed tab + safe-area sweep** (PR #100, merged). TODAY | FEED
   switch on Home; 13 pages' back controls cleared of the iPhone clock (pt-safe); 22 back
   pills now retrace via fallback.
