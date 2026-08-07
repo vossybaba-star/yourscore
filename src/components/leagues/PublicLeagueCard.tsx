@@ -11,6 +11,9 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 const TEAL = "#00d8c0";
 const LIME = "#aeea00";
 const GOLD = "#ffc233";
+// Mirrors shared.tsx's LINE — re-declared, not imported, same idiom as this
+// file's own TEAL/LIME/GOLD above (no import from shared.tsx here).
+const LINE = "rgba(255,255,255,0.07)";
 
 export interface PublicLeague {
   id: string;
@@ -56,7 +59,7 @@ export function PublicLeagueCard({ league }: { league: PublicLeague }) {
   }
 
   return (
-    <div onClick={() => router.push(viewHref)} className="rounded-2xl p-4 cursor-pointer active:scale-[0.99] transition-transform" style={{ background: "#0e1611", border: `1px solid ${league.featured ? `${GOLD}44` : "rgba(255,255,255,0.08)"}` }}>
+    <div onClick={() => router.push(viewHref)} className="rounded-2xl p-4 cursor-pointer active:scale-[0.99] transition-transform" style={{ background: "#0e1611", border: `1px solid ${league.featured ? `${GOLD}44` : LINE}` }}>
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0" style={{ background: `${c}14`, border: `1px solid ${c}33` }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
