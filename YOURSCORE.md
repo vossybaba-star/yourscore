@@ -6,7 +6,17 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-08 (**Scout's Latest — a daily, auto-published rotating recommender**
+> **Confirmed:** 2026-08-08 (**Scout tab filled in** (commit `1a50986`). Two changes on the Scout
+> tab (`/fantasy/news`): (1) signed in, the Briefing (the Scout's front door) now LEADS with the daily
+> Scout's Latest ideas above the news stream, so landing on Scout is immediately useful rather than a
+> sparse pre-season feed. (2) Signed out, the Scout was a bare sign-up wall showing none of it; it now
+> shows the PUBLIC taste — Scout's Latest + the Four Picks + the fixtures grid — with a compact "read the
+> rest" CTA under it, so the free content sells the account. Players / Shortlist / Your Squad stay walled
+> (account-only). Fixed on the way: reusing one shared async Server Component element across the briefing
+> and picks slots made React reconcile the same node in two positions and threw an internal "reading 'is'"
+> error; each slot now builds its own instance.)
+>
+> **Previously confirmed:** 2026-08-08 (**Scout's Latest — a daily, auto-published rotating recommender**
 > (commit `59e2d8e`, migration 264 `fantasy_scout_latest` APPLIED to prod). The Four Picks are one
 > frozen set per gameweek behind a manual approve gate, so they sat unchanged for a week; Scout's
 > Latest is the opposite — 1 to 3 player IDEAS at the top of the Picks tab (`/fantasy/news?tab=picks`),
