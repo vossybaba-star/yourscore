@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { INK, LINE, MUTED, PANEL, PANEL_2, Sheet, TEAL } from "@/components/fantasy/shared";
+import { ErrorState, INK, LINE, MUTED, PANEL, PANEL_2, Sheet, Skel, TEAL } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { FollowButton } from "@/components/social/FollowButton";
 import { ReportSheet } from "@/components/social/ReportSheet";
@@ -188,30 +188,40 @@ export function MemberActionSheet({
   // sheet rather than a standalone overlay.
   const [run, setRun] = useState<RunView | null>(null);
   const [runNote, setRunNote] = useState<string | null>(null);
+  // A real failure (network error, or a non-401 error status) — kept apart
+  // from runNote, which carries a legitimate "not available yet" answer from
+  // the API. Without the split a dead fetch and "hasn't played yet" looked
+  // identical, with no way to tell someone to retry.
+  const [runError, setRunError] = useState<string | null>(null);
   const [runLoading, setRunLoading] = useState(false);
+  const [runReload, setRunReload] = useState(0);
 
   useEffect(() => { trackMemberSheetOpened(context); }, [context]);
 
   useEffect(() => {
     if (context !== "league" || !leagueCode || !viewerId) return;
     let live = true;
-    setRunLoading(true); setRun(null); setRunNote(null);
+    setRunLoading(true); setRun(null); setRunNote(null); setRunError(null);
     fetch(`/api/fantasy/leagues/${leagueCode}/run?user=${member.userId}`)
       .then(async (res) => {
         const j = await res.json().catch(() => ({}));
         if (!live) return;
         if (!res.ok) {
-          if (res.status === 401) router.push(`/auth/sign-in?next=${encodeURIComponent(pathname ?? "/")}`);
-          else setRunNote(j.error ?? "Not available yet.");
+          if (res.status === 401) { router.push(`/auth/sign-in?next=${encodeURIComponent(pathname ?? "/")}`); return; }
+          // A 4xx here (besides 401) is a real "not available" answer from
+          // the route (e.g. no round played yet) — only a server error is a
+          // failure worth a retry button.
+          if (res.status >= 500) { setRunError(j.error || "Couldn't load this."); return; }
+          setRunNote(j.error ?? "Not available yet.");
           return;
         }
         setRun(j as RunView);
       })
-      .catch((e) => { if (live) setRunNote((e as Error).message); })
+      .catch((e) => { if (live) setRunError((e as Error).message || "Couldn't load this."); })
       .finally(() => { if (live) setRunLoading(false); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [context, leagueCode, member.userId, viewerId]);
+  }, [context, leagueCode, member.userId, viewerId, runReload]);
 
   // Fetched once on open (Phase 1C, AC4; full row since Phase 3A) — the chip's
   // Challenge/Pending/Your turn/Back in/In play/See result state.
@@ -432,9 +442,15 @@ export function MemberActionSheet({
           {context === "league" && leagueCode && viewerId && (
             <div style={{ marginBottom: showSecondary ? 4 : 0 }}>
               <div className="font-body" style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>THIS GAMEWEEK</div>
-              {runLoading && <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>Loading…</p>}
-              {!runLoading && runNote && <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>{runNote}</p>}
-              {!runLoading && run && (
+              {runLoading && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <Skel h={16} w="70%" />
+                  <Skel h={40} r={10} />
+                </div>
+              )}
+              {!runLoading && runError && <ErrorState message={runError} onRetry={() => setRunReload((n) => n + 1)} />}
+              {!runLoading && !runError && runNote && <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>{runNote}</p>}
+              {!runLoading && !runError && run && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>
                     {run.name} got {run.correct}/{run.total} in Gameweek {run.gw}

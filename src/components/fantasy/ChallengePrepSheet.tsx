@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { coverUrl } from "@/lib/img";
-import { GOLD, INK, LINE, MUTED, PANEL, PANEL_2, Sheet, TEAL, tint } from "@/components/fantasy/shared";
+import { ErrorState, GOLD, INK, LINE, MUTED, PANEL, PANEL_2, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { supportedChallengeGames, type ChallengeGame } from "@/lib/fantasy/challengeGames";
 import { isGamedayPack } from "@/lib/fantasy/challenges-pure";
@@ -89,6 +89,12 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
   const [scorecardCards, setScorecardCards] = useState<(Scorecard & { metadata: unknown })[] | null>(null);
   // Quiz Duel — a different source entirely, loaded lazily once that game's picked.
   const [duelCards, setDuelCards] = useState<DuelPack[] | null>(null);
+  // A failed load of whichever source is active — kept apart from "the list
+  // came back empty" (a real, valid state this sheet already renders its own
+  // copy for). On failure the cards state is still set to [] so the effect
+  // below doesn't loop retrying forever; `packsError` is what tells the
+  // render to show a retry instead of "play a quiz first".
+  const [packsError, setPacksError] = useState<string | null>(null);
 
   const [picked, setPicked] = useState<PickedPack | null>(null);
   const [message, setMessage] = useState("");
@@ -114,46 +120,59 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
   }, [leagueCode]);
 
   const loadScorecards = useCallback(async () => {
-    const sb = createClient();
-    const { data: auth } = await sb.auth.getUser();
-    const uid = auth.user?.id;
-    if (!uid) { setScorecardCards([]); return; }
-    const db = sb as Row;
+    setPacksError(null);
+    try {
+      const sb = createClient();
+      const { data: auth } = await sb.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) { setScorecardCards([]); return; }
+      const db = sb as Row;
 
-    const { data: attempts } = await db
-      .from("quiz_attempts")
-      .select("pack_id, score, correct_count, completed_at")
-      .eq("user_id", uid)
-      .order("completed_at", { ascending: false })
-      .limit(24);
-    const rows = (attempts ?? []) as Row[];
-    const packIds = Array.from(new Set(rows.map((r) => r.pack_id))).filter(Boolean);
+      const { data: attempts, error: attemptsErr } = await db
+        .from("quiz_attempts")
+        .select("pack_id, score, correct_count, completed_at")
+        .eq("user_id", uid)
+        .order("completed_at", { ascending: false })
+        .limit(24);
+      if (attemptsErr) throw attemptsErr;
+      const rows = (attempts ?? []) as Row[];
+      const packIds = Array.from(new Set(rows.map((r) => r.pack_id))).filter(Boolean);
 
-    let packs: Record<string, Row> = {};
-    if (packIds.length) {
-      const { data: pk } = await db.from("quiz_packs").select("id, name, question_count, metadata").in("id", packIds);
-      packs = Object.fromEntries(((pk ?? []) as Row[]).map((p) => [p.id, p]));
+      let packs: Record<string, Row> = {};
+      if (packIds.length) {
+        const { data: pk, error: packsErr } = await db.from("quiz_packs").select("id, name, question_count, metadata").in("id", packIds);
+        if (packsErr) throw packsErr;
+        packs = Object.fromEntries(((pk ?? []) as Row[]).map((p) => [p.id, p]));
+      }
+      const seen = new Set<string>();
+      const list: (Scorecard & { metadata: unknown })[] = [];
+      for (const r of rows) {
+        const p = packs[r.pack_id];
+        if (!p || seen.has(r.pack_id)) continue;
+        seen.add(r.pack_id);
+        list.push({
+          packId: r.pack_id, name: p.name ?? "Quiz", score: r.score ?? 0, correct: r.correct_count ?? 0,
+          total: (p.question_count as number | null) ?? 0, cover: p.metadata?.cover_image ?? null,
+          metadata: p.metadata ?? null,
+        });
+      }
+      setScorecardCards(list);
+    } catch {
+      // Set to [] (not left null) so the effect below doesn't re-fire on
+      // every render — retrying is the Try again button's job, not an
+      // automatic loop. packsError is what actually distinguishes this from
+      // a genuine "you haven't played anything" empty state.
+      setScorecardCards([]);
+      setPacksError("Couldn't load your scores.");
     }
-    const seen = new Set<string>();
-    const list: (Scorecard & { metadata: unknown })[] = [];
-    for (const r of rows) {
-      const p = packs[r.pack_id];
-      if (!p || seen.has(r.pack_id)) continue;
-      seen.add(r.pack_id);
-      list.push({
-        packId: r.pack_id, name: p.name ?? "Quiz", score: r.score ?? 0, correct: r.correct_count ?? 0,
-        total: (p.question_count as number | null) ?? 0, cover: p.metadata?.cover_image ?? null,
-        metadata: p.metadata ?? null,
-      });
-    }
-    setScorecardCards(list);
   }, []);
 
   const loadDuelPacks = useCallback(() => {
+    setPacksError(null);
     fetch(`/api/fantasy/challenges/packs?game=duel&opponent=${encodeURIComponent(opponent.userId)}`)
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((j) => setDuelCards((j?.packs as DuelPack[] | undefined) ?? []))
-      .catch(() => setDuelCards([]));
+      .catch(() => { setDuelCards([]); setPacksError("Couldn't load quizzes to duel over."); });
   }, [opponent.userId]);
 
   // Load whichever source the picked game needs, once (not re-fetched on
@@ -279,6 +298,14 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
     : isDuel
       ? "No fresh packs to duel over right now."
       : "Play a quiz first, then challenge your league";
+  // Resets whichever source is active back to null so the load effect
+  // (above) fires again — the same "cards === null means fetch it" signal
+  // the initial mount already relies on.
+  const retryPacks = () => {
+    setPacksError(null);
+    if (isDuel) setDuelCards(null);
+    else setScorecardCards(null);
+  };
 
   return (
     <Sheet onClose={closeSheet} labelledBy="challenge-title">
@@ -328,7 +355,11 @@ export function ChallengePrepSheet({ leagueCode, opponent, createdFrom = "member
           <button onClick={() => setPicked(null)} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Change</button>
         </div>
       ) : cards === null ? (
-        <p style={{ fontSize: 12.5, color: MUTED, margin: "6px 0 16px" }}>Loading{isDuel ? " packs" : " your scores"}…</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+          <Skel h={54} r={12} /><Skel h={54} r={12} /><Skel h={54} r={12} />
+        </div>
+      ) : packsError ? (
+        <ErrorState message={packsError} onRetry={retryPacks} />
       ) : cards.length === 0 ? (
         <div style={{ textAlign: "center", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: "20px 16px", marginBottom: 16 }}>
           <p style={{ fontSize: 13, color: INK, margin: "0 0 4px", fontWeight: 600 }}>{emptyTitle}</p>
