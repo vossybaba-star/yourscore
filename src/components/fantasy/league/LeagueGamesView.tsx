@@ -21,7 +21,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, PANEL_2, SectionLabel, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
+import { Btn, Card, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, SectionLabel, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
 import { acceptChallengeAction, declineChallengeAction, cancelChallengeAction, ChallengeActionConflict } from "@/lib/fantasy/challengeClientActions";
@@ -844,6 +844,39 @@ function GameDetailSheet({ game, recentResults, viewerId, onChallenge, onRematch
 
 type PrepTarget = { opponent: { userId: string; name: string; avatarUrl: string | null }; initialGame?: string; rematchOf?: string };
 
+/**
+ * A TYPED section header (founder 8 Aug, Games UX): a colour-coded accent bar +
+ * label so the four kinds of thing on this tab read distinctly at a glance —
+ * weekly competitions (gold), things to play/challenge (lime), live + standings
+ * (teal), and past results (muted). A pulsing dot flags a live/active section
+ * (e.g. an open Gameday competition on matchday). Purely presentational; the
+ * section content below is unchanged.
+ */
+function GamesHead({ label, tone, count, live, action }: {
+  label: string;
+  tone: "weekly" | "play" | "live" | "past";
+  count?: number; live?: boolean; action?: React.ReactNode;
+}) {
+  const c = tone === "weekly" ? GOLD : tone === "play" ? LIME : tone === "past" ? MUTED : TEAL;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+      <span aria-hidden style={{ width: 3, height: 15, borderRadius: 2, background: c, flexShrink: 0 }} />
+      <span className="font-display" style={{ fontSize: 12.5, letterSpacing: "0.06em", fontWeight: 700, color: tone === "past" ? MUTED : INK }}>{label}</span>
+      {live && (
+        <span aria-label="live" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span className="gm-pulse" style={{ width: 7, height: 7, borderRadius: 999, background: TEAL }} />
+          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.06em", color: TEAL }}>LIVE</span>
+        </span>
+      )}
+      {count != null && count > 0 && (
+        <span style={{ minWidth: 17, height: 17, borderRadius: 999, padding: "0 5px", background: c, color: "#0a0f0c", fontSize: 10, fontWeight: 800, lineHeight: "17px", textAlign: "center" }}>{count}</span>
+      )}
+      {action && <span style={{ marginLeft: "auto" }}>{action}</span>}
+      <style>{`@keyframes gmPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } } .gm-pulse { animation: gmPulse 1.4s ease-in-out infinite; } @media (prefers-reduced-motion: reduce) { .gm-pulse { animation: none; } }`}</style>
+    </div>
+  );
+}
+
 export function LeagueGamesView({
   code, isOwner, autoOpenChallenge, onAutoOpenChallengeHandled, initialCompetitionId = null, onCompetitionIdChange,
 }: {
@@ -1116,14 +1149,12 @@ export function LeagueGamesView({
       )}
       {competitions && competitions.length > 0 && (
         <div style={{ marginBottom: 18 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-            <SectionLabel>COMPETITIONS</SectionLabel>
-            {isOwner && (
+          <GamesHead label="COMPETITIONS" tone="weekly" live={activeCompetitions.some((c) => c.status === "open")}
+            action={isOwner && (
               <button onClick={() => setCreateOpen(true)} style={{ background: "none", border: "none", color: GOLD, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
                 Start a competition
               </button>
-            )}
-          </div>
+            )} />
           {activeCompetitions.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {activeCompetitions.map((c) => (
@@ -1157,7 +1188,7 @@ export function LeagueGamesView({
         <>
           {overview.actionRequired.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <SectionLabel>YOUR TURN</SectionLabel>
+              <GamesHead label="YOUR TURN" tone="play" count={overview.actionRequired.length} />
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {overview.actionRequired.map((c) => (
                   <ActionCard key={c.challengeId} card={c} viewerId={viewerId} busy={actionBusyId === c.challengeId}
@@ -1190,7 +1221,7 @@ export function LeagueGamesView({
 
           {overview.open.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <SectionLabel>OPEN CHALLENGES</SectionLabel>
+              <GamesHead label="OPEN CHALLENGES" tone="live" count={overview.open.length} />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {overview.open.map((c) => (
                   <OpenRow key={c.challengeId} card={c} viewerId={viewerId} busy={actionBusyId === c.challengeId} onCancel={() => cancel(c)} />
@@ -1201,7 +1232,7 @@ export function LeagueGamesView({
 
           {overview.recentResults.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <SectionLabel>RECENT RESULTS</SectionLabel>
+              <GamesHead label="RECENT RESULTS" tone="past" />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {overview.recentResults.map((c) => (
                   <ResultRow key={c.challengeId} card={c} viewerId={viewerId} onRematch={() => startRematch(c)} />
@@ -1212,20 +1243,18 @@ export function LeagueGamesView({
 
           {overview.leaderboard.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                <SectionLabel>GAMES TABLE</SectionLabel>
-                {overview.leaderboard.length > 8 && (
+              <GamesHead label="GAMES TABLE" tone="live"
+                action={overview.leaderboard.length > 8 && (
                   <button onClick={() => { trackGamesLeaderboardFullOpened(); setFullTableOpen(true); }} style={{
                     background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0,
                   }}>Full table →</button>
-                )}
-              </div>
+                )} />
               <LeaderboardPreview rows={overview.leaderboard.slice(0, 8)} viewerId={viewerId} onRowClick={openMemberSheet} />
             </div>
           )}
 
           <div>
-            <SectionLabel>GAMES</SectionLabel>
+            <GamesHead label="PLAY A GAME" tone="play" />
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {overview.availableGames.map((g) => (
                 <div key={g.id} style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12 }}>
