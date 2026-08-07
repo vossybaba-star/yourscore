@@ -21,6 +21,7 @@ import { hiddenActorIds } from "@/lib/social/safety";
 import { YOUTUBE_ID_RE } from "@/lib/videoEmbeds";
 import { HttpError } from "./server";
 import { rankTop, rawEngagement, scoreFeedEvent } from "./feedRank";
+import { parsePlayerSnapshot, parseSquadSnapshot } from "./feed-pure";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -29,7 +30,8 @@ export type FeedType =
   | "transfer" | "captain" | "chip" | "haul" | "rank_jump"
   | "squad_complete" | "squad_update" | "shortlist_add"
   | "post" // a user-authored text/poll/image/player post (Social → Live)
-  | "quiz_result"; // a finished quiz pack or knowledge round worth shouting about
+  | "quiz_result" // a finished quiz pack or knowledge round worth shouting about
+  | "h2h_result"; // a won head-to-head (P3, 6 Aug — only quiz/round used to post; see emitH2hFeedResult)
 export type FeedScope = "following" | "global";
 export type FeedSort = "recent" | "top";
 export interface FeedResult {
@@ -455,6 +457,12 @@ function sentenceFor(type: FeedType, payload: Record<string, unknown>, gw: numbe
       const title = typeof payload.title === "string" && payload.title ? payload.title : "the Football Quiz";
       return `scored ${correct}/${total} on ${title}`;
     }
+    case "h2h_result": {
+      const mine = Number(payload.yourScore ?? 0);
+      const theirs = Number(payload.opponentScore ?? 0);
+      const title = typeof payload.title === "string" && payload.title ? payload.title : "a head to head";
+      return `won a head to head on ${title} ${mine}-${theirs}`;
+    }
     default:
       return "made a move";
   }
@@ -475,12 +483,18 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   const text = typeof b.text === "string" ? b.text.trim().slice(0, POST_MAX) : "";
 
   // An attached player card — must be a real pool id (the tile links to their
-  // profile, so a junk id would mint a dead link).
+  // profile, so a junk id would mint a dead link). Snapshot (P2, 5 Aug fix)
+  // is captured here, at attach time, off the SAME pool lookup that just
+  // validated the id — the card then renders this frozen identity forever,
+  // never today's pool.json on every future read.
   let playerId: number | null = null;
+  let playerSnapshot: { name: string; club: string; price: number; pos: string } | null = null;
   if (b.playerId != null) {
     const pid = Number(b.playerId);
-    if (!Number.isInteger(pid) || !clientPool().players.some((p) => p.id === pid)) throw new HttpError(400, "bad player");
+    const found = clientPool().players.find((p) => p.id === pid);
+    if (!Number.isInteger(pid) || !found) throw new HttpError(400, "bad player");
     playerId = pid;
+    playerSnapshot = { name: found.name, club: found.club, price: found.price, pos: found.pos };
   }
 
   let poll: { question: string; options: string[]; endsAt: string } | null = null;
@@ -643,7 +657,7 @@ export async function postToFeed(db: Db, userId: string, body: unknown): Promise
   if (images.length) payload.images = images;
   if (gif) payload.gif = gif;
   if (video) payload.video = video;
-  if (playerId != null) payload.player = playerId;
+  if (playerId != null) { payload.player = playerId; payload.playerSnapshot = playerSnapshot; }
   if (link) payload.link = link;
   if (fixture) payload.fixture = fixture;
   if (quoteOf) payload.quoteOf = quoteOf;
@@ -1152,16 +1166,48 @@ async function hydrateEvents(
     if (type === "squad_complete" && Array.isArray(payload.xi)) {
       const xi = payload.xi as number[];
       const bench = Array.isArray(payload.bench) ? (payload.bench as number[]) : [];
+      // Snapshot present (P2, 5 Aug fix): the exact squad as posted — name,
+      // club, position and price frozen at reveal time, never re-derived from
+      // TODAY's pool.json/FPL bootstrap (a transfer or price change used to
+      // silently rewrite an old squad post). No snapshot (every post written
+      // before this fix) falls back to markerOf's live derivation, unchanged.
+      const snap = parseSquadSnapshot(payload.snapshot);
       board = {
-        players: [...xi, ...bench].map(markerOf),
+        players: [...xi, ...bench].map((id) => {
+          const s = snap?.get(id);
+          if (!s) return markerOf(id);
+          return { id, name: s.name, label: pitchName(s.name), pos: s.pos, club: s.club, avatarUrl: poolById.get(id)?.avatarUrl ?? null, price: s.price };
+        }),
         xi, bench,
+        // Captain/vice are already player ids, not a lookup result — an id
+        // never goes stale, so these need no snapshot of their own.
         captain: payload.captain != null ? Number(payload.captain) : undefined,
         vice: payload.vice != null ? Number(payload.vice) : undefined,
       };
     } else if ((type === "shortlist_add" || type === "squad_update" || type === "post") && payload.player != null) {
       // A post can carry an attached player card too — same tile as shortlist.
       playerId = Number(payload.player);
-      player = faceOf(playerId);
+      const snap = parsePlayerSnapshot(payload.playerSnapshot);
+      if (snap) {
+        // Snapshot present: name/position/price frozen at attach time.
+        // Fixtures/ownership/last-season stay live off the current pool entry
+        // when the player still resolves there (inherently time-varying stats,
+        // not identity) and degrade to empty — never a blank/broken tile — if
+        // the player has since left the pool entirely.
+        const live = poolById.get(playerId);
+        const el = bootEl.get(playerId);
+        player = {
+          name: snap.name, avatarUrl: live?.avatarUrl ?? null, pos: snap.pos, price: snap.price,
+          ownership: el?.selected_by_percent != null ? Number(el.selected_by_percent) : null,
+          lastSeasonPts: el?.total_points ?? null,
+          fixtures: live ? (fixturesByClub[live.clubId ?? -1] ?? []).slice(0, 3).map((c) => ({
+            gw: c.gw, oppShort: c.oppShort, home: c.home, difficulty: c.difficulty,
+          })) : [],
+        };
+      } else {
+        // No snapshot (pre-snapshot posts, backward compat) — unchanged live derivation.
+        player = faceOf(playerId);
+      }
     }
     // A quiz_result carries its score line.
     let quiz: FeedQuiz | null | undefined;
@@ -1574,9 +1620,13 @@ export async function loadDiscoverFeed(
   }
 
   if (filter === "games") {
+    // "Games" as in the product's five games, not just quiz — h2h_result (6
+    // Aug) is the first non-quiz game to post here; Versus/38-0 join this
+    // list once they get an equally clean completion hook (see the file doc
+    // above tryEmitFeedEvent's other call sites for why they don't yet).
     const { data: rows } = await db.from("fantasy_feed_events")
       .select("id, actor_id, type, gw, payload, created_at")
-      .eq("type", "quiz_result")
+      .in("type", ["quiz_result", "h2h_result"])
       .order("created_at", { ascending: false }).limit(limit);
     return { events: await hydrateEvents(db, viewerId, rows ?? [], "recent", limit) };
   }
