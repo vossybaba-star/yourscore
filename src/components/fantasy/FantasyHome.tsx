@@ -19,6 +19,7 @@ import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
+import { timeAgo } from "@/lib/timeAgo";
 
 interface FeedBoard { players: BoardPlayer[]; xi: number[]; bench: number[]; captain?: number | null; vice?: number | null }
 interface FeedFace { name: string; avatarUrl: string | null }
@@ -51,12 +52,6 @@ function countdown(iso: string | null): string | null {
   const h = Math.floor(m / 60);
   if (h < 24) return `in ${h}h`;
   return `in ${Math.floor(h / 24)}d`;
-}
-function timeAgo(iso: string): string {
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return "now"; if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60); if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
 }
 const ordinal = (n: number) => { const s = ["th","st","nd","rd"], v = n % 100; return n + (s[(v-20)%10] || s[v] || s[0]); };
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
