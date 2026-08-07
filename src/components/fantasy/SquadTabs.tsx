@@ -11,18 +11,43 @@ import { useEffect, useState } from "react";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { FantasyHub } from "@/components/fantasy/FantasyHub";
 import { PlanAhead } from "@/components/fantasy/PlanAhead";
+import { LeagueInviteNudge } from "@/components/fantasy/LeagueInviteNudge";
 import { LIME, LINE, MUTED, PANEL_2, page, tint } from "@/components/fantasy/shared";
+import { useUser } from "@/hooks/useUser";
 
 type Sub = "team" | "plan";
+
+/** A friendly default league name from whoever's signed in — first name if we
+ *  have one, else a neutral fallback. Never an email or an id. */
+function suggestLeagueName(user: ReturnType<typeof useUser>["user"]): string {
+  const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+  const raw = (meta.full_name || meta.name || "").trim();
+  const first = raw.split(/\s+/)[0];
+  return first ? `${first}'s league` : "My Fantasy league";
+}
 
 export function SquadTabs() {
   const [tab, setTab] = useState<Sub>("team");
   const [visited, setVisited] = useState<Set<Sub>>(new Set<Sub>(["team"]));
+  const [nudge, setNudge] = useState(false);
+  const { user } = useUser();
 
-  // Restore the sub-tab from the URL on mount (a deep link / refresh / back lands right).
+  // Restore the sub-tab from the URL on mount (a deep link / refresh / back lands
+  // right), and catch the one-shot ?created=1 the builder sets after a first
+  // squad confirm — open the "bring your friends" nudge and strip the flag so a
+  // refresh or back never re-fires it.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("sub") === "plan") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("sub") === "plan") {
       setTab("plan"); setVisited((v) => new Set<Sub>(v).add("plan"));
+    }
+    if (params.get("created") === "1") {
+      setNudge(true);
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.delete("created");
+        window.history.replaceState(null, "", u);
+      } catch { /* no-op */ }
     }
   }, []);
 
@@ -64,6 +89,8 @@ export function SquadTabs() {
       <div style={{ display: tab === "plan" ? "block" : "none" }}>
         {visited.has("plan") ? <PlanAhead embedded /> : null}
       </div>
+
+      <LeagueInviteNudge open={nudge} onClose={() => setNudge(false)} defaultName={suggestLeagueName(user)} />
     </main>
   );
 }

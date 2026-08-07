@@ -881,8 +881,10 @@ export async function postChat(db: Db, userId: string, code: string, body: unkno
   const inserted = await insertChatMessage(
     db, league, userId, { body: text, ...(entities.length ? { payload: { mentions: entities } } : {}) }, parentId,
   );
-  // @mentions only — never a push for every message (the spam trap). Fire-and-forget.
+  // @mentions get their own direct ping; everyone else gets the quiet once-per-
+  // streak activity nudge (never a push per message). Both fire-and-forget.
   void notifyChatMentions(db, league.id, code, league.name, userId, text, inserted.id, entities);
+  void notifyLeagueActivity(db, league.id, code, league.name, userId, inserted.id, entities.map((e) => e.userId));
   return { ok: true };
 }
 
@@ -958,6 +960,62 @@ async function notifyLeagueShare(db: Db, leagueId: string, code: string, leagueN
   } catch (e) { console.error("[fantasy:chat] share notify failed:", e); }
 }
 
+/** Nudge the OTHER league members that there's fresh chat to read — the plain
+ *  new-message case mentions and shares don't cover (founder, 7 Aug). Deliberately
+ *  quiet: ONE nudge per member per unread streak, which is the whole answer to the
+ *  spam trap a per-message push would be.
+ *
+ *  The dedupe key carries the member's own read cursor (their fantasy_league_reads
+ *  last_read_at, 0 if they've never opened the league). While a member is behind,
+ *  that cursor is CONSTANT, so every later message in the same streak rebuilds the
+ *  SAME key and notifyFantasy dedupes it away. The cursor only moves when they open
+ *  the league (chat.ts marks it read) — which mints a new key and re-arms exactly
+ *  one more nudge. No column, no migration: the read line we already keep is the
+ *  streak boundary.
+ *
+ *  notifyFantasy dedupes per (user, key), so the key needs the cursor but NOT the
+ *  uid — members sharing a cursor share one call. That collapses a whole-league
+ *  fan-out to one or two notifyFantasy calls regardless of size, on a hot path. */
+async function notifyLeagueActivity(
+  db: Db, leagueId: string, code: string, leagueName: string, actorId: string,
+  commentId: string | null, mentionedIds: string[],
+) {
+  try {
+    if (!commentId) return;
+    const { data: members } = await db.from("fantasy_league_members").select("user_id").eq("league_id", leagueId);
+    // Skip the author, and anyone the mention path already pings for this message.
+    const skip = new Set([actorId, ...mentionedIds]);
+    const others = ((members ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => !skip.has(id));
+    if (!others.length) return;
+
+    const { data: reads } = await db.from("fantasy_league_reads")
+      .select("user_id, last_read_at").eq("league_id", leagueId).in("user_id", others);
+    const cursorOf = new Map<string, number>();
+    for (const r of (reads ?? []) as { user_id: string; last_read_at: string }[]) {
+      cursorOf.set(r.user_id, Date.parse(r.last_read_at) || 0);
+    }
+
+    // Group members by read cursor so a shared streak is one call, not one per head.
+    const byCursor = new Map<number, string[]>();
+    for (const uid of others) {
+      const cursor = cursorOf.get(uid) ?? 0; // 0 = never opened → one nudge until they do
+      (byCursor.get(cursor) ?? byCursor.set(cursor, []).get(cursor)!).push(uid);
+    }
+
+    await Promise.all(Array.from(byCursor).map(([cursor, uids]) => notifyFantasy({
+      userIds: uids,
+      title: leagueName,
+      body: "New messages in your league",
+      url: `/fantasy/leagues/${code}?t=chat`,
+      dedupeKey: `fantasy-activity:${leagueId}:${cursor}`,
+      type: "fantasy_league_activity",
+      actorId,
+      subjectType: "fantasy_league",
+      subjectId: leagueId,
+    })));
+  } catch (e) { console.error("[fantasy:chat] activity notify failed:", e); }
+}
+
 export async function setStakes(db: Db, userId: string, code: string, stakes: unknown) {
   const league = await requireMemberLeague(db, code, userId);
   if (league.owner_id !== userId) throw new HttpError(403, "only the league owner sets the stakes");
@@ -998,7 +1056,8 @@ export async function postGif(db: Db, userId: string, code: string, gif: unknown
   const height = Math.min(2000, Math.max(0, Math.round(Number(g.height) || 0)));
   // Non-empty body: the comments table's body check rejects "" (and it's the
   // graceful fallback anywhere a GIF can't render). The UI shows the media, not this.
-  await insertChatMessage(db, league, userId, { body: "GIF", kind: "gif", payload: { url, preview, mp4, width, height } }, parentId);
+  const inserted = await insertChatMessage(db, league, userId, { body: "GIF", kind: "gif", payload: { url, preview, mp4, width, height } }, parentId);
+  void notifyLeagueActivity(db, league.id, code, league.name, userId, inserted.id, []);
   return { ok: true };
 }
 
@@ -1014,7 +1073,8 @@ export async function postImage(db: Db, userId: string, code: string, image: unk
   if (!isPostMediaUrl(url)) throw new HttpError(400, "bad image");
   const width = Math.min(4000, Math.max(0, Math.round(Number(im.width) || 0)));
   const height = Math.min(4000, Math.max(0, Math.round(Number(im.height) || 0)));
-  await insertChatMessage(db, league, userId, { body: "Photo", kind: "image", payload: { url: url.slice(0, 500), width, height } }, parentId);
+  const inserted = await insertChatMessage(db, league, userId, { body: "Photo", kind: "image", payload: { url: url.slice(0, 500), width, height } }, parentId);
+  void notifyLeagueActivity(db, league.id, code, league.name, userId, inserted.id, []);
   return { ok: true };
 }
 

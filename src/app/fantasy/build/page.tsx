@@ -202,7 +202,9 @@ export default function BuildPage() {
       await api("squad", { pickIds: picked });
       trackFantasySquad({ size: picked.length });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* private mode */ }
-      router.push("/fantasy/squad");
+      // First confirm (not a rebuild) hands the squad page the ?created=1 flag so
+      // it fires the one-shot "bring your friends" league nudge.
+      router.push(editing ? "/fantasy/squad" : "/fantasy/squad?created=1");
     } catch (e) {
       setErr((e as Error).message); setBusy(false);
     }
