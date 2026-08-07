@@ -88,7 +88,7 @@ function JoinLeagueIndexInner() {
         </div>
 
         <div className="mt-6 text-center">
-          <BackPill href="/" label="Back to home" tone="neutral" />
+          <BackPill fallback="/" label="Back to home" tone="neutral" />
         </div>
       </div>
     </main>

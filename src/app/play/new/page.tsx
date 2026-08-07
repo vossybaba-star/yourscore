@@ -139,7 +139,7 @@ function NewGameContent() {
       <GridBackground opacity={0.02} />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
+      <nav className="relative z-10 pt-safe flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <button onClick={() => step > 1 ? setStep(s => s - 1) : router.push("/play")}
           className="flex items-center gap-2 font-body text-sm transition-opacity hover:opacity-70 text-text-muted">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

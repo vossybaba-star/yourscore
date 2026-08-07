@@ -43,7 +43,7 @@ export default function DebatePage({ searchParams }: { searchParams: { pick?: st
   // share-link vote and a push deep link never collide server-side.
   const focusCommentId = typeof searchParams?.c === "string" && searchParams.c ? searchParams.c : null;
   return (
-    <main className="min-h-dvh bg-bg">
+    <main className="min-h-dvh bg-bg pt-safe">
       <div className="max-w-lg mx-auto px-5 py-8">
         <div className="flex items-center justify-between mb-6">
           {/* In-app arrivals retrace (home, a scorecard); shared-link guests fall back home */}

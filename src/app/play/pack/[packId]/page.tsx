@@ -69,7 +69,7 @@ export default async function PackThreadPage({
   const backTo = `/play/pack/${pack.id}`;
 
   return (
-    <main className="min-h-dvh bg-bg">
+    <main className="min-h-dvh bg-bg pt-safe">
       <div className="max-w-lg mx-auto px-5 py-8">
         <div className="flex items-center justify-between mb-6">
           <BackPill fallback="/play" label="Back" tone="play" />

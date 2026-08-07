@@ -248,7 +248,7 @@ export default function ClubPreviewGenerator() {
 
   const accent = `#${b.color || "aeea00"}`;
   return (
-    <main className="min-h-dvh bg-bg px-6 py-8">
+    <main className="min-h-dvh bg-bg px-6 pb-8" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)" }}>
       <style jsx global>{`
         .cpv-shot { width: 860px; height: 1530px; background: #0a0a0f; position: relative; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #fff; display: flex; flex-direction: column; }
         .cpv-topbar { display: flex; align-items: center; height: 84px; padding: 0 44px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
@@ -284,7 +284,7 @@ export default function ClubPreviewGenerator() {
 
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <BackPill href="/admin" label="Admin" tone="neutral" />
+          <BackPill fallback="/admin" label="Admin" tone="neutral" />
           <h1 className="font-display text-3xl text-white tracking-wide mt-2">Club League visual generator</h1>
           <p className="font-body text-sm mt-1" style={{ color: "#8a948f" }}>
             Paste a pub&apos;s website. Claude reads their branding and renders their Club League — download one strip PNG for outreach.

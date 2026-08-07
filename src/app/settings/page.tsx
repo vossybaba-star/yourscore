@@ -187,7 +187,7 @@ export default function SettingsPage() {
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
         <div className="text-center space-y-4">
           <p className="font-body text-text-muted">Sign in to access settings.</p>
-          <BackPill href="/" label="Home" tone="neutral" />
+          <BackPill fallback="/" label="Home" tone="neutral" />
           <Button href="/auth/sign-in" variant="ghost" size="md">
             Sign in →
           </Button>

@@ -567,6 +567,22 @@ function PendingTurnsNotice() {
 export function Dashboard({ data }: { data: DashboardData }) {
   const { displayName, rank, dayStreak, weekDots, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
 
+  // Home has two views (founder 2026-08-07 night): Today — the football-
+  // happening modules — and Feed, which gives AROUND THE GAME its own tab
+  // instead of the bottom of one long page. Mirrored to ?view=feed so back
+  // and deep links retrace to the right view.
+  const [view, setView] = useState<"today" | "feed">("today");
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("view") === "feed") setView("feed");
+  }, []);
+  const selectView = (v: "today" | "feed") => {
+    setView(v);
+    const u = new URL(window.location.href);
+    if (v === "feed") u.searchParams.set("view", "feed");
+    else u.searchParams.delete("view");
+    window.history.replaceState(null, "", u);
+  };
+
   // Deep-link from a daily push: /?focus=today|debate scrolls that home card
   // into view so a tap lands the player right on the game / debate to act on.
   useEffect(() => {
@@ -608,49 +624,75 @@ export function Dashboard({ data }: { data: DashboardData }) {
             </Link>
           </div>
         </nav>
-      </div>
-
-      <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4">
-
-        {/* 1. Progress at a glance */}
-        <ProgressCard rank={rank} dayStreak={dayStreak} weekDots={weekDots} />
-
-        {/* Anything waiting on you comes before what's happening today */}
-        <PendingTurnsNotice />
-        <PendingFriendsNotice />
-
-        {/* 2. What's happening today — live/upcoming halftime pack (self-hides
-            off-matchday) + the season section, under one small label. */}
-        <div className="d-2">
-          <SectionHead title="Today" />
-          <div className="space-y-4">
-            <GamedayCard />
-            <SeasonSection fixture={gamedayFixture} />
+        {/* Home view switch — Today (football happening) | Feed (around the
+            game, promoted off the bottom of the page: founder 2026-08-07). */}
+        <div className="max-w-lg mx-auto px-5 pb-3">
+          <div className="flex gap-1 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }}>
+            {([["today", "Today"], ["feed", "Feed"]] as const).map(([k, label]) => {
+              const on = view === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => selectView(k)}
+                  aria-current={on ? "page" : undefined}
+                  className="flex-1 font-display text-sm py-2 rounded-xl transition-colors"
+                  style={{ background: on ? LIME : "transparent", color: on ? "#10160c" : "#8a948f", letterSpacing: "0.02em" }}
+                >
+                  {label.toUpperCase()}
+                </button>
+              );
+            })}
           </div>
         </div>
-
-        {/* 3. Today's Game — THE single hero, playable or done+share. The
-            onboarding tour's final step points here (data-tour). */}
-        <div id="todays-game" data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
-
-        {/* News — the daily briefing, reused from Matchweek */}
-        <NewsSection />
-
-        {/* Today's debate — one tap, daily habit (moved here from Versus) */}
-        <div id="todays-debate" className="d-4">
-          <DebateCard signInNext="/" withSignUpPitch={false} />
-        </div>
-
-        {/* League highlight — leagues live in their own tab now (founder
-            2026-08-07 eve: "not on the home screen unless there's a major
-            highlight"). This renders at most ONE card, and only when a
-            league has something genuinely new: unread chat or a fresh join. */}
-        <LeagueHighlightCard />
-
-        {/* The feed — everyone else's football, open by default */}
-        <FeedSection />
-
       </div>
+
+      {view === "today" ? (
+        <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4">
+
+          {/* 1. Progress at a glance */}
+          <ProgressCard rank={rank} dayStreak={dayStreak} weekDots={weekDots} />
+
+          {/* Anything waiting on you comes before what's happening today */}
+          <PendingTurnsNotice />
+          <PendingFriendsNotice />
+
+          {/* 2. What's happening today — live/upcoming halftime pack (self-hides
+              off-matchday) + the season section, under one small label. */}
+          <div className="d-2">
+            <SectionHead title="Today" />
+            <div className="space-y-4">
+              <GamedayCard />
+              <SeasonSection fixture={gamedayFixture} />
+            </div>
+          </div>
+
+          {/* 3. Today's Game — THE single hero, playable or done+share. The
+              onboarding tour's final step points here (data-tour). */}
+          <div id="todays-game" data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
+
+          {/* News — the daily briefing, reused from Matchweek */}
+          <NewsSection />
+
+          {/* Today's debate — one tap, daily habit (moved here from Versus) */}
+          <div id="todays-debate" className="d-4">
+            <DebateCard signInNext="/" withSignUpPitch={false} />
+          </div>
+
+          {/* League highlight — leagues live in their own tab now (founder
+              2026-08-07 eve: "not on the home screen unless there's a major
+              highlight"). This renders at most ONE card, and only when a
+              league has something genuinely new: unread chat or a fresh join. */}
+          <LeagueHighlightCard />
+
+        </div>
+      ) : (
+        <div className="relative z-0 max-w-lg mx-auto px-5 pt-4">
+          {/* The Feed view — AROUND THE GAME, full height. FeedStream only
+              mounts when this tab opens (dynamic import), so the Today view
+              never pays for it. */}
+          <FeedSection />
+        </div>
+      )}
       <BottomNav />
     </main>
   );
