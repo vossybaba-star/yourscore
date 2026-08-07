@@ -7,8 +7,9 @@ import { useUser } from "@/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
-import { getTeamBadgeUrl } from "@/lib/teamImages";
-import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
+import { getTeamBadgeUrlSync } from "@/lib/teamImages";
+import { getCompetitionBadgeUrlSync } from "@/lib/competitionImages";
+import { QuickPlayGrid, PlayWithPeople, MoreGamesDoor, SectionLabel } from "@/components/games/PlayHome";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { RECORDS_EMOJI } from "@/lib/theme";
@@ -110,12 +111,11 @@ const END_OF_SEASON_EMOJI: Record<string, string> = { "The Farewell Tour": "👋
 // ── ClubCard ──────────────────────────────────────────────────────────────────
 
 function ClubCard({ pack, challengeTo, showTheme }: { pack: QuizPack; challengeTo?: string | null; showTheme?: boolean }) {
-  const [badgeUrl, setBadgeUrl] = useState<string | null>(null);
+  // Sync lookup: the async wrapper resolved after first paint, so every card
+  // flashed its fallback initial before the crest swapped in — on every tab
+  // switch. The underlying map is synchronous; read it synchronously.
+  const badgeUrl = getTeamBadgeUrlSync(pack.name);
   const slug = slugify(pack.name);
-
-  useEffect(() => {
-    getTeamBadgeUrl(pack.name).then((u) => { if (u) setBadgeUrl(u); });
-  }, [pack.name]);
 
   return (
     <Link
@@ -183,7 +183,7 @@ function ClubCard({ pack, challengeTo, showTheme }: { pack: QuizPack; challengeT
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-[10px] tracking-wide text-teal">OPEN →</span>
+          <span className="font-display text-[10px] tracking-wide text-teal">OPEN CLUB</span>
         </div>
       </div>
     </Link>
@@ -193,13 +193,10 @@ function ClubCard({ pack, challengeTo, showTheme }: { pack: QuizPack; challengeT
 // ── RecordsCard ───────────────────────────────────────────────────────────────
 
 function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  // Sync lookup — see ClubCard.
+  const logoUrl = getCompetitionBadgeUrlSync(pack.name);
   const slug = slugify(pack.name);
   const emoji = pack.metadata?.icon ?? RECORDS_EMOJI[pack.name] ?? null;
-
-  useEffect(() => {
-    getCompetitionBadgeUrl(pack.name).then((u) => { if (u) setLogoUrl(u); });
-  }, [pack.name]);
 
   return (
     <Link
@@ -258,7 +255,7 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY →</span>
+          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY</span>
         </div>
       </div>
     </Link>
@@ -268,17 +265,12 @@ function RecordsCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: stri
 // ── EndOfSeasonCard ───────────────────────────────────────────────────────────
 
 function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: string | null }) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  // Sync lookup — see ClubCard.
+  const imageUrl = pack.name === "Arsenal Are Champions"
+    ? getTeamBadgeUrlSync("Arsenal")
+    : getCompetitionBadgeUrlSync(pack.name);
   const slug = slugify(pack.name);
   const emoji = END_OF_SEASON_EMOJI[pack.name] ?? null;
-
-  useEffect(() => {
-    if (pack.name === "Arsenal Are Champions") {
-      getTeamBadgeUrl("Arsenal").then((u) => { if (u) setImageUrl(u); });
-    } else {
-      getCompetitionBadgeUrl(pack.name).then((u) => { if (u) setImageUrl(u); });
-    }
-  }, [pack.name]);
 
   return (
     <Link
@@ -341,7 +333,7 @@ function EndOfSeasonCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: 
             border: "1px solid rgba(0,216,192,0.3)",
           }}
         >
-          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY →</span>
+          <span className="font-display text-[10px] tracking-wide" style={{ color: "#00d8c0" }}>PLAY</span>
         </div>
       </div>
     </Link>
@@ -383,7 +375,9 @@ function OpenRoomCard({ room, onJoin }: { room: OpenRoom; onJoin: () => void }) 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 type MainTab = "solo" | "multiplayer" | "leaderboards";
-type SoloTab = "featured" | "worldcup" | "club" | "records" | "build";
+// "home" is the curated Play home (default). The other keys are the catalogue,
+// one tap away behind MORE GAMES.
+type SoloTab = "home" | "featured" | "worldcup" | "club" | "records" | "build";
 
 // A World Cup quiz: tagged via metadata.series (the daily seed sets series:"wc2026")
 // or named/parametered for the World Cup. These are the daily £100-series packs.
@@ -500,7 +494,7 @@ function PlayPageInner() {
   const challengeTo = searchParams?.get("challenge") ?? null; // targeting a friend
   const [challengeName, setChallengeName] = useState<string | null>(null);
   const [mainTab, setMainTab] = useState<MainTab>("solo");
-  const [soloTab, setSoloTab] = useState<SoloTab>("featured");
+  const [soloTab, setSoloTab] = useState<SoloTab>("home");
   const [packs, setPacks] = useState<QuizPack[]>([]);
   const [packsLoading, setPacksLoading] = useState(true);
   // The quizzes this user built themselves. They insert as rotation_active=false, so
@@ -518,6 +512,8 @@ function PlayPageInner() {
   useEffect(() => {
     if (!challengeTo) return;
     setMainTab("solo");
+    // Challenging someone means picking a quiz — land in the catalogue, not the home.
+    setSoloTab((t) => (t === "home" ? "featured" : t));
     createClient().from("profiles").select("display_name").eq("id", challengeTo).single()
       .then(({ data }: { data: { display_name: string | null } | null }) => setChallengeName(data?.display_name ?? null));
   }, [challengeTo]);
@@ -627,7 +623,7 @@ function PlayPageInner() {
   // "users prefer to work their way back"). Read on mount and whenever the param changes.
   useEffect(() => {
     const solo = searchParams?.get("solo");
-    if (solo === "featured" || solo === "worldcup" || solo === "club" || solo === "records") {
+    if (solo === "home" || solo === "featured" || solo === "worldcup" || solo === "club" || solo === "records" || solo === "build") {
       setSoloTab(solo);
     }
   }, [searchParams]);
@@ -723,6 +719,8 @@ function PlayPageInner() {
   const heroPack =
     soloTab === "featured" && filtered[0]?.metadata?.cover_image ? filtered[0] : null;
   const gridPacks = heroPack ? filtered.slice(1) : filtered;
+  // The Play home's Today's Game: the lead featured pack with cover art.
+  const homeHero = featuredTabPacks[0]?.metadata?.cover_image ? featuredTabPacks[0] : null;
 
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
@@ -734,23 +732,29 @@ function PlayPageInner() {
         style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
 
-          {/* Title row */}
+          {/* Title row. On the curated home the header is one quiet line — the
+              hero below is the loud thing. The games-count chip only earns its
+              place in the catalogue, where the shelves are the point. */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="font-display text-2xl tracking-tight text-teal">QUIZ</h1>
+              <h1 className="font-display text-2xl tracking-tight text-teal">
+                {mainTab === "solo" && soloTab === "home" ? "PLAY" : "QUIZ"}
+              </h1>
               <p className="font-body text-xs mt-0.5 text-text-muted">
-                {mainTab === "solo" ? "Test your football knowledge"
+                {mainTab === "solo" ? (soloTab === "home" ? "Pick a game and go" : "Test your football knowledge")
                   : mainTab === "multiplayer" ? "Challenge friends · play on your own time"
                   : "YourScore verified competitions"}
               </p>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
-              <span className="text-xs">⚡</span>
-              <span className="font-display text-xs text-teal">
-                {packsLoading ? "…" : `${packs.length} GAMES`}
-              </span>
-            </div>
+            {!(mainTab === "solo" && soloTab === "home") && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+                style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
+                <span className="text-xs">⚡</span>
+                <span className="font-display text-xs text-teal">
+                  {packsLoading ? "…" : `${packs.length} GAMES`}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Solo sub-tabs (Featured / World Cup / Club / Records) — scrollable so
@@ -764,9 +768,17 @@ function PlayPageInner() {
             </div>
           )}
 
-          {mainTab === "solo" && (
+          {mainTab === "solo" && soloTab !== "home" && (
             <div className="flex gap-5 mb-3 overflow-x-auto -mx-1 px-1"
               style={{ scrollbarWidth: "none", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <button
+                onClick={() => selectSoloTab("home")}
+                aria-label="Back to Play home"
+                className="flex-shrink-0 pb-2 font-body text-sm font-semibold whitespace-nowrap"
+                style={{ color: "#8a948f", marginBottom: -1 }}
+              >
+                ‹ Play
+              </button>
               {([
                 { key: "featured", label: "Featured" },
                 { key: "worldcup", label: "World Cup" },
@@ -819,55 +831,57 @@ function PlayPageInner() {
       {/* ── SOLO TAB ─────────────────────────────────────────────────── */}
       {mainTab === "solo" && (
         <>
-          {/* Versus promo tile (founder call 2026-08-02): Versus lost its bottom-nav
-              slot to Fantasy, so this is its ad at the top of the games tab — the
-              one nav-level surface every player still opens. Hidden on the Build
-              tab, which leads with its own CTA. */}
-          {soloTab !== "build" && (
-            <div className="max-w-lg mx-auto px-4 pt-4">
-              <button
-                onClick={() => router.push("/versus")}
-                aria-label="Versus: play with people. Find an opponent, challenge a friend or battle for your league"
-                className="w-full rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.98]"
-                style={{
-                  background:
-                    "radial-gradient(120% 160% at 100% 0%, rgba(0,216,192,0.12) 0%, rgba(174,234,0,0.1) 45%, rgba(10,16,11,0.9) 100%), linear-gradient(160deg, #0e1611 0%, #131f16 100%)",
-                  border: "1px solid rgba(174,234,0,0.4)",
-                  padding: "22px 20px 20px",
-                  textAlign: "left",
-                  boxShadow: "0 0 32px rgba(174,234,0,0.1)",
-                }}
-              >
-                <p className="font-display text-xs tracking-widest text-green mb-1">⚔️ TIME TO PLAY</p>
-                <p className="font-display leading-none" style={{ fontSize: 34 }}>
-                  <span className="text-green">VERSUS</span>
-                  <br />
-                  <span className="text-white">PLAY WITH PEOPLE</span>
-                </p>
-                <p className="font-body text-xs mt-2 text-text-muted">
-                  Find an opponent now, challenge a friend or battle for your league
-                </p>
-                <span
-                  className="font-display text-sm tracking-wide inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-full"
-                  style={{ background: "#aeea00", color: "#0a0f0a" }}
-                >
-                  FIND A RIVAL →
-                </span>
-              </button>
+          {/* ── PLAY HOME (default) ─────────────────────────────────────────
+              The curated view (2026-08-07 simplification): one obvious game,
+              a short quick-play row, people, one door to the catalogue. The
+              full-height Versus ad banner this replaces is superseded by the
+              PLAY WITH PEOPLE section — same job, above the fold, no ad. */}
+          {soloTab === "home" && (
+            <div className="max-w-lg mx-auto px-4 pt-4 space-y-5">
+              {/* Today's Game — the one major playable object. */}
+              <div>
+                {homeHero ? (
+                  <>
+                    <div className="flex items-baseline justify-between mb-2">
+                      <SectionLabel>TODAY&apos;S GAME</SectionLabel>
+                      <span className="font-body text-[11px]" style={{ color: "#7a857f", fontVariantNumeric: "tabular-nums" }}>
+                        {homeHero.question_count} questions · ~2 min
+                      </span>
+                    </div>
+                    <HeroPackCard pack={homeHero} challengeTo={challengeTo} />
+                  </>
+                ) : packsLoading ? (
+                  // Fixed-height placeholder so the hero zone never collapses
+                  // and re-expands while the pack list loads.
+                  <div className="rounded-3xl bg-surface" style={{ height: 340, border: "1px solid rgba(255,255,255,0.06)", opacity: 0.3 }} />
+                ) : null}
+              </div>
+
+              {/* Gameday rail — every PL fixture with a published pack. Self-hides
+                  off matchday (useGamedayToday), so quiet weeks lose the section
+                  entirely rather than showing an empty rail. */}
+              <GamedayRail />
+
+              {/* Quick Play — the other four games, straight in. */}
+              <div>
+                <div className="mb-2"><SectionLabel>QUICK PLAY</SectionLabel></div>
+                <QuickPlayGrid />
+              </div>
+
+              {/* Play with people — the three multiplayer verbs. */}
+              <div>
+                <div className="mb-2"><SectionLabel>PLAY WITH PEOPLE</SectionLabel></div>
+                <PlayWithPeople />
+              </div>
+
+              {/* One door into the deep catalogue. */}
+              <MoreGamesDoor count={packs.length} onOpen={() => selectSoloTab("featured")} />
             </div>
           )}
 
-          {/* Gameday rail (AC29) — every PL fixture with a published pack, playable
-              now (day-before model, §0.1). Self-hides via useGamedayToday when
-              /api/gameday/today has no rows, so an off-matchday /play looks
-              exactly as it did before this mount. The club-fan leaderboard and
-              the two prediction polls stay on their own Matchweek tab
-              (fixture-synced); this is just the quiz packs, in the evergreen
-              quiz surface where players already look for a game. Perfect 10 /
-              Higher or Lower / Guess the Player are separate games in the
-              GameSwitcher now (founder ruling 2026-07-18) — no longer tiles
-              inside the Quiz hub. */}
-          <GamedayRail />
+          {/* Gameday rail in the catalogue too — players used to finding fixture
+              packs here mid-browse keep them. (Self-hides off matchday.) */}
+          {soloTab !== "home" && <GamedayRail />}
 
           {/* ── Build a Quiz tab — the builder entry point plus the quizzes
               this user has already built. ────────────────────────────────── */}
@@ -912,7 +926,7 @@ function PlayPageInner() {
                       >
                         <p className="font-body text-sm font-bold text-white leading-snug line-clamp-2" style={{ minHeight: 36 }}>{p.name}</p>
                         <p className="font-body text-xs mt-1" style={{ color: "#7a857f" }}>{p.question_count} questions</p>
-                        <span className="font-display text-xs tracking-widest text-teal">PLAY →</span>
+                        <span className="font-display text-xs tracking-widest text-teal">PLAY</span>
                       </Link>
                     ))}
                   </div>
@@ -926,8 +940,8 @@ function PlayPageInner() {
             </>
           )}
 
-          {/* Cards grid */}
-          {soloTab !== "build" && (
+          {/* Cards grid (catalogue views only) */}
+          {soloTab !== "build" && soloTab !== "home" && (
           <div className="max-w-lg mx-auto px-4 pt-2">
             {packsLoading ? (
               <div className="grid grid-cols-3 gap-2.5">

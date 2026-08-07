@@ -58,7 +58,9 @@ export default function QuizBattlePage() {
     const sb = createClient();
     const { data: auth } = await sb.auth.getUser();
     const uid = auth.user?.id;
-    if (!uid) { setPacks([]); return; }
+    // No user (yet): keep whatever is already rendered — blanking the grid here
+    // made the library flash empty while auth resolved on tab return.
+    if (!uid) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = sb as any;
 

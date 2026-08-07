@@ -449,7 +449,9 @@ function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38
 const MODE_TILES = [
   { href: "/38-0", label: "38-0", sub: "Draft XI", accent: LIME, rgba: "174,234,0" },
   { href: "/play", label: "QUIZZES", sub: "Fast Qs", accent: TEAL, rgba: "0,216,192" },
-  { href: "/38-0/wc", label: "MASTERMIND", sub: "WC quiz", accent: GOLD, rgba: "255,194,51" },
+  // Perfect 10 replaced the Mastermind tile 2026-08-07: the WC finished 20 Jul
+  // and its daily pipeline is retired, so the third slot pointed at an archive.
+  { href: "/play/game/perfect-10", label: "PERFECT 10", sub: "Top ten", accent: GOLD, rgba: "255,194,51" },
 ];
 
 function ModeTiles() {
