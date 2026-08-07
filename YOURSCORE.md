@@ -944,13 +944,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
-- **2026-08-07** — **Home: scroll past Today → auto-switch to the Feed** (branch
-  `feat/home-scroll-feed`). On the Home dashboard, scrolling to the end of the Today view and
-  pushing a little further flips it to the Feed tab (wheel/touch downward-intent accumulator, ~70px
-  past the end; guarded so short/unscrolled pages never trip it). Clearly signalled: a "Keep
-  scrolling for the FEED ⌄" hint rises near the end, the Today|Feed toggle moves to FEED, and a
-  confirm pill ("You're in the Feed. Tap TODAY to go back") fades in. Return is tab-only (no
-  auto-reverse). Walked as the health bot, 8/8. In `Dashboard.tsx`.
+- **2026-08-07** — **Home is ONE continuous page: Today, then the Feed below it** (branch
+  `feat/home-scroll-feed`). Replaces the hard Today/Feed view-swap (which jumped and felt glitchy):
+  the Feed now lives directly under Today in one scroll, so reaching the end of Today flows straight
+  into the Feed — you watch it slide up, no swap, no scroll-jump. The Today|Feed toggle is a
+  quick-jump (tap Feed → smooth-scroll down to it; Today → glide to top) and the active tab follows
+  your scroll position (FEED once the Feed rises past mid-screen, or at the very bottom). Feed
+  lazy-mounts via IntersectionObserver as you approach (FeedStream stays off first paint); mirrored
+  to `?view=feed`. Walked as the health bot, 11/11, no console errors. In `Dashboard.tsx`.
 
 - **2026-08-07** — **Fantasy WILDCARD is back + transfer cap cut to 2** (branch
   `feat/fantasy-wildcard`, mig **265**, NOT merged — awaiting founder OK to push). Founder call:

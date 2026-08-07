@@ -123,17 +123,12 @@ const DASH_ANIM = `
   .d-4 { animation: dashSlide 0.35s ease-out 0.22s both; }
   .d-5 { animation: dashSlide 0.35s ease-out 0.28s both; }
   .flame { display: inline-block; animation: flameFlick 1.1s ease-in-out infinite; }
-  @keyframes feedNudge { 0%,100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
-  @keyframes hintRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes feedFade { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-  .feed-hint { animation: hintRise 0.28s ease-out both; }
-  .feed-nudge { display: inline-block; animation: feedNudge 1s ease-in-out infinite; }
-  .feed-fade { animation: feedFade 0.3s ease-out both; }
-  .feed-arrive { animation: dashSlide 0.34s ease-out both; }
+  /* The Feed fades gently up as it mounts below Today — you watch it arrive. */
+  .feed-arrive { animation: dashSlide 0.4s ease-out both; }
   @media (prefers-reduced-motion: reduce) {
     .d-1,.d-2,.d-3,.d-4,.d-5 { animation: none; }
     .flame { animation: none; }
-    .feed-hint,.feed-nudge,.feed-fade,.feed-arrive { animation: none; }
+    .feed-arrive { animation: none; }
   }
 `;
 
@@ -637,93 +632,93 @@ function PendingTurnsNotice() {
 export function Dashboard({ data }: { data: DashboardData }) {
   const { displayName, rank, dayStreak, weekDots, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
 
-  // Home has two views (founder 2026-08-07 night): Today — the football-
-  // happening modules — and Feed, which gives AROUND THE GAME its own tab
-  // instead of the bottom of one long page. Mirrored to ?view=feed so back
-  // and deep links retrace to the right view.
-  const [view, setView] = useState<"today" | "feed">("today");
-  // Scroll-to-Feed affordances (founder 2026-08-07): a hint that rises as you
-  // reach the end of Today, and a confirmation pill after the auto-switch fires,
-  // so the switch is clearly ACTIONED, never a silent jump. `arrivedViaScroll`
-  // fades the Feed in and drives the pill; returning is tab-only, as asked.
-  const [feedHint, setFeedHint] = useState(false);
-  const [feedPill, setFeedPill] = useState(false);
-  const [arrivedViaScroll, setArrivedViaScroll] = useState(false);
-  const pillTimer = useRef<number | null>(null);
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("view") === "feed") setView("feed");
-  }, []);
-  const selectView = (v: "today" | "feed") => {
-    setView(v);
-    // Any deliberate tab tap clears the auto-switch pill/animation — the pill is
-    // only for the scroll-driven switch, which commit() re-arms right after.
-    setFeedPill(false);
-    setArrivedViaScroll(false);
-    if (v === "today") setFeedHint(false);
-    const u = new URL(window.location.href);
-    if (v === "feed") u.searchParams.set("view", "feed");
-    else u.searchParams.delete("view");
-    window.history.replaceState(null, "", u);
+  // Home is ONE continuous page (founder 2026-08-07): the football-happening
+  // modules (Today), then the Feed right below them, so scrolling flows straight
+  // from one into the other — you watch the Feed slide up, no view swap, no jump.
+  // The Today|Feed toggle is a quick-jump: tap Feed to smooth-scroll down to it,
+  // Today to glide back to the top. Which tab reads active is derived from where
+  // you've scrolled, and mirrored to ?view=feed for deep links + back.
+  const [activeTab, setActiveTab] = useState<"today" | "feed">("today");
+  const [feedMounted, setFeedMounted] = useState(false);
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const feedRef = useRef<HTMLDivElement | null>(null);
+  const syncedOnce = useRef(false);
+
+  // The scroll offset that parks the Feed's top just under the sticky nav.
+  // feedRef's offsetTop is fixed by the Today content above it, so this is stable
+  // whether or not the (lazy) Feed has laid out its own body yet.
+  const feedScrollTop = () => {
+    const navH = navRef.current?.offsetHeight ?? 116;
+    return Math.max(0, (feedRef.current?.offsetTop ?? 0) - navH - 8);
   };
 
-  // Scroll past the end of Today → switch to Feed. Only armed in the Today view.
-  // We watch for genuine DOWNWARD intent (wheel / touch) while pinned at the very
-  // bottom, and require a small push past the end so momentum that merely lands
-  // you at the bottom never trips it. Return is via the tab only (no auto-reverse).
+  const selectTab = (v: "today" | "feed") => {
+    if (v === "feed") {
+      setFeedMounted(true);         // make sure it's there to land on
+      setActiveTab("feed");         // highlight immediately; scroll confirms it
+      requestAnimationFrame(() => window.scrollTo({ top: feedScrollTop(), behavior: "smooth" }));
+    } else {
+      setActiveTab("today");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  // Lazy-mount the Feed as it approaches (heavy: FeedStream) so first paint never
+  // pays for it, yet it is ready as it slides into view. IntersectionObserver, not
+  // scroll math, so it tracks the REAL post-layout position — a raw scroll check
+  // fires early while the async Today cards are still settling the page height.
+  // Observed after a short beat for the same reason. selectTab / deep-link mount
+  // it directly.
   useEffect(() => {
-    if (view !== "today") return;
-    const doc = document.documentElement;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const THRESH = reduce ? 1 : 70; // px of extra downward push past the end
-    let overscroll = 0, atBottom = false, touchY: number | null = null, committed = false;
+    const el = feedRef.current;
+    if (!el || feedMounted) return;
+    const io = new IntersectionObserver((ents) => {
+      if (ents.some((e) => e.isIntersecting)) { setFeedMounted(true); io.disconnect(); }
+    }, { rootMargin: "400px 0px" });
+    const t = setTimeout(() => io.observe(el), 500);
+    return () => { clearTimeout(t); io.disconnect(); };
+  }, [feedMounted]);
 
-    const measure = () => {
-      const dist = doc.scrollHeight - window.innerHeight - window.scrollY;
-      const scrollable = doc.scrollHeight - window.innerHeight > 220;
-      const engaged = scrollable && window.scrollY > 120;
-      setFeedHint(engaged && dist < 150);
-      atBottom = engaged && dist <= 4;
-      if (!atBottom) overscroll = 0;
+  // The active tab follows the scroll: FEED once the Feed section rises past the
+  // middle of the screen, or once you are at the very bottom with it in view at
+  // all (so a short or still-loading Feed still registers as "you're in it").
+  useEffect(() => {
+    const onScroll = () => {
+      const top = feedRef.current?.offsetTop ?? Infinity;
+      const onScreen = top - window.scrollY; // px from the viewport top to the Feed's top
+      const dist = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      const inFeed = onScreen < window.innerHeight * 0.5 || (dist <= 4 && onScreen < window.innerHeight);
+      setActiveTab(inFeed ? "feed" : "today");
     };
-    const commit = () => {
-      if (committed) return;
-      committed = true;
-      selectView("feed");
-      window.scrollTo({ top: 0 });
-      setArrivedViaScroll(true);
-      setFeedPill(true);
-      if (pillTimer.current) window.clearTimeout(pillTimer.current);
-      pillTimer.current = window.setTimeout(() => setFeedPill(false), 4200);
-    };
-    const push = (dy: number) => {
-      if (!atBottom) return;
-      if (dy > 0) { overscroll += dy; if (overscroll >= THRESH) commit(); }
-      else overscroll = Math.max(0, overscroll + dy);
-    };
-    const onWheel = (e: WheelEvent) => push(e.deltaY);
-    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? null; };
-    const onTouchMove = (e: TouchEvent) => {
-      if (touchY == null) return;
-      const y = e.touches[0]?.clientY ?? touchY;
-      push(touchY - y); // finger moving up = downward scroll intent
-      touchY = y;
-    };
-
-    measure();
-    window.addEventListener("scroll", measure, { passive: true });
-    window.addEventListener("wheel", onWheel, { passive: true });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", measure);
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      setFeedHint(false);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
-    // selectView is stable in behaviour; re-arming only depends on the view.
+  }, []);
+
+  // Mirror the active section to ?view=feed (deep links + back) — but only when it
+  // CHANGES, never on every scroll tick, and skip the very first run so an initial
+  // ?view=feed deep link isn't wiped before the deep-link effect below can use it.
+  useEffect(() => {
+    if (!syncedOnce.current) { syncedOnce.current = true; return; }
+    const u = new URL(window.location.href);
+    if (activeTab === "feed") u.searchParams.set("view", "feed");
+    else u.searchParams.delete("view");
+    window.history.replaceState(null, "", u);
+  }, [activeTab]);
+
+  // Deep link straight to the Feed (?view=feed): mount it and glide down once the
+  // page has laid out.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("view") !== "feed") return;
+    setFeedMounted(true);
+    const t = setTimeout(() => window.scrollTo({ top: feedScrollTop(), behavior: "smooth" }), 140);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+  }, []);
 
   // Deep-link from a daily push: /?focus=today|debate scrolls that home card
   // into view so a tap lands the player right on the game / debate to act on.
@@ -746,7 +741,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
       <div className="fixed top-0 right-0 w-[350px] h-[350px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(174,234,0,0.08) 0%, transparent 60%)" }} />
 
       {/* Nav */}
-      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <div ref={navRef} className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <Image src="/logo.png" alt="YourScore" width={95} height={28} priority style={{ height: 28, width: "auto" }} />
           <div className="flex items-center gap-3">
@@ -766,16 +761,17 @@ export function Dashboard({ data }: { data: DashboardData }) {
             </Link>
           </div>
         </nav>
-        {/* Home view switch — Today (football happening) | Feed (around the
-            game, promoted off the bottom of the page: founder 2026-08-07). */}
+        {/* Home section jump — Today (football happening) | Feed (around the game,
+            right below Today in one scroll). Tapping glides you there; the active
+            one follows your scroll (founder 2026-08-07). */}
         <div className="max-w-lg mx-auto px-5 pb-3">
           <div className="flex gap-1 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }}>
             {([["today", "Today"], ["feed", "Feed"]] as const).map(([k, label]) => {
-              const on = view === k;
+              const on = activeTab === k;
               return (
                 <button
                   key={k}
-                  onClick={() => selectView(k)}
+                  onClick={() => selectTab(k)}
                   aria-current={on ? "page" : undefined}
                   className="flex-1 font-display text-sm py-2 rounded-xl transition-colors"
                   style={{ background: on ? LIME : "transparent", color: on ? "#10160c" : "#8a948f", letterSpacing: "0.02em" }}
@@ -788,79 +784,57 @@ export function Dashboard({ data }: { data: DashboardData }) {
         </div>
       </div>
 
-      {view === "today" ? (
-        <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4">
+      {/* Today — the football-happening modules. Always rendered; the Feed sits
+          right below it in one continuous scroll. */}
+      <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4">
 
-          {/* 1. Progress at a glance */}
-          <ProgressCard rank={rank} dayStreak={dayStreak} weekDots={weekDots} />
+        {/* 1. Progress at a glance */}
+        <ProgressCard rank={rank} dayStreak={dayStreak} weekDots={weekDots} />
 
-          {/* Anything waiting on you comes before what's happening today */}
-          <PendingTurnsNotice />
-          <PendingFriendsNotice />
+        {/* Anything waiting on you comes before what's happening today */}
+        <PendingTurnsNotice />
+        <PendingFriendsNotice />
 
-          {/* 2. What's happening today — live/upcoming halftime pack (self-hides
-              off-matchday) + the season section, under one small label. */}
-          <div className="d-2">
-            <SectionHead title="Today" />
-            <div className="space-y-4">
-              <GamedayCard />
-              <SeasonSection fixture={gamedayFixture} />
-            </div>
-          </div>
-
-          {/* 3. Today's Game — THE single hero, playable or done+share. The
-              onboarding tour's final step points here (data-tour). */}
-          <div id="todays-game" data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
-
-          {/* News — the daily briefing, reused from Matchweek */}
-          <NewsSection />
-
-          {/* Today's debate — one tap, daily habit (moved here from Versus) */}
-          <div id="todays-debate" className="d-4">
-            <DebateCard signInNext="/" withSignUpPitch={false} />
-          </div>
-
-          {/* League highlight — leagues live in their own tab now (founder
-              2026-08-07 eve: "not on the home screen unless there's a major
-              highlight"). This renders at most ONE card, and only when a
-              league has something genuinely new: unread chat or a fresh join. */}
-          <LeagueHighlightCard />
-
-        </div>
-      ) : (
-        <div className={`relative z-0 max-w-lg mx-auto px-5 pt-4${arrivedViaScroll ? " feed-arrive" : ""}`}>
-          {/* The Feed view — AROUND THE GAME, full height. FeedStream only
-              mounts when this tab opens (dynamic import), so the Today view
-              never pays for it. */}
-          <FeedSection />
-        </div>
-      )}
-
-      {/* "Keep scrolling for the Feed" — rises as you near the end of Today, so
-          the auto-switch below is invited, not a surprise. Non-interactive; the
-          scroll itself is the action. */}
-      {view === "today" && feedHint && (
-        <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(84px + env(safe-area-inset-bottom))", display: "flex", justifyContent: "center", zIndex: 25, pointerEvents: "none" }}>
-          <div className="feed-hint" style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 15px", borderRadius: 999, background: "rgba(10,10,15,0.9)", backdropFilter: "blur(10px)", border: `1px solid ${LINE}`, boxShadow: "0 6px 22px rgba(0,0,0,0.45)" }}>
-            <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>Keep scrolling for the</span>
-            <span className="font-display" style={{ fontSize: 12.5, color: LIME, letterSpacing: "0.05em" }}>FEED</span>
-            <svg className="feed-nudge" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={LIME} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+        {/* 2. What's happening today — live/upcoming halftime pack (self-hides
+            off-matchday) + the season section, under one small label. */}
+        <div className="d-2">
+          <SectionHead title="Today" />
+          <div className="space-y-4">
+            <GamedayCard />
+            <SeasonSection fixture={gamedayFixture} />
           </div>
         </div>
-      )}
 
-      {/* Confirmation after the scroll-driven switch — names where you are and how
-          to get back (the tab). Auto-fades; only the scroll switch shows it. */}
-      {feedPill && (
-        <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(84px + env(safe-area-inset-bottom))", display: "flex", justifyContent: "center", zIndex: 41, pointerEvents: "none" }}>
-          <div className="feed-fade" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 999, background: "rgba(10,10,15,0.95)", backdropFilter: "blur(12px)", border: `1px solid rgba(174,234,0,0.35)`, boxShadow: "0 6px 24px rgba(0,0,0,0.5)" }}>
-            <span style={{ width: 7, height: 7, borderRadius: 999, background: LIME, flexShrink: 0 }} />
-            <span className="font-body" style={{ fontSize: 12.5, color: "#eef2f0" }}>
-              You&apos;re in the Feed. Tap <b className="font-display" style={{ color: LIME, letterSpacing: "0.03em" }}>TODAY</b> to go back.
-            </span>
-          </div>
+        {/* 3. Today's Game — THE single hero, playable or done+share. The
+            onboarding tour's final step points here (data-tour). */}
+        <div id="todays-game" data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
+
+        {/* News — the daily briefing, reused from Matchweek */}
+        <NewsSection />
+
+        {/* Today's debate — one tap, daily habit (moved here from Versus) */}
+        <div id="todays-debate" className="d-4">
+          <DebateCard signInNext="/" withSignUpPitch={false} />
         </div>
-      )}
+
+        {/* League highlight — leagues live in their own tab now (founder
+            2026-08-07 eve: "not on the home screen unless there's a major
+            highlight"). This renders at most ONE card, and only when a
+            league has something genuinely new: unread chat or a fresh join. */}
+        <LeagueHighlightCard />
+
+      </div>
+
+      {/* Feed — AROUND THE GAME, right below Today in one continuous scroll, so it
+          slides into view as you reach the end of Today (you watch it arrive). It
+          mounts lazily as you approach (heavy: FeedStream) so first paint never
+          pays for it, then fades up. `feedRef` is the Feed tab's jump target. */}
+      <div ref={feedRef} className="relative z-0 max-w-lg mx-auto px-5 pt-6">
+        {feedMounted
+          ? <div className="feed-arrive"><FeedSection /></div>
+          : <div aria-hidden style={{ minHeight: 260 }} />}
+      </div>
+
       <BottomNav />
     </main>
   );
