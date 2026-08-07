@@ -12,11 +12,13 @@ import { GAMES } from "@/components/ui/GameSwitcher";
 
 // Per-game quick-play metadata keyed by GAMES.key. Quiz is deliberately absent:
 // the hero card above the row IS the quiz entry.
-const QUICK_META: Record<string, { time: string; sub: string }> = {
+const QUICK_META: Record<string, { time: string; sub: string; autostart?: boolean }> = {
   draft: { time: "~3 min", sub: "Build your XI, go unbeaten" },
   perfect10: { time: "~2 min", sub: "Name a ranked top ten" },
-  "higher-lower": { time: "~45 sec", sub: "Pick the bigger number" },
-  "guess-the-player": { time: "~60 sec", sub: "Clues drip in, name them" },
+  // Tap = play (the gameplay teaches the mechanic): these two skip their entry
+  // screen via ?start=1 and deal question one straight away.
+  "higher-lower": { time: "~45 sec", sub: "Pick the bigger number", autostart: true },
+  "guess-the-player": { time: "~60 sec", sub: "Clues drip in, name them", autostart: true },
 };
 
 export function QuickPlayGrid() {
@@ -28,7 +30,7 @@ export function QuickPlayGrid() {
         return (
           <Link
             key={key}
-            href={href}
+            href={meta.autostart ? `${href}?start=1` : href}
             className="rounded-2xl px-4 pt-3.5 pb-3 transition-all duration-150 active:scale-[0.97]"
             style={{
               background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",

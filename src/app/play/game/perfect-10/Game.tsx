@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
 import { trackShare, trackGamePlay, trackGameComplete } from "@/lib/analytics/trackGame";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -11,6 +10,8 @@ import { useHideGamesNav } from "@/lib/gamesNav";
 import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
 import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
 import { useUser } from "@/hooks/useUser";
+import { GameEntry } from "@/components/games/GameEntry";
+import { ResultShell } from "@/components/games/ResultShell";
 
 // "Perfect 10" — name everyone in a ranked top-10 football list. Third Quiz
 // game-type. This is the literal /play/game/perfect-10 folder, which Next.js
@@ -517,8 +518,10 @@ export default function Perfect10Game() {
   }, [phase]);
 
   // The persistent GamesNav must never sit over the live board (it would
-  // outstack the fixed container and eat tower space).
-  useHideGamesNav(phase === "playing");
+  // outstack the fixed container and eat tower space). Hidden during
+  // "loading" too — matching play/game/[type] — so it never flashes in for
+  // one frame between the initial load and the intro/playing phase landing.
+  useHideGamesNav(phase === "playing" || phase === "loading");
 
   // Belt and braces with the fixed board: stop the document itself scrolling
   // while a game is in progress, so nothing can drag the tower out of view.
@@ -707,26 +710,6 @@ export default function Perfect10Game() {
     );
   }
 
-  async function handleShare() {
-    trackShare("perfect-10");
-    const text = buildShareText();
-    try {
-      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-        await navigator.share({ text, url: shareTarget });
-        return;
-      }
-    } catch {
-      /* fall through to copy */
-    }
-    try {
-      await navigator.clipboard.writeText(`${text} ${shareTarget}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable — nothing more we can do */
-    }
-  }
-
   // ── Loading ──────────────────────────────────────────────────────────────
   if (phase === "loading") {
     return (
@@ -742,78 +725,53 @@ export default function Perfect10Game() {
   // ── Intro ────────────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-        {/* The persistent GamesNav (root layout) is the section header. */}
-        {/* No back button — the nav above IS the navigation (founder
-            2026-07-18: own tab, no back buttons on game sections). */}
-        <div
-          className="relative flex flex-col items-center pt-8 pb-8 px-6"
-          style={{ background: `linear-gradient(175deg, ${ACCENT}14 0%, #16130a 55%, #0a0a0f 100%)` }}
-        >
-          <div
-            className="w-full mb-5"
-            style={{ maxWidth: 340, borderRadius: 18, overflow: "hidden", border: `1.5px solid ${ACCENT}40`, boxShadow: `0 12px 40px ${ACCENT}22` }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/game-covers/perfect-10.webp" alt="Perfect 10" className="block w-full h-auto" />
-          </div>
-          <h1 className="font-display text-3xl text-white text-center leading-tight mb-2">Perfect 10</h1>
+      <>
+        <GameEntry
+          title="Perfect 10"
+          coverSrc="/game-covers/perfect-10.webp"
+          accent={ACCENT}
+          heroMid="#16130a"
+          primaryTone="gold"
+          banner={
+            <>
+              {challenge && (
+                <div
+                  className="flex items-center gap-2 px-4 py-2 rounded-full mt-1"
+                  style={{ background: `${ACCENT}14`, border: `1px solid ${ACCENT}40` }}
+                >
+                  <span className="font-body text-xs" style={{ color: ACCENT }}>
+                    {challenge.name} scored {challenge.score} pts. Beat it
+                  </span>
+                </div>
+              )}
 
-          {challenge && (
-            <div
-              className="flex items-center gap-2 px-4 py-2 rounded-full mt-1"
-              style={{ background: `${ACCENT}14`, border: `1px solid ${ACCENT}40` }}
-            >
-              <span className="font-body text-xs" style={{ color: ACCENT }}>
-                {challenge.name} scored {challenge.score} pts. Beat it
-              </span>
-            </div>
-          )}
-
-          {/* No daily framing (founder 2026-07-18): a list is a GAME MODE, not
-              "today's list" — dates never reach the player. */}
-          <div
-            className="rounded-2xl px-4 py-3 mt-4 text-center"
-            style={{ background: "rgba(255,196,0,0.06)", border: `1px solid ${ACCENT}30`, maxWidth: 320 }}
-          >
-            <p className="font-body text-xs mb-1" style={{ color: "#9aa39d" }}>TOPIC</p>
-            <p className="font-display text-base" style={{ color: ACCENT }}>
-              {list?.title ?? "…"}
-            </p>
-          </div>
-        </div>
-
-        <div className="max-w-lg mx-auto px-5 py-6 flex flex-col gap-4">
-          <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="font-display text-sm text-white tracking-wide mb-1.5">How it works</p>
-            <p className="font-body text-sm" style={{ color: "#9aa39d", lineHeight: 1.8 }}>
+              {/* No daily framing (founder 2026-07-18): a list is a GAME MODE, not
+                  "today's list" — dates never reach the player. */}
+              <div
+                className="rounded-2xl px-4 py-3 mt-4 text-center"
+                style={{ background: "rgba(255,196,0,0.06)", border: `1px solid ${ACCENT}30`, maxWidth: 320 }}
+              >
+                <p className="font-body text-xs mb-1" style={{ color: "#9aa39d" }}>TOPIC</p>
+                <p className="font-display text-base" style={{ color: ACCENT }}>
+                  {list?.title ?? "…"}
+                </p>
+              </div>
+            </>
+          }
+          how={
+            <>
               Fill the tower. Name all 10, top to bottom.
               <br />
               3 strikes and the tower falls.
               <br />
               3 hints: clubs first, then a starting letter.
-            </p>
-          </div>
-
-          {loadError && (
-            <p className="font-body text-sm text-center" style={{ color: "#ff6b78" }}>
-              Couldn&apos;t load this topic, try again.
-            </p>
-          )}
-
-          {/* A finished mode can't be replayed — the picker below is the way
-              on; the primary button just goes back to the result card. */}
-          <Button
-            variant="primary"
-            tone="gold"
-            size="lg"
-            fullWidth
-            onClick={() => setPhase(game.done ? "results" : "playing")}
-            disabled={!list}
-          >
-            {game.done ? "SEE MY RESULT" : "START"}
-          </Button>
-
+            </>
+          }
+          primaryLabel={game.done ? "SEE MY RESULT" : "PLAY"}
+          onPlay={() => setPhase(game.done ? "results" : "playing")}
+          playDisabled={!list}
+          error={loadError ? "Couldn't load this topic, try again." : null}
+        >
           {/* Every list is a game mode (founder 2026-07-18 — "forget this daily
               thing"): one picker, all topics, selected one highlighted, no
               dates. `day` still gates release server-side; players never see it. */}
@@ -863,10 +821,10 @@ export default function Perfect10Game() {
               </div>
             </div>
           )}
-        </div>
+        </GameEntry>
 
         <BottomNav />
-      </div>
+      </>
     );
   }
 
@@ -889,16 +847,21 @@ export default function Perfect10Game() {
           style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
         >
           <div className={`px-5 flex items-center justify-between gap-3 ${keyboardUp ? "pt-1 pb-0.5" : "pt-2.5 pb-1.5"}`}>
+            {/* Quit — the only way out of a live tower today was the browser/nav
+                back gesture. Matches GameHeader's Quit control exactly (same
+                slot the old "Back" button held, so the header keeps its
+                height); returns to the intro phase only — `game` state is
+                untouched, so found names/strikes/hints survive the trip. */}
             <button
               type="button"
-              onClick={() => router.push(smartBackTarget("/play"))}
+              onClick={() => setPhase("intro")}
               className="flex items-center gap-1.5 font-body text-xs flex-shrink-0"
               style={{ color: "#586058" }}
             >
               <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
                 <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Back
+              Quit
             </button>
 
             <div className="flex items-center gap-1.5">
@@ -1058,45 +1021,82 @@ export default function Perfect10Game() {
     });
 
     return (
-      <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
+      <>
         {justFinished && (
           <FantasyResultInterstitial surface="p10" userId={user?.id ?? null}
             scoreLine={won ? `PERFECT 10 · ${game.score.toLocaleString()} pts` : `${game.score.toLocaleString()} pts`} />
         )}
 
-        {/* Official result card: topic, verdict, the points — then the tower. */}
-        <div
-          className="relative flex flex-col items-center pt-3 pb-5 px-6"
-          style={{ background: `linear-gradient(175deg, ${won ? ACCENT : "#ff4757"}14 0%, #16130a 60%, #0a0a0f 100%)` }}
+        <ResultShell
+          accent={ACCENT}
+          primaryTone="gold"
+          score={game.score.toLocaleString()}
+          scoreSub={`${game.found.length}/10 named`}
+          badge={{ label: won ? "PERFECT 10" : "TOWER FALLS", color: won ? ACCENT : "#ff4757" }}
+          save={
+            isGuest && (
+              <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: `1px solid ${ACCENT}30` }}>
+                <p className="font-body text-sm font-semibold text-white mb-1">Sign up to save your streak and challenge friends</p>
+                <p className="font-body text-xs mb-3" style={{ color: "#9aa39d" }}>
+                  Guest progress only lives on this device.
+                </p>
+                <Button variant="primary" tone="gold" size="md" fullWidth href="/auth/sign-in?next=/play/game/perfect-10">
+                  SIGN UP &amp; SAVE
+                </Button>
+              </div>
+            )
+          }
+          primaryLabel="MORE GAME MODES"
+          onPrimary={() => {
+            window.scrollTo(0, 0);
+            setPhase("intro");
+          }}
+          secondaries={
+            <>
+              {/* Share on X — house scorecard CTA. The tweet names only ~50% of the
+                  player's answers (buildShareText), so posting never spoils the list. */}
+              <button
+                type="button"
+                onClick={shareOnX}
+                className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
+                style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(255,196,0,0.55)" }}
+              >
+                <div className="flex items-center gap-4 px-5 py-4">
+                  <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
+                  <div className="text-left flex-1 min-w-0">
+                    <div className="font-display tracking-wide" style={{ fontSize: 20, color: ACCENT }}>SHARE YOUR SCORECARD</div>
+                    <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
+                  </div>
+                </div>
+              </button>
+              {!isGuest && shareUrl && (
+                <Button
+                  variant="ghost"
+                  tone="gold"
+                  size="lg"
+                  fullWidth
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(shareUrl);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                >
+                  {copied ? "LINK COPIED ✓" : "CHALLENGE A FRIEND"}
+                </Button>
+              )}
+            </>
+          }
+          bridge={<FantasyPromoCard surface="p10" />}
         >
-          <p className="font-display text-2xl text-white text-center leading-tight mb-2" style={{ maxWidth: 360 }}>
+          {/* Tower recap — topic + per-rung breakdown, unchanged. */}
+          <p className="font-display text-lg text-white text-center leading-tight" style={{ maxWidth: 360, margin: "0 auto" }}>
             {list.title}
           </p>
-
-          {/* Verdict, score and count on ONE line. Stacked, they ate ~200px of
-              a phone screen and pushed the tower — the actual result — below
-              the fold. */}
-          <div className="flex items-center justify-center gap-2.5 mb-3 flex-wrap">
-            <span
-              className="font-display text-xs tracking-wide px-3 py-1 rounded-full"
-              style={{
-                background: won ? `${ACCENT}18` : "rgba(255,71,87,0.12)",
-                border: `1px solid ${won ? ACCENT : "#ff4757"}50`,
-                color: won ? ACCENT : "#ff4757",
-              }}
-            >
-              {won ? "PERFECT 10" : "TOWER FALLS"}
-            </span>
-            <span className="font-display text-2xl leading-none" style={{ color: won ? ACCENT : "#ffe082" }}>
-              {game.score.toLocaleString()}
-              <span className="font-display text-sm"> PTS</span>
-            </span>
-            <span className="font-body text-xs" style={{ color: "#9aa39d" }}>
-              {game.found.length}/10 named
-            </span>
-          </div>
-
-          <div className="w-full max-w-sm flex flex-col gap-1">
+          <div className="w-full max-w-sm mx-auto flex flex-col gap-1">
             {allEntries.map((e) => (
               <div
                 key={e.rank}
@@ -1123,88 +1123,14 @@ export default function Perfect10Game() {
           </div>
 
           {challenge && (
-            <div className="w-full max-w-sm mt-6 rounded-2xl px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="w-full max-w-sm mx-auto rounded-2xl px-4 py-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
               <p className="font-body text-xs text-center mb-2" style={{ color: "#8a948f" }}>
                 {challenge.name}: {challenge.score} pts
               </p>
               <CompareDots foundRanks={challenge.foundRanks} />
             </div>
           )}
-        </div>
-
-        <div className="max-w-lg mx-auto px-5 flex flex-col gap-3 mt-5">
-          {/* Share on X — house scorecard CTA. The tweet names only ~50% of the
-              player's answers (buildShareText), so posting never spoils the list. */}
-          <button
-            type="button"
-            onClick={shareOnX}
-            className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
-            style={{ background: "linear-gradient(135deg, #1c1400, #221900)", border: "2px solid rgba(255,196,0,0.55)" }}
-          >
-            <div className="flex items-center gap-4 px-5 py-4">
-              <div style={{ fontSize: 36, lineHeight: 1 }}>📣</div>
-              <div className="text-left flex-1 min-w-0">
-                <div className="font-display tracking-wide" style={{ fontSize: 20, color: ACCENT }}>SHARE YOUR SCORECARD</div>
-                <div className="font-body" style={{ fontSize: 13, color: "#a89060" }}>Post it on 𝕏 →</div>
-              </div>
-            </div>
-          </button>
-
-          <Button variant="primary" tone="gold" size="lg" fullWidth onClick={handleShare}>
-            {copied ? "COPIED ✓" : "SHARE"}
-          </Button>
-
-          {!isGuest && shareUrl && (
-            <Button
-              variant="ghost"
-              tone="gold"
-              size="lg"
-              fullWidth
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(shareUrl);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                } catch {
-                  /* ignore */
-                }
-              }}
-            >
-              CHALLENGE A FRIEND
-            </Button>
-          )}
-
-          {isGuest && (
-            <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: `1px solid ${ACCENT}30` }}>
-              <p className="font-body text-sm font-semibold text-white mb-1">Sign up to save your streak and challenge friends</p>
-              <p className="font-body text-xs mb-3" style={{ color: "#9aa39d" }}>
-                Guest progress only lives on this device.
-              </p>
-              <Button variant="primary" tone="gold" size="md" fullWidth href="/auth/sign-in?next=/play/game/perfect-10">
-                SIGN UP &amp; SAVE
-              </Button>
-            </div>
-          )}
-
-          {/* Straight back to the picker — the next game mode is one tap away. */}
-          <Button
-            variant="ghost"
-            tone="gold"
-            size="lg"
-            fullWidth
-            onClick={() => {
-              window.scrollTo(0, 0);
-              setPhase("intro");
-            }}
-          >
-            PICK ANOTHER GAME MODE →
-          </Button>
-          <Button variant="ghost" tone="gold" size="lg" fullWidth onClick={() => router.push("/play")}>
-            MORE GAMES
-          </Button>
-
-          <FantasyPromoCard surface="p10" />
-        </div>
+        </ResultShell>
 
         <BottomNav />
 
@@ -1216,7 +1142,7 @@ export default function Perfect10Game() {
           }
           .animate-p10-ignite { animation: p10-ignite 0.5s ease-out both; }
         `}</style>
-      </div>
+      </>
     );
   }
 

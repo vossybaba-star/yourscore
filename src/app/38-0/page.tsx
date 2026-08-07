@@ -89,12 +89,10 @@ export default function DraftHome() {
       {/* pt-4, not pt-safe — the persistent GamesNav above already carries the
           safe-area inset; doubling it left a dead band under the nav. */}
       <div className="max-w-lg mx-auto px-5 pt-4">
-        {/* The persistent GamesNav (root layout) is the header — nothing above
-            the title here (founder 2026-07-18: it's a NAV; no back buttons). */}
-        <h1 className="font-display tracking-wide leading-none mb-4" style={{ fontSize: 52, color: "#fff" }}>
-          38<span style={{ color: "#aeea00" }}>-0</span>
-        </h1>
-
+        {/* The persistent GamesNav (root layout) already names the game — no
+            standalone page title here. Tabs are the first element on screen
+            (founder brief 2026-08-07: radically simpler landing, hero + one
+            big CTA up top, everything else demoted or progressively revealed). */}
         {/* ── Main tab switcher — clean underline text tabs, same treatment as
             the quiz filters (founder 2026-07-18: no emoji pills, no badges);
             each competition keeps its accent as the underline. ── */}
@@ -121,22 +119,6 @@ export default function DraftHome() {
           ))}
         </div>
 
-        {/* ── Secondary nav pills ── */}
-        {cfg && (
-          <div className="flex gap-2 mb-6">
-            {([
-              { href: `/38-0/live${q}`,        label: "⚡ Live H2H",   color: cfg.accent },
-              { href: `/38-0/teams${q}`,       label: "📁 My Teams",   color: "#aeea00" },
-              { href: `/38-0/leaderboard${q}`, label: "⚔️ H2H Ladder", color: "#ffb800" },
-            ]).map(({ href, label, color }) => (
-              <Link key={href} href={href}
-                className="flex-1 py-2.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
-                style={{ fontSize: 12, color, background: `${color}1f`, border: `1px solid ${color}40` }}>
-                {label}
-              </Link>
-            ))}
-          </div>
-        )}
         {tab === "wc" && (
           <div className="flex gap-2 mb-6">
             {([
@@ -158,6 +140,8 @@ export default function DraftHome() {
         ══════════════════════════════════════════════════════════════════ */}
         {cfg && (
           <>
+            {/* Hero — first thing under the tabs. No stats line, no title above it;
+                the tab row already says where we are. */}
             <div className="mb-5">
               <DraftHubHero
                 eyebrow="ALL-TIME XI"
@@ -166,18 +150,14 @@ export default function DraftHome() {
                 accent={cfg.accent}
                 accentText={cfg.accent}
               />
-              {poolReady && (
-                <p className="font-body mt-2 px-1" style={{ color: "#8a948f", fontSize: 11 }}>
-                  {leagueCounts()[cfg.league].players} all-time {LEAGUE_META[cfg.league].name} player-seasons · {leagueCounts()[cfg.league].buckets} legendary squads
-                </p>
-              )}
             </div>
 
-            {/* continue card — signed-in: both complete + in-progress; anonymous: in-progress only */}
+            {/* continue card — signed-in: both complete + in-progress; anonymous: in-progress only.
+                Resuming beats starting, so this sits above the primary CTA. */}
             {continueTeam && (
               <Link
                 href={isComplete(continueTeam) ? "/38-0/team" : "/38-0/play"}
-                className="block mb-6 rounded-2xl p-4 active:scale-[0.98] transition-transform"
+                className="block mb-4 rounded-2xl p-4 active:scale-[0.98] transition-transform"
                 style={{ background: `linear-gradient(135deg,${cfg.accent}1f,${cfg.accent}0d)`, border: `1px solid ${cfg.accent}40` }}
               >
                 <div className="flex items-center justify-between">
@@ -200,7 +180,7 @@ export default function DraftHome() {
             {anonSavePrompt && (
               <Link
                 href="/auth/sign-in?next=/38-0/team"
-                className="block mb-6 rounded-2xl p-4 active:scale-[0.98] transition-transform"
+                className="block mb-4 rounded-2xl p-4 active:scale-[0.98] transition-transform"
                 style={{ background: "rgba(0,201,255,0.06)", border: "1px solid rgba(0,201,255,0.25)" }}
               >
                 <div className="flex items-center justify-between">
@@ -217,37 +197,61 @@ export default function DraftHome() {
               </Link>
             )}
 
-            {/* ── How you draft, FIRST.
-                Above the formation picker on purpose (UX walk 2026-07-23): it used to sit
-                344px below the fold, under a full pitch diagram, while the sticky lime CTA
-                started the OTHER mode — so a first-timer could draft without ever learning
-                Pro existed. Which game you're playing outranks which shape you play it in. ── */}
+            {/* ── Primary CTA — first screen, one big button. Same target as the
+                sticky footer CTA below (kept for scroll depth). ── */}
+            <Button variant="primary" tone="lime" size="lg" fullWidth onClick={startNew}>
+              PLAY · DRAFT YOUR XI →
+            </Button>
+
+            {/* ── Secondary links — compact pill row, one line, scrolls if it overflows. ── */}
+            <div className="flex gap-2 mt-3 mb-7 overflow-x-auto -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+              <Link href={`/38-0/teams${q}`}
+                className="flex-shrink-0 py-2 px-3.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
+                style={{ fontSize: 11, color: "#aeea00", background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
+                📁 My Teams
+              </Link>
+              <button onClick={() => setTab("board")}
+                className="flex-shrink-0 py-2 px-3.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
+                style={{ fontSize: 11, color: "#aeea00", background: "rgba(174,234,0,0.12)", border: "1px solid rgba(174,234,0,0.25)" }}>
+                🏆 Leaderboard
+              </button>
+              <Link href={`/38-0/live${q}`}
+                className="flex-shrink-0 py-2 px-3.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
+                style={{ fontSize: 11, color: cfg.accent, background: `${cfg.accent}1f`, border: `1px solid ${cfg.accent}40` }}>
+                ⚡ Live H2H
+              </Link>
+              <Link href={`/38-0/leaderboard${q}`}
+                className="flex-shrink-0 py-2 px-3.5 rounded-full text-center font-display tracking-wide transition-all active:scale-95"
+                style={{ fontSize: 11, color: "#ffb800", background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)" }}>
+                ⚔️ H2H Ladder
+              </Link>
+            </div>
+
+            {/* ── How you draft — real pre-game decision, kept but compacted to a
+                two-option segmented pair, one line of copy each. ── */}
             {tab === "pl" && (
-              <>
-                <h2 className="font-display tracking-wide mb-3" style={{ fontSize: 22, color: "#fff" }}>
-                  HOW YOU DRAFT
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="mb-6">
+                <div className="grid grid-cols-2 gap-2">
                   {([
-                    { key: true,  label: "PRO",        desc: "Answer to earn every pick. Right answers deal better players.", color: cfg.accent },
-                    { key: false, label: "JUST DRAFT", desc: "No questions. Spin and pick, every squad at full strength.",    color: "#8a948f" },
+                    { key: true,  label: "PRO",        desc: "Answer to earn every pick.", color: cfg.accent },
+                    { key: false, label: "JUST DRAFT", desc: "No questions, full strength.", color: "#8a948f" },
                   ]).map((g) => {
                     const active = gated === g.key;
                     return (
                       <button
                         key={String(g.key)}
                         onClick={() => setGated(g.key)}
-                        className="rounded-2xl p-4 text-left transition-all active:scale-95"
+                        className="rounded-xl px-3 py-2.5 text-left transition-all active:scale-95"
                         style={{
                           background: active ? `${g.color}14` : "#0e1611",
                           border: `1px solid ${active ? `${g.color}88` : "rgba(255,255,255,0.08)"}`,
                         }}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="font-display tracking-wide" style={{ fontSize: 22, color: active ? g.color : "#fff" }}>{g.label}</span>
-                          {g.key && <span style={{ fontSize: 14 }}>⚽</span>}
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-display tracking-wide" style={{ fontSize: 15, color: active ? g.color : "#fff" }}>{g.label}</span>
+                          {g.key && <span style={{ fontSize: 11 }}>⚽</span>}
                         </div>
-                        <div className="font-body mt-1" style={{ fontSize: 11, color: "#8a948f", lineHeight: 1.3 }}>{g.desc}</div>
+                        <div className="font-body mt-0.5" style={{ fontSize: 10, color: "#8a948f", lineHeight: 1.3 }}>{g.desc}</div>
                       </button>
                     );
                   })}
@@ -255,44 +259,59 @@ export default function DraftHome() {
 
                 {/* Only under PRO, because that's the only mode where a club changes
                     anything. Never blocks: Pro plays fine on the neutral pool. */}
-                {gated && <ProClubPrompt />}
-              </>
+                {gated && <div className="mt-2"><ProClubPrompt /></div>}
+              </div>
             )}
 
-            <h2 className="font-display tracking-wide mt-7 mb-3" style={{ fontSize: 22, color: "#fff" }}>
-              PICK YOUR SHAPE
-            </h2>
+            {/* ── Pick your shape — collapsed by default; the formation picker + pitch
+                preview are a nice-to-have, not first-screen material. ── */}
+            <details className="rounded-2xl mb-6" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <summary className="flex items-center justify-between px-4 py-3 cursor-pointer select-none list-none">
+                <span className="font-display tracking-wide" style={{ fontSize: 15, color: "#fff" }}>
+                  Formation: <span style={{ color: cfg.accent }}>{selected}</span>
+                  <span className="font-body" style={{ fontSize: 12, color: "#8a948f", marginLeft: 6 }}>· Change</span>
+                </span>
+                <span className="font-body" style={{ fontSize: 10, color: "#8a948f" }}>▼</span>
+              </summary>
 
-            <div className="flex flex-wrap gap-2">
-              {FORMATIONS.map((f) => {
-                const active = selected === f;
-                return (
-                  <button
-                    key={f}
-                    onClick={() => setSelected(f)}
-                    className="rounded-xl px-4 py-2.5 font-display tracking-wide transition-all active:scale-95"
-                    style={{
-                      background: active ? `${cfg.accent}1f` : "#0e1611",
-                      border: `1px solid ${active ? `${cfg.accent}80` : "rgba(255,255,255,0.08)"}`,
-                      color: active ? cfg.accent : "#fff",
-                      fontSize: 18,
-                    }}
-                  >
-                    {f}
-                  </button>
-                );
-              })}
-            </div>
+              <div className="px-4 pb-4">
+                <div className="flex flex-wrap gap-2">
+                  {FORMATIONS.map((f) => {
+                    const active = selected === f;
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => setSelected(f)}
+                        className="rounded-xl px-4 py-2.5 font-display tracking-wide transition-all active:scale-95"
+                        style={{
+                          background: active ? `${cfg.accent}1f` : "#080d0a",
+                          border: `1px solid ${active ? `${cfg.accent}80` : "rgba(255,255,255,0.08)"}`,
+                          color: active ? cfg.accent : "#fff",
+                          fontSize: 18,
+                        }}
+                      >
+                        {f}
+                      </button>
+                    );
+                  })}
+                </div>
 
-            <div className="mt-4 rounded-2xl p-3" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="max-w-[260px] mx-auto">
-                <Pitch formation={selected} squad={[]} compact />
+                <div className="mt-4 rounded-2xl p-3" style={{ background: "#080d0a", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div className="max-w-[260px] mx-auto">
+                    <Pitch formation={selected} squad={[]} compact />
+                  </div>
+                  <p className="font-body text-center mt-3" style={{ fontSize: 12, color: "#8a948f" }}>
+                    {FORMATION_NOTE[selected]}
+                  </p>
+                </div>
+
+                {poolReady && (
+                  <p className="font-body text-center mt-3" style={{ color: "#8a948f", fontSize: 11 }}>
+                    {leagueCounts()[cfg.league].players} all-time {LEAGUE_META[cfg.league].name} player-seasons · {leagueCounts()[cfg.league].buckets} legendary squads
+                  </p>
+                )}
               </div>
-              <p className="font-body text-center mt-3" style={{ fontSize: 12, color: "#8a948f" }}>
-                {FORMATION_NOTE[selected]}
-              </p>
-            </div>
-
+            </details>
 
             {/* spacer so sticky button doesn't cover the last card */}
             <div className="h-28" />
