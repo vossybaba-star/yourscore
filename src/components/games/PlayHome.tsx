@@ -266,7 +266,16 @@ export function MoreGamesDoor({ count, onOpen }: { count: number; onOpen: () => 
   );
 }
 
-export function SectionLabel({ children }: { children: React.ReactNode }) {
+export function SectionLabel({ children, lg = false }: { children: React.ReactNode; lg?: boolean }) {
+  // lg: the primary game sections (Today's Quiz, Quick Play) — a real heading, not
+  // a faint eyebrow, so they read as the main things to do (founder 7 Aug).
+  if (lg) {
+    return (
+      <p className="font-display" style={{ fontSize: 20, lineHeight: 1.1, letterSpacing: "0.01em", color: "#eef2f0", fontWeight: 700 }}>
+        {children}
+      </p>
+    );
+  }
   return (
     <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>
       {children}

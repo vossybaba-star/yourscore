@@ -13,6 +13,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { trackFollowClicked } from "@/lib/analytics/trackSocial";
 
 const TEAL = "#00d8c0";
+const MUTED = "#8a948f";
 
 interface FollowState {
   following: boolean;
@@ -23,12 +24,16 @@ interface FollowState {
 export function FollowButton({
   userId,
   size = "md",
+  quiet = false,
   onChange,
   refreshOnChange = false,
   initialFollowing,
 }: {
   userId: string;
   size?: "sm" | "md";
+  /** Feed treatment: a small, muted OUTLINE follow (not a solid teal fill) so it
+   *  never competes with the username + post content (founder 7 Aug). */
+  quiet?: boolean;
   /** Called after a successful toggle, e.g. to bump a follower count. */
   onChange?: (following: boolean) => void;
   /** Re-fetch the server component after a toggle so server-rendered counts
@@ -83,8 +88,25 @@ export function FollowButton({
   if (!state || state.self) return null;
 
   const following = state.following;
-  const pad = size === "sm" ? "6px 12px" : "9px 16px";
-  const fontSize = size === "sm" ? 12.5 : 13.5;
+  const pad = quiet ? "4px 11px" : size === "sm" ? "6px 12px" : "9px 16px";
+  const fontSize = quiet ? 11.5 : size === "sm" ? 12.5 : 13.5;
+
+  // Quiet (feed): always an outline, muted — never the solid teal fill, which
+  // was pulling the eye off the post. Normal: solid teal to follow, outline once
+  // followed (unchanged).
+  const style = quiet
+    ? {
+        background: "transparent",
+        color: following ? MUTED : TEAL,
+        border: `1px solid ${following ? "rgba(255,255,255,0.14)" : "rgba(0,216,192,0.4)"}`,
+        fontWeight: 600 as const,
+      }
+    : {
+        background: following ? "transparent" : TEAL,
+        color: following ? TEAL : "#04231f",
+        border: `1px solid ${following ? "rgba(0,216,192,0.4)" : TEAL}`,
+        fontWeight: 700 as const,
+      };
 
   return (
     <button
@@ -93,11 +115,9 @@ export function FollowButton({
       aria-pressed={following}
       style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-        padding: pad, borderRadius: 999, fontWeight: 700, fontSize, cursor: "pointer",
-        lineHeight: 1, whiteSpace: "nowrap", transition: "opacity 0.15s",
-        background: following ? "transparent" : TEAL,
-        color: following ? TEAL : "#04231f",
-        border: `1px solid ${following ? "rgba(0,216,192,0.4)" : TEAL}`,
+        padding: pad, borderRadius: 999, fontSize, cursor: "pointer",
+        lineHeight: 1, whiteSpace: "nowrap", transition: "opacity 0.15s", flexShrink: 0,
+        ...style,
         opacity: busy ? 0.6 : 1,
       }}
     >

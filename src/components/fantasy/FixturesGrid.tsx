@@ -69,17 +69,25 @@ export function FixturesGrid({
         </div>
       )}
 
-      <div style={{ color: INK, fontSize: 15, fontWeight: 600, marginBottom: 2 }}>Next {gws.length} gameweeks</div>
-      <div style={{ color: MUTED, fontSize: 11, marginBottom: 8 }}>CAPS = home · lower = away.</div>
+      <div style={{ color: INK, fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Next {gws.length} gameweeks</div>
 
-      {/* Legend — decodes the difficulty colours in words. */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
-        {(["kind", "medium", "tough"] as Difficulty[]).map((d) => (
-          <span key={d} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: MUTED }}>
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: DIFF[d].bg }} />
-            {DIFF[d].label}
-          </span>
-        ))}
+      {/* Fixture key — how to read the grid. Bigger and clearer than the old faint
+          one-liner so nobody has to hunt for it (founder 7 Aug); still a compact
+          integrated panel, not a banner. Decodes home/away AND the difficulty
+          colours (the grid never relies on colour alone). */}
+      <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${LINE}`, borderRadius: 10, padding: "11px 13px", marginBottom: 12, display: "flex", flexDirection: "column", gap: 9 }}>
+        <div style={{ fontSize: 13.5, color: INK, lineHeight: 1.45 }}>
+          <b style={{ letterSpacing: "0.04em" }}>CAPITALS</b> = home team&nbsp;&nbsp;·&nbsp;&nbsp;<span style={{ color: MUTED }}>lowercase</span> = away team
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12.5, color: MUTED, fontWeight: 600 }}>Colour = difficulty</span>
+          {(["kind", "medium", "tough"] as Difficulty[]).map((d) => (
+            <span key={d} style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 13, color: INK }}>
+              <span style={{ width: 16, height: 16, borderRadius: 4, background: DIFF[d].bg, border: "1px solid rgba(255,255,255,0.12)", flexShrink: 0 }} />
+              {DIFF[d].label}
+            </span>
+          ))}
+        </div>
       </div>
 
       {shown.length === 0 ? (

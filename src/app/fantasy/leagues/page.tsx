@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Btn, Card, Chip, GOLD, INK, LINE, LIME, MUTED, page, PANEL, PANEL_2, TEAL, tint,
+  Btn, Card, GOLD, INK, LINE, LIME, MUTED, page, PANEL, PANEL_2, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
 import { CreateLeagueFlow, JoinLeagueFlow, LeagueEmptyState } from "@/components/fantasy/league/LeagueFlows";
@@ -246,21 +246,27 @@ export default function LeaguesHome() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {crest(l.imageUrl)}
           <span style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
+            {/* The league NAME owns the first line — full width, the strongest
+                identifier. Only the tick + unread badge share it (founder 7 Aug). */}
+            <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+              <span style={{ minWidth: 0, fontSize: 15.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
               {l.official && <VerifiedTick size={14} />}
               {l.unread > 0 && (
                 <span aria-label={`${l.unread} unread`} style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: "#04231f", background: TEAL, borderRadius: 999, padding: "1px 7px", minWidth: 18, textAlign: "center" }}>{l.unread > 99 ? "99+" : l.unread}</span>
               )}
-              {l.kind === "club" && <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: "0.04em", color: TEAL, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, borderRadius: 999, padding: "1px 7px" }}>YOUR CLUB</span>}
-              {l.kind === "founder" && <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: "0.04em", color: GOLD, background: tint(GOLD, "1c"), border: `1px solid ${tint(GOLD, "44")}`, borderRadius: 999, padding: "1px 7px" }}>FOUNDER</span>}
-              {l.isPublic && <Chip>Public</Chip>}
             </span>
-            <span style={{ fontSize: 12, color: MUTED }}>
-              {l.memberCount} member{l.memberCount === 1 ? "" : "s"}{h.msgCount > 0 ? ` · ${h.msgCount} message${h.msgCount === 1 ? "" : "s"}` : ""}
+            {/* Secondary line: member count + subtle tags, small and muted so they
+                never compete with the name above. */}
+            <span style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", fontSize: 12, color: MUTED }}>
+              <span>{l.memberCount} member{l.memberCount === 1 ? "" : "s"}{h.msgCount > 0 ? ` · ${h.msgCount} message${h.msgCount === 1 ? "" : "s"}` : ""}</span>
+              {l.kind === "club" && <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.03em", color: tint(TEAL, "cc"), background: tint(TEAL, "14"), borderRadius: 999, padding: "1px 6px" }}>Your club</span>}
+              {l.kind === "founder" && <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.03em", color: tint(GOLD, "cc"), background: tint(GOLD, "14"), borderRadius: 999, padding: "1px 6px" }}>Founder</span>}
+              {l.isPublic && <span style={{ fontSize: 9.5, fontWeight: 600, color: MUTED, background: "rgba(255,255,255,0.05)", borderRadius: 999, padding: "1px 6px" }}>Public</span>}
+              {/* Invite lives on this secondary line now, right-aligned, so the
+                  NAME above gets the full width and stops truncating (founder 7 Aug). */}
+              <span style={{ marginLeft: "auto", flexShrink: 0 }}>{inviteControl(l)}</span>
             </span>
           </span>
-          {inviteControl(l)}
           <span style={{ color: TEAL, fontSize: 18, flexShrink: 0 }}>›</span>
         </div>
         {(l.bio || hasLinks(l.links)) && (

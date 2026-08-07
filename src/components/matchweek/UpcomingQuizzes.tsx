@@ -56,30 +56,8 @@ export function UpcomingQuizzes() {
         <span className="font-body text-xs" style={{ color: "#8a948f" }}>{current.fixtures.length} this gameweek</span>
       </div>
 
-      {/* Gameweek switcher */}
-      {gws.length > 1 && (
-        <div className="mb-3">
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar" style={{ paddingBottom: 2, scrollbarWidth: "none" }}>
-            {gws.map((g) => {
-              const on = g.round === current.round;
-              return (
-                <button key={g.round} onClick={() => setActive(g.round)}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-full font-body text-xs transition-colors"
-                  style={{
-                    background: on ? TEAL : "rgba(255,255,255,0.04)",
-                    color: on ? "#062018" : "#8a948f",
-                    border: `1px solid ${on ? TEAL : "rgba(255,255,255,0.08)"}`,
-                    fontWeight: on ? 700 : 500,
-                  }}>
-                  GW {g.round}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* The carousel */}
+      {/* The carousel — shows the current gameweek's fixtures. The GW 1 / GW 2
+          switcher was removed (founder 7 Aug: declutter the Play tab). */}
       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snap-x -mx-4 px-4"
         style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         {current.fixtures.map((fx, i) => {
@@ -123,9 +101,6 @@ export function UpcomingQuizzes() {
         })}
       </div>
 
-      <p className="font-body text-xs mt-2" style={{ color: "#586058" }}>
-        A quiz pack publishes the day before each match. Play solo or against friends.
-      </p>
     </div>
   );
 }

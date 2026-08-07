@@ -47,3 +47,23 @@ export function timeAgo(iso: string): string {
   const years = Math.round(days / 365);
   return `${years} year${years === 1 ? "" : "s"} ago`;
 }
+
+/**
+ * Compact uppercase form for space-tight rows (the feed, where the timestamp
+ * competes with the username): "43M", "12H", "3D", "2W", "5MO", "1Y", "NOW".
+ * Same buckets as timeAgo, just terse — deliberately NOT changing timeAgo's
+ * long form, which the league/comment surfaces read better in a sentence.
+ */
+export function timeAgoShort(iso: string): string {
+  const ms = Math.max(0, Date.now() - new Date(iso).getTime());
+  if (ms < 60_000) return "NOW";
+  const mins = Math.round(ms / 60_000);
+  if (mins < 60) return `${mins}M`;
+  const hours = Math.round(ms / 3_600_000);
+  if (hours < 24) return `${hours}H`;
+  const days = Math.round(ms / 86_400_000);
+  if (days < 7) return `${days}D`;
+  if (days < 30) return `${Math.round(days / 7)}W`;
+  if (days < 365) return `${Math.round(days / 30)}MO`;
+  return `${Math.round(days / 365)}Y`;
+}

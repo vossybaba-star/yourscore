@@ -944,6 +944,15 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-07** — **UX readability/nav cleanup batch 1** (branch `feat/ux-cleanup-batch`). Nine
+  focused fixes: Feed timestamps now compact (`12H`/`43M`, new `timeAgoShort`) + username gets
+  priority; Feed Follow button is a small muted outline (new `quiet` variant) not a solid teal fill;
+  Play headings **Today's Quiz** + **Quick Play** enlarged (SectionLabel `lg`); Play GW1/GW2 switcher
+  + "publishes the day before" blurb removed; Leagues list shows full names (Invite moved to line 2,
+  Founder/Your-club labels muted); Scout Fixtures key made big + clear (home/away + difficulty colours);
+  Awards modal got a sticky top-right close; squad-pitch names no longer overlap EDIT SQUAD on narrow
+  phones (extra clearance under the 1:1 pitch); Play/Fantasy bottom-nav glow removed. Verified as the
+  health bot at 320 + 375px; tsc + build green.
 - **2026-08-07** — **Fantasy transfer bank cap 5 → 3** (branch `fix/fantasy-credit-cap-3`).
   Finishes the "cap of 2 additional transfers" change: the earning curve already shipped
   (5 correct → 1, 10 → 2), but `CREDIT_CAP` was left at 5 — so the EARN TRANSFERS card, the pip

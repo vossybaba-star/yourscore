@@ -47,9 +47,26 @@ export function MedalsModal({ medals, onClose }: { medals: Medal[]; onClose: () 
         style={{ animation: "slideUp 0.24s ease" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-baseline justify-between mb-5">
-          <p className="font-display text-2xl text-white">Awards</p>
-          <p className="font-body text-sm text-text-muted">{earned}/{medals.length} won</p>
+        {/* Sticky header with an always-visible close — the bottom Close was the
+            only obvious exit and it sits below a long scroll of medals, so on a
+            small phone there was no way out without scrolling to the end
+            (founder 7 Aug). X stays put at the top, matching the app's modals. */}
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between -mx-5 px-5 pb-3 pt-1 mb-4"
+          style={{ background: "rgba(10,12,10,0.86)", backdropFilter: "blur(10px)" }}
+        >
+          <div className="flex items-baseline gap-3">
+            <p className="font-display text-2xl text-white">Awards</p>
+            <p className="font-body text-sm text-text-muted">{earned}/{medals.length} won</p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close awards"
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#eef2f0" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+          </button>
         </div>
 
         {GROUP_ORDER.map((g) => {

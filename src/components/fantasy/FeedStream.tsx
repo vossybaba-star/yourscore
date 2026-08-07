@@ -21,7 +21,7 @@ import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
-import { timeAgo } from "@/lib/timeAgo";
+import { timeAgoShort } from "@/lib/timeAgo";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
 import { SharePost } from "@/components/fantasy/SharePost";
@@ -683,7 +683,7 @@ function QuoteEmbedCard({ embed }: { embed: EmbeddedPost }) {
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <PlayerAvatar name={embed.actorName ?? "A manager"} avatarUrl={embed.actorAvatar ?? null} size={20} />
         <span style={{ fontSize: 12.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{embed.actorName}</span>
-        {embed.createdAt && <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>· {timeAgo(embed.createdAt)}</span>}
+        {embed.createdAt && <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>· {timeAgoShort(embed.createdAt)}</span>}
       </div>
       {embed.actorIsCommunity && <div style={{ marginTop: 2 }}><CommunityBadge compact /></div>}
       {embed.text && (
@@ -870,19 +870,23 @@ export function FeedCard({ ev, signInNext, detail = false, pinControl }: {
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 5, minWidth: 0, fontSize: 13.5, lineHeight: 1.35 }}>
-            <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "55%" }}>{ev.actorName}</Link>
+            {/* Name + @handle share the flexible space (name first, both ellipsis
+                if pushed); the timestamp is now a compact "12H" so it barely costs
+                the username any room (founder 7 Aug). */}
+            <Link href={`/profile/${ev.actorId}`} style={{ color: INK, fontWeight: 800, textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flexShrink: 1, maxWidth: "62%" }}>{ev.actorName}</Link>
             {ev.actorUsername && (
-              <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>@{ev.actorUsername}</span>
+              <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0, flexShrink: 1 }}>@{ev.actorUsername}</span>
             )}
-            <span style={{ color: MUTED, fontWeight: 400, fontSize: 12.5, whiteSpace: "nowrap", flexShrink: 0 }}>· {timeAgo(ev.createdAt)}</span>
+            <span style={{ color: MUTED, fontWeight: 400, fontSize: 11.5, letterSpacing: "0.02em", whiteSpace: "nowrap", flexShrink: 0, marginLeft: "auto", paddingLeft: 4 }}>{timeAgoShort(ev.createdAt)}</span>
           </div>
           {ev.actorIsCommunity && <div style={{ marginTop: 1 }}><CommunityBadge compact /></div>}
           {ev.type !== "post" && (
             <div style={{ fontSize: 13, color: "#c7d0cb", marginTop: 1, lineHeight: 1.4 }}>{ev.sentence}</div>
           )}
         </div>
-        {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts. */}
-        <FollowButton userId={ev.actorId} size="sm" initialFollowing={false} />
+        {/* Follow lives in the header (spec); FollowButton renders nothing on your own posts.
+            Quiet treatment so it never outshouts the username + post (founder 7 Aug). */}
+        <FollowButton userId={ev.actorId} size="sm" quiet initialFollowing={false} />
         <CardMenu ev={ev} shareUrl={shareUrl} onShare={() => setShareOpen(true)} onInvite={() => setInviteOpen(true)} pinControl={pinControl}
           viewerId={user?.id ?? null} onHide={() => setHiddenSelf(true)} />
       </div>

@@ -875,8 +875,8 @@ function PlayPageInner() {
                   className="w-full flex items-center justify-between mb-2.5"
                   aria-label="See all quizzes"
                 >
-                  <SectionLabel>TODAY&apos;S QUIZ</SectionLabel>
-                  <span className="font-display text-sm" style={{ color: "#00d8c0" }}>→</span>
+                  <SectionLabel lg>TODAY&apos;S QUIZ</SectionLabel>
+                  <span className="font-display text-lg" style={{ color: "#00d8c0" }}>→</span>
                 </button>
                 {packsLoading ? (
                   <div className="flex gap-3">
@@ -893,7 +893,7 @@ function PlayPageInner() {
               <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
                 {/* Quick Play — art-led cards, straight into each game. */}
                 <div>
-                  <div className="mb-2"><SectionLabel>QUICK PLAY</SectionLabel></div>
+                  <div className="mb-2.5"><SectionLabel lg>QUICK PLAY</SectionLabel></div>
                   <QuickPlayGrid />
                 </div>
 

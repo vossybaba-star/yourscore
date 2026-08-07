@@ -146,11 +146,15 @@ function GameweekHero({ you, proposed, onAdopt, adopting }: { you: HomeData["you
         </div>
       )}
       {you.board && you.board.xi.length > 0 && (
-        <div style={{ marginTop: 12, paddingBottom: 12 }}>
+        // The pitch is a 1:1 square, so on narrow (non-Plus) phones the bottom
+        // keeper's NAME spills a little below the pitch box. Extra bottom room
+        // here keeps it clear of the EDIT SQUAD button — no overlap at any width
+        // (founder 7 Aug).
+        <div style={{ marginTop: 12, paddingBottom: 30 }}>
           <SquadBoard mode="complete" players={you.board.players} xi={you.board.xi} bench={you.board.bench} captain={you.board.captain ?? undefined} vice={you.board.vice ?? undefined} />
         </div>
       )}
-      <div style={{ marginTop: 2 }}><Btn gold onClick={() => router.push("/fantasy/build")}>EDIT SQUAD</Btn></div>
+      <div style={{ marginTop: 10 }}><Btn gold onClick={() => router.push("/fantasy/build")}>EDIT SQUAD</Btn></div>
     </div>
   );
 }

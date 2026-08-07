@@ -108,25 +108,6 @@ input, textarea, select {
   100% { transform: translateX(300%);  }
 }
 
-/* Soft pulsing halo behind the Play + Fantasy nav icons — draws the eye to the
-   two games surfaces without moving layout. Purely decorative. */
-@keyframes navGlow {
-  0%, 100% { opacity: 0.3;  transform: scale(0.82); }
-  50%      { opacity: 0.85; transform: scale(1.18); }
-}
-.nav-glow {
-  position: absolute;
-  inset: -7px;
-  border-radius: 9999px;
-  pointer-events: none;
-  z-index: 0;
-  background: radial-gradient(circle, rgba(0,216,192,0.55) 0%, rgba(0,216,192,0) 70%);
-  animation: navGlow 2.6s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .nav-glow { animation: none; opacity: 0.45; }
-}
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);   }
