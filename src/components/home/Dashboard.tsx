@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { GridBackground } from "@/components/ui/GridBackground";
@@ -123,9 +123,17 @@ const DASH_ANIM = `
   .d-4 { animation: dashSlide 0.35s ease-out 0.22s both; }
   .d-5 { animation: dashSlide 0.35s ease-out 0.28s both; }
   .flame { display: inline-block; animation: flameFlick 1.1s ease-in-out infinite; }
+  @keyframes feedNudge { 0%,100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+  @keyframes hintRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes feedFade { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .feed-hint { animation: hintRise 0.28s ease-out both; }
+  .feed-nudge { display: inline-block; animation: feedNudge 1s ease-in-out infinite; }
+  .feed-fade { animation: feedFade 0.3s ease-out both; }
+  .feed-arrive { animation: dashSlide 0.34s ease-out both; }
   @media (prefers-reduced-motion: reduce) {
     .d-1,.d-2,.d-3,.d-4,.d-5 { animation: none; }
     .flame { animation: none; }
+    .feed-hint,.feed-nudge,.feed-fade,.feed-arrive { animation: none; }
   }
 `;
 
@@ -634,16 +642,88 @@ export function Dashboard({ data }: { data: DashboardData }) {
   // instead of the bottom of one long page. Mirrored to ?view=feed so back
   // and deep links retrace to the right view.
   const [view, setView] = useState<"today" | "feed">("today");
+  // Scroll-to-Feed affordances (founder 2026-08-07): a hint that rises as you
+  // reach the end of Today, and a confirmation pill after the auto-switch fires,
+  // so the switch is clearly ACTIONED, never a silent jump. `arrivedViaScroll`
+  // fades the Feed in and drives the pill; returning is tab-only, as asked.
+  const [feedHint, setFeedHint] = useState(false);
+  const [feedPill, setFeedPill] = useState(false);
+  const [arrivedViaScroll, setArrivedViaScroll] = useState(false);
+  const pillTimer = useRef<number | null>(null);
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("view") === "feed") setView("feed");
   }, []);
   const selectView = (v: "today" | "feed") => {
     setView(v);
+    // Any deliberate tab tap clears the auto-switch pill/animation — the pill is
+    // only for the scroll-driven switch, which commit() re-arms right after.
+    setFeedPill(false);
+    setArrivedViaScroll(false);
+    if (v === "today") setFeedHint(false);
     const u = new URL(window.location.href);
     if (v === "feed") u.searchParams.set("view", "feed");
     else u.searchParams.delete("view");
     window.history.replaceState(null, "", u);
   };
+
+  // Scroll past the end of Today → switch to Feed. Only armed in the Today view.
+  // We watch for genuine DOWNWARD intent (wheel / touch) while pinned at the very
+  // bottom, and require a small push past the end so momentum that merely lands
+  // you at the bottom never trips it. Return is via the tab only (no auto-reverse).
+  useEffect(() => {
+    if (view !== "today") return;
+    const doc = document.documentElement;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const THRESH = reduce ? 1 : 70; // px of extra downward push past the end
+    let overscroll = 0, atBottom = false, touchY: number | null = null, committed = false;
+
+    const measure = () => {
+      const dist = doc.scrollHeight - window.innerHeight - window.scrollY;
+      const scrollable = doc.scrollHeight - window.innerHeight > 220;
+      const engaged = scrollable && window.scrollY > 120;
+      setFeedHint(engaged && dist < 150);
+      atBottom = engaged && dist <= 4;
+      if (!atBottom) overscroll = 0;
+    };
+    const commit = () => {
+      if (committed) return;
+      committed = true;
+      selectView("feed");
+      window.scrollTo({ top: 0 });
+      setArrivedViaScroll(true);
+      setFeedPill(true);
+      if (pillTimer.current) window.clearTimeout(pillTimer.current);
+      pillTimer.current = window.setTimeout(() => setFeedPill(false), 4200);
+    };
+    const push = (dy: number) => {
+      if (!atBottom) return;
+      if (dy > 0) { overscroll += dy; if (overscroll >= THRESH) commit(); }
+      else overscroll = Math.max(0, overscroll + dy);
+    };
+    const onWheel = (e: WheelEvent) => push(e.deltaY);
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? null; };
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchY == null) return;
+      const y = e.touches[0]?.clientY ?? touchY;
+      push(touchY - y); // finger moving up = downward scroll intent
+      touchY = y;
+    };
+
+    measure();
+    window.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", measure);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      setFeedHint(false);
+    };
+    // selectView is stable in behaviour; re-arming only depends on the view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
 
   // Deep-link from a daily push: /?focus=today|debate scrolls that home card
   // into view so a tap lands the player right on the game / debate to act on.
@@ -748,11 +828,37 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
         </div>
       ) : (
-        <div className="relative z-0 max-w-lg mx-auto px-5 pt-4">
+        <div className={`relative z-0 max-w-lg mx-auto px-5 pt-4${arrivedViaScroll ? " feed-arrive" : ""}`}>
           {/* The Feed view — AROUND THE GAME, full height. FeedStream only
               mounts when this tab opens (dynamic import), so the Today view
               never pays for it. */}
           <FeedSection />
+        </div>
+      )}
+
+      {/* "Keep scrolling for the Feed" — rises as you near the end of Today, so
+          the auto-switch below is invited, not a surprise. Non-interactive; the
+          scroll itself is the action. */}
+      {view === "today" && feedHint && (
+        <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(84px + env(safe-area-inset-bottom))", display: "flex", justifyContent: "center", zIndex: 25, pointerEvents: "none" }}>
+          <div className="feed-hint" style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 15px", borderRadius: 999, background: "rgba(10,10,15,0.9)", backdropFilter: "blur(10px)", border: `1px solid ${LINE}`, boxShadow: "0 6px 22px rgba(0,0,0,0.45)" }}>
+            <span className="font-body" style={{ fontSize: 12.5, color: MUTED }}>Keep scrolling for the</span>
+            <span className="font-display" style={{ fontSize: 12.5, color: LIME, letterSpacing: "0.05em" }}>FEED</span>
+            <svg className="feed-nudge" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={LIME} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation after the scroll-driven switch — names where you are and how
+          to get back (the tab). Auto-fades; only the scroll switch shows it. */}
+      {feedPill && (
+        <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(84px + env(safe-area-inset-bottom))", display: "flex", justifyContent: "center", zIndex: 41, pointerEvents: "none" }}>
+          <div className="feed-fade" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 16px", borderRadius: 999, background: "rgba(10,10,15,0.95)", backdropFilter: "blur(12px)", border: `1px solid rgba(174,234,0,0.35)`, boxShadow: "0 6px 24px rgba(0,0,0,0.5)" }}>
+            <span style={{ width: 7, height: 7, borderRadius: 999, background: LIME, flexShrink: 0 }} />
+            <span className="font-body" style={{ fontSize: 12.5, color: "#eef2f0" }}>
+              You&apos;re in the Feed. Tap <b className="font-display" style={{ color: LIME, letterSpacing: "0.03em" }}>TODAY</b> to go back.
+            </span>
+          </div>
         </div>
       )}
       <BottomNav />
