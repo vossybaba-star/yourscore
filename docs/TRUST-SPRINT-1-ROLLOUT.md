@@ -262,3 +262,44 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key-not-real
 ```
+
+
+---
+
+## Postscript: 262 broke H2H, and the fix
+
+Applying 262 took every H2H challenge link down. `src/app/h2h/[id]/page.tsx`
+fetched the challenge with `select("*")`. Under column level grants PostgREST
+rejects the WHOLE query with 42501 rather than omitting the columns you
+withheld, so the row came back null and the page fell to its not found branch.
+Every link read "Challenge expired or not found".
+
+Two things made it slower to spot than it should have been. The verification in
+Step 3 replayed a solo quiz but never opened an H2H link. And the first
+challenge used to reproduce it was ALSO genuinely expired, which shows the same
+copy for a completely different reason.
+
+**Rule for any future column revoke: grep for `select("*")` on that table in
+client code first.** A star select requests every column, including ones added
+later.
+
+Mitigation was a single statement, applied within minutes:
+
+```sql
+grant select on public.h2h_challenges to anon, authenticated;
+```
+
+Quiz answer keys were unaffected throughout; packs, the question bank and
+attempt logs stayed locked.
+
+The real fix shipped in PR #93: explicit column list on the page, and both
+sides' per question picks moved onto `/api/h2h/[id]/questions`, which already
+checks participation and completeness. The h2h column revoke was then re
+applied and verified end to end:
+
+- Completed challenge, signed in as a participant: scores, question by question
+  review and both players' picks all render.
+- Same page signed out: scores still render so share links work, review
+  correctly withheld.
+- Awaiting opponent challenge: accept screen renders.
+- `select(*)` and the two answer columns both return 401 to the public key.
