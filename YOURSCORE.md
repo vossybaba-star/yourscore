@@ -944,6 +944,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Leagues UX pass, increment 1: bubble switcher + compact header** (branch
+  `feat/leagues-ux`). A horizontal, story-style league bubble strip at the top of every league
+  (`LeagueBubbleSwitcher`) — hop between your football groups without going back to the list; each
+  bubble is the league badge/monogram, the active one is ringed + named, subtle dots flag unread +
+  live chat. Reuses the existing `/api/fantasy/leagues` payload (no new endpoint, no structure
+  change). The league header is now compact: badge 64→46, name + members on tight lines, bio/socials
+  slimmed to one line, stakes folded inline. Content stays full-width beneath (NOT a sidebar).
+  Verified as the health bot at 390 + 320px. **Still to do (UX brief follow-ups):** Hub concision
+  (kill oversized containers / nested cards), Table utilitarian, Games clearly-playable, Chat rich
+  objects, matchday Gameday-Quiz priority.
 - **2026-08-07** — **UX readability/nav cleanup batch 1** (branch `feat/ux-cleanup-batch`). Nine
   focused fixes: Feed timestamps now compact (`12H`/`43M`, new `timeAgoShort`) + username gets
   priority; Feed Follow button is a small muted outline (new `quiet` variant) not a solid teal fill;

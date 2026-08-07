@@ -34,6 +34,7 @@ import { LeagueHub } from "@/components/fantasy/league/LeagueHub";
 import { LeagueChatView } from "@/components/fantasy/league/LeagueChatView";
 import { LeagueTableView } from "@/components/fantasy/league/LeagueTableView";
 import { LeagueGamesView } from "@/components/fantasy/league/LeagueGamesView";
+import { LeagueBubbleSwitcher } from "@/components/fantasy/league/LeagueBubbleSwitcher";
 import { LeagueHistoryView } from "@/components/fantasy/league/LeagueHistoryView";
 import type { ChatData, GamesPulse, LeagueDetail as BaseLeagueDetail } from "@/components/fantasy/league/types";
 
@@ -295,33 +296,31 @@ export default function LeaguePage() {
     <main data-fantasy style={page}>
       <Header exit={{ label: "Leagues", onClick: () => router.push("/fantasy/leagues") }} />
 
-      {/* Header: crest, name, private label + members, bio + social chips
-          (compact — migration 263), invite, settings. */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, minWidth: 0 }}>
+      {/* Bubble switcher — hop between your football groups without leaving. */}
+      <LeagueBubbleSwitcher currentCode={code} current={{ name: league.name, imageUrl: league.imageUrl }} />
+
+      {/* Compact header (founder 8 Aug): badge, name + members, invite + settings.
+          Bio/chips are kept but slimmed to one line so the header stops eating
+          vertical space — no oversized crest, no two-line clamp. */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: league.bio || hasLinks(league.links) ? 6 : 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
           {league.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={league.imageUrl} alt="" width={64} height={64} style={{ width: 64, height: 64, borderRadius: 15, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
+            <img src={league.imageUrl} alt="" width={46} height={46} style={{ width: 46, height: 46, borderRadius: 12, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
           ) : (
-            <span style={{ width: 64, height: 64, flexShrink: 0, borderRadius: 15, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width={31} height={31} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
+            <span style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 12, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
             </span>
           )}
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-              <h1 style={{ fontSize: 22, margin: 0, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis" }}>{league.name}</h1>
-              {league.official && <VerifiedTick size={17} />}
+              <h1 style={{ fontSize: 19, margin: 0, fontWeight: 700, lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{league.name}</h1>
+              {league.official && <VerifiedTick size={16} />}
             </div>
-            <div style={{ fontSize: 12.5, color: MUTED, marginTop: 3 }}>
+            <div style={{ fontSize: 12, color: MUTED, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {league.kind === "club" ? `${league.club ?? "Club"} fans` : league.kind === "founder" ? "Founder League" : league.isPublic ? "Public league" : "Private league"} · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
+              {league.stakes && <span style={{ color: "#ffc233", fontWeight: 600 }}> · 🏆 {league.stakes}</span>}
             </div>
-            {league.bio && (
-              <p style={{
-                fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.4, margin: "5px 0 0",
-                display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-              }}>{league.bio}</p>
-            )}
-            {hasLinks(league.links) && <div style={{ marginTop: 6 }}><SocialChips links={league.links} size={24} /></div>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
@@ -335,9 +334,14 @@ export default function LeaguePage() {
         </div>
       </div>
 
-      {/* Stakes line — compact, read-only here (set in Settings). */}
-      {league.stakes && (
-        <div style={{ fontSize: 12.5, color: "#ffc233", fontWeight: 600, marginBottom: 10 }}>🏆 {league.stakes}</div>
+      {/* Bio + socials — one slim line under the header, only when set. */}
+      {(league.bio || hasLinks(league.links)) && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, minWidth: 0 }}>
+          {league.bio && (
+            <p style={{ flex: 1, minWidth: 0, fontSize: 12, color: "#c7d0cb", lineHeight: 1.4, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{league.bio}</p>
+          )}
+          {hasLinks(league.links) && <div style={{ flexShrink: 0 }}><SocialChips links={league.links} size={22} /></div>}
+        </div>
       )}
 
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "8px 0 10px" }}>{err}</p>}
