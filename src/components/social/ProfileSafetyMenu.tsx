@@ -13,22 +13,6 @@ import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fanta
 import { useUser } from "@/hooks/useUser";
 import { ReportSheet } from "@/components/social/ReportSheet";
 
-// Bare SVG, not emoji (house rule — see LeagueChatView's ChipIcon comment: the
-// tray shipped with 📷/📊/👕 before that fix, and these three menu items
-// shipped with 🚩/🔇/🚫 the same way).
-const SAFETY_ICON_PATH = {
-  flag: "M4 22V4 M4 4s1-1 4-1 4 2 8 2 4-1 4-1v10s-1 1-4 1-4-2-8-2-4 1-4 1z",
-  mute: "M11 5L6 9H2v6h4l5 4V5z M23 9l-6 6 M17 9l6 6",
-  block: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z M4.93 4.93l14.14 14.14",
-};
-function SafetyIcon({ kind }: { kind: keyof typeof SAFETY_ICON_PATH }) {
-  return (
-    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
-      <path d={SAFETY_ICON_PATH[kind]} />
-    </svg>
-  );
-}
-
 export function ProfileSafetyMenu({ userId, userName, initialBlocked, initialMuted }: {
   userId: string; userName: string; initialBlocked: boolean; initialMuted: boolean;
 }) {
@@ -101,15 +85,15 @@ export function ProfileSafetyMenu({ userId, userName, initialBlocked, initialMut
             <button onClick={() => { setMenuOpen(false); setReportOpen(true); }} style={{
               display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
               background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK, whiteSpace: "nowrap",
-            }}><SafetyIcon kind="flag" />Report {userName}</button>
+            }}><span aria-hidden style={{ fontSize: 15 }}>🚩</span>Report {userName}</button>
             <button onClick={toggleMute} disabled={busy} style={{
               display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
               background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: INK, whiteSpace: "nowrap",
-            }}><SafetyIcon kind="mute" />{muted ? `Unmute ${userName}` : `Mute ${userName}`}</button>
+            }}><span aria-hidden style={{ fontSize: 15 }}>🔇</span>{muted ? `Unmute ${userName}` : `Mute ${userName}`}</button>
             <button onClick={toggleBlock} disabled={busy} style={{
               display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
               background: "none", border: "none", padding: "10px 14px", fontSize: 13.5, fontWeight: 600, color: "#E08A6B", whiteSpace: "nowrap",
-            }}><SafetyIcon kind="block" />Block {userName}</button>
+            }}><span aria-hidden style={{ fontSize: 15 }}>🚫</span>Block {userName}</button>
           </div>
         </>
       )}

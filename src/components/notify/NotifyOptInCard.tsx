@@ -81,12 +81,7 @@ export function NotifyOptInCard({
   if (done) {
     return (
       <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: `${accent}14`, border: `1px solid ${accent}40` }}>
-        {/* Bare SVG, not emoji (house rule) — same bell path as the ask-state
-            icon below, just inline and sized for the done-state row. */}
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-        </svg>
+        <span className="text-lg" aria-hidden>🔔</span>
         <div>
           <p className="font-display text-sm tracking-wide" style={{ color: accent }}>{doneHeadline}</p>
           <p className="font-body text-xs text-text-muted">{doneBody}</p>

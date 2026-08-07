@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { GridBackground } from "@/components/ui/GridBackground";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { BackPill } from "@/components/ui/BackPill";
+import { timeAgo } from "@/lib/timeAgo";
 
 // Notification inbox (stage 2). Everything in one feed: comment likes
 // (aggregated per comment), comment replies (one row each), and the two
@@ -21,14 +22,10 @@ export const fetchCache = "force-no-store";
 const LIME = "#aeea00";
 const LOOKBACK_DAYS = 30;
 
-function timeAgo(iso: string): string {
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
-}
+// Uses the shared formatter rather than a local copy. The one that lived here
+// had no upper bucket at all, so a notification from last season read as
+// "400d". src/lib/timeAgo.ts carries no "use client" and no server-only import,
+// so a server component can call it directly.
 
 type NotificationRow = {
   id: string;

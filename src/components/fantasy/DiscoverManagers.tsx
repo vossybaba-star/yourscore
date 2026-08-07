@@ -42,25 +42,14 @@ function ManagerFace({ name, avatarUrl, club, size = 40 }: { name: string; avata
   );
 }
 
-// Bare SVG, not emoji (house rule — see LeagueChatView's ChipIcon comment).
-// Strongest connection (3+ shared) = a link/chain; some overlap = a handshake;
-// weakest (shared club only) = the shirt CreatePostSheet/LeagueChatView use.
-const CONNECTION_ICON_PATH = {
-  link: "M9 15l6-6 M8 12l-2.5 2.5a3 3 0 0 0 4 4.5L12 16.5 M16 12l2.5-2.5a3 3 0 0 0-4-4.5L12 7.5",
-  handshake: "M8 12l3 3 6-6 M2 12l4-4 3 3-4 4z M22 12l-4-4-3 3 4 4z M11 15l-1.5 1.5a2 2 0 1 1-3-3 M13 15l1.5 1.5a2 2 0 1 0 3-3",
-  shirt: "M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z",
-};
 function ReasonChip({ m }: { m: Manager }) {
   const strong = m.shared >= 1;
   const accent = m.shared >= 3 ? GOLD : strong ? TEAL : MUTED;
-  const icon = m.shared >= 3 ? "link" : strong ? "handshake" : "shirt";
+  const icon = m.shared >= 3 ? "🔗" : strong ? "🤝" : "👕";
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 999,
       color: accent, background: tint(accent === MUTED ? "#8a948f" : accent, "16"), border: `1px solid ${tint(accent === MUTED ? "#8a948f" : accent, "40")}` }}>
-      <svg width={11.5} height={11.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
-        <path d={CONNECTION_ICON_PATH[icon]} />
-      </svg>
-      {m.reason}
+      <span aria-hidden>{icon}</span>{m.reason}
     </span>
   );
 }
