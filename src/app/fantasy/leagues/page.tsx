@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 import {
   Btn, Card, Chip, GOLD, INK, LINE, LIME, MUTED, page, PANEL, PANEL_2, TEAL, tint,
 } from "@/components/fantasy/shared";
-import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
 import { CreateLeagueFlow, JoinLeagueFlow, LeagueEmptyState } from "@/components/fantasy/league/LeagueFlows";
 import { DiscoverLeagues } from "@/components/fantasy/DiscoverLeagues";
@@ -39,7 +38,13 @@ interface MyLeague {
   official?: boolean;
 }
 interface PublicLeague { id: string; name: string; code: string; memberCount: number; imageUrl?: string | null; official?: boolean }
-type Tab = "competition" | "leagues";
+// "leagues" (My Leagues) and "discover" are the primary split — the global
+// bottom-nav Leagues tab, "my people" (product model 2026-08-07). Competition
+// stays reachable but isn't a top-level pill any more: it's a compact
+// "Global Competition →" link off My Leagues, so there's still one all-round
+// YourScore competition without it competing with the friends-first split.
+type Tab = "leagues" | "discover" | "competition";
+const TAB_KEYS: Tab[] = ["leagues", "discover", "competition"];
 
 /** "3m" / "5h" / "2d" — a highlight without a timestamp doesn't read as live. */
 const ago = (iso: string | null): string => {
@@ -63,7 +68,6 @@ export default function LeaguesHome() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("leagues");
   const [leagues, setLeagues] = useState<MyLeague[]>([]);
-  const [publicList, setPublicList] = useState<PublicLeague[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [needsAuth, setNeedsAuth] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -74,7 +78,8 @@ export default function LeaguesHome() {
   // Restore the subtab from the URL on mount, and keep it there so back from a
   // profile or a league returns to the same subtab.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "leagues") setTab("leagues");
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && (TAB_KEYS as string[]).includes(t)) setTab(t as Tab);
   }, []);
   useEffect(() => {
     const u = new URL(window.location.href);
@@ -86,7 +91,6 @@ export default function LeaguesHome() {
     try {
       const r = await apiRaw<{ leagues: MyLeague[]; public: PublicLeague[] }>("leagues");
       setLeagues(r.leagues);
-      setPublicList(r.public);
       setLoaded(true);
     } catch (e) {
       if ((e as { status?: number }).status === 401) setNeedsAuth(true);
@@ -215,22 +219,25 @@ export default function LeaguesHome() {
     );
   };
 
-  // A compact discovery tile for public leagues (no chat highlight — not a member).
-  const leagueTile = (l: { id: string; name: string; code: string; memberCount: number; isPublic?: boolean; imageUrl?: string | null; official?: boolean }, hint: string) => (
-    <button key={l.id} onClick={() => router.push(`/fantasy/leagues/${l.code}`)} style={{
-      width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
-      background: `linear-gradient(150deg, ${tint(TEAL, "10")}, ${PANEL})`, border: `1px solid ${LINE}`, borderRadius: 14, padding: 12,
+  // Competition's entry off My Leagues — a compact card/link row rather than
+  // its own top-level pill, so there's still one all-round YourScore
+  // competition without splitting the primary My Leagues / Discover choice
+  // three ways.
+  const globalCompetitionCard = (
+    <button onClick={() => setTab("competition")} style={{
+      display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", cursor: "pointer",
+      background: `linear-gradient(150deg, ${tint(GOLD, "14")}, ${PANEL})`, border: `1px solid ${tint(GOLD, "3a")}`, borderRadius: 14, padding: 12, marginBottom: 16,
     }}>
-      {crest(l.imageUrl)}
-      <span style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 3 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
-          {l.official && <VerifiedTick size={14} />}
-          {l.isPublic && <Chip>Public</Chip>}
-        </span>
-        <span style={{ fontSize: 12, color: MUTED }}>{l.memberCount} member{l.memberCount === 1 ? "" : "s"} · <span style={{ color: TEAL, fontWeight: 700 }}>{hint}</span></span>
+      <span style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 10, background: tint(GOLD, "1e"), border: `1px solid ${tint(GOLD, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 21h8 M12 17v4 M7 4h10v4a5 5 0 01-10 0V4z M7 5H4a3 3 0 003 3 M17 5h3a3 3 0 01-3 3" />
+        </svg>
       </span>
-      <span style={{ color: TEAL, fontSize: 18, flexShrink: 0 }}>›</span>
+      <span style={{ minWidth: 0, flex: 1 }}>
+        <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: INK }}>Global Competition</span>
+        <span style={{ display: "block", fontSize: 11.5, color: MUTED, marginTop: 1 }}>This month&apos;s YourScore-wide table</span>
+      </span>
+      <span style={{ color: GOLD, fontSize: 18, flexShrink: 0 }}>›</span>
     </button>
   );
 
@@ -238,23 +245,32 @@ export default function LeaguesHome() {
     <>
       {needsAuth ? (
         <>
-          {/* Guests browse every league (founder, 4 Aug) — creating your own or
-              joining one is the part that needs an account. */}
+          {/* Guests can look around the whole app (founder, 4 Aug) — creating
+              your own league or joining one is the part that needs an
+              account. Browsing every league now lives one tap away on
+              Discover, so this stays a simple sign-in prompt. */}
           <Card style={{ marginTop: 2, marginBottom: 14 }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Have a look around</div>
             <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
-              Browse every league below. Sign in when you want to start your own or join one.
+              Sign in to create your own league or join one with a friend.
             </p>
             <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/leagues")}>Sign in to create or join</Btn>
+            <button onClick={() => setTab("discover")} style={{
+              width: "100%", marginTop: 8, padding: "11px 12px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer",
+              background: "transparent", color: TEAL, border: `1px solid ${tint(TEAL, "55")}`,
+            }}>Browse leagues</button>
           </Card>
-          <DiscoverLeagues />
+          {globalCompetitionCard}
         </>
       ) : (
         <>
           {!loaded ? (
             <p style={{ fontSize: 13, color: MUTED }}>Loading your leagues…</p>
           ) : leagues.length === 0 ? (
-            <LeagueEmptyState onCreate={() => setCreateOpen(true)} onJoin={() => setJoinOpen(true)} />
+            <>
+              <LeagueEmptyState onCreate={() => setCreateOpen(true)} onJoin={() => setJoinOpen(true)} />
+              <div style={{ marginTop: 16 }}>{globalCompetitionCard}</div>
+            </>
           ) : (
             <>
               {/* Your leagues lead; creating and joining are demoted to buttons. */}
@@ -270,15 +286,7 @@ export default function LeaguesHome() {
                 <div style={{ flex: 1 }}><Btn onClick={() => setJoinOpen(true)}>Join with code</Btn></div>
               </div>
 
-              {/* Public leagues stay secondary — never dominate the friend leagues. */}
-              {publicList.length > 0 && (
-                <div>
-                  <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>PUBLIC LEAGUES</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {publicList.map((l) => leagueTile(l, "Public league"))}
-                  </div>
-                </div>
-              )}
+              {globalCompetitionCard}
             </>
           )}
           {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "12px 0 0" }}>{err}</p>}
@@ -287,26 +295,60 @@ export default function LeaguesHome() {
     </>
   );
 
+  // Discover — reuses DiscoverLeagues as-is (it already runs its own search
+  // and YourScore/club/public sections internally); "FOR YOU" wraps it as
+  // the section label, and a join-by-code card sits after it. Public leagues
+  // to browse live here now, not duplicated on My Leagues.
+  const discoverView = (
+    <>
+      <div className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>FOR YOU</div>
+      <DiscoverLeagues />
+      <Card style={{ marginTop: 4 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: INK, marginBottom: 4 }}>Join private league</div>
+        <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.45 }}>
+          Got an invite code from a friend? Enter it here.
+        </p>
+        <Btn onClick={() => setJoinOpen(true)}>Enter code</Btn>
+      </Card>
+    </>
+  );
+
   return (
     <>
     <main data-fantasy style={page}>
-      <FantasyHeader />
-
-      {/* Subtabs — the YourScore-wide competition first, your own leagues second. */}
-      <div style={{ display: "flex", gap: 6, margin: "4px 0 14px" }}>
-        {([["leagues", "My Leagues"], ["competition", "Competition"]] as [Tab, string][]).map(([k, label]) => {
-          const active = tab === k;
-          return (
-            <button key={k} onClick={() => setTab(k)} style={{
-              flex: 1, padding: "10px 4px", borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-              background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
-              border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
-            }}>{label}</button>
-          );
-        })}
+      {/* Leagues is a top-level destination now (product model 2026-08-07:
+          "my people") — its own header, not the Fantasy chrome. */}
+      <div style={{ marginBottom: 14 }}>
+        <h1 className="font-display" style={{ fontSize: 27, color: "#eef2f0", lineHeight: 1, margin: 0 }}>LEAGUES</h1>
+        <p className="font-body" style={{ fontSize: 13, color: "#8a948f", margin: "6px 0 0" }}>
+          Your people. Friends, fantasy leagues and fan communities.
+        </p>
       </div>
 
-      {tab === "competition" ? <LeagueCompetition /> : myLeagues}
+      {tab === "competition" ? (
+        <div style={{ display: "flex", alignItems: "center", margin: "4px 0 14px" }}>
+          <button onClick={() => setTab("leagues")} style={{
+            display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer",
+            color: TEAL, fontSize: 14, fontWeight: 700, padding: 0,
+          }}>‹ My Leagues</button>
+        </div>
+      ) : (
+        /* Primary split — My Leagues (your people) and Discover (find more). */
+        <div style={{ display: "flex", gap: 6, margin: "4px 0 14px" }}>
+          {([["leagues", "My Leagues"], ["discover", "Discover"]] as [Tab, string][]).map(([k, label]) => {
+            const active = tab === k;
+            return (
+              <button key={k} onClick={() => setTab(k)} style={{
+                flex: 1, padding: "10px 4px", borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: "pointer",
+                background: active ? tint(TEAL, "22") : PANEL, color: active ? TEAL : MUTED,
+                border: `1px solid ${active ? tint(TEAL, "66") : LINE}`,
+              }}>{label}</button>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === "competition" ? <LeagueCompetition /> : tab === "discover" ? discoverView : myLeagues}
     </main>
       <CreateLeagueFlow open={createOpen} onClose={() => setCreateOpen(false)} />
       <JoinLeagueFlow open={joinOpen} onClose={() => setJoinOpen(false)} />

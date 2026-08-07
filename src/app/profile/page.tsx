@@ -32,13 +32,37 @@ export default async function ProfilePage() {
   const user = await getUserBounded(supabase);
 
   if (!user) {
+    // A guest's Profile is "me before I exist": say what identity accumulates
+    // here (product model 2026-08-07: Profile = "Me"), not a bare wall.
     return (
       <main className="min-h-dvh bg-bg flex items-center justify-center px-6">
-        <div className="text-center space-y-4">
-          <p className="font-body text-text-muted">Sign in to see your profile.</p>
-          <Button href="/auth/sign-in" variant="ghost" size="md">
-            Sign in →
-          </Button>
+        <div className="w-full max-w-sm text-center">
+          <div
+            className="mx-auto mb-5 flex items-center justify-center rounded-full"
+            style={{ width: 72, height: 72, background: "rgba(174,234,0,0.1)", border: "1.5px solid rgba(174,234,0,0.3)" }}
+          >
+            <svg width="30" height="30" viewBox="0 0 22 22" fill="none">
+              <circle cx="11" cy="7" r="4" stroke="#aeea00" strokeWidth="1.8" />
+              <path d="M3 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#aeea00" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </div>
+          <h1 className="font-display text-2xl text-white leading-tight">YOUR FOOTBALL IDENTITY</h1>
+          <p className="font-body text-sm mt-2" style={{ color: "#8a948f" }}>
+            Your player card, rank, medals, quiz record and squads all build here as you play. Nothing to set up.
+          </p>
+          <div className="mt-5">
+            <Button href="/auth/sign-in" variant="primary" tone="teal" size="lg" fullWidth>
+              SIGN IN
+            </Button>
+          </div>
+          <p className="font-body text-xs mt-3" style={{ color: "#586058" }}>
+            New here? Play a game first. Your first score starts the card.
+          </p>
+          <div className="mt-2">
+            <Button href="/play" variant="ghost" size="md">
+              PLAY SOMETHING →
+            </Button>
+          </div>
         </div>
       </main>
     );

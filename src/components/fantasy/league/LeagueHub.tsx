@@ -271,17 +271,65 @@ export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
         </div>
       )}
 
-      {/* RECENT ACTIVITY — the league's pulse, a swipeable rail into the feed. */}
+      {/* GAMES MODULE — the live/gameday element, so it sits right after the
+          table position summary above (Phase 4B module, reordered product
+          model 2026-08-07: "what's happening" leads with what's live right
+          now, ahead of the recent-activity rail and chat). Hidden outright
+          until the pulse actually loads. */}
+      {detail.league.isMember && gamesPulse && (() => {
+        const live = gamesPulse.activeCompetition?.status === "open";
+        return (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+              <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>GAMES</span>
+            </div>
+            <Card style={{ marginBottom: 14 }}>
+              {live && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 999, background: GOLD }} />
+                  <span className="font-display" style={{ fontSize: 10.5, letterSpacing: "0.1em", color: GOLD, fontWeight: 800 }}>LIVE NOW</span>
+                </div>
+              )}
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 4 }}>League games</div>
+              <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 4px", lineHeight: 1.4 }}>{gamesStatusLine(gamesPulse)}</p>
+              {gamesPulse.lastResultLine && (
+                <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.4 }}>{gamesPulse.lastResultLine}</p>
+              )}
+              {/* Active competition hint (UI wave) — one extra line, tapping
+                  goes to Games exactly like "Open Games" below (same onTab).
+                  Skipped while live: the LIVE badge + Play now button above
+                  already say it, so this line would only repeat itself. */}
+              {gamesPulse.activeCompetition && !live && (
+                <button onClick={() => { trackGamesHubModuleOpened(); onTab("games"); }} style={{
+                  display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer",
+                  padding: 0, margin: "0 0 12px", fontSize: 11.5, color: GOLD, fontWeight: 600, lineHeight: 1.4,
+                }}>{competitionHintLine(gamesPulse.activeCompetition)}</button>
+              )}
+              <div style={{ display: "flex", gap: 8, marginTop: (gamesPulse.lastResultLine || (gamesPulse.activeCompetition && !live)) ? 0 : 8 }}>
+                <div style={{ flex: 1 }}>
+                  <Btn gold glow={live} onClick={() => { trackGamesHubModuleOpened(); onTab("games"); }}>{live ? "Play now" : "Open Games"}</Btn>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <Btn onClick={() => { trackGamesHubModuleOpened(); onOpenGamesChallenge(); }}>Challenge someone</Btn>
+                </div>
+              </div>
+            </Card>
+          </>
+        );
+      })()}
+
+      {/* HAPPENING NOW — the league's pulse, a swipeable rail into the feed. */}
+      <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>HAPPENING NOW</div>
       <LeagueRecentRail code={detail.league.code} onSelect={detail.league.isMember ? openActor : undefined} />
 
-      {/* CHAT PREVIEW */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>CHAT</span>
+      {/* RECENT CHAT preview — last couple of lines, never the whole thread. */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8, marginTop: 14 }}>
+        <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>RECENT CHAT</span>
       </div>
-      <Card style={{ marginBottom: 12 }}>
+      <Card style={{ marginBottom: 14 }}>
         {preview.length ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-            {preview.map((m) => (
+            {preview.slice(-2).map((m) => (
               <div key={m.id} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                 <PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={22} />
                 <div style={{ minWidth: 0 }}>
@@ -296,41 +344,43 @@ export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
         ) : (
           <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px" }}>Nothing said yet. Someone has to start it.</p>
         )}
-        <Btn onClick={() => onTab("chat")}>Open league chat</Btn>
+        <Btn onClick={() => onTab("chat")}>Open chat</Btn>
       </Card>
 
-      {/* GAMES MODULE — after the hub's primary content (Phase 4B), same
-          Card/SectionLabel weight as CHAT above it, never dominating the
-          screen. Hidden outright until the pulse actually loads. */}
-      {detail.league.isMember && gamesPulse && (
+      {/* MEMBER PREVIEW — who's in it, a tap from the full member sheet. */}
+      {detail.league.isMember && season.length > 0 && (
         <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-            <span style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>GAMES</span>
-          </div>
-          <Card style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 4 }}>League games</div>
-            <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 4px", lineHeight: 1.4 }}>{gamesStatusLine(gamesPulse)}</p>
-            {gamesPulse.lastResultLine && (
-              <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.4 }}>{gamesPulse.lastResultLine}</p>
-            )}
-            {/* Active competition hint (UI wave) — one extra line, tapping
-                goes to Games exactly like "Open Games" below (same onTab). */}
-            {gamesPulse.activeCompetition && (
-              <button onClick={() => { trackGamesHubModuleOpened(); onTab("games"); }} style={{
-                display: "block", width: "100%", textAlign: "left", background: "none", border: "none", cursor: "pointer",
-                padding: 0, margin: "0 0 12px", fontSize: 11.5, color: GOLD, fontWeight: 600, lineHeight: 1.4,
-              }}>{competitionHintLine(gamesPulse.activeCompetition)}</button>
-            )}
-            <div style={{ display: "flex", gap: 8, marginTop: (gamesPulse.lastResultLine || gamesPulse.activeCompetition) ? 0 : 8 }}>
-              <div style={{ flex: 1 }}>
-                <Btn onClick={() => { trackGamesHubModuleOpened(); onTab("games"); }}>Open Games</Btn>
-              </div>
-              <div style={{ flex: 1 }}>
-                <Btn gold onClick={() => { trackGamesHubModuleOpened(); onOpenGamesChallenge(); }}>Challenge someone</Btn>
-              </div>
-            </div>
-          </Card>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED, marginBottom: 8 }}>MEMBERS</div>
+          <button onClick={() => setMembersOpen(true)} style={{
+            display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer",
+            background: PANEL, border: `1px solid ${LINE}`, borderRadius: 14, padding: 12, marginBottom: 14,
+          }}>
+            <span style={{ display: "flex", flexShrink: 0 }}>
+              {season.slice(0, 5).map((r, i) => (
+                <span key={r.userId} style={{ marginLeft: i === 0 ? 0 : -8, borderRadius: 999, border: `2px solid ${PANEL}` }}>
+                  <PlayerAvatar name={nameOf(r)} avatarUrl={r.avatarUrl} size={28} />
+                </span>
+              ))}
+            </span>
+            <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: MUTED }}>
+              {season.length} member{season.length === 1 ? "" : "s"}
+            </span>
+            <span style={{ color: TEAL, fontSize: 12, fontWeight: 700, flexShrink: 0 }}>Members →</span>
+          </button>
         </>
+      )}
+
+      {/* SEASON HISTORY — quiet, single row. History lost its own tab pill
+          (product model 2026-08-07, four permanent tabs max); this is now
+          the way in, alongside the ?t=history deep link. */}
+      {detail.league.isMember && (
+        <button onClick={() => onTab("history")} style={{
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%",
+          background: "none", border: "none", cursor: "pointer", padding: "10px 0 4px",
+          fontSize: 12.5, fontWeight: 600, color: MUTED,
+        }}>
+          Season history <span style={{ color: TEAL }}>→</span>
+        </button>
       )}
 
       {selected && (

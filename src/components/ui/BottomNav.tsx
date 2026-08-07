@@ -7,19 +7,6 @@ import { useUser } from "@/hooks/useUser";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 
-// Football icon for the Matchweek tab — the live, fixture-synced surface.
-function FootballIcon({ active }: { active: boolean }) {
-  return (
-    <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
-      <circle cx="11" cy="11" r="8.2" stroke="currentColor" strokeWidth="1.7"
-        fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.15 : 0} />
-      <path d="M11 6.6l3.2 2.3-1.2 3.8H9l-1.2-3.8z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M11 6.6V4M14.2 8.9l2-1M12.9 12.7l1.2 2M9.1 12.7l-1.2 2M7.8 8.9l-2-1"
-        stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 /** How long a tapped tab stays highlighted if the navigation never lands. */
 const PENDING_TIMEOUT_MS = 12_000;
 
@@ -139,15 +126,18 @@ export function BottomNav() {
     active.startsWith("/play") || active.startsWith("/challenges") ||
     active.startsWith("/h2h") || active.startsWith("/38-0") ||
     active.startsWith("/club") || active.startsWith("/versus") ||
-    active.startsWith("/friends") || active.startsWith("/leagues") ||
-    active.startsWith("/league") || active.startsWith("/profile/");
-  // Matchweek is the fixture-synced tab. A halftime pack itself opens under
-  // /challenges (which holds the Quiz tab, so a pack played from anywhere reads
-  // consistently); Matchweek highlights on its own route.
-  const isMatchweek = active.startsWith("/matchweek");
-  // Fantasy is its own tab now (founder 2026-07-25) — its squad, build, round,
-  // transfers, leagues and news all live under /fantasy.
-  const isFantasy = active.startsWith("/fantasy");
+    active.startsWith("/friends") || active.startsWith("/profile/");
+  // Leagues is a top-level destination (product model 2026-08-07: "my people").
+  // It owns every league surface: the fantasy league product (the flagship),
+  // the quiz leagues (/leagues, /league/<id>) and 38-0 leagues.
+  // (38-0 leagues stay under Play — they are part of that game's own world.)
+  const isLeagues =
+    active.startsWith("/fantasy/leagues") || active.startsWith("/leagues") ||
+    active.startsWith("/league");
+  // Fantasy is "my team" — everything under /fantasy EXCEPT leagues, which has
+  // its own tab now. (Premier League is content context, not architecture: the
+  // /matchweek route stays reachable but no longer owns a nav slot.)
+  const isFantasy = active.startsWith("/fantasy") && !active.startsWith("/fantasy/leagues");
   const isProfile = active === "/profile" || active.startsWith("/settings");
   // Guest-only tab. Highlights on the auth routes it owns, so a guest who taps it
   // and lands on sign-in still sees where they are in the bar.
@@ -191,13 +181,16 @@ export function BottomNav() {
           {/* Versus folded into the Play tab (founder 2026-07-25) — no longer its
               own bottom-nav tab. */}
 
-          {/* Premier League — the flagship live surface, discoverable to guests.
-              Route stays /matchweek; everything under it IS the PL (halftime
-              quizzes are PL fixtures, Fantasy is a PL squad), and "Matchweek"
-              names the first section inside. */}
-          <Link prefetch href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
-            <FootballIcon active={isMatchweek} />
-            <span className="font-body text-xs text-center leading-tight">Premier League</span>
+          {/* Leagues — "my people" (product model 2026-08-07). Premier League
+              lost its nav slot: PL is content context that now surfaces across
+              Home / Play / Fantasy; /matchweek stays reachable by link. */}
+          <Link prefetch href="/fantasy/leagues" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isLeagues ? "#ffc233" : "#8a948f" }}>
+            <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+              <path d="M6 4h10v4a5 5 0 0 1-10 0V4z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isLeagues ? "currentColor" : "none"} fillOpacity={isLeagues ? 0.15 : 0} />
+              <path d="M6 5H3.5v1.5A3.5 3.5 0 0 0 7 10M16 5h2.5v1.5A3.5 3.5 0 0 1 15 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M8 19h6M11 13v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+            <span className="font-body text-xs text-center leading-tight">Leagues</span>
           </Link>
 
           {/* Fantasy — public now (founder 2026-07-25). The tab is a teaser +
@@ -282,10 +275,14 @@ export function BottomNav() {
           <span className="font-body text-xs text-center leading-tight">Play</span>
         </Link>
 
-        {/* Premier League — quizzes at half time + the club-fan leaderboard. */}
-        <Link prefetch href="/matchweek" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isMatchweek ? "#00d8c0" : "#8a948f" }}>
-          <FootballIcon active={isMatchweek} />
-          <span className="font-body text-xs text-center leading-tight">Premier League</span>
+        {/* Leagues — "my people" (product model 2026-08-07). */}
+        <Link prefetch href="/fantasy/leagues" className="flex-1 min-w-0 flex flex-col items-center gap-1 px-1 py-1 transition-colors" style={{ color: isLeagues ? "#ffc233" : "#8a948f" }}>
+          <svg width="21" height="21" viewBox="0 0 22 22" fill="none">
+            <path d="M6 4h10v4a5 5 0 0 1-10 0V4z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" fill={isLeagues ? "currentColor" : "none"} fillOpacity={isLeagues ? 0.15 : 0} />
+            <path d="M6 5H3.5v1.5A3.5 3.5 0 0 0 7 10M16 5h2.5v1.5A3.5 3.5 0 0 1 15 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M8 19h6M11 13v6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
+          <span className="font-body text-xs text-center leading-tight">Leagues</span>
         </Link>
 
         {/* Fantasy — its own tab, public now (founder 2026-07-25). A teaser +

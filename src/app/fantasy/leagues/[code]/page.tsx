@@ -38,7 +38,10 @@ import { LeagueHistoryView } from "@/components/fantasy/league/LeagueHistoryView
 import type { ChatData, GamesPulse, LeagueDetail } from "@/components/fantasy/league/types";
 
 type Tab = "hub" | "chat" | "table" | "games" | "history";
-const TABS: [Tab, string][] = [["hub", "Hub"], ["chat", "Chat"], ["table", "Table"], ["games", "Games"], ["history", "History"]];
+// History lost its pill (product model 2026-08-07: four permanent tabs max).
+// The view itself stays — reached from the Hub's "Season history" row and via
+// ?tab=history deep links, which still resolve above.
+const TABS: [Tab, string][] = [["hub", "Hub"], ["chat", "Chat"], ["table", "Table"], ["games", "Games"]];
 
 async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, init);
