@@ -218,6 +218,20 @@ export function Deadline({ iso, compact = false }: { iso: string | null; compact
  *     controlled by the caller) so a sticky header can sit above a scrolling
  *     body, e.g. a search box that shouldn't scroll away with its results.
  */
+/** Open sheets, innermost last. Escape acts on the last entry only, so a
+ *  stacked sheet (the GIF picker over the composer) dismisses one layer at a
+ *  time instead of collapsing the whole stack. Module scope on purpose: every
+ *  Sheet listens on `document`, so they need one shared view of who is on top. */
+const sheetStack: object[] = [];
+
+/** Page scroll lock, reference counted across stacked sheets. `prev` holds the
+ *  page's real pre-lock state, captured by the first sheet to open and restored
+ *  by the last to close. */
+const sheetScrollLock: {
+  depth: number;
+  prev: { bodyOverflow: string; bodyTouch: string; htmlOverflow: string } | null;
+} = { depth: 0, prev: null };
+
 export function Sheet({ onClose, labelledBy, children, variant = "glass", layout = "padded", height, maxHeight, animation, border, padding = 18 }: {
   onClose: () => void; labelledBy: string; children: ReactNode;
   variant?: "glass" | "panel";
@@ -262,20 +276,36 @@ export function Sheet({ onClose, labelledBy, children, variant = "glass", layout
   // Lock the page scroll while the sheet is up. Without this the feed keeps
   // scrolling underneath every drag that starts on the sheet, which reads as
   // a jumpy, broken background (founder, 6 Aug). Restore on close.
+  //
+  // Reference counted, because sheets STACK: the GIF picker opens on top of the
+  // composer. Naive per-sheet save/restore breaks that — the inner sheet mounts
+  // while the page is already locked, records "hidden" as the value to go back
+  // to, and restores THAT on close, leaving the page unscrollable with no sheet
+  // open. Only the first sheet to open captures the real page state, and only
+  // the last to close puts it back.
   useEffect(() => {
     if (!mounted) return;
-    const prevBodyOverflow = document.body.style.overflow;
-    const prevBodyTouch = document.body.style.touchAction;
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
-    // <html> is the actual scroller on mobile Safari/Chrome — locking body
-    // alone still lets the page pan underneath the sheet.
-    document.documentElement.style.overflow = "hidden";
+    if (sheetScrollLock.depth === 0) {
+      sheetScrollLock.prev = {
+        bodyOverflow: document.body.style.overflow,
+        bodyTouch: document.body.style.touchAction,
+        htmlOverflow: document.documentElement.style.overflow,
+      };
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      // <html> is the actual scroller on mobile Safari/Chrome — locking body
+      // alone still lets the page pan underneath the sheet.
+      document.documentElement.style.overflow = "hidden";
+    }
+    sheetScrollLock.depth += 1;
     return () => {
-      document.body.style.overflow = prevBodyOverflow;
-      document.body.style.touchAction = prevBodyTouch;
-      document.documentElement.style.overflow = prevHtmlOverflow;
+      sheetScrollLock.depth -= 1;
+      if (sheetScrollLock.depth === 0 && sheetScrollLock.prev) {
+        document.body.style.overflow = sheetScrollLock.prev.bodyOverflow;
+        document.body.style.touchAction = sheetScrollLock.prev.bodyTouch;
+        document.documentElement.style.overflow = sheetScrollLock.prev.htmlOverflow;
+        sheetScrollLock.prev = null;
+      }
     };
   }, [mounted]);
 
@@ -295,8 +325,18 @@ export function Sheet({ onClose, labelledBy, children, variant = "glass", layout
     const first = focusables()[0] ?? ref.current;
     first?.focus();
 
+    // Register on the open-sheet stack so Escape only reaches the TOP sheet.
+    // Every mounted Sheet listens on `document`, so without this one Escape
+    // fires all of them: dismissing the GIF picker also closed the composer
+    // underneath it and took the half written post with it.
+    const token = {};
+    sheetStack.push(token);
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); onCloseRef.current(); return; }
+      if (e.key === "Escape") {
+        if (sheetStack[sheetStack.length - 1] !== token) return; // not the top sheet
+        e.preventDefault(); onCloseRef.current(); return;
+      }
       if (e.key !== "Tab") return;
       const items = focusables();
       if (!items.length) return;
@@ -308,6 +348,8 @@ export function Sheet({ onClose, labelledBy, children, variant = "glass", layout
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("keydown", onKey);
+      const at = sheetStack.indexOf(token);
+      if (at !== -1) sheetStack.splice(at, 1);
       // Put focus back where the user left it, not at the top of the document.
       returnTo.current?.focus?.();
     };
