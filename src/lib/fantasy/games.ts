@@ -12,10 +12,9 @@ import "server-only";
  * only reads and partitions it for a second surface.
  *
  * The leaderboard is NEVER stored (locked, "computed ON READ") — every call
- * walks every completed, non-bot row this league has ever had. That's fine
- * at today's scale (a private league, hundreds of challenges at most); a
- * future league with thousands of completed games would want this cached,
- * not recomputed per request.
+ * pages through every completed, non-bot row this league has ever had (see
+ * fetchAllCompletedChallengeRows), up to LEADERBOARD_ROWS_CAP. A league that
+ * hits the cap would want this cached, not recomputed per request.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { HttpError } from "@/lib/fantasy/server";
@@ -38,6 +37,10 @@ const OPEN_STATUSES = new Set(["pending", "accepted", "active", "awaiting_oppone
 const CHALLENGES_WINDOW = 200;
 const RECENT_RESULTS_LIMIT = 12;
 const LEADERBOARD_CAP = 50;
+// How many completed rows the leaderboard will walk before it stops paging.
+// Bigger than any real league gets today, but not unbounded — one league
+// can't force every leaderboard read to page forever.
+const LEADERBOARD_ROWS_CAP = 5000;
 // League History's "GAMES" block (Phase 4B) — a longer look-back than the
 // Games tab's own RECENT_RESULTS_LIMIT (12), since History is where a member
 // goes to browse further back, not just "what just happened".
@@ -106,6 +109,37 @@ async function fetchLeagueChallengeRows(db: Db, leagueId: string): Promise<{ rec
   return { reconciled, cardById };
 }
 
+/** Every completed, non-bot row this league has ever had — for the
+ *  leaderboard ONLY. Paged in 1000-row steps because PostgREST caps any
+ *  single read at 1000 regardless of the .range() asked for (the same reason
+ *  ensureOfficialGamedayCompetitions in competitions.ts pages), rather than
+ *  the CHALLENGES_WINDOW-capped fetch above, which only ever sees the most
+ *  recent CHALLENGES_WINDOW rows of ANY status. action/open/recentResults
+ *  never need history older than CHALLENGES_WINDOW (anything actionable is
+ *  necessarily recent), so they stay on the cheaper fetchLeagueChallengeRows
+ *  rather than paying for this walk too. A terminal status is never revisited
+ *  by reconcile() (see that function's own doc), so these rows are read
+ *  straight off the table with no reconcile pass needed before hydrating them
+ *  through challengeCardsFor. Stops at LEADERBOARD_ROWS_CAP so one runaway
+ *  league can't page forever; past that cap the standings are no longer
+ *  strictly all time (logged, not silently wrong). */
+async function fetchAllCompletedChallengeRows(db: Db, leagueId: string): Promise<MemberChallengeRow[]> {
+  const bots = syntheticActors();
+  const out: MemberChallengeRow[] = [];
+  for (let from = 0; from < LEADERBOARD_ROWS_CAP; from += 1000) {
+    const { data } = await db.from("member_challenges")
+      .select("*").eq("league_id", leagueId).eq("status", "completed")
+      .order("created_at", { ascending: false }).range(from, from + 999);
+    const page = (data ?? []) as MemberChallengeRow[];
+    for (const r of page) {
+      if (!bots.has(r.challenger_id) && !bots.has(r.opponent_id)) out.push(r);
+    }
+    if (page.length < 1000) return out;
+  }
+  console.warn(`[fantasy:games] leaderboard hit the ${LEADERBOARD_ROWS_CAP}-row cap for league ${leagueId}; standings are no longer strictly all time past this point`);
+  return out;
+}
+
 export async function leagueGamesOverview(db: Db, userId: string, code: string): Promise<GamesOverview> {
   const league = await requireMemberLeagueByCode(db, code, userId);
   const { reconciled, cardById } = await fetchLeagueChallengeRows(db, league.id);
@@ -140,8 +174,13 @@ export async function leagueGamesOverview(db: Db, userId: string, code: string):
   completed.sort((a, b) => new Date(b.row.completed_at ?? b.row.created_at).getTime() - new Date(a.row.completed_at ?? a.row.created_at).getTime());
   const recentResults: ChallengeCardData[] = completed.slice(0, RECENT_RESULTS_LIMIT).map((c) => c.card);
 
-  // ── Leaderboard — every completed, non-bot row this league has, not just
-  // the RECENT_RESULTS_LIMIT-capped slice above. ──
+  // ── Leaderboard — every completed, non-bot row this league has EVER had
+  // (fetchAllCompletedChallengeRows, paged, up to LEADERBOARD_ROWS_CAP), not
+  // the CHALLENGES_WINDOW-capped `completed` slice above that recentResults
+  // and mySummary use. A league past CHALLENGES_WINDOW lifetime challenges
+  // would otherwise silently drop its older completed games from standings. ──
+  const leaderboardRows = await fetchAllCompletedChallengeRows(db, league.id);
+  const leaderboardCardById = await challengeCardsFor(db, leaderboardRows.map((r) => r.id));
   const byUser = new Map<string, { played: number; wins: number; draws: number; losses: number; points: number; lastCompletedAt: string }>();
   const bump = (uid: string, result: GameResult, completedAt: string) => {
     const cur = byUser.get(uid) ?? { played: 0, wins: 0, draws: 0, losses: 0, points: 0, lastCompletedAt: completedAt };
@@ -153,7 +192,9 @@ export async function leagueGamesOverview(db: Db, userId: string, code: string):
     if (new Date(completedAt).getTime() > new Date(cur.lastCompletedAt).getTime()) cur.lastCompletedAt = completedAt;
     byUser.set(uid, cur);
   };
-  for (const { card, row } of completed) {
+  for (const row of leaderboardRows) {
+    const card = leaderboardCardById.get(row.id);
+    if (!card) continue; // defensive — challengeCardsFor returns one entry per id it actually found
     const completedAt = row.completed_at ?? row.created_at;
     bump(row.challenger_id, resultForParticipant(card.winnerId, row.challenger_id), completedAt);
     bump(row.opponent_id, resultForParticipant(card.winnerId, row.opponent_id), completedAt);

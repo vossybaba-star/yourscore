@@ -70,7 +70,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const db = createServiceClient();
   const { data: challenge } = await db
     .from("h2h_challenges")
-    .select("challenger_id, opponent_id, invited_user_id, opponent_score, quiz_pack_id")
+    // One literal, not a concatenation: the generated Supabase types infer the
+    // row shape from the select string, and a concatenated expression collapses
+    // it to GenericStringError.
+    .select("challenger_id, opponent_id, invited_user_id, opponent_score, quiz_pack_id, challenger_answers, opponent_answers")
     .eq("id", id)
     .single();
 
@@ -117,5 +120,19 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const complete = challenge.opponent_score !== null;
   const questions = rawQuestions.map(complete && isParticipant ? withAnswer : stripAnswer);
 
-  return NextResponse.json({ questions });
+  // The per-question picks (which letter each side chose, and whether it was
+  // right) ride along on the same gate rather than being read from the row in
+  // the browser. Migration 262 withholds challenger_answers/opponent_answers
+  // from anon and authenticated precisely so a passer-by cannot mine a finished
+  // challenge for a pack's key, which means the results comparison has to be
+  // served here or not at all. Same rule as the answers above: only once the
+  // run is finished, and only for the two people who played it.
+  const picks = complete && isParticipant
+    ? {
+        challenger: challenge.challenger_answers ?? null,
+        opponent: challenge.opponent_answers ?? null,
+      }
+    : null;
+
+  return NextResponse.json({ questions, picks });
 }

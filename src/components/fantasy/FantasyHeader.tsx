@@ -48,12 +48,30 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
   const hrefFor = (href: string) => href;
   return (
     <div style={{ marginBottom: 14 }}>
-      <h1 className="font-display" style={{ fontSize: 27, color: INK, lineHeight: 1, letterSpacing: "-0.005em", margin: 0 }}>
-        YourScore Fantasy PL
-      </h1>
-      {subtitle && (
-        <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "6px 0 0" }}>{subtitle}</p>
-      )}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+        <div>
+          <h1 className="font-display" style={{ fontSize: 27, color: INK, lineHeight: 1, letterSpacing: "-0.005em", margin: 0 }}>
+            YourScore Fantasy PL
+          </h1>
+          {subtitle && (
+            <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "6px 0 0" }}>{subtitle}</p>
+          )}
+        </div>
+        {/* Notifications entry point (Social/Leagues had none — the bell on
+            the home dashboard was the only door to /notifications). Same
+            glyph as Dashboard's nav bell; no unread dot here since that needs
+            a fetch this header doesn't already make — plain link only. */}
+        <Link href="/notifications" aria-label="Notifications" style={{
+          flexShrink: 0, marginTop: 1, width: 36, height: 36, borderRadius: 999,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.1)",
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </Link>
+      </div>
       <div style={{
         display: "flex", gap: 4, padding: 4, borderRadius: 16,
         background: "rgba(255,255,255,0.04)", marginTop: 12,

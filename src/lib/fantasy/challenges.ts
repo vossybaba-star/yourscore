@@ -649,6 +649,15 @@ export async function acceptChallenge(db: Db, userId: string, challengeId: unkno
   if (mc.status === "active" && mc.accepted_at) return { ok: true, h2hId: mc.result_id };
   if (mc.status !== "pending") throw new HttpError(409, "This challenge isn't open anymore");
 
+  // Lazy reconcile() only runs on read, so a challenge nobody's viewed since
+  // its window passed can still show 'pending' here — catch it before
+  // flipping to active, via the SAME expiry path reconcile() itself falls
+  // through to (expiryFallback), then return the same 409 "isn't open
+  // anymore" every other already-closed status gets below, so a caller can't
+  // tell whether reconcile beat them to it or this did.
+  const stillPending = await expiryFallback(db, mc);
+  if (stillPending.status !== "pending") throw new HttpError(409, "This challenge isn't open anymore");
+
   const now = new Date().toISOString();
   const { data: updated, error } = await db.from("member_challenges")
     .update({ status: "active", accepted_at: now, started_at: now })
@@ -749,6 +758,79 @@ export async function declineChallenge(db: Db, userId: string, challengeId: unkn
   });
 
   return { ok: true };
+}
+
+// ── Sweep (cron) ───────────────────────────────────────────────────────────
+
+/** Every OPEN_STATUSES member_challenges row whose expires_at has passed —
+ *  mirrors competitions.ts's sweepDueCompetitions (same cap/try-catch-per-row
+ *  shape), the cron sweep this lifecycle never had (unlike h2h_challenges/
+ *  group_challenges, swept daily by /api/cron/expire-challenges, and
+ *  competitions, swept by sweepDueCompetitions off fantasy-tick). Without a
+ *  proactive sweep, expiry here is lazy-on-read only via reconcile() — a
+ *  pending challenge nobody ever opens stays 'pending' forever.
+ *
+ *  This just decides who's worth checking; reconcile() itself is still the
+ *  only place that decides what changes (a scorecard row's true expiry rides
+ *  its h2h row's OWN expires_at, not this copy — see reconcileScorecard's own
+ *  doc), so a stale local copy here just means a harmless no-op recheck, not
+ *  a wrong expiry. Never touches a terminal status (completed/cancelled/
+ *  declined/expired already) — OPEN_STATUSES excludes all of those. Capped so
+ *  one tick can't run away on a bad backlog; per-row failures are isolated so
+ *  one bad row never stops the rest. */
+export async function sweepExpiredMemberChallenges(db: Db, cap = 200): Promise<{ checked: number; acted: number }> {
+  const nowIso = new Date().toISOString();
+  const { data } = await db.from("member_challenges").select("*")
+    .in("status", Array.from(OPEN_STATUSES))
+    .lt("expires_at", nowIso)
+    .limit(cap);
+  const rows = (data ?? []) as MemberChallengeRow[];
+  let acted = 0;
+  for (const row of rows) {
+    try {
+      const after = await reconcile(db, row);
+      if (after.status !== row.status) acted++;
+    } catch (e) {
+      console.error("[fantasy:challenges] expiry sweep failed for", row.id, e);
+    }
+  }
+  return { checked: rows.length, acted };
+}
+
+// ── Block interaction (called from safety.ts) ────────────────────────────
+
+/** Void every currently open (member_challenges' own OPEN_STATUSES: pending,
+ *  accepted, active, awaiting_opponent) challenge between two users — called
+ *  from safety.ts the instant a block lands, so an already-open or active
+ *  challenge with someone just blocked can't stay playable (createChallenge
+ *  already stops NEW ones between blocked users; this closes the same door
+ *  for ones that predate the block). Kept here rather than in safety.ts so
+ *  the challenge lifecycle stays owned by one file.
+ *
+ *  Same CAS update idiom as cancelChallenge/declineChallenge above
+ *  (.eq("status", row.status) as the guard) — a race against reconcile()
+ *  completing a row elsewhere just loses harmlessly, never double-writes.
+ *  Never touches a completed/cancelled/declined/expired row (OPEN_STATUSES
+ *  excludes all of those already) — history and results stay intact.
+ *  Best-effort and silent by design, same as blockUser's own follow-graph
+ *  cleanup: a block must never fail, or notify the other side, over this. */
+export async function voidChallengesBetween(db: Db, userIdA: string, userIdB: string): Promise<{ voided: number }> {
+  if (!UUID_RE.test(userIdA) || !UUID_RE.test(userIdB)) throw new HttpError(400, "bad user id");
+
+  const { data } = await db.from("member_challenges").select("id, status")
+    .in("status", Array.from(OPEN_STATUSES))
+    .or(`and(challenger_id.eq.${userIdA},opponent_id.eq.${userIdB}),and(challenger_id.eq.${userIdB},opponent_id.eq.${userIdA})`);
+  const rows = (data ?? []) as { id: string; status: string }[];
+
+  const now = new Date().toISOString();
+  let voided = 0;
+  for (const row of rows) {
+    const { data: updated } = await db.from("member_challenges")
+      .update({ status: "cancelled", cancelled_at: now })
+      .eq("id", row.id).eq("status", row.status).select("id").maybeSingle();
+    if (updated) voided++;
+  }
+  return { voided };
 }
 
 export interface ChallengeCardData {

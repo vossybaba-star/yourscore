@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
+import { ErrorState, INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
 import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
@@ -1105,6 +1105,11 @@ export function FeedStream({
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  // A real fetch failure (non-OK response or thrown error) must never render
+  // identically to a genuinely empty feed — loadError drives a distinct retry
+  // branch instead (P1: outages were pixel-identical to "no moves yet").
+  const [loadError, setLoadError] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   // loadMore reads this instead of `events` directly — `events` is left out
   // of loadMore's own deps (below) so its identity stays stable across every
@@ -1124,10 +1129,12 @@ export function FeedStream({
   }, [embedded, controlled]);
 
   const loadFeed = useCallback(async (silent = false): Promise<{ updated?: boolean }> => {
-    if (!silent) setEvents(null);
+    if (!silent) { setEvents(null); setLoadError(false); }
     try {
       const res = await fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}`);
-      const d = res.ok ? await res.json() : { events: [], followingCount: 0, nextCursor: null };
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+      setLoadError(false);
       setFollowingCount(d.followingCount ?? 0);
       if (!controlled && (d.followingCount ?? 0) === 0 && scope === "following") { setScope("global"); return {}; }
       const next: FeedEvent[] = d.events ?? [];
@@ -1137,7 +1144,10 @@ export function FeedStream({
       setHasMore(!!d.nextCursor);
       return { updated };
     } catch {
-      if (!silent) setEvents([]);
+      // Leave whatever's on screen alone (stale data on a silent refresh, or
+      // nothing on a first load) and flag the failure instead of overwriting
+      // events with [] — that used to render as the ordinary empty state.
+      setLoadError(true);
       return {};
     }
   }, [scope, sort, events, controlled]);
@@ -1146,21 +1156,28 @@ export function FeedStream({
   // repost pointer row and its original share the same `id` but never the
   // same rowKey, so rowKey is the correct dedupe key here).
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || !cursor || eventsRef.current === null) return;
+    // loadMoreError blocks the sentinel's IntersectionObserver from retrying
+    // on its own the instant it fails again (it stays in view) — only the
+    // retry button below clears the flag and re-triggers a fetch.
+    if (loadingMore || !hasMore || !cursor || eventsRef.current === null || loadMoreError) return;
     setLoadingMore(true);
     try {
       const res = await fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}&before=${encodeURIComponent(cursor)}`);
-      const d = res.ok ? await res.json() : { events: [], nextCursor: null };
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
       const seen = new Set(eventsRef.current.map((e) => e.rowKey));
       const fresh: FeedEvent[] = (d.events ?? []).filter((e: FeedEvent) => !seen.has(e.rowKey));
       setEvents((prev) => [...(prev ?? []), ...fresh]);
       setCursor(d.nextCursor ?? null);
       setHasMore(!!d.nextCursor);
     } catch {
-      setHasMore(false);
+      // A failed page must not read as "you've reached the end" — keep
+      // hasMore/cursor as they were and surface a retry instead of the
+      // caught-up terminal (P1).
+      setLoadMoreError(true);
     }
     setLoadingMore(false);
-  }, [loadingMore, hasMore, cursor, scope, sort]);
+  }, [loadingMore, hasMore, cursor, scope, sort, loadMoreError]);
 
   useEffect(() => {
     if (!embedded && !controlled && typeof window !== "undefined") {
@@ -1172,8 +1189,10 @@ export function FeedStream({
     setEvents(null);
     setCursor(null);
     setHasMore(true);
+    setLoadError(false);
+    setLoadMoreError(false);
     fetch(`/api/fantasy/feed?scope=${scope}&sort=${sort}`)
-      .then((r) => (r.ok ? r.json() : { events: [], followingCount: 0, nextCursor: null }))
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((d) => {
         if (!live) return;
         setFollowingCount(d.followingCount ?? 0);
@@ -1182,7 +1201,9 @@ export function FeedStream({
         setCursor(d.nextCursor ?? null);
         setHasMore(!!d.nextCursor);
       })
-      .catch(() => { if (live) setEvents([]); });
+      // events stays null on failure so the render below shows the retry
+      // branch, not the ordinary "no moves yet" empty state.
+      .catch(() => { if (live) setLoadError(true); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scope, sort, embedded, controlled]);
@@ -1247,7 +1268,11 @@ export function FeedStream({
       )}
 
       <PullToRefresh onRefresh={() => loadFeed(true)}>
-        {events === null && <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>}
+        {loadError && events === null && (
+          <ErrorState message="The feed couldn't load." onRetry={() => { void loadFeed(); }} />
+        )}
+
+        {!loadError && events === null && <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>}
 
         {events !== null && events.length === 0 && (
           (controlled && scope === "following" && emptyFollowing != null) ? (
@@ -1278,6 +1303,14 @@ export function FeedStream({
           <div ref={sentinelRef} style={{ padding: "18px 0", textAlign: "center" }}>
             {loadingMore ? (
               <span style={{ fontSize: 12.5, color: MUTED }}>Loading more…</span>
+            ) : loadMoreError ? (
+              <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, color: MUTED }}>Couldn&apos;t load more</span>
+                <button onClick={() => { setLoadMoreError(false); void loadMore(); }} style={{
+                  cursor: "pointer", padding: "8px 16px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
+                  background: tint(TEAL, "22"), color: TEAL, border: `1px solid ${tint(TEAL, "66")}`,
+                }}>Try again</button>
+              </span>
             ) : !hasMore ? (
               <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 12, color: MUTED }}>You&apos;re all caught up</span>

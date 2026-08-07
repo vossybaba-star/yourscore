@@ -8,6 +8,7 @@ import "server-only";
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { HttpError } from "@/lib/fantasy/server";
+import { voidChallengesBetween } from "@/lib/fantasy/challenges";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any, "public", any>;
@@ -60,6 +61,16 @@ export async function blockUser(db: Db, blockerId: string, targetId: unknown): P
       `and(follower_id.eq.${blockerId},followee_id.eq.${blockedId}),and(follower_id.eq.${blockedId},followee_id.eq.${blockerId})`,
     );
   } catch (e) { console.error("[social:block] follow cleanup failed:", e); }
+
+  // Void any open Games challenge between them (AC3 extension) — an
+  // already-open or active challenge with someone you've just blocked would
+  // otherwise stay fully playable. Same best-effort discipline as the follow
+  // cleanup above: the block itself has already landed, so this must never
+  // fail or roll it back. Logic lives in challenges.ts (voidChallengesBetween)
+  // so the challenge lifecycle stays owned by one file.
+  try {
+    await voidChallengesBetween(db, blockerId, blockedId);
+  } catch (e) { console.error("[social:block] challenge void failed:", e); }
 
   return { ok: true };
 }

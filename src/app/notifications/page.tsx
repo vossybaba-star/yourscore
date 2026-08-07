@@ -56,8 +56,16 @@ type NotifTab = "all" | "mentions" | "leagues";
 function isMentionType(n: NotificationRow): boolean {
   return /mention/i.test(n.type);
 }
+// League-scoped subject_types beyond fantasy_league itself: challenge
+// notifications carry subject_type "member_challenge" (types like
+// challenge_result/challenge_invite) and competition notifications carry
+// "league_competition" (type "competition_result") — neither name matches
+// /league|chat/, so both classes were falling out of the Leagues tab into
+// only "All". Listed explicitly, same "match the subject_type, not a wider
+// regex" spirit as the comment above.
+const LEAGUE_SUBJECT_TYPES = new Set(["fantasy_league", "member_challenge", "league_competition"]);
 function isLeagueType(n: NotificationRow): boolean {
-  return n.subject_type === "fantasy_league" || /league|chat/i.test(n.type);
+  return (n.subject_type != null && LEAGUE_SUBJECT_TYPES.has(n.subject_type)) || /league|chat/i.test(n.type);
 }
 
 /** One rendered inbox row, built from a notification row + the read-time
