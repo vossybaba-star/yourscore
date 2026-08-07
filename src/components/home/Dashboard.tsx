@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { GridBackground } from "@/components/ui/GridBackground";
 import Link from "next/link";
 import Image from "next/image";
 import { BottomNav } from "@/components/ui/BottomNav";
-import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
-import { getTeamBadgeUrlSync } from "@/lib/teamImages";
-import { getCompetitionBadgeUrlSync } from "@/lib/competitionImages";
 import { usePendingFriends } from "@/hooks/usePendingFriends";
 import { usePendingTurns } from "@/hooks/usePendingTurns";
 import { DebateCard } from "@/components/debate/DebateCard";
@@ -16,7 +14,17 @@ import { GamedayCard } from "@/components/home/GamedayCard";
 import { trackShare } from "@/lib/analytics/trackGame";
 import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import { SeasonSection } from "@/components/home/SeasonSection";
+import { BriefingTile } from "@/components/matchweek/BriefingTile";
+import type { PlBriefing } from "@/lib/pl/briefing";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
+
+// FeedStream is a heavy client component (long feed, media, comment threads) —
+// loaded on demand so Home's first paint never pays for it (founder brief
+// 2026-08-07: Home is read-first, the Feed is the last thing on the page).
+const FeedStream = dynamic(
+  () => import("@/components/fantasy/FeedStream").then((m) => m.FeedStream),
+  { ssr: false, loading: () => null }
+);
 
 const LIME = "#aeea00";
 const TEAL = "#00d8c0";
@@ -89,11 +97,7 @@ export interface DashboardData {
   dayStreak: number;
   weekDots: WeekDot[];
   rivalry: RivalryInfo | null;
-  recommended: RecommendedPack[];
-  played38: boolean;
   wcRun: WcRunInfo | null;
-  playNext: PlayNextInfo | null;
-  openLobbies: number;
   leagues: LeaguePosition[];
   /** The single hero: today's featured game (Europe/London calendar day). */
   todaysGame: TodaysGame;
@@ -391,168 +395,69 @@ function TodaysGameHero({ game, completion }: { game: TodaysGame; completion: { 
   return <TodaysGamePlayable game={game} />;
 }
 
-// ── 4. Behaviour-based discovery rail ─────────────────────────────────────────
-// Compact three-up tiles of packs they haven't played. Label is honest about
-// the signal: 38-0 players get "Because you played 38-0", everyone else
-// "Picked for you".
+// ── News — "The latest": the daily briefing tile, reused from the Matchweek
+// PL news feed (src/components/matchweek/PlNews.tsx). Fetches its own data so
+// Home doesn't need a server round trip for it; self-hides while loading and
+// on failure, same idiom as GamedayCard off-matchday.
 
-function DiscoveryRail({ packs, played38 }: { packs: RecommendedPack[]; played38: boolean }) {
-  if (packs.length === 0) return null;
+function NewsSection() {
+  const [briefing, setBriefing] = useState<PlBriefing | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/pl/briefing")
+      .then((r) => r.json())
+      .then((j) => { if (live) setBriefing(j.doc ?? null); })
+      .catch(() => { /* no tile — home stands on its own */ });
+    return () => { live = false; };
+  }, []);
+
+  if (!briefing) return null;
   return (
     <div className="d-4">
-      <SectionHead title={played38 ? "Because you played 38-0" : "Picked for you"} href="/play" />
-      <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-5 px-5">
-        {packs.map((p) => {
-          // Packs without a cover show a real badge instead of a bare letter:
-          // a club crest for club packs, a competition badge for records packs
-          // ("Champions League Records · ...", "Premier League Records · ...").
-          // Both are local /badges/*.png (founder call: crests are fine to use).
-          const seg = p.name.split(" ·")[0];
-          const crest = p.cover ? null : (getTeamBadgeUrlSync(seg) ?? getCompetitionBadgeUrlSync(seg));
-          return (
-          <Link key={p.id} href={`/challenges/${slugify(p.name)}`}
-            className="flex-shrink-0 rounded-xl overflow-hidden flex flex-col transition-transform active:scale-[0.98]"
-            style={{ width: 118, background: "#0e1611", border: "1px solid rgba(255,255,255,0.08)" }}>
-            {/* Square — matches the designed covers' own aspect so they show whole */}
-            <div className="relative" style={{ width: "100%", aspectRatio: "1 / 1" }}>
-              {p.cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={coverUrl(p.cover, 118) ?? p.cover} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-              ) : crest ? (
-                <div className="absolute inset-0 flex items-center justify-center"
-                  style={{ background: "radial-gradient(ellipse at 50% 80%, rgba(0,216,192,0.1), #0b1310 75%)" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={crest} alt={p.name} width={84} height={84}
-                    style={{ objectFit: "contain", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.5))" }} />
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center font-display text-2xl"
-                  style={{ background: "rgba(0,216,192,0.1)", color: TEAL }}>
-                  {p.name[0]?.toUpperCase() ?? "Q"}
-                </div>
-              )}
-            </div>
-            <div className="p-2 flex flex-col flex-1">
-              <p className="font-body text-[11px] font-bold text-white leading-snug line-clamp-2">{p.name}</p>
-              <p className="font-body text-[10px] mt-auto pt-1" style={{ color: "#8a948f" }}>{p.questionCount} Qs</p>
-            </div>
-          </Link>
-          );
-        })}
-      </div>
+      <SectionHead title="The latest" href="/matchweek" hrefLabel="More →" />
+      <BriefingTile briefing={briefing} now={Date.now()} />
     </div>
   );
 }
 
-// ── 5. Compact mode tiles — Quiz / 38-0 / Mastermind in one row ───────────────
+// ── Feed — "Around the game": the fantasy activity feed, controlled scope.
+// A small For You / Following toggle sits above it (matches the app's
+// segmented-control idiom); the feed itself carries no chrome of its own
+// (chrome={false}) since this toggle replaces it. Read-first — no composer
+// mounted here, posting stays on the feed's own surfaces.
 
-const MODE_TILES = [
-  { href: "/38-0", label: "38-0", sub: "Draft XI", accent: LIME, rgba: "174,234,0" },
-  { href: "/play", label: "QUIZZES", sub: "Fast Qs", accent: TEAL, rgba: "0,216,192" },
-  // Perfect 10 replaced the Mastermind tile 2026-08-07: the WC finished 20 Jul
-  // and its daily pipeline is retired, so the third slot pointed at an archive.
-  { href: "/play/game/perfect-10", label: "PERFECT 10", sub: "Top ten", accent: GOLD, rgba: "255,194,51" },
-];
+type FeedTab = "global" | "following";
 
-function ModeTiles() {
-  return (
-    <div className="d-5 grid grid-cols-3 gap-2.5">
-      {MODE_TILES.map((t) => (
-        <Link key={t.href} href={t.href}
-          className="rounded-xl px-2 py-3 text-center transition-transform active:scale-[0.98]"
-          style={{ background: `linear-gradient(160deg, rgba(${t.rgba},0.13), #0c1410)`, border: `1px solid rgba(${t.rgba},0.3)` }}>
-          <p className="font-display text-[15px] leading-none text-white tracking-wide">{t.label}</p>
-          <p className="font-body text-[10px] mt-1" style={{ color: t.accent }}>{t.sub}</p>
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-// ── 38-0 promo tile — sits under Today's debate on the app home only (not the
-//    marketing web homepage). Sells the viral team-builder, one tap into a game.
-//    Decorative pitch graphic shows the XI you draft (4-3-3), lime on turf.
-
-// A mini pitch with the eleven laid out in a 4-3-3 — the thing you build in 38-0.
-function PitchGraphic() {
-  const dots = [
-    { x: 60, y: 120 },                                             // GK
-    { x: 16, y: 92 }, { x: 45, y: 96 }, { x: 75, y: 96 }, { x: 104, y: 92 }, // DEF
-    { x: 30, y: 62 }, { x: 60, y: 66 }, { x: 90, y: 62 },          // MID
-    { x: 24, y: 30 }, { x: 60, y: 24 }, { x: 96, y: 30 },          // FWD
+function FeedToggle({ tab, onChange }: { tab: FeedTab; onChange: (t: FeedTab) => void }) {
+  const opts: { id: FeedTab; label: string }[] = [
+    { id: "global", label: "For You" },
+    { id: "following", label: "Following" },
   ];
   return (
-    <svg viewBox="0 0 120 138" className="absolute right-0 top-0 h-full w-auto pointer-events-none"
-      style={{ opacity: 0.9 }} aria-hidden="true">
-      <defs>
-        <radialGradient id="p38-turf" cx="70%" cy="0%" r="90%">
-          <stop offset="0%" stopColor="#aeea00" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#0c1410" stopOpacity="0" />
-        </radialGradient>
-        <filter id="p38-glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="2.2" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-      <rect x="0" y="0" width="120" height="138" fill="url(#p38-turf)" />
-      {/* pitch markings */}
-      <g stroke="#aeea00" strokeOpacity="0.28" strokeWidth="1" fill="none">
-        <rect x="8" y="6" width="104" height="126" rx="4" />
-        <line x1="8" y1="69" x2="112" y2="69" />
-        <circle cx="60" cy="69" r="16" />
-        <rect x="36" y="6" width="48" height="20" />
-        <rect x="36" y="112" width="48" height="20" />
-      </g>
-      {/* the eleven */}
-      {dots.map((d, i) => (
-        <circle key={i} cx={d.x} cy={d.y} r="4.5" fill="#aeea00"
-          filter="url(#p38-glow)" stroke="#0a0a0f" strokeWidth="0.75" />
-      ))}
-    </svg>
+    <div className="inline-flex items-center gap-1 mb-3 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      {opts.map((o) => {
+        const active = tab === o.id;
+        return (
+          <button key={o.id} type="button" onClick={() => onChange(o.id)}
+            className="font-display text-[13px] tracking-wide px-3.5 py-1.5 rounded-full transition-colors"
+            style={{ background: active ? TEAL : "transparent", color: active ? "#04231f" : "#8a948f" }}>
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
-function Play38Tile() {
+function FeedSection() {
+  const [tab, setTab] = useState<FeedTab>("global");
   return (
-    <Link
-      href="/38-0"
-      className="d-4 relative block overflow-hidden rounded-2xl px-5 py-4 transition-transform active:scale-[0.99]"
-      style={{
-        background: `linear-gradient(115deg, rgba(174,234,0,0.18), #0c1410 62%)`,
-        border: `1px solid rgba(174,234,0,0.32)`,
-      }}
-    >
-      {/* corner glow + pitch on the right, content sits over a scrim so it stays legible */}
-      <div className="absolute top-0 right-0 w-[200px] h-[200px] pointer-events-none"
-        style={{ background: "radial-gradient(circle at 100% 0%, rgba(174,234,0,0.16) 0%, transparent 60%)" }} />
-      <PitchGraphic />
-      <div className="absolute inset-y-0 left-0 w-3/4 pointer-events-none"
-        style={{ background: "linear-gradient(90deg, #0c1410 55%, transparent)" }} />
-
-      <div className="relative flex items-center gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-body text-[9px] font-bold uppercase tracking-[0.22em] px-2 py-0.5 rounded-full"
-              style={{ color: "#0a0a0f", background: LIME }}>
-              The viral game
-            </span>
-            {/* the perfect scoreline, as a little scoreboard chip */}
-            <span className="font-display text-[11px] tracking-[0.14em] px-2 py-0.5 rounded"
-              style={{ color: LIME, border: "1px solid rgba(174,234,0,0.4)", background: "rgba(174,234,0,0.08)" }}>
-              38&ndash;0
-            </span>
-          </div>
-          <p className="font-display text-[26px] leading-none text-white tracking-wide">Build your XI</p>
-          <p className="font-body text-xs text-text-muted mt-1.5 leading-snug">
-            Draft the perfect team, chase a flawless 38&ndash;0 season, and see how you rank.
-          </p>
-          <span className="inline-flex items-center gap-1.5 mt-3 rounded-xl px-4 py-2 font-display text-sm tracking-wide"
-            style={{ background: LIME, color: "#0a0a0f" }}>
-            PLAY 38&ndash;0 →
-          </span>
-        </div>
-      </div>
-    </Link>
+    <div className="d-5">
+      <SectionHead title="Around the game" />
+      <FeedToggle tab={tab} onChange={setTab} />
+      <FeedStream embedded chrome={false} controlledScope={tab} controlledSort="recent" signInNext="/" />
+    </div>
   );
 }
 
@@ -601,10 +506,7 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { displayName, rank, dayStreak, weekDots, recommended, played38, openLobbies, leagues, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
-
-  // Don't recommend the pack that's already the hero.
-  const rail = recommended.filter((p) => p.id !== todaysGame.packId).slice(0, 5);
+  const { displayName, rank, dayStreak, weekDots, leagues, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
 
   // Deep-link from a daily push: /?focus=today|debate scrolls that home card
   // into view so a tap lands the player right on the game / debate to act on.
@@ -654,50 +556,34 @@ export function Dashboard({ data }: { data: DashboardData }) {
         {/* 1. Progress at a glance */}
         <ProgressCard rank={rank} dayStreak={dayStreak} weekDots={weekDots} />
 
-        {/* Anything waiting on you comes before discovery */}
+        {/* Anything waiting on you comes before what's happening today */}
         <PendingTurnsNotice />
         <PendingFriendsNotice />
 
-        {/* Live/upcoming halftime pack — self-hides off-matchday */}
-        <GamedayCard />
-
-        {/* 2. Get set for the season — Fantasy + Gameday Quiz (replaced Rivalries,
-              founder 2026-07-25). */}
-        <SeasonSection className="d-2" fixture={gamedayFixture} />
+        {/* 2. What's happening today — live/upcoming halftime pack (self-hides
+            off-matchday) + the season section, under one small label. */}
+        <div className="d-2">
+          <SectionHead title="Today" />
+          <div className="space-y-4">
+            <GamedayCard />
+            <SeasonSection fixture={gamedayFixture} />
+          </div>
+        </div>
 
         {/* 3. Today's Game — THE single hero, playable or done+share. The
             onboarding tour's final step points here (data-tour). */}
         <div id="todays-game" data-tour="todays-game"><TodaysGameHero game={todaysGame} completion={todaysGameCompletion} /></div>
+
+        {/* News — the daily briefing, reused from Matchweek */}
+        <NewsSection />
 
         {/* Today's debate — one tap, daily habit (moved here from Versus) */}
         <div id="todays-debate" className="d-4">
           <DebateCard signInNext="/" withSignUpPitch={false} />
         </div>
 
-        {/* 38-0 promo — under the debate, app home only (not MarketingLanding) */}
-        <Play38Tile />
-
-        {/* 4. Behaviour-based discovery */}
-        <DiscoveryRail packs={rail} played38={played38} />
-
-        {/* 5. Compact mode entries */}
-        <ModeTiles />
-
-        {/* Open lobbies nudge */}
-        {openLobbies > 0 && (
-          <Link href="/play" className="flex items-center justify-between rounded-2xl px-5 py-3.5 transition-all hover:opacity-90 active:scale-[0.99]"
-            style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.22)" }}>
-            <div className="flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: TEAL }} />
-              <p className="font-body text-sm font-semibold text-white">
-                {openLobbies === 1 ? "1 open lobby" : `${openLobbies} open lobbies`} waiting for players
-              </p>
-            </div>
-            <span className="font-display text-sm tracking-wide" style={{ color: TEAL }}>JOIN →</span>
-          </Link>
-        )}
-
-        {/* Your leagues */}
+        {/* Your leagues — sits with the football-that's-mine content, ahead
+            of the open feed */}
         <div>
           <SectionHead title="Your leagues" href="/leagues" hrefLabel="All →" />
           {leagues.length === 0 ? (
@@ -739,6 +625,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
             </div>
           )}
         </div>
+
+        {/* The feed — everyone else's football, open by default */}
+        <FeedSection />
 
       </div>
       <BottomNav />

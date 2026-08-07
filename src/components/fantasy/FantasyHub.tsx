@@ -450,7 +450,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     },
   };
   const b = BANNER[phase];
-  const seasonOver = phase === "result" && gwN >= total;
 
   /** Who actually did something. Best first, so the week reads as a story rather
    *  than a squad list: a 25-point haul at the top, the blanks folded away. */
@@ -484,8 +483,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     return { played, benched, toCome, total: rows.length };
   })();
 
-  /** The one thing this screen wants you to do, hoisted above the fold. Mirrors
-   *  the detailed control further down rather than replacing it. */
   /** `preseason` means "has never locked a gameweek" — which in a LIVE season is
    *  true for the whole of gameweek 1, because the first lock only happens at the
    *  first deadline. Gating the round on it therefore hid the round for all of
@@ -581,47 +578,6 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     return out;
   })();
 
-  const playRound = {
-    label: entry && entry.round.answered > 0 ? `Continue round (${entry.round.answered}/11)` : "Play this week's round",
-    note: "Eleven questions. Right answers earn transfers.",
-    onClick: () => router.push("/fantasy/round"),
-  };
-
-  /** The one thing this screen wants you to do.
-   *
-   *  In a LIVE season it must never be `lock` or `advance`. Both of those are the
-   *  season's job now — `/api/fantasy/lock` answers 403 "live gameweeks lock at
-   *  the deadline" and `/api/fantasy/advance` answers 403 "the season advances at
-   *  the deadline" — so the hub was leading with a button that could not succeed
-   *  in any live gameweek, and offering a second one the moment a score landed.
-   *  Worse than the error: it taught managers they had to submit or their team
-   *  wouldn't count, which is the exact opposite of the roll-over rule.
-   *
-   *  Replay keeps the old ladder — in the sandbox the user really does drive the
-   *  clock, and the demo stepper depends on it. */
-  const primary: { label: string; note?: string; onClick: () => void } | null =
-    seasonOver ? { label: "See where you finished", note: "Your league tables and Top Marks are final.", onClick: () => router.push("/fantasy/leagues") }
-    : phase === "result" ? (isDemo
-        ? { label: `Start Gameweek ${gwN + 1} →`, note: "Your squad, credits and chips carry over.", onClick: advance }
-        : { label: "See your league tables", note: `Gameweek ${gwN + 1} opens on its own. Nothing to do here.`, onClick: () => router.push("/fantasy/leagues") })
-    // Live and locked both have exactly one honest answer: nothing. There is no
-    // action left this week, so offering one would be an invitation to break
-    // something. The live panel below carries the interest instead.
-    : phase === "live" || phase === "locked" ? null
-    // Live pre-season is squad-selection time: no round to play yet, and nothing
-    // to lock (the season locks at the deadline). The pitch and the "Edit my
-    // squad" button below carry it — a top CTA here would be the play-round button
-    // the founder pulled, or a duplicate edit button.
-    : preseason && !isDemo ? null
-    : !roundDone && roundPlayable ? playRound
-    : isDemo
-      ? (preseason
-        ? { label: "Lock in my squad", note: "You can still change it until you lock.", onClick: lock }
-        : { label: `Lock team & play gameweek ${gwN}`, note: `${squad.credits} transfer${squad.credits === 1 ? "" : "s"} in hand.`, onClick: lock })
-    : state.canRebuild
-      ? { label: "Edit my squad", note: "Free to change any player until the season starts.", onClick: () => router.push("/fantasy/build") }
-      : { label: "Make a transfer", note: `${squad.credits} free move${squad.credits === 1 ? "" : "s"} in hand. Extras cost 4 points.`, onClick: () => router.push("/fantasy/transfers") };
-
   /** Team value = what the fifteen are priced at right now, in tenths (fmtM's
    *  unit). Read off the same pool the pitch draws from; blank until it loads so
    *  the header never flashes £0.0m. */
@@ -680,6 +636,35 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
     </div>
   );
 
+  /** The compact secondary row under the dominant Edit squad button. One line,
+   *  small pills, scrollable rather than wrapped — everything the old
+   *  share/edit block, 2-up destination grid and bottom Transfers button used
+   *  to spread across the screen. Transfers keeps the same lock condition it
+   *  always had (no transfers to make before the season starts, you rebuild
+   *  freely instead). Chips just scrolls to the chips card below rather than
+   *  duplicating its content up here. */
+  const pillStyle: CSSProperties = {
+    flexShrink: 0, whiteSpace: "nowrap", padding: "9px 15px", fontSize: 12.5, fontWeight: 700,
+    cursor: "pointer", background: PANEL_2, color: INK, border: `1px solid ${LINE}`,
+  };
+  const secondaryActions: { key: string; label: string; onClick: () => void; disabled?: boolean }[] = [
+    ...(!preseason && !isDemo
+      ? [{ key: "transfers", label: "Transfers", onClick: () => router.push("/fantasy/transfers") }]
+      : []),
+    { key: "plan", label: "Plan ahead", onClick: () => router.push("/fantasy/plan") },
+    { key: "chips", label: "Chips", onClick: () => document.getElementById("chips-card")?.scrollIntoView({ behavior: "smooth" }) },
+    { key: "scout", label: "Scout", onClick: () => router.push("/fantasy/scout/squad") },
+    { key: "share", label: busy ? "…" : "Share", onClick: () => share("squad"), disabled: busy },
+  ];
+
+  /** Small text link, the shared style for the demoted "More" card at the
+   *  bottom — quiz guide, knowledge board, leagues nudge, the quiet rebuild
+   *  link. None of them earn a place above the pitch anymore. */
+  const moreLinkStyle: CSSProperties = {
+    textAlign: "left", background: "none", border: "none", padding: 0, cursor: "pointer",
+    fontSize: 12.5, color: MUTED, textDecoration: "underline",
+  };
+
   return (
     <main data-fantasy style={embedded ? EMBEDDED_PAGE : page} onClick={() => menuFor !== null && setMenuFor(null)}>
       <div className="relative">
@@ -723,31 +708,14 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
-      {/* When it closes — sits ABOVE the quiz tile (founder, 2 Aug) so "how long
+      {/* When it closes — sits ABOVE the pitch (founder, 2 Aug) so "how long
           have I got?" is the first thing answered. Replay has no deadline; once
           points exist the deadline is history and the live panel takes over. */}
       {!isDemo && !result && <Deadline iso={state.gw.deadline} />}
 
-      {/* Pre-season, the one thing worth doing beyond your squad is the quiz —
-          it's how transfers are earned. A tappable explainer, not dead copy. */}
-      {preseason && !result && (
-        <button onClick={() => router.push("/fantasy/quiz-guide")} style={{
-          display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", cursor: "pointer",
-          background: `linear-gradient(150deg, ${tint(GOLD, "16")}, ${tint(GOLD, "04")})`,
-          border: `1px solid ${tint(GOLD, "3a")}`, borderRadius: 16, padding: "13px 15px", marginBottom: 12,
-        }}>
-          <span style={{ fontSize: 22, flexShrink: 0 }}>⚡</span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: INK }}>Earn extra transfers with the weekly quiz</span>
-            <span style={{ display: "block", fontSize: 12, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>A bonus, not a must. Right answers bank extra transfers. See how it works.</span>
-          </span>
-          <span style={{ color: GOLD, fontSize: 20, flexShrink: 0 }}>›</span>
-        </button>
-      )}
-
       {/* WHAT NEEDS ATTENTION, before it's too late to act on it. Sits between
-          the deadline and the week's action because that's the order the
-          questions arrive in: how long have I got, what's wrong, what do I do. */}
+          the deadline and the pitch because that's the order the questions
+          arrive in: how long have I got, what's wrong, what do I do. */}
       {warnings.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
           {warnings.map((w, i) => (
@@ -773,11 +741,66 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
-      {/* The captain tip — the one recommendation with proof. Sits right after
-          the warnings (which flag a doubtful captain) and only while the squad is
-          still editable; self-hides when the flag is off or there's no change to
-          suggest. onApplied refreshes so the new armband shows immediately. */}
-      {!locked && !result && <CaptainAssistCard onApplied={refresh} />}
+      {/* THE PITCH — the identity of this screen, moved above everything except
+          the score and the warnings. Your team in the shape you actually picture
+          it: forwards attacking the top of the screen, keeper at the back, subs
+          in a DUGOUT down the touchline.
+
+          The playing area is a SQUARE. A real pitch is ~1.6:1, but drawing the
+          true ratio on a phone gives you a tall thin strip whose markings can't
+          line up with four rows of players — the halfway line landed under the
+          defenders and the boxes sat nowhere near anybody. Square is a lie that
+          reads right: with the rows spaced across it, the forwards stand in the
+          attacking box, the halfway line falls between midfield and defence, and
+          the keeper stands in his own six-yard box. The viewBox is square too, so
+          nothing is stretched. */}
+      <div style={{ marginBottom: 10 }}>
+        <SquadBoard
+          mode={boardMode}
+          players={boardPlayers}
+          xi={squad.xi}
+          bench={squad.bench}
+          captain={squad.captain}
+          vice={squad.vice}
+          doubts={ctx.doubts}
+          live={liveData}
+          menuFor={locked ? null : menuFor}
+          onSlot={locked ? undefined : (id) => setMenuFor(menuFor === id ? null : id)}
+          renderMenu={locked ? undefined : renderPlayerMenu}
+        />
+      </div>
+
+      {/* THE DOMINANT ACTION, directly under the pitch. Same condition the edit
+          button always had: free to rebuild until the season starts, hidden the
+          moment the squad locks. Everything else on this screen is secondary
+          to this one action. */}
+      {state.canRebuild && !isDemo && (
+        <div style={{ marginBottom: 10 }}>
+          <Btn lime glow onClick={() => router.push("/fantasy/build")}>Edit my squad</Btn>
+          <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 7, textAlign: "center" }}>
+            Free to change any player until the season starts.
+          </p>
+        </div>
+      )}
+
+      {/* THE SECONDARY ROW — one compact line, small pills. Replaces what used
+          to be spread across a share+edit block, a 2-up destination grid and a
+          Transfers button at the bottom. */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          {secondaryActions.map((a) => (
+            <button key={a.key} disabled={a.disabled} onClick={a.onClick} className="font-body rounded-full"
+              style={{ ...pillStyle, opacity: a.disabled ? 0.5 : 1, cursor: a.disabled ? "default" : "pointer" }}>
+              {a.label}
+            </button>
+          ))}
+        </div>
+        {notice && (
+          <p className="font-body" style={{ fontSize: 12, color: GOLD, marginTop: 7, textAlign: "center" }}>
+            {notice}
+          </p>
+        )}
+      </div>
 
       {/* THE LIVE PANEL — the weekend hook. What's counted, what's still to come,
           and an honest label on a number that can still move. */}
@@ -834,24 +857,15 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
-      {/* THE WEEK'S ACTION, above the fold. The pitch sits high by design, which
-          pushed every actual verb (play the round, transfers, lock) 1.6 to 2.5
-          screens down — you opened the app and couldn't reach the thing you came
-          to do. One primary button here, the detail still below. */}
-      {primary && (
-        <div style={{ marginBottom: 12 }}>
-          <Btn lime glow disabled={busy} onClick={primary.onClick}>{primary.label}</Btn>
-          {primary.note && (
-            <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 7, textAlign: "center" }}>
-              {primary.note}
-            </p>
-          )}
-        </div>
-      )}
+      {/* The captain tip — the one recommendation with proof. Only while the
+          squad is still editable; self-hides when the flag is off or there's no
+          change to suggest. onApplied refreshes so the new armband shows
+          immediately. */}
+      {!locked && !result && <CaptainAssistCard onApplied={refresh} />}
 
-      {/* The Moves Bank leads, because knowledge-earned moves are the product's
-          whole story — a bare "Transfers: 3" tile buried the one thing that makes
-          this fantasy game ours. The two money figures sit beside it. */}
+      {/* The Moves Bank — knowledge-earned moves are the product's whole
+          story, so it gets its own row rather than a bare "Transfers: 3" tile.
+          The two money figures sit beside it. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
         <MovesBank held={squad.credits} cap={CREDIT_CAP}
           roundEarns={!roundDone && roundPlayable} chips={CHIP_META.map((c) => ({ label: c.label, accent: c.accent }))} />
@@ -868,93 +882,10 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       </div>
 
-      {/* THE PITCH — your team in the shape you actually picture it: forwards
-          attacking the top of the screen, keeper at the back, subs in a DUGOUT
-          down the touchline.
-
-          The playing area is a SQUARE. A real pitch is ~1.6:1, but drawing the
-          true ratio on a phone gives you a tall thin strip whose markings can't
-          line up with four rows of players — the halfway line landed under the
-          defenders and the boxes sat nowhere near anybody. Square is a lie that
-          reads right: with the rows spaced across it, the forwards stand in the
-          attacking box, the halfway line falls between midfield and defence, and
-          the keeper stands in his own six-yard box. The viewBox is square too, so
-          nothing is stretched. */}
-      <div style={{ marginBottom: 12 }}>
-        <SquadBoard
-          mode={boardMode}
-          players={boardPlayers}
-          xi={squad.xi}
-          bench={squad.bench}
-          captain={squad.captain}
-          vice={squad.vice}
-          doubts={ctx.doubts}
-          live={liveData}
-          menuFor={locked ? null : menuFor}
-          onSlot={locked ? undefined : (id) => setMenuFor(menuFor === id ? null : id)}
-          renderMenu={locked ? undefined : renderPlayerMenu}
-        />
-      </div>
-
-      {/* SHARE THE SQUAD. Before a gameweek has scored there is nothing else to
-          send anyone, and between signing up and the first deadline that is the
-          only loop the product has. Sits directly under the pitch, because the
-          pitch is the thing being shared. Hidden once a result exists — the
-          result card carries its own, better share. */}
-      {!result && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-          {state.canRebuild && !isDemo && (
-            <button onClick={() => router.push("/fantasy/build")} className="font-body rounded-xl"
-              style={{ width: "100%", padding: "10px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer", background: TEAL, color: "#03211d", border: `1px solid ${TEAL}` }}>
-              Edit my squad
-            </button>
-          )}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button disabled={busy} onClick={() => share("squad")} className="font-body rounded-xl"
-              style={{ flex: 1, padding: "10px 16px", fontSize: 14, fontWeight: 600, cursor: busy ? "default" : "pointer", background: PANEL_2, color: INK, border: `1px solid ${LINE}`, opacity: busy ? 0.5 : 1 }}>
-              {busy ? "…" : "Share my squad"}
-            </button>
-            <button onClick={() => router.push("/fantasy/scout/squad")} className="font-body rounded-xl"
-              style={{ flex: 1, padding: "8px 16px", fontSize: 14, fontWeight: 600, cursor: "pointer", background: PANEL_2, color: INK, border: `1px solid ${tint(TEAL, "55")}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
-              <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.08em", color: TEAL }}>YS SCOUT</span>
-              <span>Rate my team</span>
-            </button>
-          </div>
-          {notice && (
-            <p className="font-body" style={{ fontSize: 12, color: GOLD, margin: "3px 0 0", textAlign: "center" }}>
-              {notice}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Secondary destinations — quiet, one line each. Two per row on a phone:
-          four across at 375px squeezed "How it works" to one letter per line. */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-        {([
-          // Leagues is a top-level tab in the header now, so it's not a tile here.
-          { label: KNOWLEDGE_NAME, to: "/fantasy/knowledge" },
-          { label: "Plan ahead", to: "/fantasy/plan" },
-          { label: "My history", to: "/fantasy/history" },
-          { label: "How it works", to: "/fantasy/rules" },
-        ] as const).map((l) => (
-          <div key={l.to} onClick={() => router.push(l.to)}
-            className="rounded-2xl font-body"
-            style={{
-              background: PANEL, border: `1px solid ${LINE}`, padding: "11px 13px",
-              fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6,
-            }}>
-            <span>{l.label}</span>
-            <span style={{ color: TEAL }}>→</span>
-          </div>
-        ))}
-      </div>
-
       {phase === "open" && !roundDone && roundPlayable && (
         <Card style={{ marginBottom: 12, border: `1px solid ${tint(TEAL, "44")}`, background: `linear-gradient(150deg, ${tint(TEAL, "0e")}, ${PANEL})` }}>
           <div className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
-            THIS WEEK&apos;S ROUND IS OPEN
+            ⚡ EARN A TRANSFER
           </div>
           <p style={{ fontSize: 13, color: MUTED, margin: "0 0 10px", lineHeight: 1.45 }}>
             Eleven questions. Right answers earn the transfer credits that improve this squad.
@@ -992,69 +923,72 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           Hiding the card until a manager had committed a squad meant the whole
           mechanic was invisible
           through onboarding and all of gameweek 1. A locked card that names the
-          chips and shows progress teaches the game; an absent one doesn't. */}
+          chips and shows progress teaches the game; an absent one doesn't.
+          `chips-card` is the anchor id the Chips pill above scrolls to. */}
       {phase === "open" && roundOpen && chips && (
-        <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${tint(GOLD, "14")}, ${tint(GOLD, "04")})`, border: `1px solid ${tint(GOLD, "33")}` }}>
-          <div className="font-display" style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4, color: GOLD, letterSpacing: "0.02em" }}>Chips</div>
-          {/* Monthly rotation: one a month, a fresh set of three once all three
-              are used. No progress bar — nothing accrues, you simply have the set. */}
-          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
-            {preseason
-              ? "Your powers for the season. Chips unlock to play once gameweek 1 kicks off."
-              : chips.playedThisMonth
-              ? "You've played this month's chip. A fresh pick opens next month."
-              : chips.available.length >= CHIP_META.length
-                ? "One chip a month, your pick. Use all three before any comes back."
-                : `One chip a month. ${chips.available.length} left in this set before it refreshes.`}
-          </p>
-          {chips.playedThisGw ? (
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
-              background: "#233B2C", border: `1px solid ${GOLD}`, borderRadius: 10, padding: "9px 12px", marginTop: 6,
-            }}>
-              <span style={{ fontSize: 13.5, fontWeight: 700, color: GOLD }}>
-                {CHIP_LABEL[chips.playedThisGw]} played this gameweek
-              </span>
-              <Btn small disabled={busy} onClick={undoChip}>Undo</Btn>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
-              {CHIP_META.map((c) => {
-                const held = chips.available.includes(c.key);
-                // Pre-season a chip can't be played — the season hasn't started.
-                const playable = held && !c.comingSoon && !preseason;
-                return (
-                  <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key)} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
-                    padding: "9px 12px", borderRadius: 10, textAlign: "left",
-                    // Each chip owns a colour so the row isn't three identical tiles.
-                    background: `linear-gradient(150deg, ${tint(c.accent, "16")}, ${tint(c.accent, "04")})`,
-                    border: `1px solid ${tint(c.accent, "3a")}`, borderLeft: `3px solid ${c.accent}`,
-                    color: playable ? INK : MUTED,
-                    cursor: playable ? "pointer" : "default", opacity: playable ? 1 : 0.55,
-                  }}>
-                    <span>
-                      <span style={{ fontSize: 13.5, fontWeight: 700, display: "block", color: c.accent }}>{c.label}</span>
-                      <span style={{ fontSize: 11.5, display: "block" }}>{c.comingSoon ? "Coming soon" : c.blurb}</span>
-                      {/* How it's earned, shown only while you don't hold it —
-                          once you do, the effect is the only thing that matters. */}
-                      {!held && !c.comingSoon && (
-                        <span style={{ fontSize: 11, color: "#5b645e", display: "block", marginTop: 2, lineHeight: 1.4 }}>
-                          {c.earn}
+        <div id="chips-card">
+          <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${tint(GOLD, "14")}, ${tint(GOLD, "04")})`, border: `1px solid ${tint(GOLD, "33")}` }}>
+            <div className="font-display" style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4, color: GOLD, letterSpacing: "0.02em" }}>Chips</div>
+            {/* Monthly rotation: one a month, a fresh set of three once all three
+                are used. No progress bar — nothing accrues, you simply have the set. */}
+            <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
+              {preseason
+                ? "Your powers for the season. Chips unlock to play once gameweek 1 kicks off."
+                : chips.playedThisMonth
+                ? "You've played this month's chip. A fresh pick opens next month."
+                : chips.available.length >= CHIP_META.length
+                  ? "One chip a month, your pick. Use all three before any comes back."
+                  : `One chip a month. ${chips.available.length} left in this set before it refreshes.`}
+            </p>
+            {chips.playedThisGw ? (
+              <div style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+                background: "#233B2C", border: `1px solid ${GOLD}`, borderRadius: 10, padding: "9px 12px", marginTop: 6,
+              }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: GOLD }}>
+                  {CHIP_LABEL[chips.playedThisGw]} played this gameweek
+                </span>
+                <Btn small disabled={busy} onClick={undoChip}>Undo</Btn>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 6 }}>
+                {CHIP_META.map((c) => {
+                  const held = chips.available.includes(c.key);
+                  // Pre-season a chip can't be played — the season hasn't started.
+                  const playable = held && !c.comingSoon && !preseason;
+                  return (
+                    <button key={c.key} disabled={!playable || busy} onClick={() => playChipAction(c.key)} style={{
+                      display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+                      padding: "9px 12px", borderRadius: 10, textAlign: "left",
+                      // Each chip owns a colour so the row isn't three identical tiles.
+                      background: `linear-gradient(150deg, ${tint(c.accent, "16")}, ${tint(c.accent, "04")})`,
+                      border: `1px solid ${tint(c.accent, "3a")}`, borderLeft: `3px solid ${c.accent}`,
+                      color: playable ? INK : MUTED,
+                      cursor: playable ? "pointer" : "default", opacity: playable ? 1 : 0.55,
+                    }}>
+                      <span>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, display: "block", color: c.accent }}>{c.label}</span>
+                        <span style={{ fontSize: 11.5, display: "block" }}>{c.comingSoon ? "Coming soon" : c.blurb}</span>
+                        {/* How it's earned, shown only while you don't hold it —
+                            once you do, the effect is the only thing that matters. */}
+                        {!held && !c.comingSoon && (
+                          <span style={{ fontSize: 11, color: "#5b645e", display: "block", marginTop: 2, lineHeight: 1.4 }}>
+                            {c.earn}
+                          </span>
+                        )}
+                      </span>
+                      {!c.comingSoon && (
+                        <span style={{ fontSize: 11, color: playable ? c.accent : MUTED, fontWeight: 700, flexShrink: 0 }}>
+                          {held ? "Play" : chips.playedThisMonth ? "Next month" : "Used this set"}
                         </span>
                       )}
-                    </span>
-                    {!c.comingSoon && (
-                      <span style={{ fontSize: 11, color: playable ? c.accent : MUTED, fontWeight: 700, flexShrink: 0 }}>
-                        {held ? "Play" : chips.playedThisMonth ? "Next month" : "Used this set"}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </Card>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </div>
       )}
 
       {/* Chip confirm, in the app's own voice. Anchored bottom on a phone so the
@@ -1105,53 +1039,18 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
           busy={busy}
           notice={notice}
           onShare={shareResult}
-          advance={isDemo && gwN < total ? { label: `Start Gameweek ${gwN + 1} \u2192`, onClick: advance } : undefined}
+          advance={isDemo && gwN < total ? { label: `Start Gameweek ${gwN + 1} →`, onClick: advance } : undefined}
         />
       )}
 
-      {/* Leagues — a nudge into leagues, or a shortcut back once you're already in one */}
-      {/* Wrapped rather than clicking the Card itself: Card takes no onClick, and an
-          inner-div handler leaves its 14px padding dead to the tap. */}
-      <div onClick={() => router.push("/fantasy/leagues")} style={{ cursor: "pointer" }}>
-        <Card style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>
-            {hasLeagues ? "Your leagues" : "Play with friends"}
-          </div>
-          <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>
-            {hasLeagues
-              ? "See how you stack up this gameweek and this month."
-              : "Create a league, share your invite link, see who really knows football."}
-          </p>
-        </Card>
-      </div>
-
-      {/* The knowledge board — the quiz's own competition, win or lose at the weekend */}
-      <div onClick={() => router.push("/fantasy/knowledge")} style={{ cursor: "pointer" }}>
-        <Card style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>{KNOWLEDGE_NAME}</div>
-          <p style={{ fontSize: 12.5, color: MUTED, margin: 0, lineHeight: 1.45 }}>
-            The quiz table. Right answers count here even when your team lets you down.
-          </p>
-        </Card>
-      </div>
-
-
       {err && <p style={{ color: "#E08A6B", fontSize: 13, margin: "0 0 10px" }}>{err}</p>}
 
-      {!locked && <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {/* Editing lives above the pitch now (Edit my squad, by Share). In-season
-            the transfer route stays here; pre-season there are no transfers to
-            make (you rebuild freely), so it's hidden. */}
-        {!preseason && !isDemo && (
-          <Btn onClick={() => router.push("/fantasy/transfers")}>
-            {`Transfers (${squad.credits} free · extras −4 pts)`}
-          </Btn>
-        )}
-        {/* Locking is the SEASON's job in a live gameweek — this button answers
-            403 there, and the paragraph under it told live managers they were in
-            replay mode. Both are replay-only now; the deadline strip at the top
-            of the screen is what a live manager needs instead. */}
-        {isDemo && <>
+      {/* Locking is the SEASON's job in a live gameweek — this button answers
+          403 there, and the paragraph under it told live managers they were in
+          replay mode. Both are replay-only now; the deadline strip at the top
+          of the screen is what a live manager needs instead. */}
+      {!locked && isDemo && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <Btn gold disabled={busy} onClick={lock}>
             {busy ? "Locking…" : `Lock team & play gameweek ${state.gw.gw}`}
           </Btn>
@@ -1159,8 +1058,8 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
             Replay mode: this scores your XI against the real results of gameweek {state.gw.gw},
             {" "}{state.gw.season}. In the live season this happens automatically at the deadline.
           </p>
-        </>}
-      </div>}
+        </div>
+      )}
       {locked && !result && <p style={{ color: MUTED, fontSize: 13 }}>Locked. Scoring…</p>}
 
       {/* Demo stepper — walk the weekly journey (replay/prototype only) */}
@@ -1189,18 +1088,38 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
-      {/* Live already offers the rebuild as a proper button above; this quiet
-          link is the replay sandbox's version. */}
-      {state.canRebuild && isDemo && (
-        <div style={{ marginTop: 18, paddingTop: 12, borderTop: `1px solid ${LINE}` }}>
-          <button onClick={() => router.push("/fantasy/build")} style={{
-            fontSize: 12.5, color: MUTED, background: "none", border: "none",
-            cursor: "pointer", textDecoration: "underline", padding: 0,
-          }}>
-            Edit my squad. Swap any players before the season starts
+      {/* MORE — everything demoted off the main screen, folded into one quiet
+          card of small text links. Was four separate big-card destinations
+          (the pre-season quiz explainer, the knowledge board, the leagues nudge,
+          the rebuild link); none of them earn a place above the pitch, so they
+          demote together at the very bottom. */}
+      <Card style={{ marginBottom: 12 }}>
+        <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: MUTED, marginBottom: 8 }}>MORE</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+          {preseason && !result && (
+            <button onClick={() => router.push("/fantasy/quiz-guide")} className="font-body" style={moreLinkStyle}>
+              How the weekly quiz earns transfers
+            </button>
+          )}
+          <button onClick={() => router.push("/fantasy/knowledge")} className="font-body" style={moreLinkStyle}>
+            {KNOWLEDGE_NAME} table
           </button>
+          <button onClick={() => router.push("/fantasy/history")} className="font-body" style={moreLinkStyle}>
+            My gameweek history
+          </button>
+          <button onClick={() => router.push("/fantasy/rules")} className="font-body" style={moreLinkStyle}>
+            How the game works
+          </button>
+          <button onClick={() => router.push("/fantasy/leagues")} className="font-body" style={moreLinkStyle}>
+            {hasLeagues ? "Your leagues" : "Play with friends in a league"}
+          </button>
+          {state.canRebuild && isDemo && (
+            <button onClick={() => router.push("/fantasy/build")} className="font-body" style={moreLinkStyle}>
+              Edit my squad. Swap any players before the season starts
+            </button>
+          )}
         </div>
-      )}
+      </Card>
       </div>
     </main>
   );

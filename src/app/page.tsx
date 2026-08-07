@@ -15,9 +15,7 @@ import {
   Dashboard,
   type DashboardData,
   type LeaguePosition,
-  type PlayNextInfo,
   type RivalryInfo,
-  type RecommendedPack,
 } from "@/components/home/Dashboard";
 
 // Did the signed-in player already finish today's featured game? Only quiz
@@ -155,8 +153,6 @@ export default async function RootPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
 
-  // Stale lobbies are hidden in the /play list after 3h — match that here.
-  const lobbyCutoff = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
   // One window for every streak source, shared with /profile. NOTE: this caps
   // the visible day streak at ~45 — raise STREAK_WINDOW_DAYS to change it.
   const streakCutoff = libStreakCutoff();
@@ -171,10 +167,8 @@ export default async function RootPage({
     { data: standingRows },
     { data: recentMatches },
     { data: wcRunRows },
-    { count: openLobbiesCount },
     { data: attemptDays },
     { data: h2hRows },
-    { data: packPool },
     { data: wcRunDays },
     { data: latestNotification },
   ] = await Promise.all([
@@ -203,14 +197,6 @@ export default async function RootPage({
       .eq("status", "active")
       .order("updated_at", { ascending: false })
       .limit(1),
-    // Open public lobbies still fresh enough to join.
-    sb
-      .from("rooms")
-      .select("id", { count: "exact", head: true })
-      .eq("type", "player")
-      .eq("status", "lobby")
-      .eq("room_mode", "open")
-      .gte("created_at", lobbyCutoff),
     // Quiz play days (45d) — feeds the day streak + this-week dots. 38-0 play
     // days come from recentMatches above; both sets are merged below.
     sb
@@ -228,14 +214,6 @@ export default async function RootPage({
       // invited_user_id covers direct invites the invitee hasn't played yet
       // (opponent_id only fills once they play their turn).
       .or(`challenger_id.eq.${userId},opponent_id.eq.${userId},invited_user_id.eq.${userId}`)
-      .order("created_at", { ascending: false })
-      .limit(40),
-    // Pool for the behaviour-based rail: published packs, newest first; the
-    // user's already-played packs are filtered out below.
-    sb
-      .from("quiz_packs")
-      .select("id, name, question_count, metadata, featured, created_at")
-      .eq("status", "published")
       .order("created_at", { ascending: false })
       .limit(40),
     // WC Mastermind/Run days (45d) — the pushed daily habit writes ONLY
@@ -362,21 +340,6 @@ export default async function RootPage({
     }
   }
 
-  // ── Behaviour-based rail: packs they haven't played yet ─────────────────────
-  const attemptedPackIds = new Set((attemptDays ?? []).map((a: { pack_id: string }) => a.pack_id));
-  const played38 = matches.length > 0;
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const recommended: RecommendedPack[] = ((packPool as any) ?? [])
-    .filter((p: any) => !attemptedPackIds.has(p.id))
-    .slice(0, 6)
-    .map((p: any) => ({
-      id: String(p.id),
-      name: String(p.name),
-      questionCount: Number(p.question_count ?? 10),
-      cover: p.metadata?.cover_image ? String(p.metadata.cover_image) : null,
-    }));
-  /* eslint-enable @typescript-eslint/no-explicit-any */
-
   // ── Active World Cup run ────────────────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const wcRow: any = (wcRunRows ?? [])[0] ?? null;
@@ -386,19 +349,6 @@ export default async function RootPage({
   const wcRun = wcRow
     ? { nation: String(wcRow.nation), stage: STAGE_LABEL[wcRow.stage] ?? "Group stage", groupPoints: Number(wcRow.group_points ?? 0) }
     : null;
-
-  const openLobbies = openLobbiesCount ?? 0;
-
-  // ── "Play next" — pick the single most relevant action by live state ────────
-  // No generic quiz fallback here anymore — Today's Game is the hero now, so
-  // when there's no run to resume and no lobby to join, playNext is simply null.
-  // Mastermind runs are deliberately NOT resurfaced here (founder, Jul 23):
-  // no "resume your run" prompt anywhere on home. The Mastermind mode tile is
-  // the only way back in.
-  let playNext: PlayNextInfo | null = null;
-  if (openLobbies > 0) {
-    playNext = { kind: "lobby", href: "/play", title: "Join a lobby", sub: `${openLobbies} open right now — jump in` };
-  }
 
   // ── Today's Game completion — score + share, not a replay nudge ─────────────
   const todaysGameCompletion = await resolveTodaysCompletion(supabase, userId, todaysGame);
@@ -442,11 +392,7 @@ export default async function RootPage({
     dayStreak,
     weekDots,
     rivalry,
-    recommended,
-    played38,
     wcRun,
-    playNext,
-    openLobbies,
     leagues,
     todaysGame,
     todaysGameCompletion,

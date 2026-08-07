@@ -15,22 +15,18 @@ import { usePathname } from "next/navigation";
 
 const TEAL = "#00d8c0";
 const LIME = "#aeea00";
-const GOLD = "#ffc233";
 const INK = "#eef2f0";
 const MUTED = "#8a948f";
 
-// Each area carries its own accent so the tab you're on is colour-coded: Home,
-// Scout and Social teal (the feed/radar/knowledge brand), Squad lime, Leagues
-// gold. Social is now a first-class destination — the feed no longer hides
-// behind a Home sub-toggle (founder, 3 Aug).
-// Order (founder, 3 Aug): Home · Squad · Social · Leagues · Scout.
+// Fantasy is "my team" — three tabs (product model 2026-08-07): Home · Squad ·
+// Scout. Leagues moved to the global bottom-nav Leagues tab ("my people"); the
+// social feed moved to the global Home ("football happening"). /fantasy/social
+// and /fantasy/leagues stay routable for deep links — they are just no longer
+// pills here (Social posts open with no fantasy pill lit, which is correct: the
+// feed belongs to Home now).
 const TABS = [
   { href: "/fantasy", label: "Home", accent: TEAL, match: (p: string) => p === "/fantasy" },
   { href: "/fantasy/squad", label: "Squad", accent: LIME, match: (p: string) => p === "/fantasy/squad" },
-  // Social owns both /fantasy/social and the legacy /fantasy/feed (which now
-  // redirects here), so the old feed deep-links light the Social tab.
-  { href: "/fantasy/social", label: "Social", accent: TEAL, match: (p: string) => p.startsWith("/fantasy/social") || p.startsWith("/fantasy/feed") },
-  { href: "/fantasy/leagues", label: "Leagues", accent: GOLD, match: (p: string) => p.startsWith("/fantasy/leagues") },
   {
     href: "/fantasy/news",
     label: "Scout",
@@ -82,8 +78,6 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
             <Link key={t.href} href={hrefFor(t.href)} aria-current={on ? "page" : undefined}
               className="font-display"
               style={{
-                // Five tabs now, so a touch tighter than the old four to keep
-                // "Leagues" on one line at 375px.
                 flex: 1, textAlign: "center", padding: "9px 3px", borderRadius: 12,
                 fontSize: 14.5, fontWeight: 700, letterSpacing: 0, textDecoration: "none",
                 background: on ? t.accent : "transparent", color: on ? "#062018" : MUTED,

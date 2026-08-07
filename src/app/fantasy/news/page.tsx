@@ -8,6 +8,7 @@
  * Still served at /fantasy/news so nothing linking here breaks; the old
  * /fantasy/scout/* routes redirect in with the right tab.
  */
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ScoutCover } from "@/components/fantasy/ScoutCover";
 import { ScoutTabsShell, type ScoutTabKey } from "@/components/fantasy/ScoutTabsShell";
@@ -18,8 +19,55 @@ import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { ShortlistView } from "@/components/fantasy/ShortlistView";
 import { ScoutYourSquad } from "@/components/fantasy/ScoutYourSquad";
 import { FixturesGrid } from "@/components/fantasy/FixturesGrid";
-import { FantasyMasthead, GOLD, INK, MUTED, card, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
+import { FantasyMasthead, GOLD, INK, LINE, MUTED, TEAL, card, column, loadFeedDoc, shell, ukTime } from "@/components/fantasy/newsUi";
 import { BottomNav } from "@/components/ui/BottomNav";
+
+/** Scout's front door: "what do you need help with", not a stats dashboard
+ *  (founder brief, 7 Aug). Four decision cards above the news stream, each a
+ *  question a manager actually has this week rather than a feature label. All
+ *  four routes redirect back into this same page with the matching tab
+ *  pre-selected (see src/app/fantasy/scout/*), so plain Links are enough — no
+ *  client state needed for a server component.
+ *
+ *  COMPARE has no dedicated URL entry point today: CompareEntry (mounted in
+ *  the players slot) opens on local useState with no query-param read, and
+ *  ScoutPlayersBrowser's own compare sheet is likewise local state. So this
+ *  card links plain to /fantasy/scout/players rather than a `?compare=1`
+ *  deep link — landing on Players, with Compare one tap away, same as today. */
+const DECISIONS: { title: string; sub: string; href: string }[] = [
+  { title: "CAPTAIN", sub: "Who should I captain?", href: "/fantasy/scout/picks" },
+  { title: "TRANSFERS", sub: "Who should I bring in?", href: "/fantasy/scout/players" },
+  { title: "MY SQUAD", sub: "Where are the weaknesses?", href: "/fantasy/scout/squad" },
+  { title: "COMPARE", sub: "Compare two players", href: "/fantasy/scout/players" },
+];
+
+function DecisionGrid() {
+  return (
+    <section style={{ display: "grid", gap: 8 }}>
+      <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058" }}>
+        WHAT DO YOU NEED HELP WITH?
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {DECISIONS.map((d) => (
+          <Link key={d.title} href={d.href} className="rounded-2xl bg-surface" style={{
+            border: `1px solid ${LINE}`, padding: "14px 12px", textDecoration: "none",
+            display: "flex", flexDirection: "column", gap: 4, minHeight: 84,
+          }}>
+            <span className="font-display" style={{ color: INK, fontSize: 13, fontWeight: 700, letterSpacing: "0.02em" }}>
+              {d.title}
+            </span>
+            <span className="font-body" style={{ color: MUTED, fontSize: 12, lineHeight: 1.35 }}>
+              {d.sub}
+            </span>
+            <span aria-hidden style={{ color: TEAL, fontSize: 16, marginTop: "auto", alignSelf: "flex-end" }}>
+              ›
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export const dynamic = "force-dynamic"; // reads the auth cookie to wall the content
 
@@ -44,13 +92,19 @@ export default async function ScoutBriefing({ searchParams }: { searchParams?: {
 
   const slots = signedIn ? {
     briefing: (
-      <NewsFeed
-        tips={doc?.tips}
-        doubts={doc?.teamNews?.doubts ?? []}
-        insights={doc?.insights?.items ?? []}
-        teamItems={fresh(doc?.teamNews?.items)}
-        transferItems={fresh(doc?.transfers?.items)}
-      />
+      <div style={{ display: "grid", gap: 14 }}>
+        <DecisionGrid />
+        <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058", marginBottom: -6 }}>
+          THIS WEEK
+        </div>
+        <NewsFeed
+          tips={doc?.tips}
+          doubts={doc?.teamNews?.doubts ?? []}
+          insights={doc?.insights?.items ?? []}
+          teamItems={fresh(doc?.teamNews?.items)}
+          transferItems={fresh(doc?.transfers?.items)}
+        />
+      </div>
     ),
     picks: <FourPicks />,
     players: <><CompareEntry /><ScoutPlayersBrowser /></>,

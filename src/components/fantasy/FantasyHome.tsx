@@ -98,8 +98,10 @@ function ManagerFace({ name, avatarUrl, club, size = 32 }: { name: string; avata
   );
 }
 
-// ── The "You" strip — your squad on the pitch, or a ready-made one to adopt ───
-function YouStrip({ you, proposed, onAdopt, adopting }: { you: HomeData["you"]; proposed: HomeData["proposed"]; onAdopt: () => void; adopting: boolean }) {
+// ── GAMEWEEK STATUS hero — where you stand right now + the one thing to do
+// next (edit the squad). Shows only what the home payload actually returns:
+// gameweek, deadline, rank, points, gap to first. No invented fields. ────────
+function GameweekHero({ you, proposed, onAdopt, adopting }: { you: HomeData["you"]; proposed: HomeData["proposed"]; onAdopt: () => void; adopting: boolean }) {
   const router = useRouter();
   const gwLabel = you.gw ? `GAMEWEEK ${you.gw}` : "PRE-SEASON";
   const cd = countdown(you.deadline);
@@ -148,7 +150,7 @@ function YouStrip({ you, proposed, onAdopt, adopting }: { you: HomeData["you"]; 
           <SquadBoard mode="complete" players={you.board.players} xi={you.board.xi} bench={you.board.bench} captain={you.board.captain ?? undefined} vice={you.board.vice ?? undefined} />
         </div>
       )}
-      <button onClick={() => router.push("/fantasy/squad")} style={{ marginTop: 2, background: "none", border: "none", color: TEAL, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 }}>View your squad →</button>
+      <div style={{ marginTop: 2 }}><Btn gold onClick={() => router.push("/fantasy/build")}>EDIT SQUAD</Btn></div>
     </div>
   );
 }
@@ -199,17 +201,18 @@ function JoinHook() {
 const SCOUT_LABEL: Record<string, string> = { safe: "SAFE", form: "IN FORM", value: "VALUE", gamble: "GAMBLE" };
 // Same category hues as the Scout's Four Picks, so a "VALUE" pick is gold here and there.
 const SCOUT_CAT_COLOR: Record<string, string> = { safe: TEAL, form: LIME, value: GOLD, gamble: "#a78bfa" };
-function ScoutRail({ picks }: { picks: ScoutPick[] }) {
+function ScoutRail({ picks, limit, label = "THE SCOUT'S PICKS", cta = "See all →", to = "/fantasy/news" }: { picks: ScoutPick[]; limit?: number; label?: string; cta?: string; to?: string }) {
   const router = useRouter();
-  if (!picks.length) return null;
+  const shown = limit ? picks.slice(0, limit) : picks;
+  if (!shown.length) return null;
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 2px 8px" }}>
-        <span className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>THE SCOUT&apos;S PICKS</span>
-        <span onClick={() => router.push("/fantasy/news")} style={{ fontSize: 12, fontWeight: 700, color: TEAL, cursor: "pointer" }}>See all →</span>
+        <span className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>{label}</span>
+        <span onClick={() => router.push(to)} style={{ fontSize: 12, fontWeight: 700, color: TEAL, cursor: "pointer" }}>{cta}</span>
       </div>
       <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, margin: "0 -16px", padding: "0 16px 4px", scrollbarWidth: "none" }}>
-        {picks.map((p) => {
+        {shown.map((p) => {
           const cat = SCOUT_CAT_COLOR[p.category] ?? TEAL;
           return (
           <button key={p.category} onClick={() => router.push("/fantasy/news")} style={{
@@ -235,12 +238,84 @@ function ScoutRail({ picks }: { picks: ScoutPick[] }) {
   );
 }
 
+// ── NEEDS ATTENTION — a contextual list built only from signals the home
+// payload already carries (todo flags, deadline proximity). Renders nothing
+// when there's nothing to flag — never an empty placeholder card. ───────────
+function NeedsAttention({ you, todo }: { you: HomeData["you"]; todo: HomeData["todo"] }) {
+  const router = useRouter();
+  const items: { key: string; accent: string; icon: React.ReactNode; text: string; to: string }[] = [];
+
+  if (you.hasSquad && you.phase === "pre" && you.deadline) {
+    const ms = new Date(you.deadline).getTime() - Date.now();
+    if (ms > 0 && ms < 24 * 60 * 60 * 1000) {
+      const h = Math.max(1, Math.floor(ms / 3600000));
+      items.push({
+        key: "deadline", accent: GOLD,
+        icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>,
+        text: `Deadline in ${h}h. Check your squad before it locks.`,
+        to: "/fantasy/build",
+      });
+    }
+  }
+  if (todo.league) {
+    items.push({
+      key: "league", accent: LIME,
+      icon: <path d="M21 11.5a8.5 8.5 0 01-12.5 7.5L3 21l2-5.5A8.5 8.5 0 1121 11.5z" />,
+      text: "You haven't joined a league yet.",
+      to: "/fantasy/leagues",
+    });
+  }
+
+  if (!items.length) return null;
+  return (
+    <>
+      <SectionLabel>NEEDS ATTENTION</SectionLabel>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {items.map((it) => (
+          <button key={it.key} onClick={() => router.push(it.to)} style={{
+            width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+            background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12,
+          }}>
+            <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 999, background: tint(it.accent, "16"), border: `1px solid ${tint(it.accent, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={it.accent} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{it.icon}</svg>
+            </span>
+            <span style={{ flex: 1, fontSize: 13, color: INK, lineHeight: 1.35 }}>{it.text}</span>
+            <span aria-hidden style={{ color: MUTED, fontSize: 16, flexShrink: 0 }}>→</span>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// ── EARN A TRANSFER — the weekly knowledge round, styled as a game (lime),
+// not a settings card. Mirrors FantasyHub's round card copy + target route. ──
+function EarnTransferCard() {
+  const router = useRouter();
+  return (
+    <div style={{
+      borderRadius: 16, padding: 16, marginTop: 12,
+      background: `linear-gradient(150deg, ${tint(LIME, "1c")}, ${PANEL})`, border: `1px solid ${tint(LIME, "4a")}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <svg width={17} height={17} viewBox="0 0 24 24" fill={LIME} stroke="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" /></svg>
+        <span className="font-display tracking-widest" style={{ fontSize: 15, letterSpacing: "0.03em", color: LIME }}>EARN A TRANSFER</span>
+      </div>
+      <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.45 }}>Get answers right in the weekly quiz to unlock extra moves.</p>
+      <Btn lime onClick={() => router.push("/fantasy/round")}>PLAY</Btn>
+    </div>
+  );
+}
+
 // ── Your league chats — or a nudge to create one ─────────────────────────────
 function LeagueChats({ leagues }: { leagues: LeagueCard[] }) {
   const router = useRouter();
   return (
     <>
-      <SectionLabel>YOUR LEAGUE CHATS</SectionLabel>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 2px 8px" }}>
+        <span className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>YOUR LEAGUES</span>
+        {leagues.length > 0 && <span onClick={() => router.push("/fantasy/leagues")} style={{ fontSize: 12, fontWeight: 700, color: TEAL, cursor: "pointer" }}>See all →</span>}
+      </div>
       {leagues.length === 0 ? (
         <div style={{ borderRadius: 14, padding: 16, background: `linear-gradient(150deg, ${tint(GOLD,"16")}, ${PANEL})`, border: `1px solid ${tint(GOLD,"3a")}` }}>
           <div className="font-display" style={{ fontSize: 18, color: INK, lineHeight: 1.15, marginBottom: 4 }}>You haven&apos;t got any leagues</div>
@@ -325,37 +400,6 @@ function MoveCard({ ev }: { ev: FeedEvent }) {
         </Link>
       )}
     </div>
-  );
-}
-
-// ── Home's Social preview — two recent moves + a door into the Social tab ─────
-function HomeSocialPreview({ moves, scope }: { moves: FeedEvent[]; scope: "following" | "global" }) {
-  const router = useRouter();
-  if (!moves.length) return null;
-  const top = moves.slice(0, 2);
-  return (
-    <>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "18px 2px 8px" }}>
-        <span className="font-display tracking-widest" style={{ fontSize: 11, letterSpacing: "0.12em", color: MUTED }}>
-          {scope === "following" ? "FROM YOUR FEED" : "WHAT MANAGERS ARE DOING"}
-        </span>
-        <span onClick={() => router.push("/fantasy/social")} style={{ fontSize: 12, fontWeight: 700, color: TEAL, cursor: "pointer" }}>Open Social →</span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {top.map((ev) => (
-          <button key={ev.id} onClick={() => router.push("/fantasy/social")} style={{ width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 11 }}>
-            <ManagerFace name={ev.actorName} avatarUrl={ev.actorAvatar} club={ev.actorClub} size={30} />
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 13, color: INK, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                <b style={{ fontWeight: 700 }}>{ev.actorName}</b> <span style={{ color: "#c7d0cb" }}>{ev.sentence}</span>
-              </div>
-              <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{timeAgo(ev.createdAt)}</div>
-            </div>
-            <MoveGlyph type={ev.type} />
-          </button>
-        ))}
-      </div>
-    </>
   );
 }
 
@@ -461,27 +505,17 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
         </div>
       ) : (
         <PullToRefresh onRefresh={refresh}>
-          <YouStrip you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
-          <div style={{ marginTop: 12 }}><RatePhotoHero /></div>
-          {/* Active league(s) + chat — one tap into the conversation. */}
+          {/* 1. GAMEWEEK STATUS — where you stand, and the one CTA to fix your squad. */}
+          <GameweekHero you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
+          {/* 2. NEEDS ATTENTION — only renders when there's a real signal to flag. */}
+          <NeedsAttention you={data.you} todo={data.todo} />
+          {/* 3. EARN A TRANSFER — the weekly knowledge round, played as a game. */}
+          <EarnTransferCard />
+          {/* 4. YOUR LEAGUES — one tap into the conversation. */}
           <LeagueChats leagues={data.leagues} />
-          <ScoutRail picks={data.scout} />
-          {/* A preview of the feed, not the full feed — the Social tab is the feed. */}
-          <HomeSocialPreview moves={data.moves} scope={data.movesScope} />
-          {data.todo.follow && (
-            <div style={{ marginTop: 12 }}>
-              <button onClick={() => router.push("/fantasy/social?tab=discover")} style={{ width: "100%", textAlign: "left", cursor: "pointer", display: "flex", gap: 12, alignItems: "center", background: PANEL, border: `1px solid ${tint(LIME, "3a")}`, borderRadius: 12, padding: 12 }}>
-                <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 10, background: tint(LIME, "16"), border: `1px solid ${tint(LIME,"44")}`, color: LIME, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0111 0M17 7.5a3 3 0 010 5M19.5 19a5 5 0 00-3-4.6" /></svg>
-                </span>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>Follow other managers</div>
-                  <div style={{ fontSize: 12, color: MUTED, marginTop: 1, lineHeight: 1.35 }}>Their moves land in your feed. We&apos;ll suggest people who picked like you.</div>
-                </div>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: LIME, whiteSpace: "nowrap" }}>Find people →</span>
-              </button>
-            </div>
-          )}
+          {/* 5. SCOUT SAYS — top recommendation only. */}
+          <ScoutRail picks={data.scout} limit={1} label="SCOUT SAYS" cta="See why →" />
+          <div style={{ marginTop: 12 }}><RatePhotoHero /></div>
           <RulesRow />
         </PullToRefresh>
       )}
