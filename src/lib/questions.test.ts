@@ -94,7 +94,7 @@ test("respects the requested count", () => {
 
 // ── Existing text dedupe still works, and is NOT a substitute ─────────────────
 
-test("dedupeByQuestionText cannot catch the same-fact case — which is why pickDistinctFacts exists", () => {
+test("dedupeByQuestionText cannot catch the same-fact case , which is why pickDistinctFacts exists", () => {
   // Both survive text dedupe: the wording is completely different. Only fact_key catches it.
   const deduped = dedupeByQuestionText(FA_CUP_FINAL);
   assert.equal(deduped.length, 3, "text dedupe sees three distinct questions");

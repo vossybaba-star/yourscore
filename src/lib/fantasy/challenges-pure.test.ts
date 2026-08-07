@@ -19,7 +19,7 @@ test("normalizeChallengeMessage: strips newlines to a single line", () => {
   assert.deepEqual(r, { ok: true, message: "line one line two line three" });
 });
 
-test("normalizeChallengeMessage: no message is fine — null, not rejected", () => {
+test("normalizeChallengeMessage: no message is fine , null, not rejected", () => {
   assert.deepEqual(normalizeChallengeMessage(undefined), { ok: true, message: null });
   assert.deepEqual(normalizeChallengeMessage(null), { ok: true, message: null });
   assert.deepEqual(normalizeChallengeMessage(""), { ok: true, message: null });
@@ -154,7 +154,7 @@ test("checkRematchEligibility: a terminal status with the old challenger as call
   }
 });
 
-test("checkRematchEligibility: a terminal status with the old OPPONENT as caller also passes — a rematch may flip roles", () => {
+test("checkRematchEligibility: a terminal status with the old OPPONENT as caller also passes , a rematch may flip roles", () => {
   assert.deepEqual(checkRematchEligibility("completed", "b", "a", "b"), { ok: true });
 });
 
@@ -168,6 +168,6 @@ test("checkRematchEligibility: a terminal status with a stranger as caller is re
   assert.deepEqual(checkRematchEligibility("completed", "c", "a", "b"), { ok: false, reason: "not_participant" });
 });
 
-test("checkRematchEligibility: not_terminal is checked before not_participant — a stranger against an open challenge is still not_terminal", () => {
+test("checkRematchEligibility: not_terminal is checked before not_participant , a stranger against an open challenge is still not_terminal", () => {
   assert.deepEqual(checkRematchEligibility("pending", "c", "a", "b"), { ok: false, reason: "not_terminal" });
 });

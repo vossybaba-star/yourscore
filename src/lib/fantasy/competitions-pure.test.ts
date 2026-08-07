@@ -71,11 +71,11 @@ test("isEligibleAttempt: an attempt completed after closes_at is excluded", () =
 
 // ── viewerIneligibleReason ────────────────────────────────────────────────
 
-test("viewerIneligibleReason: no attempt at all is null — nothing to explain", () => {
+test("viewerIneligibleReason: no attempt at all is null, nothing to explain", () => {
   assert.equal(viewerIneligibleReason(null, "2026-08-10T00:00:00Z", "2026-08-11T00:00:00Z"), null);
 });
 
-test("viewerIneligibleReason: an attempt inside the window is false — they're just in standings", () => {
+test("viewerIneligibleReason: an attempt inside the window is false, they are just in standings", () => {
   assert.equal(
     viewerIneligibleReason({ completedAt: "2026-08-10T12:00:00Z" }, "2026-08-10T00:00:00Z", "2026-08-11T00:00:00Z"),
     false,
@@ -160,7 +160,7 @@ test("resolveBeatTarget: placed entries lead the list ahead of every played entr
   assert.deepEqual(resolved.map((r) => r.result), ["placed", "played", "played"]);
 });
 
-test("resolveBeatTarget: everyone who beats the target is a winner — no single-winner cutoff", () => {
+test("resolveBeatTarget: everyone who beats the target is a winner , no single-winner cutoff", () => {
   const resolved = resolveBeatTarget([
     { userId: "a", score: 600, completedAt: "2026-08-10T01:00:00Z" },
     { userId: "b", score: 550, completedAt: "2026-08-10T01:00:00Z" },
@@ -224,7 +224,7 @@ test("competitionResultLine: beat_target, several beat it uses plural friends", 
   );
 });
 
-test("competitionResultLine: house style — zero dashes of any kind, ever, in any branch", () => {
+test("competitionResultLine: house style , zero dashes of any kind, ever, in any branch", () => {
   const cases: Parameters<typeof competitionResultLine>[0][] = [
     { format: "league_quiz", entrantCount: 0, winnerName: null, placedCount: 0 },
     { format: "league_quiz", entrantCount: 4, winnerName: "Sam", placedCount: 0 },
