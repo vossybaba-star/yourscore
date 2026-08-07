@@ -25,10 +25,29 @@ function timeAgo(iso: string): string {
   return `${Math.floor(h / 24)}d`;
 }
 
-const TYPE_ICON: Record<string, string> = {
-  squad_complete: "👕", squad_update: "🔁", transfer: "🔁", captain: "Ⓒ",
-  chip: "✨", haul: "🔥", rank_jump: "📈", shortlist_add: "⭐",
+// Bare SVG, not emoji (house rule — see LeagueChatView's ChipIcon comment).
+// "captain" stays the Ⓒ glyph used everywhere else captain is marked; it's a
+// Unicode letter, not an emoji, so it's outside the sweep.
+const TYPE_ICON_PATH: Record<string, string> = {
+  squad_complete: "M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z",
+  squad_update: "M17 2l4 4-4 4 M21 6H8a4 4 0 0 0-4 4v1 M7 22l-4-4 4-4 M3 18h13a4 4 0 0 0 4-4v-1",
+  transfer: "M17 2l4 4-4 4 M21 6H8a4 4 0 0 0-4 4v1 M7 22l-4-4 4-4 M3 18h13a4 4 0 0 0 4-4v-1",
+  chip: "M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z",
+  haul: "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z",
+  rank_jump: "M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6",
+  shortlist_add: "M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z",
 };
+
+function TypeGlyph({ type }: { type: string }) {
+  if (type === "captain") return <span aria-hidden style={{ fontSize: 13, lineHeight: 1.3 }}>Ⓒ</span>;
+  const d = TYPE_ICON_PATH[type];
+  if (!d) return <span aria-hidden style={{ fontSize: 13, lineHeight: 1.3 }}>•</span>;
+  return (
+    <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>
+      <path d={d} />
+    </svg>
+  );
+}
 
 export function LeagueRecentRail({ code, onSelect }: {
   code: string;
@@ -92,7 +111,7 @@ export function LeagueRecentRail({ code, onSelect }: {
                 </div>
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
-                <span style={{ fontSize: 13, lineHeight: 1.3 }} aria-hidden>{TYPE_ICON[ev.type] ?? "•"}</span>
+                <TypeGlyph type={ev.type} />
                 <span style={{
                   fontSize: 12, color: "#c7d0cb", lineHeight: 1.35,
                   display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
