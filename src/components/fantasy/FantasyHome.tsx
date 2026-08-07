@@ -288,9 +288,9 @@ function NeedsAttention({ you, todo }: { you: HomeData["you"]; todo: HomeData["t
   );
 }
 
-// ── The transfer bank as a five-slot pip row — mirrors MovesBank's own bars
-// (lib/fantasy/engine.ts CREDIT_CAP = 5) at a compact size, so the same store
-// of earned moves reads the same wherever it shows up. Gold fill = held. ─────
+// ── The transfer bank as a pip row (one slot per CREDIT_CAP) — mirrors
+// MovesBank's own bars at a compact size, so the same store of earned moves
+// reads the same wherever it shows up. Gold fill = held. ─────────────────────
 function BankPips({ held, cap }: { held: number; cap: number }) {
   const filled = Math.max(0, Math.min(cap, held));
   return (

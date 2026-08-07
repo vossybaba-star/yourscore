@@ -511,7 +511,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
    *
    *  Everything the game knew about your team going wrong, it kept to itself: a
    *  captain with no fixture, a starter flagged as a doubt, an unplayed round
-   *  worth up to four transfers. All of it was discoverable only by going and
+   *  worth up to two transfers. All of it was discoverable only by going and
    *  looking. These are the things worth interrupting someone for, and nothing
    *  else — a warnings list that cries wolf gets scrolled past.
    *

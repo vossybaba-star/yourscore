@@ -16,7 +16,10 @@ export const SQUAD_QUOTA: Record<FantasyPos, number> = { GK: 2, DEF: 5, MID: 5, 
 export const SQUAD_SIZE = 15;
 export const XI_SIZE = 11;
 export const MAX_PER_CLUB = 3;
-export const CREDIT_CAP = 5;
+// The transfer bank: at most 1 baseline + the round's max earned (founder 7 Aug:
+// cap of 2 earned, so 1 + 2 = 3). Mirrors creditsForRound's ceiling — a single
+// great gameweek fills the bank, nothing accumulates past it. (Was 5 = 1 + 4.)
+export const CREDIT_CAP = 3;
 export const HIT_POINTS = 4;
 /** Cashing a credit pays what buying a transfer costs — the economy is symmetric:
  *  knowledge buys transfers or points, points buy transfers (founder, 14 Jul). */

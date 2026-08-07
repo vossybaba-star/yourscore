@@ -944,6 +944,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-07** — **Fantasy transfer bank cap 5 → 3** (branch `fix/fantasy-credit-cap-3`).
+  Finishes the "cap of 2 additional transfers" change: the earning curve already shipped
+  (5 correct → 1, 10 → 2), but `CREDIT_CAP` was left at 5 — so the EARN TRANSFERS card, the pip
+  bank and the "bank up to N" copy all still showed 5. The cap tracks 1 baseline + the round's max
+  earned, so 1 + 2 = 3 (it was 1 + 4 = 5). One constant in `engine.ts`; every bank display / rules
+  line derives from it. Verified live as the health bot: card now reads "1 / 3", 3 pips. 129 engine
+  tests green.
 - **2026-08-07** — **Home is ONE continuous page: Today, then the Feed below it** (branch
   `feat/home-scroll-feed`). Replaces the hard Today/Feed view-swap (which jumped and felt glitchy):
   the Feed now lives directly under Today in one scroll, so reaching the end of Today flows straight

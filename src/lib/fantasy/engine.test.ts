@@ -121,8 +121,8 @@ test("halfOf: GW1-19 first half, GW20-38 second (wildcard expiry boundary)", () 
   assert.equal(halfOf(HALF_SEASON_GW + 1), 2);
   assert.equal(halfOf(38), 2);
 });
-test("bankCredits caps at 5; transferCost credit-then-hit, wildcard is free", () => {
-  assert.equal(bankCredits(4, 3), 5);
+test("bankCredits caps at 3 (1 baseline + 2 earned); transferCost credit-then-hit, wildcard is free", () => {
+  assert.equal(bankCredits(2, 3), CREDIT_CAP); // over the cap → clamped to 3
   assert.equal(bankCredits(0, 2), 2);
   assert.equal(transferCost(1).paid, "credit");
   assert.equal(transferCost(0).paid, "hit");
@@ -332,19 +332,19 @@ test("scoreEntry: chips never break the pure-recompute contract", () => {
 
 // ── cash-out: credits → points, overflow only (founder-locked 14 Jul) ─────────
 test("cashOverflow: nothing spills until the bank is full", () => {
-  assert.deepEqual(cashOverflow(0, 4), { credits: 4, points: 0 });
-  assert.deepEqual(cashOverflow(1, 4), { credits: 5, points: 0 }, "exactly full = still nothing");
+  assert.deepEqual(cashOverflow(0, 2), { credits: 2, points: 0 });
+  assert.deepEqual(cashOverflow(1, 2), { credits: CREDIT_CAP, points: 0 }, "exactly full (3) = still nothing");
 });
 test("cashOverflow: only what the bank can't hold cashes out", () => {
-  // 4 banked + a perfect round's 4 = 8; the bank holds 5, so 3 spill at 4 pts each
-  assert.deepEqual(cashOverflow(4, 4), { credits: CREDIT_CAP, points: 3 * CASH_POINTS });
-  assert.deepEqual(cashOverflow(5, 4), { credits: CREDIT_CAP, points: 4 * CASH_POINTS },
-    "a settled manager at the cap cashes the whole round — 16 pts, never zero");
+  // 2 banked + a max round's 2 = 4; the bank holds 3, so 1 spills at 4 pts
+  assert.deepEqual(cashOverflow(2, 2), { credits: CREDIT_CAP, points: 1 * CASH_POINTS });
+  assert.deepEqual(cashOverflow(CREDIT_CAP, 2), { credits: CREDIT_CAP, points: 2 * CASH_POINTS },
+    "a settled manager at the cap cashes the whole round — never zero");
 });
 test("cashOverflow: a credit cashes for exactly what a transfer costs", () => {
   // The symmetry the founder locked: a transfer costs 4 points, so a credit pays 4.
   assert.equal(CASH_POINTS, 4);
-  assert.equal(cashOverflow(5, 1).points, 4, "one spilled credit = one transfer's worth");
+  assert.equal(cashOverflow(CREDIT_CAP, 1).points, 4, "one spilled credit = one transfer's worth");
 });
 test("cashOverflow: the round is NEVER worth zero to a settled manager", () => {
   // This is the whole point of the mechanic. At the cap, every curve step still pays.
