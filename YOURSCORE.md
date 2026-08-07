@@ -6,7 +6,29 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-07 (**Play home simplified — /play now opens on a curated home**
+> **Confirmed:** 2026-08-07 pm (**Universal game shells + 38-0 landing diet shipped** (PR #96):
+> three shared components in `src/components/games/` — `GameEntry` (compact fixed-aspect
+> cover, PLAY above the fold, "How to play" collapsed), `GameHeader` (the one in-game
+> chrome: progress, Quit, timer, score, difficulty) and `ResultShell` (score hero → one
+> primary → max two secondaries → ONE ecosystem bridge). Higher or Lower + Guess the
+> Player run on all three; the Play home's Quick Play cards deep-link `?start=1` so a tap
+> deals question one directly (one tap from Play home to gameplay; composes with the
+> `?daily=1` pinned round). Perfect 10: entry + results on the shells, a Quit during play
+> that PRESERVES game state (the 100dvh no-scroll rule still holds), GamesNav no longer
+> flashes during its loading phase, results trimmed to scorecard-share + challenge +
+> fantasy bridge. Quiz: playing header is `GameHeader`; results timing + difficulty merged
+> into one collapsed "Your round in detail" (the locked PLAY ANOTHER → save order is
+> untouched); the whole results phase is a **lazy chunk** — `challenges/[slug]/page.tsx`
+> went 1631 → 911 lines with `ResultsView.tsx`, `PackLeaderboard.tsx` and `types.ts`
+> extracted into the route dir, so the intro paints without parsing results code. 38-0
+> landing: standalone title gone (GamesNav names the game), first screen = hero +
+> `PLAY · DRAFT YOUR XI` + compact pills (My Teams / Leaderboard / Live H2H / H2H Ladder),
+> PRO vs JUST DRAFT compacted, formation picker collapsed behind "Formation: X · Change".
+> Versus: guest create-account banner deleted and the welcome hero compacted to two lines,
+> action cards now in the first viewport. Catalogue cover zones reserve a square
+> (`aspect-ratio` + contain — covers still shown whole, never cropped).)
+>
+> **Previously confirmed:** 2026-08-07 (**Play home simplified — /play now opens on a curated home**
 > (PR #94): Today's Game hero with PLAY above the fold, Quick Play row for the other four
 > games (fed by the canonical `GAMES` list in `GameSwitcher.tsx`), PLAY WITH PEOPLE rows
 > (challenge a friend / find an opponent / play your league) and one MORE GAMES door into
@@ -834,6 +856,13 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-07 pm** — **Universal game shells + 38-0 diet** (PR #96, merged). GameEntry /
+  GameHeader / ResultShell shared components; HL + GTP migrated with `?start=1` autostart
+  from Quick Play (one tap to question one); Perfect 10 on the shells + state-preserving
+  Quit + loading nav-flash fix; quiz header shared, results consolidated and split into a
+  lazy chunk (page 1631 → 911 lines); 38-0 landing on one screen with formation collapsed;
+  versus double promo removed; catalogue covers reserve square aspect. Audit item list
+  fully closed: `docs/AUDIT-2026-08-07-play-simplify.md`.
 - **2026-08-07** — **Play home simplified** (PR #94, merged). /play opens on a curated
   home: Today's Game hero (PLAY above the fold), Quick Play row (other four games, from
   the canonical `GAMES` list), PLAY WITH PEOPLE rows, one MORE GAMES door; catalogue +

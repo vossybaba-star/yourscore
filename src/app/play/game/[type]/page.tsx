@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { haptic } from "@/lib/haptics";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +17,9 @@ import {
   maxPointsForDifficulty,
 } from "@/lib/scoring";
 import { DIFFICULTY_COLOR as DIFF_COLOR, DIFFICULTY_BG as DIFF_BG } from "@/lib/theme";
+import { GameEntry } from "@/components/games/GameEntry";
+import { GameHeader, timerDisplay } from "@/components/games/GameHeader";
+import { ResultShell } from "@/components/games/ResultShell";
 
 // ── Game type config ────────────────────────────────────────────────────────
 
@@ -138,17 +142,6 @@ function clearGuestRun() {
 }
 
 type Phase = "intro" | "loading" | "playing" | "results";
-
-// ── Timer helpers (shared look with the solo challenge screen) ──────────────
-
-function timerColor(ms: number): string {
-  if (ms < 5_000) return "#aeea00";
-  if (ms < 10_000) return "#00d8c0";
-  return "#ff4757";
-}
-function timerDisplay(ms: number): string {
-  return (ms / 1000).toFixed(2) + "s";
-}
 
 function scoreData(pct: number) {
   if (pct >= 0.9) return { emoji: "🏆", label: "Elite Knowledge", color: "#00d8c0" };
@@ -461,10 +454,33 @@ export default function GameTypeGame() {
   // markup match on first paint; the effect runs before a user could click
   // START, so there's no race.
   const [isDailyMode, setIsDailyMode] = useState(false);
+  // Mirrors isDailyMode but updates synchronously (refs aren't batched the way
+  // state is), so the ?start=1 autostart effect below — which can fire in the
+  // same passive-effect flush as this one, before the isDailyMode state update
+  // has actually applied — still sees the daily flag when it calls startRound().
+  const dailyModeRef = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (new URLSearchParams(window.location.search).get("daily") === "1") setIsDailyMode(true);
+    if (new URLSearchParams(window.location.search).get("daily") === "1") {
+      dailyModeRef.current = true;
+      setIsDailyMode(true);
+    }
   }, []);
+
+  // Today's Game / a push notification deep link can ask the round to start
+  // itself (`?start=1`) instead of waiting for a tap on the intro screen. Same
+  // "read window.location.search after mount" pattern as ?daily=1 above (kept
+  // out of useSearchParams so server/client markup still match on first
+  // paint), and guarded with a ref so it only ever fires once per mount.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (autoStartedRef.current) return;
+    if (phase !== "intro") return;
+    if (new URLSearchParams(window.location.search).get("start") !== "1") return;
+    autoStartedRef.current = true;
+    void startRound();
+  }, [phase]);
   // Whether the pinned round has been drawn yet in THIS session — consumed
   // on the first draw, so "Play Again" (and any later visit to the intro
   // screen via Quit) falls back to normal random rounds. Pinning is for the
@@ -621,8 +637,10 @@ export default function GameTypeGame() {
     setPhase("loading");
     setLoadError(false);
     // Only the FIRST draw in a daily-mode session asks for the pinned round —
-    // once consumed, "Play Again" is normal random practice.
-    const useDaily = isDailyMode && !dailyConsumedRef.current;
+    // once consumed, "Play Again" is normal random practice. Reads the ref,
+    // not the isDailyMode state, so an autostarted round sees the flag even
+    // when both mount effects fire before React has applied the state update.
+    const useDaily = dailyModeRef.current && !dailyConsumedRef.current;
     if (useDaily) dailyConsumedRef.current = true;
     try {
       const res = await fetch(`/api/games/${type}`, {
@@ -745,32 +763,19 @@ export default function GameTypeGame() {
   // ── Intro ────────────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-        {/* The persistent GamesNav (root layout) is the section header. */}
-        {/* No back button — the nav above IS the navigation (founder
-            2026-07-18: own tab, no back buttons on game sections). */}
-        <div className="relative flex flex-col items-center pt-8 pb-8 px-6"
-          style={{ background: `linear-gradient(175deg, ${accent}14 0%, #0e1611 55%, #0a0a0f 100%)` }}>
-          <div className="w-full mb-5"
-            style={{ maxWidth: 340, borderRadius: 18, overflow: "hidden", border: `1.5px solid ${accent}40`, boxShadow: `0 12px 40px ${accent}22` }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/game-covers/${type}.webp`} alt={config.title} className="block w-full h-auto" />
-          </div>
-          <h1 className="font-display text-3xl text-white text-center leading-tight mb-2">{config.title}</h1>
-          <p className="font-body text-sm text-center px-2" style={{ color: "#9aa39d", lineHeight: 1.5 }}>{config.tagline}</p>
-          <div className="flex items-center gap-2 mt-3">
-            <span className="font-body text-xs px-3 py-1 rounded-full"
-              style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}40` }}>
-              Premier League
-            </span>
-            <span className="font-body text-xs px-3 py-1 rounded-full"
-              style={{ background: "rgba(255,255,255,0.06)", color: "#9aa39d" }}>
-              10 questions
-            </span>
-          </div>
-        </div>
-
-        <div className="max-w-lg mx-auto px-5 py-6 flex flex-col gap-4">
+      <>
+        <GameEntry
+          title={config.title}
+          coverSrc={`/game-covers/${type}.webp`}
+          accent={accent}
+          tagline={config.tagline}
+          meta={["Premier League", "10 questions"]}
+          how={config.how}
+          primaryLabel="PLAY · 10 Qs"
+          primaryTone="teal"
+          onPlay={startRound}
+          error={loadError ? "Couldn't load questions, try again." : null}
+        >
           {/* They played as a guest, signed up, and landed back here. Close the
               loop out loud: the whole ask was that this score would be kept. */}
           {claimed !== null && (
@@ -785,11 +790,6 @@ export default function GameTypeGame() {
               </div>
             </div>
           )}
-
-          <div className="rounded-2xl px-4 py-4 bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="font-display text-sm text-white tracking-wide mb-1.5">How it works</p>
-            <p className="font-body text-sm" style={{ color: "#9aa39d", lineHeight: 1.6 }}>{config.how}</p>
-          </div>
 
           {/* Topic picker (Higher or Lower). Mixed = a few topics across the round.
               Hidden for the pinned "Today's Game" round — no topic choice
@@ -819,21 +819,11 @@ export default function GameTypeGame() {
             </div>
           )}
 
-          {loadError && (
-            <p className="font-body text-sm text-center" style={{ color: "#ff6b78" }}>
-              Couldn&apos;t load questions, try again.
-            </p>
-          )}
-
-          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={startRound}>
-            START · 10 Qs
-          </Button>
-
           <GameBoard type={type} accent={accent} userId={user?.id ?? null} refreshKey={boardKey} />
-        </div>
+        </GameEntry>
 
         <BottomNav />
-      </div>
+      </>
     );
   }
 
@@ -843,53 +833,22 @@ export default function GameTypeGame() {
     const diff = currentQ.difficulty.toLowerCase();
     const diffColor = DIFF_COLOR[diff] ?? accent;
     const diffBg = DIFF_BG[diff] ?? `${accent}20`;
-    const tColor = timerColor(timerMs);
 
     return (
       <div className="min-h-screen flex flex-col bg-bg">
-        <div className="sticky top-0 z-10 pt-safe"
-          style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
-            <div className="h-full transition-all duration-700 ease-out"
-              style={{ width: `${progressFilled}%`, background: `linear-gradient(90deg, ${accent}, ${accent})` }} />
-          </div>
-
-          <div className="px-5 py-3 flex items-center justify-between gap-3">
-            <button
-              onClick={() => { stopTimer(); setPhase("intro"); resetRoundState(); }}
-              className="flex items-center gap-1.5 font-body text-xs flex-shrink-0"
-              style={{ color: "#586058" }}
-            >
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Quit
-            </button>
-
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl flex-1 justify-center"
-              style={{ background: `${tColor}10`, border: `1px solid ${tColor}28` }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: tColor, display: "inline-block",
-                boxShadow: revealed ? "none" : `0 0 6px ${tColor}`, opacity: revealed ? 0.4 : 1 }} />
-              <span className="font-display text-base tabular-nums" style={{ color: tColor }}>{timerDisplay(timerMs)}</span>
-            </div>
-
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl flex-shrink-0"
-              style={{ background: `${accent}12`, border: `1px solid ${accent}25` }}>
-              <span className="font-display text-sm" style={{ color: accent }}>{score.toLocaleString()}</span>
-              <span className="font-body text-xs" style={{ color: "#5b645e" }}>pts</span>
-            </div>
-          </div>
-
-          <div className="px-5 pb-2.5 flex items-center gap-2">
-            <span className="font-body text-xs" style={{ color: "#586058" }}>
-              Question <span className="text-white">{currentIdx + 1}</span> of {questions.length}
-            </span>
-            <span className="ml-auto font-display text-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider"
-              style={{ background: diffBg, color: diffColor, border: `1px solid ${diffColor}30` }}>
-              {diff}
-            </span>
-          </div>
-        </div>
+        <GameHeader
+          accent={accent}
+          progressPct={progressFilled}
+          onQuit={() => { stopTimer(); setPhase("intro"); resetRoundState(); }}
+          timerMs={timerMs}
+          timerFrozen={revealed}
+          score={score}
+          current={currentIdx + 1}
+          total={questions.length}
+          difficulty={diff}
+          difficultyColor={diffColor}
+          difficultyBg={diffBg}
+        />
 
         <div className="flex-1 px-5 pb-10 pt-4 flex flex-col max-w-lg mx-auto w-full">
           {/* Who-am-I visual clues: nationality flag + shirt number */}
@@ -972,110 +931,102 @@ export default function GameTypeGame() {
     const { label, color } = scoreData(pct);
 
     return (
-      <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
-        <div className="relative flex flex-col items-center pt-16 pb-10 px-6"
-          style={{ background: `linear-gradient(175deg, ${accent}14 0%, #0e1611 60%, #0a0a0f 100%)` }}>
-          <div className="mb-4" style={{ width: 132, borderRadius: 12, overflow: "hidden", border: `1px solid ${accent}33` }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/game-covers/${type}.webp`} alt={config.title} className="block w-full h-auto" />
-          </div>
-          <div className="font-display text-7xl mb-1" style={{ color: accent }}>{score.toLocaleString()}</div>
-          <p className="font-body text-sm mb-3 text-text-muted">out of {maxScore.toLocaleString()} pts</p>
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full"
-            style={{ background: `${color}15`, border: `1px solid ${color}35` }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, boxShadow: `0 0 8px ${color}` }} />
-            <span className="font-display text-base tracking-wide" style={{ color }}>{label}</span>
-          </div>
-
-          <div className="flex items-center gap-6 mt-6">
-            <div className="text-center">
-              <div className="font-display text-2xl text-white">{correctCount}/{total}</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Correct</div>
-            </div>
-            <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.08)" }} />
-            <div className="text-center">
-              <div className="font-display text-2xl" style={{ color: accent }}>{accPct}%</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Accuracy</div>
-            </div>
-            <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.08)" }} />
-            <div className="text-center">
-              <div className="font-display text-2xl text-green">{timerDisplay(fastestMs)}</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Fastest</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-lg mx-auto px-5 flex flex-col gap-3 mt-5">
-          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={startRound}>
-            PLAY AGAIN →
-          </Button>
-
-          {/* The guest's whole reason to open an account, at the one moment they
-              have something worth keeping. Same block the Quiz result ships
-              (challenges/[slug]) — minus its "You'd be #N on the leaderboard"
-              line, because these two games have no board to project a rank
-              against yet. Everything else is the Quiz's approved wording. */}
-          {isGuest && (
-            <div className="rounded-2xl p-5"
-              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-2xl px-3 py-2 font-display text-xl"
-                  style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
-                  {score.toLocaleString()}
+      <>
+        <ResultShell
+          accent={accent}
+          coverSrc={`/game-covers/${type}.webp`}
+          score={score.toLocaleString()}
+          scoreSub={`out of ${maxScore.toLocaleString()} pts`}
+          badge={{ label, color }}
+          stats={[
+            { value: `${correctCount}/${total}`, label: "Correct" },
+            { value: `${accPct}%`, label: "Accuracy", color: accent },
+            { value: timerDisplay(fastestMs), label: "Fastest", color: "#aeea00" },
+          ]}
+          save={
+            <>
+              {/* The guest's whole reason to open an account, at the one moment they
+                  have something worth keeping. Same block the Quiz result ships
+                  (challenges/[slug]) — minus its "You'd be #N on the leaderboard"
+                  line, because these two games have no board to project a rank
+                  against yet. Everything else is the Quiz's approved wording. */}
+              {isGuest && (
+                <div className="rounded-2xl p-5"
+                  style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="rounded-2xl px-3 py-2 font-display text-xl"
+                      style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
+                      {score.toLocaleString()}
+                    </div>
+                    <div>
+                      {/* The rank comes from the server's own re-grade, so it is the
+                          real position this score takes. Before it lands (or if the
+                          request failed) the ask still stands on the score alone. */}
+                      <p className="font-body text-sm font-semibold text-white">
+                        {rank !== null ? `You'd be #${rank} on the board` : "Sign up to lock in your spot"}
+                      </p>
+                      <p className="font-body text-xs text-text-muted">
+                        {rank !== null
+                          ? "Sign up to lock in your spot. This score is saved the moment you're in."
+                          : "This score is saved the moment you're in."}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/play/game/${type}`}>
+                    SIGN UP &amp; SAVE SCORE
+                  </Button>
                 </div>
-                <div>
-                  {/* The rank comes from the server's own re-grade, so it is the
-                      real position this score takes. Before it lands (or if the
-                      request failed) the ask still stands on the score alone. */}
-                  <p className="font-body text-sm font-semibold text-white">
-                    {rank !== null ? `You'd be #${rank} on the board` : "Sign up to lock in your spot"}
-                  </p>
-                  <p className="font-body text-xs text-text-muted">
-                    {rank !== null
-                      ? "Sign up to lock in your spot. This score is saved the moment you're in."
-                      : "This score is saved the moment you're in."}
-                  </p>
-                </div>
-              </div>
-              <Button variant="primary" tone="teal" size="md" fullWidth href={`/auth/sign-in?next=/play/game/${type}`}>
-                SIGN UP &amp; SAVE SCORE
-              </Button>
-            </div>
-          )}
+              )}
 
-          {/* Signed in: say plainly that it counted, and where it put them. The
-              screen used to end on "these don't count on the leaderboard yet". */}
-          {!isGuest && saved && (
-            <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
-              <span className="text-xl">✓</span>
-              <div>
-                <p className="font-display text-sm tracking-wide text-green">Score saved</p>
-                <p className="font-body text-xs text-text-muted">
-                  {rank !== null ? `You're #${rank} on the board` : "You're on the board"}
+              {/* Signed in: say plainly that it counted, and where it put them. The
+                  screen used to end on "these don't count on the leaderboard yet". */}
+              {!isGuest && saved && (
+                <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
+                  style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
+                  <span className="text-xl">✓</span>
+                  <div>
+                    <p className="font-display text-sm tracking-wide text-green">Score saved</p>
+                    <p className="font-body text-xs text-text-muted">
+                      {rank !== null ? `You're #${rank} on the board` : "You're on the board"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          }
+          primaryLabel="PLAY AGAIN"
+          onPrimary={startRound}
+          secondaries={
+            /* No OG card exists for these two games, so this shares text plus the
+               game link rather than an image. navigator.share on native, clipboard
+               everywhere else. */
+            <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={handleShareResult}>
+              {copied ? "COPIED ✓" : "SHARE YOUR RESULT"}
+            </Button>
+          }
+          bridge={
+            /* The board lives on the intro screen, so the bridge from here points
+               outward instead — to challenging a friend on the same game. */
+            <Link
+              href="/versus/challenge"
+              className="rounded-2xl px-5 py-4 flex items-center justify-between gap-3"
+              style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}
+            >
+              <div className="min-w-0">
+                <p className="font-body text-sm font-semibold text-white">
+                  Think a friend can beat {score.toLocaleString()}?
                 </p>
+                <p className="font-body text-xs text-text-muted mt-0.5">Challenge them to this game</p>
               </div>
-            </div>
-          )}
-
-          {/* No OG card exists for these two games, so this shares text plus the
-              game link rather than an image. navigator.share on native, clipboard
-              everywhere else. */}
-          <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={handleShareResult}>
-            {copied ? "COPIED ✓" : "SHARE YOUR RESULT"}
-          </Button>
-          {/* The board lives on the intro screen, so "see it" is a return to
-              the game's own front page rather than a route of its own. */}
-          <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={() => setPhase("intro")}>
-            SEE THE LEADERBOARD →
-          </Button>
-          <Button variant="ghost" tone="teal" size="lg" fullWidth onClick={() => router.push("/play")}>
-            MORE GAMES
-          </Button>
-        </div>
+              <svg width="20" height="20" viewBox="0 0 18 18" fill="none" style={{ flexShrink: 0 }}>
+                <path d="M7 4l5 5-5 5" stroke="#aeea00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          }
+        />
 
         <BottomNav />
-      </div>
+      </>
     );
   }
 

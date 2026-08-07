@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { smartBackTarget } from "@/lib/nav";
 import { haptic } from "@/lib/haptics";
@@ -10,15 +10,10 @@ import { getTeamBadgeUrl } from "@/lib/teamImages";
 import { coverUrl } from "@/lib/img";
 import { getCompetitionBadgeUrl } from "@/lib/competitionImages";
 import { AnswerButtons } from "@/components/game/AnswerButtons";
-import { RankRewardCard } from "@/components/rank/RankRewardCard";
-import { QuizNotifyPrompt } from "@/components/quiz/QuizNotifyPrompt";
 import { StreakWindowTimer } from "@/components/quiz/StreakWindowTimer";
-import HalftimePredictionPoll from "@/components/halftime/HalftimePredictionPoll";
-import { FantasyPromoCard } from "@/components/fantasy/FantasyPromoCard";
-import { FantasyResultInterstitial } from "@/components/fantasy/FantasyResultInterstitial";
+import { GameHeader } from "@/components/games/GameHeader";
 import { useGameLoop } from "@/lib/useGameLoop";
 import { Button } from "@/components/ui/Button";
-import { BeatScoreRail } from "@/components/versus/BeatScoreRail";
 import { trackGamePlay, trackGameComplete, trackShare } from "@/lib/analytics/trackGame";
 import { getAcq } from "@/lib/analytics/acq";
 import {
@@ -32,40 +27,15 @@ import {
   maxPointsForDifficulty,
   getSpeedLabel,
 } from "@/lib/scoring";
+import dynamic from "next/dynamic";
+import { PackLeaderboard, type LeaderEntry } from "./PackLeaderboard";
+import type { QuizPack, RawQuestion, AnswerRecord, Letter } from "./types";
+
+const ResultsView = dynamic(() => import("./ResultsView"), { ssr: false, loading: () => null });
 
 // Solo challenge question window — the reference duration for speed band calculation.
 // Players can answer at any time; elapsed is capped at this value for scoring purposes.
 const CHALLENGE_WINDOW_MS = 30_000;
-
-// ── Types ─────────────────────────────────────────────────────────────────
-
-interface QuizPack {
-  id: string;
-  name: string;
-  type: string;
-  parameter: string;
-  question_count: number;
-  description?: string | null;
-  metadata?: {
-    icon?: string;
-    cover_image?: string;
-    series?: string;
-    daily?: boolean;
-    date?: string;
-    // Present only on halftime packs (release engine writes it) — the fixture
-    // linkage that powers the end-of-pack prediction poll. Only the Halftime
-    // Prediction poll's own settlement bookkeeping still reads this key.
-    halftime?: { fixture_id: number; home: string; away: string };
-    // Present only on Gameday packs (publish engine writes it) — the fixture
-    // linkage for the PRE-MATCH prediction poll shown at the end of an
-    // attempt made before kickoff (§0.6). kickoff_at drives the "has this
-    // fixture already kicked off" check.
-    gameday?: { fixture_id: number; home: string; away: string; kickoff_at: string };
-    // Present only on the pre-generated club topic packs (the /club/[slug] hub).
-    // The category slug drives an honest label instead of "2025/26 Season Game".
-    club_topic?: string;
-  } | null;
-}
 
 // The four club topics carry a category slug; show its real name on the pack
 // header. Anything without a club_topic keeps the generic season label.
@@ -76,26 +46,6 @@ const CLUB_TOPIC_LABEL: Record<string, string> = {
   "rivalries-derbies": "Rivalries",
 };
 
-// NO `answer` field — the pack route (/api/challenges/pack) strips it before
-// this ever reaches the client. Grading + the correct-letter reveal come from
-// /api/quiz/answer, one question at a time. Do not add `answer` back here; a
-// future reader with a wider type would silently reopen the leak.
-interface RawQuestion {
-  question: string;
-  options: { A: string; B: string; C: string; D: string };
-  difficulty: string;
-  category: string;
-}
-
-interface AnswerRecord {
-  idx: number;
-  selected: Letter;
-  correct: boolean;
-  points: number;
-  elapsed_ms: number;
-}
-
-type Letter = "A" | "B" | "C" | "D";
 type Phase = "loading" | "intro" | "playing" | "results";
 
 // ── Guest result (save-your-score round trip) ─────────────────────────────
@@ -149,366 +99,12 @@ function recordGuestBest(packId: string, next: GuestBest) {
   } catch { /* ignore */ }
 }
 
-// Synthetic row id for the guest's own not-yet-saved score on the leaderboard.
-const GUEST_ROW_ID = "__guest__";
-
-// ── Timer helpers ─────────────────────────────────────────────────────────
-
-function timerColor(ms: number): string {
-  if (ms < 5_000) return "#aeea00";
-  if (ms < 10_000) return "#00d8c0";
-  return "#ff4757";
-}
-
-function timerDisplay(ms: number): string {
-  return (ms / 1000).toFixed(2) + "s";
-}
-
-// ── Misc helpers ──────────────────────────────────────────────────────────
-
-
-function scoreData(score: number, max: number) {
-  const p = score / max;
-  if (p >= 0.9) return { emoji: "🏆", label: "Elite Knowledge", color: "#00d8c0" };
-  if (p >= 0.75) return { emoji: "⚡", label: "Sharp.", color: "#aeea00" };
-  if (p >= 0.55) return { emoji: "⚽", label: "Decent.", color: "#4fc3f7" };
-  if (p >= 0.35) return { emoji: "📚", label: "Keep watching.", color: "#aeea00" };
-  return { emoji: "😬", label: "Back to basics.", color: "#ff4757" };
-}
-
-// ── ChallengeAFriendButton ────────────────────────────────────────────────
-
-interface ChallengeAFriendButtonProps {
-  packId: string;
-  packName: string;
-  score: number;
-  correctCount: number;
-  totalQuestions: number;
-  maxScore: number;
-  invitedUserId?: string | null; // a specific friend (from ?challenge=) — else open link
-  invitedName?: string | null;
-}
-
-function ChallengeAFriendButton({
-  packId,
-  packName,
-  score,
-  correctCount,
-  totalQuestions,
-  maxScore,
-  invitedUserId,
-  invitedName,
-}: ChallengeAFriendButtonProps) {
-  const [status, setStatus] = useState<"idle" | "creating" | "created">("idle");
-  const [challengeId, setChallengeId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const link = challengeId
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/h2h/${challengeId}`
-    : "";
-
-  async function handleCreate() {
-    if (status !== "idle") return;
-    setStatus("creating");
-    try {
-      // Server-side create: owns challenger lookup + targeting (invited_user_id)
-      // + notifications. invitedUserId null = open link challenge.
-      const res = await fetch("/api/h2h/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quizPackId: packId,
-          quizPackName: packName,
-          score,
-          correct: correctCount,
-          totalQuestions,
-          maxScore,
-          invitedUserId: invitedUserId ?? null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.id) { setStatus("idle"); return; }
-      setChallengeId(data.id);
-      setStatus("created");
-    } catch {
-      setStatus("idle");
-    }
-  }
-
-  async function handleCopy() {
-    if (!link) return;
-    await navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  // Native share sheet — works inside the iOS WKWebView (Web Share API), so the
-  // app gets the real iMessage/WhatsApp sheet with no Capacitor plugin. Falls
-  // back to copy when unavailable (most desktop browsers).
-  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
-  async function handleShare() {
-    if (!link) return;
-    trackShare("challenge-friend");
-    try {
-      await navigator.share({ text: `I scored ${score.toLocaleString()} on "${packName}" — can you beat it?`, url: link });
-    } catch {
-      void handleCopy();
-    }
-  }
-
-  const waText = encodeURIComponent(
-    `I scored ${score.toLocaleString()} on "${packName}" — can you beat it? ${link}`
-  );
-
-  if (status === "idle") {
-    return (
-      <button
-        onClick={handleCreate}
-        className="w-full rounded-2xl py-4 font-display text-sm tracking-widest active:scale-[0.97] transition-transform text-green"
-        style={{
-          background: "transparent",
-          border: "1.5px solid rgba(174,234,0,0.35)",
-        }}
-      >
-        ⚔️ Challenge a friend
-      </button>
-    );
-  }
-
-  if (status === "creating") {
-    return (
-      <div className="w-full rounded-2xl py-4 flex items-center justify-center gap-3"
-        style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
-        <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: "#aeea00", borderTopColor: "transparent" }} />
-        <span className="font-body text-sm text-text-muted">Creating challenge…</span>
-      </div>
-    );
-  }
-
-  // created
-  return (
-    <div className="rounded-2xl p-5 flex flex-col gap-3"
-      style={{ background: "rgba(174,234,0,0.06)", border: "1px solid rgba(174,234,0,0.2)" }}>
-      <div className="flex items-center gap-2">
-        <span className="text-lg">⚔️</span>
-        <div>
-          <p className="font-display text-sm tracking-wide text-green">
-            {invitedUserId ? `Sent to ${invitedName ?? "your friend"}!` : "Challenge created!"}
-          </p>
-          <p className="font-body text-xs text-text-muted">
-            {invitedUserId ? "They'll see it in their Your Turns inbox" : "Share the link with a friend"}
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-xl px-3 py-2.5 font-body text-xs break-all bg-bg border border-border"
-        style={{ color: "#8a948f" }}>
-        {link}
-      </div>
-
-      {canShare && (
-        <button
-          onClick={handleShare}
-          className="w-full rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform"
-          style={{ background: "rgba(0,216,192,0.15)", border: "1px solid rgba(0,216,192,0.4)", color: "#00d8c0" }}
-        >
-          SHARE
-        </button>
-      )}
-
-      <div className="flex gap-2">
-        <button
-          onClick={handleCopy}
-          className="flex-1 rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform"
-          style={{
-            background: copied ? "rgba(174,234,0,0.15)" : "rgba(255,255,255,0.07)",
-            border: copied ? "1px solid rgba(174,234,0,0.4)" : "1px solid rgba(255,255,255,0.1)",
-            color: copied ? "#aeea00" : "#9aa39d",
-          }}
-        >
-          {copied ? "✓ COPIED" : "COPY LINK"}
-        </button>
-
-        <a
-          href={`https://wa.me/?text=${waText}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 rounded-xl py-3 font-display text-xs tracking-widest text-center active:scale-[0.97] transition-transform"
-          style={{
-            background: "rgba(37,211,102,0.12)",
-            border: "1px solid rgba(37,211,102,0.3)",
-            color: "#25d366",
-          }}
-        >
-          WHATSAPP
-        </a>
-      </div>
-
-      <a
-        href="/challenges"
-        className="block w-full text-center rounded-xl py-3 font-display text-xs tracking-widest active:scale-[0.97] transition-transform border border-border"
-        style={{
-          background: "transparent",
-          color: "#586058",
-        }}
-      >
-        ← MORE CHALLENGES
-      </a>
-    </div>
-  );
-}
-
-// ── PackLeaderboard ───────────────────────────────────────────────────────
-
-interface LeaderEntry {
-  user_id: string;
-  score: number;
-  correct_count: number;
-  display_name: string | null;
-}
-
 // Shape of a quiz_attempts row joined with profiles, as read at the query boundary.
 interface LeaderRow {
   user_id: string;
   score: number;
   correct_count: number;
   profiles: { display_name: string | null } | null;
-}
-
-function PackLeaderboard({ entries, userId, accent, loading, maxVisible = 10, approxRank }: {
-  entries: LeaderEntry[];
-  userId: string | null;
-  accent: string;
-  loading?: boolean;
-  maxVisible?: number;
-  /** The user's row sits below a full fetched page, so its true rank is "N or lower". */
-  approxRank?: boolean;
-}) {
-  const [showAll, setShowAll] = useState(false);
-  const [mode, setMode] = useState<"speed" | "accuracy">("speed");
-  const MEDALS = ["🥇", "🥈", "🥉"];
-  const RANK_COLORS = ["#00d8c0", "#9aa39d", "#cd7f32"];
-
-  // Speed ranks by points (the default board); Accuracy ranks by most correct,
-  // points breaking ties. Both derived from the same rows so switching is instant.
-  const ranked = useMemo(() => {
-    const copy = [...entries];
-    copy.sort(mode === "accuracy"
-      ? (a, b) => (b.correct_count - a.correct_count) || (b.score - a.score)
-      : (a, b) => (b.score - a.score) || (b.correct_count - a.correct_count));
-    return copy;
-  }, [entries, mode]);
-  const userRank = userId ? ranked.findIndex(e => e.user_id === userId) + 1 : 0;
-
-  const visible = showAll ? ranked : ranked.slice(0, maxVisible);
-  const hasMore = !showAll && ranked.length > maxVisible;
-  const userOutsideVisible = userId && userRank > 0 && userRank > visible.length;
-
-  function EntryRow({ entry, rank }: { entry: LeaderEntry; rank: number }) {
-    const isUser = entry.user_id === userId;
-    const rankLabel = isUser && approxRank ? `${rank}+` : rank;
-    return (
-      <div
-        className="flex items-center gap-3 px-5 py-3 transition-colors"
-        style={{
-          background: isUser ? `${accent}0f` : undefined,
-          borderLeft: isUser ? `3px solid ${accent}` : "3px solid transparent",
-        }}>
-        <span className="font-display text-sm w-7 text-center flex-shrink-0"
-          style={{ color: rank <= 3 ? RANK_COLORS[rank - 1] : "#586058" }}>
-          {rank <= 3 ? MEDALS[rank - 1] : rankLabel}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="font-body text-sm truncate" style={{ color: isUser ? "#ffffff" : "#9aa39d" }}>
-            {isUser
-              ? `You${entry.display_name ? ` (${entry.display_name})` : ""}`
-              : (entry.display_name ?? "Player")}
-          </p>
-          <p className="font-body text-xs mt-0.5" style={{ color: "#586058" }}>
-            {mode === "accuracy" ? `${entry.score.toLocaleString()} pts` : `${entry.correct_count} correct`}
-          </p>
-        </div>
-        <span className="font-display text-sm flex-shrink-0"
-          style={{ color: isUser ? accent : "#8a948f" }}>
-          {mode === "accuracy" ? entry.correct_count : entry.score.toLocaleString()}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-2xl overflow-hidden bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-        <p className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>LEADERBOARD</p>
-        {userRank > 0 && (
-          <span className="font-display text-xs px-2 py-0.5 rounded-full"
-            style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }}>
-            YOU #{userRank}{approxRank ? "+" : ""}
-          </span>
-        )}
-      </div>
-      {/* Rank by Speed (points) or Accuracy (most correct). */}
-      {entries.length > 0 && (
-        <div className="px-5 pb-3 flex gap-1.5">
-          {(["speed", "accuracy"] as const).map((m) => {
-            const on = mode === m;
-            return (
-              <button key={m} onClick={() => { setMode(m); setShowAll(false); }}
-                className="flex-1 py-1.5 rounded-lg font-body text-xs font-semibold transition-all"
-                style={on
-                  ? { background: accent, color: "#0a0a0f" }
-                  : { background: "rgba(255,255,255,0.04)", color: "#8a948f", border: "1px solid rgba(255,255,255,0.08)" }}>
-                {m === "speed" ? "Speed" : "Accuracy"}
-              </button>
-            );
-          })}
-        </div>
-      )}
-      {loading ? (
-        <div className="px-5 pb-5 text-center">
-          <p className="font-body text-xs" style={{ color: "#586058" }}>Loading…</p>
-        </div>
-      ) : entries.length === 0 ? (
-        <div className="px-5 pb-5 text-center">
-          <p className="font-body text-sm text-white mb-1">No scores yet</p>
-          <p className="font-body text-xs" style={{ color: "#586058" }}>Be the first to set a score!</p>
-        </div>
-      ) : (
-        <div className="pb-2">
-          {visible.map((entry, idx) => (
-            <EntryRow key={entry.user_id + idx} entry={entry} rank={idx + 1} />
-          ))}
-          {userOutsideVisible && ranked[userRank - 1] && (
-            <>
-              <div className="px-5 py-1 text-center">
-                <span className="font-body text-xs" style={{ color: "#586058" }}>···</span>
-              </div>
-              <EntryRow entry={ranked[userRank - 1]} rank={userRank} />
-            </>
-          )}
-          {hasMore && (
-            <button
-              onClick={() => setShowAll(true)}
-              className="w-full py-3 font-body text-xs text-center transition-colors"
-              style={{ color: accent, borderTop: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              View full leaderboard ({ranked.length} scores) ↓
-            </button>
-          )}
-          {showAll && ranked.length > maxVisible && (
-            <button
-              onClick={() => setShowAll(false)}
-              className="w-full py-3 font-body text-xs text-center"
-              style={{ color: "#586058", borderTop: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              Show less ↑
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 // ── Component ─────────────────────────────────────────────────────────────
@@ -1185,76 +781,29 @@ export default function ChallengePage() {
     const diffBg = DIFF_BG[diff] ?? "rgba(0,216,192,0.12)";
     const isRecords = pack?.type === "records";
     const accent = isRecords ? "#aeea00" : "#00d8c0";
-    const tColor = timerColor(timerMs);
 
     return (
       <div className="min-h-screen flex flex-col bg-bg">
-        {/* Sticky header */}
-        <div className="sticky top-0 z-10 pt-safe"
-          style={{ background: "rgba(10,10,15,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          {/* Progress bar */}
-          <div style={{ height: 3, background: "rgba(255,255,255,0.06)" }}>
-            <div className="h-full transition-all duration-700 ease-out"
-              style={{ width: `${progressFilled}%`,
-                background: isRecords ? "linear-gradient(90deg, #aeea00, #aeea00)" : "linear-gradient(90deg, #e65c00, #00d8c0)" }} />
-          </div>
-
-          <div className="px-5 py-3 flex items-center justify-between gap-3">
-            {/* Quit */}
-            <button
-              onClick={() => {
-                if (window.confirm("Quit? Your progress won't be saved.")) {
-                  stopTimer();
-                  setPhase("intro"); setCurrentIdx(0); setSelected(null);
-                  setRevealed(false); setScore(0); setAnswerLog([]); setLastPoints(null); setTimerMs(0);
-                }
-              }}
-              className="flex items-center gap-1.5 font-body text-xs flex-shrink-0"
-              style={{ color: "#586058" }}
-            >
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Quit
-            </button>
-
-            {/* Timer — counts up, colour-coded */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl flex-1 justify-center"
-              style={{ background: `${tColor}10`, border: `1px solid ${tColor}28` }}>
-              {/* Pulse dot */}
-              <span style={{
-                width: 7, height: 7, borderRadius: "50%", background: tColor, display: "inline-block",
-                boxShadow: revealed ? "none" : `0 0 6px ${tColor}`,
-                opacity: revealed ? 0.4 : 1,
-              }} />
-              <span className="font-display text-base tabular-nums" style={{ color: tColor, letterSpacing: "0.02em" }}>
-                {timerDisplay(timerMs)}
-              </span>
-            </div>
-
-            {/* Score */}
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl flex-shrink-0"
-              style={{ background: `${accent}12`, border: `1px solid ${accent}25` }}>
-              <span className="font-display text-sm" style={{ color: accent }}>{score.toLocaleString()}</span>
-              <span className="font-body text-xs" style={{ color: "#5b645e" }}>pts</span>
-            </div>
-          </div>
-
-          {/* Question counter */}
-          <div className="px-5 pb-2.5 flex items-center gap-2">
-            {badgeUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={badgeUrl} alt="" width={18} height={18} style={{ objectFit: "contain", opacity: 0.6 }} />
-            )}
-            <span className="font-body text-xs" style={{ color: "#586058" }}>
-              Question <span className="text-white">{currentIdx + 1}</span> of {questions.length}
-            </span>
-            <span className="ml-auto font-display text-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider"
-              style={{ background: diffBg, color: diffColor, border: `1px solid ${diffColor}30` }}>
-              {diff}
-            </span>
-          </div>
-        </div>
+        <GameHeader
+          accent={accent}
+          progressPct={progressFilled}
+          progressGradient={isRecords ? "linear-gradient(90deg, #aeea00, #aeea00)" : "linear-gradient(90deg, #e65c00, #00d8c0)"}
+          onQuit={() => {
+            if (window.confirm("Quit? Your progress won't be saved.")) {
+              stopTimer();
+              setPhase("intro"); setCurrentIdx(0); setSelected(null);
+              setRevealed(false); setScore(0); setAnswerLog([]); setLastPoints(null); setTimerMs(0);
+            }
+          }}
+          timerMs={timerMs}
+          timerFrozen={revealed}
+          score={score}
+          current={currentIdx + 1}
+          total={questions.length}
+          difficulty={diff}
+          difficultyColor={diffColor}
+          difficultyBg={diffBg}
+        />
 
         {/* Question body */}
         <div className="flex-1 px-5 pb-10 pt-4 flex flex-col">
@@ -1326,304 +875,35 @@ export default function ChallengePage() {
   }
 
   // ── Results ───────────────────────────────────────────────────────────────
+  // Lazy-loaded (next/dynamic, ssr:false) — its own component tree (rank card,
+  // notify prompt, leaderboard, prediction poll, fantasy promo, versus rail)
+  // no longer has to parse before the intro/playing phases can paint.
   if (phase === "results" && pack) {
-    const correctCount = answerLog.filter((r) => r.correct).length;
-    const perfectBonus = calculatePerfectRoundBonus(correctCount, questions.length);
-    // Accuracy is questions right, NOT score/maxScore. Score carries speed bonuses, so the
-    // points ratio sat next to "7/15 Correct" reading 41% and the two numbers disagreed.
-    // This matches the leaderboard's Accuracy sort (correct_count) and the profile's
-    // lifetime accuracy, so one word means one thing everywhere.
-    const pct = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
-    const isRecords = pack.type === "records";
-    const accent = isRecords ? "#aeea00" : "#00d8c0";
-    const { emoji, label, color } = scoreData(score, maxScore);
-    const avgTime = answerLog.length
-      ? Math.round(answerLog.reduce((s, r) => s + r.elapsed_ms, 0) / answerLog.length)
-      : 0;
-    const fastestMs = answerLog.length ? Math.min(...answerLog.map(r => r.elapsed_ms)) : 0;
-
-    // Rendered high in the column, straight under PLAY ANOTHER: a guest's prompt to keep
-    // the score they just earned, or a signed-in player's confirmation that it stuck.
-    // A function, not a value: it reads guestRank/guestApprox, which are computed below.
-    const renderSaveScore = () => userId ? (
-      priorAttempt ? (
-        <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-          style={{ background: "rgba(0,216,192,0.07)", border: "1px solid rgba(0,216,192,0.2)" }}>
-          <span className="text-xl">🎯</span>
-          <div>
-            <p className="font-display text-sm tracking-wide text-teal">Practice run</p>
-            <p className="font-body text-xs text-text-muted">
-              Your leaderboard score is still{" "}
-              <span className="text-white font-semibold">{priorAttempt.score.toLocaleString()}</span> pts
-            </p>
-          </div>
-        </div>
-      ) : saved ? (
-        <div className="rounded-2xl px-5 py-4 flex items-center gap-3"
-          style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.2)" }}>
-          <span className="text-xl">✓</span>
-          <div>
-            <p className="font-display text-sm tracking-wide text-green">Score saved ✓</p>
-            <p className="font-body text-xs text-text-muted">You&apos;re on the leaderboard</p>
-          </div>
-        </div>
-      ) : null
-    ) : (
-      <div className="rounded-2xl p-5"
-        style={{ background: "rgba(174,234,0,0.07)", border: "1px solid rgba(174,234,0,0.22)" }}>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="rounded-2xl px-3 py-2 font-display text-xl"
-            style={{ background: "rgba(174,234,0,0.15)", color: "#aeea00" }}>
-            {score.toLocaleString()}
-          </div>
-          <div>
-            <p className="font-body text-sm font-semibold text-white">
-              You&apos;d be #{guestRank}{guestApprox ? "+" : ""} on the leaderboard
-            </p>
-            <p className="font-body text-xs text-text-muted">Sign up to lock in your spot. This score is saved the moment you&apos;re in.</p>
-          </div>
-        </div>
-        <Button variant="primary" tone="teal" size="md" fullWidth href={signInHref}>
-          SIGN UP &amp; SAVE SCORE
-        </Button>
-      </div>
-    );
-
-    const byDiff = (["easy", "medium", "hard"] as const).map((d) => {
-      const dQs = questions.map((q, i) => ({ q, i })).filter(({ q }) => (q.difficulty?.toLowerCase() ?? "medium") === d);
-      const correct = dQs.filter(({ i }) => answerLog.find((r) => r.idx === i)?.correct).length;
-      return { d, correct, total: dQs.length };
-    }).filter(({ total }) => total > 0);
-
-    // Guest: splice this run into the board as a highlighted "You" row at its true
-    // position (ties rank below existing equal scores), so they SEE the spot they'd
-    // claim by signing up. If they'd fall below a full fetched page (25 rows), the
-    // exact rank is unknown — shown as "N+".
-    const guestIdx = !userId
-      ? (() => { const i = leaderboard.findIndex((e) => score > e.score); return i === -1 ? leaderboard.length : i; })()
-      : -1;
-    const guestRank = guestIdx + 1;
-    const guestApprox = !userId && guestIdx === leaderboard.length && leaderboard.length >= 25;
-    const lbEntries = !userId
-      ? [
-          ...leaderboard.slice(0, guestIdx),
-          { user_id: GUEST_ROW_ID, score, correct_count: correctCount, display_name: null },
-          ...leaderboard.slice(guestIdx),
-        ]
-      : leaderboard;
-
     return (
-      <div className="min-h-screen flex flex-col bg-bg" style={{ paddingBottom: 40 }}>
-        {/* A stored prior attempt can land here without playing this session —
-            only a genuine just-finished result pops the interstitial. */}
-        {answerLog.length > 0 && (
-          <FantasyResultInterstitial surface="quiz" userId={userId} scoreLine={`${score.toLocaleString()} pts`} />
-        )}
-
-        {/* Hero */}
-        <div className="relative flex flex-col items-center pt-16 pb-10 px-6"
-          style={{ background: isRecords
-            ? "linear-gradient(175deg, #0e1611 0%, #080d0a 60%, #0a0a0f 100%)"
-            : "linear-gradient(175deg, #1f1200 0%, #12100a 60%, #0a0a0f 100%)" }}>
-          {badgeUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={badgeUrl} alt={pack.name} width={52} height={52}
-              style={{ objectFit: "contain", marginBottom: 16, opacity: 0.85,
-                filter: `drop-shadow(0 4px 12px ${isRecords ? "rgba(174,234,0,0.4)" : "rgba(0,216,192,0.4)"})` }} />
-          )}
-
-          <div className="font-display text-7xl mb-1" style={{ color: accent }}>
-            {score.toLocaleString()}
-          </div>
-          <p className="font-body text-sm mb-3 text-text-muted">
-            out of {maxScore.toLocaleString()} pts
-          </p>
-
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full"
-            style={{ background: `${color}15`, border: `1px solid ${color}35` }}>
-            <span className="text-xl">{emoji}</span>
-            <span className="font-display text-base tracking-wide" style={{ color }}>{label}</span>
-          </div>
-
-          {perfectBonus > 0 && (
-            <div className="flex items-center gap-2 mt-3 px-4 py-2 rounded-full"
-              style={{ background: "rgba(174,234,0,0.08)", border: "1px solid rgba(174,234,0,0.25)" }}>
-              <span className="text-base">🏆</span>
-              <span className="font-body text-xs font-semibold text-green">
-                Perfect round +{perfectBonus} pts
-              </span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-6 mt-5">
-            <div className="text-center">
-              <div className="font-display text-2xl text-white">{correctCount}/{questions.length}</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Correct</div>
-            </div>
-            <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.08)" }} />
-            <div className="text-center">
-              <div className="font-display text-2xl" style={{ color: accent }}>{pct}%</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Accuracy</div>
-            </div>
-            <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.08)" }} />
-            <div className="text-center">
-              <div className="font-display text-2xl text-green">{timerDisplay(fastestMs)}</div>
-              <div className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>Fastest</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-5 flex flex-col gap-4 mt-2">
-          {/* Pre-match prediction poll — appended to a Gameday pack attempt
-              (§0.6). The halftime (second-half) poll never renders here — it
-              stands alone on the matchweek page for every player, whether or
-              not they played the quiz. Signed-in only.
-
-              FIX P2-d: this used to gate on `Date.now() < kickoff_at`, so the
-              poll — and a fan's own pick made minutes earlier — vanished the
-              instant kickoff passed while they were still looking at their
-              results screen. The mount is unconditional on kickoff now; the
-              component's own self-hide contract (already correct — see its
-              header) reads the fixture's server truth instead: it renders
-              nothing only when the window is closed AND this player never
-              picked AND nothing has settled. A player who finished before
-              kickoff keeps seeing their pick, then the graded result once it
-              settles; a player who finishes after kickoff with no pick on
-              record sees nothing, exactly as §0.6 specifies. */}
-          {userId && pack.metadata?.gameday && (
-            <HalftimePredictionPoll fixtureId={pack.metadata.gameday.fixture_id} phase="prematch" accent={accent} />
-          )}
-
-          {/* The next loop is the primary action, not sharing. Two dominant share CTAs used
-              to sit here and the only route to another game was the last thing on the page,
-              four screens down. Play again leads; share is one secondary underneath (the
-              share sheet already offers link / X / image, so the standalone X card is gone). */}
-          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push("/play")}>
-            PLAY ANOTHER →
-          </Button>
-
-          {/* Save-your-score sits directly under the payoff, above the leaderboard it refers
-              to. It used to sit below the timing card, the rank card, the leaderboard and the
-              difficulty breakdown, which is where the conversion moment went to die. */}
-          {renderSaveScore()}
-
-          <Button variant="ghost" tone="teal" size="md" fullWidth onClick={openShare}>
-            📸 SHARE YOUR RESULT
-          </Button>
-
-          <FantasyPromoCard surface="quiz" />
-
-          {/* Front door to the pack's standalone thread page — while the
-              result's fresh, this is the only route to that page besides a
-              push/inbox deep link. */}
-          <Button variant="ghost" tone="teal" size="md" fullWidth href={`/play/pack/${pack.id}`}>
-            💬 TALK ABOUT THIS QUIZ
-          </Button>
-
-          {/* Timing stats */}
-          <div className="rounded-2xl p-5 bg-surface"
-            style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>YOUR TIMING</p>
-            <div className="flex items-center justify-around">
-              {[
-                { label: "Avg time", value: timerDisplay(avgTime), color: "#9aa39d" },
-                { label: "Fastest", value: timerDisplay(fastestMs), color: "#aeea00" },
-                { label: "Points/Q", value: Math.round(score / Math.max(correctCount, 1)).toLocaleString(), color: accent },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="text-center">
-                  <div className="font-display text-xl" style={{ color }}>{value}</div>
-                  <div className="font-body text-xs mt-1" style={{ color: "#5b645e" }}>{label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Post-game reward moment — mounts once the attempt is saved so the
-              rank RPC reads post-game state (practice runs show position only) */}
-          {(saved || priorAttempt) && <RankRewardCard />}
-
-          {/* In-context push opt-in — broadens token capture from the results
-              screen. Native-only; self-gates on prior prompt / existing opt-in. */}
-          {userId && (saved || priorAttempt) && (
-            <QuizNotifyPrompt userId={userId} accent={accent} daily={Boolean(pack.metadata?.daily)} />
-          )}
-
-          {/* Leaderboard — guests see their own run as a highlighted "You" row */}
-          <PackLeaderboard entries={lbEntries} userId={userId ?? GUEST_ROW_ID} accent={accent} loading={leaderLoading} approxRank={guestApprox} />
-
-          {/* Difficulty breakdown */}
-          <div className="rounded-2xl p-5 bg-surface"
-            style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>BY DIFFICULTY</p>
-            <div className="space-y-4">
-              {byDiff.map(({ d, correct, total }) => (
-                <div key={d} className="flex items-center gap-3">
-                  <span className="font-body text-xs capitalize w-14 flex-shrink-0" style={{ color: DIFF_COLOR[d] }}>{d}</span>
-                  <div className="flex-1 relative" style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 99 }}>
-                    <div className="absolute inset-y-0 left-0 rounded-full"
-                      style={{ width: `${(correct / total) * 100}%`, background: DIFF_COLOR[d] }} />
-                  </div>
-                  <span className="font-display text-xs w-10 text-right text-text-muted">{correct}/{total}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* The versus bridge — the result screen is the motivation peak.
-              Recommend quizzes OTHER players have scored on (never this one —
-              they've just seen its answers, which would rig the match); the
-              rail falls back to a plain find-an-opponent button when empty. */}
-          {userId && !groupId && <BeatScoreRail />}
-
-          {userId && groupId ? (
-            <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push(`/g/${groupId}`)}>
-              SEE THE LEADERBOARD →
-            </Button>
-          ) : userId ? (
-            <ChallengeAFriendButton
-              packId={pack.id}
-              packName={pack.name}
-              score={score}
-              correctCount={correctCount}
-              totalQuestions={questions.length}
-              maxScore={maxScore}
-              invitedUserId={invitedUserId}
-              invitedName={invitedName}
-            />
-          ) : null}
-
-          <Button variant="primary" tone="teal" size="lg" fullWidth onClick={() => router.push("/challenges")}>
-            MORE CHALLENGES →
-          </Button>
-        </div>
-
-        {/* ── Share sheet ── */}
-        {shareOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShareOpen(false)}>
-            <div className="w-full max-w-lg rounded-t-3xl px-4 pt-3" style={{ background: "#080d0a", borderTop: "1px solid rgba(255,255,255,0.1)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 16px)" }} onClick={(e) => e.stopPropagation()}>
-              <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)" }} />
-              <button onClick={nativeShare} className="w-full mt-2 rounded-2xl py-4 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#aeea00", color: "#062013", fontSize: 20 }}>
-                🔗 Share link
-              </button>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                <button onClick={shareX} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#15211a", color: "#fff", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>𝕏</button>
-                <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "rgba(225,48,108,0.12)", color: "#e1306c", fontSize: 15, border: "1px solid rgba(225,48,108,0.3)" }}>Instagram</button>
-                <button onClick={() => { setShareOpen(false); void nativeShare(); }} className="rounded-2xl py-3 font-display tracking-wide active:scale-[0.98] transition-transform" style={{ background: "#15211a", color: "#c4ccc6", fontSize: 15, border: "1px solid rgba(255,255,255,0.15)" }}>TikTok</button>
-              </div>
-              <button onClick={copyLink} className="w-full mt-2 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all" style={{ background: copied ? "rgba(174,234,0,0.1)" : "rgba(255,255,255,0.06)", border: `1px solid ${copied ? "rgba(174,234,0,0.3)" : "rgba(255,255,255,0.1)"}` }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke={copied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke={copied ? "#aeea00" : "#9aa39d"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span className="font-body text-sm font-semibold" style={{ color: copied ? "#aeea00" : "#9aa39d" }}>{copied ? "Copied!" : "Copy link"}</span>
-              </button>
-              <button onClick={() => setShareOpen(false)} className="w-full mt-2 rounded-2xl py-3 font-body active:scale-[0.98] transition-transform" style={{ background: "transparent", color: "#8a948f", fontSize: 15 }}>Close</button>
-            </div>
-          </div>
-        )}
-
-
-      </div>
+      <ResultsView
+        pack={pack}
+        questions={questions}
+        answerLog={answerLog}
+        score={score}
+        maxScore={maxScore}
+        userId={userId}
+        priorAttempt={priorAttempt}
+        saved={saved}
+        groupId={groupId}
+        invitedUserId={invitedUserId}
+        invitedName={invitedName}
+        badgeUrl={badgeUrl}
+        leaderboard={leaderboard}
+        leaderLoading={leaderLoading}
+        signInHref={signInHref}
+        shareOpen={shareOpen}
+        setShareOpen={setShareOpen}
+        copied={copied}
+        openShare={openShare}
+        nativeShare={nativeShare}
+        shareX={shareX}
+        copyLink={copyLink}
+      />
     );
   }
 

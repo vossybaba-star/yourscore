@@ -9,7 +9,7 @@ import { useVersusStats, type Rivalry } from "@/hooks/useVersusStats";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { SoloVersusToggle } from "@/components/ui/SoloVersusToggle";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { PitchArt, QuizArt, VersusHeroArt } from "@/components/versus/GameTileArt";
+import { PitchArt, QuizArt } from "@/components/versus/GameTileArt";
 import { VersusDiscovery } from "@/components/versus/VersusDiscovery";
 import { VersusActionCards } from "@/components/versus/VersusActionCard";
 import { LiveActivityStrip } from "@/components/versus/LiveActivityStrip";
@@ -331,14 +331,6 @@ function VersusInner({ embedded = false }: { embedded?: boolean }) {
           </div>
 
           <div className="max-w-lg mx-auto px-5">
-            {/* Create-account path stays visible without dominating: one slim
-                banner, not two giant buttons stacked under the hub. */}
-            <Link href="/auth/sign-in?next=/versus" className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3 mt-4 active:scale-[0.99] transition-transform"
-              style={{ background: "linear-gradient(135deg, rgba(0,216,192,0.14), rgba(0,216,192,0.05))", border: "1px solid rgba(0,216,192,0.3)" }}>
-              <p className="font-body text-xs text-white pr-2">Free account, takes seconds — then challenge your friends.</p>
-              <span className="font-display text-[11px] tracking-wide px-3 py-2 rounded-lg flex-shrink-0" style={{ background: TEAL, color: "#04231f" }}>CREATE FREE ACCOUNT →</span>
-            </Link>
-
             {/* Priority: an action waiting on you always outranks discovery —
                 never true for a guest (mirrored for parity with the real
                 first-time hub; yourTurn is always empty here). */}
@@ -346,20 +338,12 @@ function VersusInner({ embedded = false }: { embedded?: boolean }) {
               <div className="pt-4"><YourTurnCard c={yourTurn[0]} /></div>
             )}
 
-            {/* Hero — full-size welcome when nothing is urgent, exactly as a
-                first-time signed-in user sees it. */}
+            {/* Compact header — a single line, not a full-height hero, so the
+                action cards below sit in the first viewport for a guest. */}
             {yourTurn.length === 0 && (
               <div className="pt-4">
-                <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #101d16 0%, #0b1511 100%)" }} />
-                  <VersusHeroArt />
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, rgba(8,13,10,0.78) 38%, rgba(8,13,10,0.28) 82%, rgba(8,13,10,0.05) 100%)" }} />
-                  <div className="relative p-5 pt-7 pb-6">
-                    <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Welcome to Versus</p>
-                    <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>TIME TO PLAY.<br /><span style={{ color: LIME }}>LET&rsquo;S FIND YOU</span><br />A RIVAL.</p>
-                    <p className="font-body text-xs mt-3" style={{ color: "#cdeee7" }}>Play someone now, challenge a friend or join a match.</p>
-                  </div>
-                </div>
+                <p className="font-display text-2xl text-white leading-tight">TIME TO PLAY. <span style={{ color: LIME }}>LET&rsquo;S FIND YOU A RIVAL.</span></p>
+                <p className="font-body text-xs mt-1" style={{ color: "#8a948f" }}>Play someone now, challenge a friend or join a match.</p>
               </div>
             )}
 
@@ -431,20 +415,12 @@ function VersusInner({ embedded = false }: { embedded?: boolean }) {
             <div className="pt-4"><YourTurnCard c={yourTurn[0]} /></div>
           )}
 
-          {/* Hero — full-size welcome when nothing is urgent; suppressed to keep
-              the waiting match on top otherwise. Action cards always render. */}
+          {/* Compact header when nothing is urgent; suppressed to keep the
+              waiting match on top otherwise. Action cards always render. */}
           {yourTurn.length === 0 && (
             <div className="pt-4">
-              <div className="relative rounded-3xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #101d16 0%, #0b1511 100%)" }} />
-                <VersusHeroArt />
-                <div className="absolute inset-0" style={{ background: "linear-gradient(110deg, rgba(8,13,10,0.78) 38%, rgba(8,13,10,0.28) 82%, rgba(8,13,10,0.05) 100%)" }} />
-                <div className="relative p-5 pt-7 pb-6">
-                  <p className="font-body text-[11px] font-bold uppercase tracking-[0.32em] mb-2.5" style={{ color: LIME }}>Welcome to Versus</p>
-                  <p className="font-display text-white leading-[0.85]" style={{ fontSize: 46 }}>TIME TO PLAY.<br /><span style={{ color: LIME }}>LET&rsquo;S FIND YOU</span><br />A RIVAL.</p>
-                  <p className="font-body text-xs mt-3" style={{ color: "#cdeee7" }}>Play someone now, challenge a friend or join a match.</p>
-                </div>
-              </div>
+              <p className="font-display text-2xl text-white leading-tight">TIME TO PLAY. <span style={{ color: LIME }}>LET&rsquo;S FIND YOU A RIVAL.</span></p>
+              <p className="font-body text-xs mt-1" style={{ color: "#8a948f" }}>Play someone now, challenge a friend or join a match.</p>
             </div>
           )}
           <div className="mt-2.5" data-tour="versus-actions">

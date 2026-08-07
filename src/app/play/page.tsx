@@ -62,7 +62,7 @@ function CoverImg({ src, alt }: { src: string; alt: string }) {
     // CDN-resized (coverUrl): originals are 2-3MB PNGs — never ship those to a grid.
     // eslint-disable-next-line @next/next/no-img-element
     <img src={coverUrl(src, 420) ?? src} alt={alt} loading="eager" decoding="async" fetchPriority="high"
-      className="block w-full h-auto" />
+      className="block w-full" style={{ aspectRatio: "1 / 1", objectFit: "contain", width: "100%" }} />
   );
 }
 
@@ -82,7 +82,7 @@ function HeroPackCard({ pack, challengeTo }: { pack: QuizPack; challengeTo?: str
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={coverUrl(cover, 840) ?? cover} alt={pack.name}
-        loading="eager" decoding="async" fetchPriority="high" className="block w-full h-auto" />
+        loading="eager" decoding="async" fetchPriority="high" className="block w-full" style={{ aspectRatio: "1 / 1", objectFit: "contain", width: "100%" }} />
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-5 pb-4 pt-12"
         style={{ background: "linear-gradient(180deg, transparent 0%, rgba(6,10,8,0.9) 80%)" }}>
         <div>
