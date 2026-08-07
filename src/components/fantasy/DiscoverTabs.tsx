@@ -51,9 +51,16 @@ export function DiscoverTabs({ initialSub }: { initialSub?: "leagues" | "players
             a plain text link beside the chips rather than a new tab, sheet,
             or its own row in the Social tab bar. */}
         <Link href="/fantasy/social/saved" style={{
-          flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: MUTED, textDecoration: "none",
+          flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 4,
+          fontSize: 12.5, fontWeight: 700, color: MUTED, textDecoration: "none",
           padding: "7px 4px",
-        }}>🔖 Saved</Link>
+        }}>
+          {/* Bare SVG, not emoji (house rule). A bookmark ribbon, replacing 🔖. */}
+          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+            <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z" />
+          </svg>
+          Saved
+        </Link>
       </div>
 
       {sub === "leagues" ? <DiscoverLeagues />

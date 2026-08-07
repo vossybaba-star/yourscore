@@ -21,6 +21,7 @@ import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import type { BoardPlayer } from "@/lib/fantasy/board";
+import { timeAgo } from "@/lib/timeAgo";
 import { DiscussionThread } from "@/components/debate/DiscussionThread";
 import { InviteToLeagueSheet } from "@/components/fantasy/InviteToLeagueSheet";
 import { SharePost } from "@/components/fantasy/SharePost";
@@ -339,15 +340,6 @@ function LinkedText({ text, mentions }: { text: string; mentions?: { username: s
       })}
     </>
   );
-}
-
-function timeAgo(iso: string): string {
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
 }
 
 /** Recompute the reaction tallies after a user switches from `from` to `to`

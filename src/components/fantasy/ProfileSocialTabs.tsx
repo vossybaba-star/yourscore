@@ -12,8 +12,9 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
+import { ErrorState, INK, LINE, Loading, MUTED, PANEL, PANEL_2, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { FeedCard, type FeedEvent } from "@/components/fantasy/FeedStream";
+import { timeAgo } from "@/lib/timeAgo";
 
 type Tab = "posts" | "replies" | "media";
 const TABS: { id: Tab; label: string }[] = [
@@ -43,15 +44,6 @@ function fmtMediaDuration(ms: number): string {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
-function timeAgo(iso: string): string {
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
-}
-
 function Empty({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ borderRadius: 14, background: PANEL, border: `1px solid ${LINE}`, padding: 20, textAlign: "center" }}>
@@ -66,6 +58,11 @@ export function ProfileSocialTabs({ userId, isOwner, signInNext }: {
   const [tab, setTab] = useState<Tab>("posts");
   const [loaded, setLoaded] = useState<Record<Tab, boolean>>({ posts: false, replies: false, media: false });
   const [loading, setLoading] = useState(false);
+  // Per tab: a fetch failure (bad status or thrown) is tracked separately from
+  // an empty-but-successful response, so a dead API never renders as "No
+  // posts yet." — that used to be indistinguishable (the old catch marked the
+  // tab "loaded" with nothing in it, same as a genuinely empty profile).
+  const [tabError, setTabError] = useState<Partial<Record<Tab, string>>>({});
   const [pinned, setPinned] = useState<FeedEvent | null>(null);
   const [posts, setPosts] = useState<FeedEvent[]>([]);
   const [replies, setReplies] = useState<UserReply[]>([]);
@@ -73,14 +70,18 @@ export function ProfileSocialTabs({ userId, isOwner, signInNext }: {
 
   const fetchTab = useCallback(async (t: Tab) => {
     setLoading(true);
+    setTabError((e) => ({ ...e, [t]: undefined }));
     try {
       const res = await fetch(`/api/fantasy/social/profile-tab?userId=${userId}&tab=${t}`);
-      const d = res.ok ? await res.json() : {};
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
       if (t === "posts") { setPinned(d.pinned ?? null); setPosts(d.posts ?? []); }
       if (t === "replies") setReplies(d.replies ?? []);
       if (t === "media") setMedia(d.media ?? []);
       setLoaded((l) => ({ ...l, [t]: true }));
-    } catch { setLoaded((l) => ({ ...l, [t]: true })); }
+    } catch {
+      setTabError((e) => ({ ...e, [t]: "That didn't load." }));
+    }
     setLoading(false);
   }, [userId]);
 
@@ -127,7 +128,19 @@ export function ProfileSocialTabs({ userId, isOwner, signInNext }: {
         })}
       </div>
 
-      {loading && !loaded[tab] && <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>}
+      {loading && !loaded[tab] && !tabError[tab] && (
+        <Loading label="Loading">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <Skel h={64} r={14} />
+            <Skel h={64} r={14} />
+            <Skel h={64} r={14} />
+          </div>
+        </Loading>
+      )}
+
+      {!loaded[tab] && tabError[tab] && (
+        <ErrorState message={tabError[tab]!} onRetry={() => void fetchTab(tab)} />
+      )}
 
       {tab === "posts" && loaded.posts && (
         posts.length === 0 && !pinned ? (

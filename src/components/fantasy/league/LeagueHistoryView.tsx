@@ -13,34 +13,18 @@
  *  Games results are an appended section, not a promotion above them. */
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, SectionLabel, Sheet } from "@/components/fantasy/shared";
+import { Btn, Card, ErrorState, GOLD, INK, LINE, Loading, MUTED, PANEL, SectionLabel, Sheet, Skel } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { LeagueTableRows } from "./LeagueTableRows";
 import { formatGameResultLine } from "@/lib/fantasy/games-pure";
 import { competitionResultLine, type CompetitionFormatId } from "@/lib/fantasy/competitions-pure";
 import { trackGamesHistoryResultOpened } from "@/lib/analytics/trackSocial";
+import { timeAgo } from "@/lib/timeAgo";
 import type { CompetitionHistoryEntry, GamesHistoryEntry, HistoryGw, LeagueHistoryData } from "./types";
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"], v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
-
-/** "3 hours ago" / "2 days ago" — same rounding idiom LeagueGamesView's own
- *  timeAgo uses, duplicated rather than imported (that one lives in a
- *  "use client" component file, not a shared lib — same per-file duplication
- *  idiom this codebase already follows for small display helpers). */
-function timeAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  if (ms < 60_000) return "just now";
-  const mins = Math.round(ms / 60_000);
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.round(ms / 3_600_000);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
-  const weeks = Math.round(days / 7);
-  return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
 }
 
 function GameHistoryRow({ entry }: { entry: GamesHistoryEntry }) {
@@ -89,15 +73,17 @@ export function LeagueHistoryView({ code, onOpenChat }: { code: string; onOpenCh
   const [open, setOpen] = useState<HistoryGw | null>(null);
   const [games, setGames] = useState<GamesHistoryEntry[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionHistoryEntry[]>([]);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let live = true;
+    setErr(null);
     fetch(`/api/fantasy/leagues/${code}/history`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Couldn't load history"))))
       .then((d) => { if (live) setData(d); })
       .catch((e) => { if (live) setErr((e as Error).message); });
     return () => { live = false; };
-  }, [code]);
+  }, [code, reload]);
 
   // GAMES block (Phase 4B, + competitions in the UI wave) — a separate small
   // fetch, own failure mode: if it 404s/errors the gameweek list above still
@@ -129,8 +115,16 @@ export function LeagueHistoryView({ code, onOpenChat }: { code: string; onOpenCh
     return rows.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   }, [games, competitions]);
 
-  if (err) return <p style={{ fontSize: 13, color: MUTED }}>{err}</p>;
-  if (!data) return <p style={{ fontSize: 13, color: MUTED }}>Loading…</p>;
+  if (err) return <ErrorState message={err} onRetry={() => setReload((n) => n + 1)} />;
+  if (!data) {
+    return (
+      <Loading label="Loading history">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <Skel h={78} r={12} /><Skel h={78} r={12} /><Skel h={78} r={12} />
+        </div>
+      </Loading>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

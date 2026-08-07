@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { fantasyEnabledByEnv, fantasyVisible } from "@/lib/fantasy/flag";
 import { trackDiag } from "@/lib/analytics/trackGame";
+import { GOLD } from "@/components/fantasy/shared";
 
-const GOLD = "#ffc400";
 const FANTASY_HREF = "/fantasy?ref=postgame";
 
 export interface FantasyPromoCardProps {
@@ -51,7 +51,7 @@ export function FantasyPromoCard({ surface }: FantasyPromoCardProps) {
         size="md"
         fullWidth
         href={FANTASY_HREF}
-        className="!border-[rgba(255,196,0,0.4)] !text-[#ffc400]"
+        className="!border-[rgba(255,194,51,0.4)] !text-[#ffc233]"
         onClick={() => trackDiag("fantasy_promo_click", { surface })}
       >
         {cta}

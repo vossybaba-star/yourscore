@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AMBER, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, PITCH, PosTag, Sheet, TEAL, tint } from "@/components/fantasy/shared";
+import { AMBER, CORAL, ErrorState, GOLD, INK, LIME, LINE, Loading, MUTED, PANEL, PANEL_2, PITCH, PosTag, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
@@ -179,8 +179,8 @@ function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, is
         <button onClick={(e) => { e.stopPropagation(); onReply?.(); }} style={actionBtn}>↩ Reply</button>
       )}
       {showActions && canPin && (
-        <button onClick={(e) => { e.stopPropagation(); onPin?.(); }} style={{ ...actionBtn, color: GOLD, borderColor: tint(GOLD, "44") }}>
-          {isPinned ? "Unpin" : "📌 Pin"}
+        <button onClick={(e) => { e.stopPropagation(); onPin?.(); }} style={{ ...actionBtn, display: "flex", alignItems: "center", gap: 4, color: GOLD, borderColor: tint(GOLD, "44") }}>
+          {isPinned ? "Unpin" : <><ChipIcon d={CHIP_ICON.pin} />Pin</>}
         </button>
       )}
       {/* Report/Block/Mute (Phase 5a) — never on your own message; Delete is
@@ -188,7 +188,9 @@ function Reactions({ msg, onReact, open, readOnly, canReply, onReply, canPin, is
           applies to (see LeagueChatView's Reactions call site), so no extra
           isMe check is needed here. */}
       {showActions && onReport && (
-        <button onClick={(e) => { e.stopPropagation(); onReport(); }} style={actionBtn}>🚩 Report</button>
+        <button onClick={(e) => { e.stopPropagation(); onReport(); }} style={{ ...actionBtn, display: "flex", alignItems: "center", gap: 4 }}>
+          <ChipIcon d={CHIP_ICON.flag} />Report
+        </button>
       )}
       {showActions && onBlock && (
         <button onClick={(e) => { e.stopPropagation(); onBlock(); }} style={actionBtn}>Block</button>
@@ -928,6 +930,14 @@ export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // The FIRST load's own failure — distinct from `err` above (which is an
+  // action's failure, e.g. sending a message). While `chat` is still null a
+  // failed fetch used to leave the screen stuck on "Loading chat…" forever
+  // (the catch below kept prior state, which was nothing); this makes that
+  // failure visible with a retry, and never fires again once the thread has
+  // loaded once (a later poll failure still just keeps the prior state).
+  const [loadErr, setLoadErr] = useState<string | null>(null);
+  const chatLoadedRef = useRef(false);
   const [menu, setMenu] = useState(false);
   const [poll, setPoll] = useState(false);
   const [gifOpen, setGifOpen] = useState(false);
@@ -1073,8 +1083,18 @@ export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
   const load = useCallback(async (gw: number | null) => {
     try {
       const res = await fetch(`/api/fantasy/leagues/${code}/chat${gw != null ? `?gw=${gw}` : ""}`);
-      if (res.ok) setChat(await res.json());
-    } catch { /* keep prior state */ }
+      if (res.ok) {
+        setChat(await res.json());
+        chatLoadedRef.current = true;
+        setLoadErr(null);
+      } else if (!chatLoadedRef.current) {
+        setLoadErr(`HTTP ${res.status}`);
+      }
+      // A failed poll AFTER the thread has already loaded once keeps the
+      // prior state on screen rather than replacing it with an error — same
+      // "keep prior state" call this file always made, just now scoped to
+      // only the very first load.
+    } catch { if (!chatLoadedRef.current) setLoadErr("Couldn't load the chat."); }
   }, [code]);
   useEffect(() => { load(viewGw); }, [viewGw, load]);
   // Poll the LIVE thread only — an archive never changes.
@@ -1252,7 +1272,19 @@ export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
     setReactFor((prev) => (prev === id ? null : id));
   };
 
-  if (!chat) return <p style={{ fontSize: 13, color: MUTED }}>Loading chat…</p>;
+  if (!chat) {
+    if (loadErr) return <ErrorState message={loadErr} onRetry={() => load(viewGw)} />;
+    return (
+      <Loading label="Loading chat">
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Skel h={44} r={13} w="70%" />
+          <Skel h={44} r={13} w="55%" style={{ marginLeft: "auto" }} />
+          <Skel h={44} r={13} w="65%" />
+          <Skel h={44} r={13} w="50%" style={{ marginLeft: "auto" }} />
+        </div>
+      </Loading>
+    );
+  }
   const readOnly = chat.readOnly;
   const canSend = !!draft.trim() && !busy;
   // Most recent gameweeks first, capped so the selector stays thumb-sized.
@@ -1296,7 +1328,7 @@ export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
           it yet (chat.pinned comes back null either way). */}
       {chat.pinned && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 9, background: tint(GOLD, "10"), border: `1px solid ${tint(GOLD, "3a")}`, borderRadius: 10, padding: "6px 11px" }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>📌</span>
+          <span style={{ color: GOLD, flexShrink: 0, display: "flex" }}><ChipIcon d={CHIP_ICON.pin} /></span>
           <button onClick={() => scrollToMessage(chat.pinned!.id)} style={{
             flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0,
           }}>
@@ -1559,6 +1591,9 @@ const CHIP_ICON = {
   captain: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M15.2 9.6a4 4 0 1 0 0 4.8",
   // The member sheet's crossed-swords Challenge icon, flattened to one path.
   challenge: "M4 4l7 7 M11 4l-7 7 M20 4l-7 7 M13 4l7 7 M6.5 17.5l-3 3 M17.5 17.5l3 3 M12 11l-5.5 6.5 M12 11l5.5 6.5",
+  // The Reactions row's Pin/Report actions, replacing 📌/🚩 (house rule).
+  pin: "M12 17v5 M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z",
+  flag: "M4 22V4 M4 4s1-1 4-1 4 2 8 2 4-1 4-1v10s-1 1-4 1-4-2-8-2-4 1-4 1z",
 };
 
 function MenuChip({ icon, children, onClick, accent, disabled }: { icon?: React.ReactNode; children: React.ReactNode; onClick: () => void; accent: string; disabled?: boolean }) {

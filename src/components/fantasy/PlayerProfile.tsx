@@ -14,7 +14,7 @@
  * what it is handed, in order.
  */
 import { useEffect, useState } from "react";
-import { api, Card, Btn, INK, MUTED, TEAL, GOLD, PosTag } from "./shared";
+import { api, Card, Btn, ErrorState, INK, Loading, MUTED, TEAL, GOLD, PosTag } from "./shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { faceFor, faceUrlById } from "@/lib/fantasy/faces";
 
@@ -128,6 +128,7 @@ export function PlayerProfile({ playerId, onClose, onConsider }: {
   const [data, setData] = useState<PlayerProfileResponse | null>(null);
   const [error, setError] = useState(false);
   const [tab, setTab] = useState<ProfileTab>("overview");
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -136,17 +137,17 @@ export function PlayerProfile({ playerId, onClose, onConsider }: {
       .then((d) => { if (live) setData(d); })
       .catch(() => { if (live) setError(true); });
     return () => { live = false; };
-  }, [playerId]);
+  }, [playerId, reload]);
 
   if (error) {
     return (
-      <Card>
-        <p style={{ margin: 0, color: MUTED, fontSize: 13 }}>Couldn&apos;t load this player right now.</p>
+      <div>
+        <ErrorState message="Couldn't load this player right now." onRetry={() => setReload((n) => n + 1)} />
         <div style={{ marginTop: 10 }}><Btn small onClick={onClose}>Back</Btn></div>
-      </Card>
+      </div>
     );
   }
-  if (!data) return <Card><p style={{ margin: 0, color: MUTED, fontSize: 13 }}>Loading…</p></Card>;
+  if (!data) return <Card><Loading label="Loading player" /></Card>;
 
   const p = data.profile;
 

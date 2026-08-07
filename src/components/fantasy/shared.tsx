@@ -206,10 +206,53 @@ export function Deadline({ iso, compact = false }: { iso: string | null; compact
  *
  * `labelledBy` points at the id of the sheet's own heading, so the announcement
  * is the question being asked rather than the word "dialog".
+ *
+ * `variant`/`layout` exist so the six hand-rolled sheets that bypassed this
+ * primitive (accessibility sweep, Aug) could adopt the focus trap/Escape/scroll
+ * lock WITHOUT losing their shipped look — re-skinning six surfaces to the glass
+ * treatment was out of scope for an a11y fix.
+ *   "glass" (default) = the reference translucent, all-corner panel above.
+ *   "panel" = solid PANEL background, top corners only, teal-tinted border —
+ *     the pickers'/rules bot's existing look.
+ *   layout "flex" hands children a zero-padding flex column (height/maxHeight
+ *     controlled by the caller) so a sticky header can sit above a scrolling
+ *     body, e.g. a search box that shouldn't scroll away with its results.
  */
-export function Sheet({ onClose, labelledBy, children }: {
+/** Open sheets, innermost last. Escape acts on the last entry only, so a
+ *  stacked sheet (the GIF picker over the composer) dismisses one layer at a
+ *  time instead of collapsing the whole stack. Module scope on purpose: every
+ *  Sheet listens on `document`, so they need one shared view of who is on top. */
+const sheetStack: object[] = [];
+
+/** Page scroll lock, reference counted across stacked sheets. `prev` holds the
+ *  page's real pre-lock state, captured by the first sheet to open and restored
+ *  by the last to close. */
+const sheetScrollLock: {
+  depth: number;
+  prev: { bodyOverflow: string; bodyTouch: string; htmlOverflow: string } | null;
+} = { depth: 0, prev: null };
+
+export function Sheet({ onClose, labelledBy, children, variant = "glass", layout = "padded", height, maxHeight, animation, border, padding = 18 }: {
   onClose: () => void; labelledBy: string; children: ReactNode;
+  variant?: "glass" | "panel";
+  layout?: "padded" | "flex";
+  height?: string;
+  maxHeight?: string;
+  /** CSS `animation` shorthand for the panel's entrance — e.g. RulesBot's
+   *  `"slideUp 0.22s ease"` (@keyframes in globals.css). Omitted by default;
+   *  most of the migrated sheets shipped with no entrance animation. */
+  animation?: string;
+  /** Overrides "panel"'s default teal-tinted border — InviteToLeagueSheet and
+   *  ReportSheet shipped with a plain hairline (LINE) border, not teal. */
+  border?: string;
+  /** Overrides the default 18px padding — e.g. an asymmetric bottom that clears
+   *  the home-indicator safe area on a "panel" sheet flush to the screen edge,
+   *  which InviteToLeagueSheet/ReportSheet shipped with. Ignored by layout "flex",
+   *  which is always zero-padding (the child owns its own header/body padding). */
+  padding?: number | string;
 }) {
+  const panel = variant === "panel";
+  const flex = layout === "flex";
   const ref = useRef<HTMLDivElement>(null);
   const returnTo = useRef<HTMLElement | null>(null);
   // Portal to <body>: every fantasy route sets `main[data-fantasy] > * { z-index:1 }`,
@@ -233,20 +276,36 @@ export function Sheet({ onClose, labelledBy, children }: {
   // Lock the page scroll while the sheet is up. Without this the feed keeps
   // scrolling underneath every drag that starts on the sheet, which reads as
   // a jumpy, broken background (founder, 6 Aug). Restore on close.
+  //
+  // Reference counted, because sheets STACK: the GIF picker opens on top of the
+  // composer. Naive per-sheet save/restore breaks that — the inner sheet mounts
+  // while the page is already locked, records "hidden" as the value to go back
+  // to, and restores THAT on close, leaving the page unscrollable with no sheet
+  // open. Only the first sheet to open captures the real page state, and only
+  // the last to close puts it back.
   useEffect(() => {
     if (!mounted) return;
-    const prevBodyOverflow = document.body.style.overflow;
-    const prevBodyTouch = document.body.style.touchAction;
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
-    // <html> is the actual scroller on mobile Safari/Chrome — locking body
-    // alone still lets the page pan underneath the sheet.
-    document.documentElement.style.overflow = "hidden";
+    if (sheetScrollLock.depth === 0) {
+      sheetScrollLock.prev = {
+        bodyOverflow: document.body.style.overflow,
+        bodyTouch: document.body.style.touchAction,
+        htmlOverflow: document.documentElement.style.overflow,
+      };
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      // <html> is the actual scroller on mobile Safari/Chrome — locking body
+      // alone still lets the page pan underneath the sheet.
+      document.documentElement.style.overflow = "hidden";
+    }
+    sheetScrollLock.depth += 1;
     return () => {
-      document.body.style.overflow = prevBodyOverflow;
-      document.body.style.touchAction = prevBodyTouch;
-      document.documentElement.style.overflow = prevHtmlOverflow;
+      sheetScrollLock.depth -= 1;
+      if (sheetScrollLock.depth === 0 && sheetScrollLock.prev) {
+        document.body.style.overflow = sheetScrollLock.prev.bodyOverflow;
+        document.body.style.touchAction = sheetScrollLock.prev.bodyTouch;
+        document.documentElement.style.overflow = sheetScrollLock.prev.htmlOverflow;
+        sheetScrollLock.prev = null;
+      }
     };
   }, [mounted]);
 
@@ -266,8 +325,18 @@ export function Sheet({ onClose, labelledBy, children }: {
     const first = focusables()[0] ?? ref.current;
     first?.focus();
 
+    // Register on the open-sheet stack so Escape only reaches the TOP sheet.
+    // Every mounted Sheet listens on `document`, so without this one Escape
+    // fires all of them: dismissing the GIF picker also closed the composer
+    // underneath it and took the half written post with it.
+    const token = {};
+    sheetStack.push(token);
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); onCloseRef.current(); return; }
+      if (e.key === "Escape") {
+        if (sheetStack[sheetStack.length - 1] !== token) return; // not the top sheet
+        e.preventDefault(); onCloseRef.current(); return;
+      }
       if (e.key !== "Tab") return;
       const items = focusables();
       if (!items.length) return;
@@ -279,6 +348,8 @@ export function Sheet({ onClose, labelledBy, children }: {
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("keydown", onKey);
+      const at = sheetStack.indexOf(token);
+      if (at !== -1) sheetStack.splice(at, 1);
       // Put focus back where the user left it, not at the top of the document.
       returnTo.current?.focus?.();
     };
@@ -314,7 +385,9 @@ export function Sheet({ onClose, labelledBy, children }: {
         top: vv ? vv.top : 0, height: vv ? vv.height : "100%",
         zIndex: 60, background: "rgba(4,8,6,0.72)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
-        padding: "14px 14px calc(14px + env(safe-area-inset-bottom)) 14px",
+        // "panel" sheets sit flush to the screen edge (their own shipped look);
+        // "glass" keeps the 14px surround so the rounded card reads as floating.
+        padding: panel ? 0 : "14px 14px calc(14px + env(safe-area-inset-bottom)) 14px",
       }}>
       <div
         ref={ref}
@@ -323,20 +396,31 @@ export function Sheet({ onClose, labelledBy, children }: {
         aria-labelledby={labelledBy}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-2xl"
+        className={panel ? undefined : "rounded-2xl"}
         style={{
           // Glassy surface (founder, 6 Aug): translucent panel over a heavy
           // backdrop blur, a hairline top highlight for the glossy edge, and a
           // deep soft shadow so the sheet reads as a floating pane of glass
-          // rather than a flat card.
-          background: "rgba(14,22,17,0.82)",
-          backdropFilter: "blur(24px) saturate(1.3)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
-          border: `1px solid rgba(255,255,255,0.10)`,
-          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px ${tint(TEAL, "14")}`,
-          padding: 18,
-          width: "100%", maxWidth: 480, maxHeight: "100%", overflowY: "auto",
+          // rather than a flat card. "panel" trades that for the solid,
+          // top-rounded-only surface the pickers/rules bot shipped with.
+          background: panel ? PANEL : "rgba(14,22,17,0.82)",
+          backdropFilter: panel ? undefined : "blur(24px) saturate(1.3)",
+          WebkitBackdropFilter: panel ? undefined : "blur(24px) saturate(1.3)",
+          border: panel ? `1px solid ${border ?? tint(TEAL, "44")}` : `1px solid rgba(255,255,255,0.10)`,
+          borderBottom: panel ? "none" : undefined,
+          borderTopLeftRadius: panel ? 18 : undefined,
+          borderTopRightRadius: panel ? 18 : undefined,
+          boxShadow: panel ? undefined : `inset 0 1px 0 rgba(255,255,255,0.10), 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px ${tint(TEAL, "14")}`,
+          padding: flex ? 0 : padding,
+          width: "100%", maxWidth: 480,
+          height,
+          maxHeight: maxHeight ?? "100%",
+          overflowY: flex ? undefined : "auto",
+          overflow: flex ? "hidden" : undefined,
+          display: flex ? "flex" : undefined,
+          flexDirection: flex ? "column" : undefined,
           overscrollBehavior: "contain",
+          animation,
         }}>
         {children}
       </div>

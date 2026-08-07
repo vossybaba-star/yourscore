@@ -8,22 +8,39 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { FollowButton } from "@/components/social/FollowButton";
+import { ErrorState, Loading, Skel } from "@/components/fantasy/shared";
 
 interface Row { userId: string; name: string; avatarUrl: string | null; iFollow: boolean }
 
 export function FollowList({ query, emptyText }: { query: string; emptyText: string }) {
   const [rows, setRows] = useState<Row[] | null>(null);
+  // Kept apart from "rows came back empty" (a real, valid state this list
+  // already has its own copy for via `emptyText`) — a failed fetch used to
+  // land on rows=[] too, which made a dead request look identical to a
+  // genuinely empty followers/following list.
+  const [err, setErr] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let live = true;
+    setErr(null);
     fetch(`/api/follow/list?${query}`)
-      .then((r) => (r.ok ? r.json() : { rows: [] }))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d) => { if (live) setRows(d.rows ?? []); })
-      .catch(() => { if (live) setRows([]); });
+      .catch(() => { if (live) setErr("That didn't load."); });
     return () => { live = false; };
-  }, [query]);
+  }, [query, reload]);
 
-  if (rows === null) return <p style={{ fontSize: 13, color: "#8a948f", padding: "8px 2px" }}>Loading…</p>;
+  if (err) return <ErrorState message={err} onRetry={() => setReload((n) => n + 1)} />;
+  if (rows === null) {
+    return (
+      <Loading label="Loading">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <Skel h={54} r={12} /><Skel h={54} r={12} /><Skel h={54} r={12} />
+        </div>
+      </Loading>
+    );
+  }
   if (rows.length === 0) return <p style={{ fontSize: 13.5, color: "#8a948f", padding: "12px 2px", lineHeight: 1.5 }}>{emptyText}</p>;
 
   return (

@@ -28,6 +28,7 @@ import { acceptChallengeAction, declineChallengeAction, cancelChallengeAction, C
 import { useUser } from "@/hooks/useUser";
 import { resultForParticipant, deriveStreak, winRatePercent } from "@/lib/fantasy/games-pure";
 import { supportedCompetitionFormats, competitionFormat, type CompetitionFormat } from "@/lib/fantasy/competitionFormats";
+import { timeAgo } from "@/lib/timeAgo";
 import { competitionResultLine, type CompetitionFormatId } from "@/lib/fantasy/competitions-pure";
 import { coverUrl } from "@/lib/img";
 import {
@@ -57,20 +58,6 @@ function expiryLine(iso: string): string {
   if (hours < 24) return `Expires in ${hours} hour${hours === 1 ? "" : "s"}`;
   const days = Math.round(hours / 24);
   return `Expires in ${days} day${days === 1 ? "" : "s"}`;
-}
-
-/** "3 hours ago" / "2 days ago" — for a completed result's timestamp. */
-function timeAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  if (ms < 60_000) return "just now";
-  const mins = Math.round(ms / 60_000);
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.round(ms / 3_600_000);
-  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
-  const weeks = Math.round(days / 7);
-  return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
 }
 
 /** "3rd" — same ordinal idiom every other league surface already carries
