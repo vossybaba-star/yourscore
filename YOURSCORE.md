@@ -856,6 +856,35 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-07** — **AUDIT REMEDIATION Sprints 2 to 4 SHIPPED** (PRs #93, #95, #97),
+  closing the coherence audit's broken behaviour, UI system and media continuity waves.
+  **Sprint 2 (#93):** a failed feed load no longer renders as "No moves yet" (the same
+  bug also lived on the first load path and on pagination, where a failed page read as
+  "you're all caught up"); the conflicting `tab` and `t` league URL params collapsed to
+  one with old links still working; competitions are shareable at `?t=games&c=<id>`; the
+  Games leaderboard is genuinely all time rather than silently capped at 200 rows;
+  member_challenges finally gets swept by the daily cron; expired challenges can no
+  longer be accepted; blocking someone voids the open challenge between you;
+  notifications reachable from the fantasy header and filed under Leagues. Also fixed
+  the h2h regression that migration 262 caused, see the rollout doc postscript.
+  **Sprint 3 (#95):** six sheets routed through the shared primitive, gaining focus
+  trap, Escape and scroll lock (two had no dialog role at all). That surfaced two real
+  bugs in stacked sheets: Escape closed the whole stack, taking a half written post with
+  it, and the page was left unscrollable after a nested sheet closed. Both fixed with a
+  sheet stack and a reference counted scroll lock. Plus skeletons and failure branches
+  on nine surfaces, emoji icons replaced with SVG, drifted gold corrected, and one
+  timeAgo replacing six copies that disagreed with each other.
+  **Sprint 4 (#97):** league chat GIFs animate at last (they rendered the static
+  thumbnail while the animated asset sat right there); the chat composer clears the iOS
+  keyboard; squad posts snapshot at post time so an old post stops rewriting itself as
+  players transfer, with every pre snapshot post still rendering; head to head and
+  Versus results reach the feed; competition eligibility is explained to anyone silently
+  excluded. Test suite went 609 to 639, all passing.
+  **Deliberately NOT done, each needing a founder decision:** repost on football native
+  posts (the server rejects any non `post` type, so widening the button alone ships a
+  404), 38-0 feed events (no sentence template fits a football match), and fixture
+  postponement (wiring it would add SportMonks calls on days gameday-publish promises
+  zero, and a health check asserts that).
 - **2026-08-07 pm** — **Universal game shells + 38-0 diet** (PR #96, merged). GameEntry /
   GameHeader / ResultShell shared components; HL + GTP migrated with `?start=1` autostart
   from Quick Play (one tap to question one); Perfect 10 on the shells + state-preserving
