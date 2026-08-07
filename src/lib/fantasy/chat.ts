@@ -64,9 +64,15 @@ export interface SquadCard {
 export interface NewsCard { title: string; source: string; url: string; image: string | null; internal: boolean }
 /** A shared player comparison — two pool players side by side. */
 export interface CompareCard { a: PlayerCard; b: PlayerCard }
-/** A GIF (from the Tenor picker) — the media URL, a lighter preview, and the
- *  natural dimensions so the bubble reserves the right space (no layout shift). */
-export interface GifCard { url: string; preview: string; width: number; height: number }
+/** A GIF (from the Tenor picker) — the media URL, a lighter preview, an
+ *  optional mp4 re-encode (a fraction of the .gif's weight — chat renders this
+ *  when present, muted/looping, over the .gif itself), and the natural
+ *  dimensions so the bubble reserves the right space (no layout shift). `url`
+ *  is itself an animated .gif, so it's also the correct still-image fallback
+ *  for a message with no mp4 (an old one, or a provider miss) — `preview` is
+ *  Tenor's lighter tinygif, meant for the picker's search grid, not for a
+ *  posted message. */
+export interface GifCard { url: string; preview: string; mp4?: string | null; width: number; height: number }
 /** One photo dropped straight into the chat (Phase 4a, AC4) — uploaded via the
  *  same post-media pipeline the feed composer uses, one per message. */
 export interface ImageCard { url: string; width: number; height: number }
@@ -590,11 +596,15 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
       return card ? { kind, competition: card } : { kind: "text" };
     }
     if (m.kind === "gif" && m.payload && typeof m.payload === "object") {
-      const pl = m.payload as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
+      const pl = m.payload as { url?: unknown; preview?: unknown; mp4?: unknown; width?: unknown; height?: unknown };
       const url = typeof pl.url === "string" ? pl.url : "";
       if (!isAllowedGifUrl(url)) return { kind: "text" };
       const preview = typeof pl.preview === "string" && isAllowedGifUrl(pl.preview) ? pl.preview : url;
-      return { kind: "gif", gif: { url, preview, width: Number(pl.width) || 0, height: Number(pl.height) || 0 } };
+      // Absent on any message posted before mp4 storage shipped — the client
+      // falls back to `url` (itself an animated .gif) for those, never to
+      // `preview` (the picker's lighter tinygif, not meant for a posted card).
+      const mp4 = typeof pl.mp4 === "string" && isAllowedGifUrl(pl.mp4) ? pl.mp4 : null;
+      return { kind: "gif", gif: { url, preview, mp4, width: Number(pl.width) || 0, height: Number(pl.height) || 0 } };
     }
     // player + captain both resolve one pool player (captain is labelled by the UI).
     if ((m.kind === "player" || m.kind === "captain") && m.payload && typeof m.payload === "object") {
@@ -963,15 +973,19 @@ export function isAllowedGifUrl(url: string): boolean {
 /** Post a GIF into the league chat. Body is empty; the media lives in the payload. */
 export async function postGif(db: Db, userId: string, code: string, gif: unknown, parentId?: unknown) {
   const league = await requireMemberLeague(db, code, userId);
-  const g = (gif ?? {}) as { url?: unknown; preview?: unknown; width?: unknown; height?: unknown };
+  const g = (gif ?? {}) as { url?: unknown; preview?: unknown; mp4?: unknown; width?: unknown; height?: unknown };
   const url = typeof g.url === "string" ? g.url : "";
   if (!isAllowedGifUrl(url)) throw new HttpError(400, "That GIF isn't from a source we allow");
   const preview = typeof g.preview === "string" && isAllowedGifUrl(g.preview) ? g.preview : url;
+  // Same allowlist as url/preview (Tenor only) — an mp4 field is as much an
+  // injection surface as the others, so it gets the same validation on the
+  // way in, not just a type check.
+  const mp4 = typeof g.mp4 === "string" && isAllowedGifUrl(g.mp4) ? g.mp4 : null;
   const width = Math.min(2000, Math.max(0, Math.round(Number(g.width) || 0)));
   const height = Math.min(2000, Math.max(0, Math.round(Number(g.height) || 0)));
   // Non-empty body: the comments table's body check rejects "" (and it's the
   // graceful fallback anywhere a GIF can't render). The UI shows the media, not this.
-  await insertChatMessage(db, league, userId, { body: "GIF", kind: "gif", payload: { url, preview, width, height } }, parentId);
+  await insertChatMessage(db, league, userId, { body: "GIF", kind: "gif", payload: { url, preview, mp4, width, height } }, parentId);
   return { ok: true };
 }
 

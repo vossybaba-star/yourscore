@@ -43,7 +43,7 @@ test("timeAgo: weeks, from 7 days up to 4 weeks", () => {
   assert.equal(timeAgo(ago(28 * DAY)), "4 weeks ago");
 });
 
-test("timeAgo: the drift bug this replaces — a ~40 day old item reads in months, never '40d' or '12 weeks ago'", () => {
+test("timeAgo: the drift bug this replaces , a ~40 day old item reads in months, never '40d' or '12 weeks ago'", () => {
   const line = timeAgo(ago(40 * DAY));
   assert.equal(line, "1 month ago");
 });

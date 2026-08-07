@@ -21,6 +21,7 @@ import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
 import { enginePool, fantasyPool, pricedPool } from "./pool";
 import { tryEmitFeedEvent } from "./feed";
+import { formationOf, teamValueOf, type SquadPlayerSnapshot } from "./feed-pure";
 import { notifyFantasy } from "./notify";
 import { loadFixtureSet, fixtureStatusFor } from "./captainAssist";
 import { isOpenForEdits, isRoundOpen, roundOpensAt, type EntryLockView, type GwRow } from "./gameweeks";
@@ -262,7 +263,29 @@ export async function createSquad(db: Db, userId: string, body: {
   if (existing) await db.from("fantasy_entries").delete().eq("user_id", userId).eq("gw", gw.gw);
   // Activity feed: the pre-season move that matters is finalising your squad. Only
   // on the FIRST build (not every tweak), so it never spams; the tile shows the XI.
-  if (!existing) await tryEmitFeedEvent(db, userId, "squad_complete", null, { xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice });
+  // Snapshot (P2, 5 Aug fix) — every pick's identity frozen AT REVEAL TIME
+  // (id/name/club/price/pos), plus the formation, this gameweek and the total
+  // team value: the founder's exact field list. Without this the tile re-
+  // derived every player from TODAY's pool.json/FPL bootstrap on every read,
+  // so a transferred player's card quietly rewrote itself weeks later. Built
+  // off squad.picks (this build's own priced selection), not a fresh pool
+  // lookup, so price/pos/club are exactly what was bought, not today's.
+  if (!existing) {
+    const poolById = new Map(enginePool().map((p) => [p.id, p]));
+    const picksById = new Map(squad.picks.map((p) => [p.id, p]));
+    const snapshotPlayers: SquadPlayerSnapshot[] = squad.picks.map((p) => ({
+      id: p.id, name: poolById.get(p.id)?.name ?? `#${p.id}`, club: poolById.get(p.id)?.club ?? "",
+      price: p.buyTenths / 10, pos: p.pos,
+    }));
+    const xiPositions = sel.xi.map((id) => picksById.get(id)?.pos).filter((p): p is typeof squad.picks[number]["pos"] => !!p);
+    const snapshot = {
+      players: snapshotPlayers,
+      formation: formationOf(xiPositions),
+      gw: gw.gw,
+      teamValue: teamValueOf(squad.picks.map((p) => p.buyTenths), squad.bankTenths),
+    };
+    await tryEmitFeedEvent(db, userId, "squad_complete", null, { xi: sel.xi, bench: sel.bench, captain: sel.captain, vice: sel.vice, snapshot });
+  }
   return getState(db, userId);
 }
 

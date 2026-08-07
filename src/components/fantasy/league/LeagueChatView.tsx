@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AMBER, CORAL, ErrorState, GOLD, INK, LIME, LINE, Loading, MUTED, PANEL, PANEL_2, PITCH, PosTag, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
+import { AMBER, CORAL, ErrorState, GifPlayer, GOLD, INK, LIME, LINE, Loading, MUTED, PANEL, PANEL_2, PITCH, PosTag, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
@@ -379,9 +379,14 @@ function SharedNews({ msg, onOpen }: { msg: ChatMessage; onOpen: () => void }) {
   );
 }
 
-/** A GIF someone dropped in the chat. Renders the animated preview at a chat-
- *  friendly width; the aspect ratio is reserved from the stored dims so the
- *  thread doesn't jump as it loads. */
+/** A GIF someone dropped in the chat, at a chat-friendly width; the aspect
+ *  ratio is reserved from the stored dims so the thread doesn't jump as it
+ *  loads. Renders through the shared GifPlayer (shared.tsx, also used by the
+ *  feed's GifTile) so the two surfaces can't drift into two copies of the
+ *  mp4-vs-image decision again — this file only owns the bubble's own size
+ *  cap and border. `url` (an animated .gif in its own right), never
+ *  `preview` (Tenor's lighter tinygif, meant for the picker's search grid),
+ *  is the image fallback for a message with no mp4. */
 function SharedGif({ msg }: { msg: ChatMessage }) {
   const g = msg.gif!;
   return (
@@ -391,8 +396,7 @@ function SharedGif({ msg }: { msg: ChatMessage }) {
         borderRadius: 13, overflow: "hidden", border: `1px solid ${msg.isMe ? tint(TEAL, "44") : LINE}`, background: PANEL,
         aspectRatio: g.width && g.height ? `${g.width} / ${g.height}` : undefined,
       }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={g.preview} alt="GIF" loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
+        <GifPlayer mp4={g.mp4} imgSrc={g.url} style={{ height: "auto" }} />
       </div>
     </div>
   );
@@ -849,7 +853,7 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, o
   );
 }
 
-type GifResult = { id: string; url: string; preview: string; width: number; height: number };
+type GifResult = { id: string; url: string; preview: string; mp4: string | null; width: number; height: number };
 
 /** The GIF picker sheet — sits above the composer like the poll composer.
  *  Trending on open, search-as-you-type after that. Degrades to a friendly
@@ -891,7 +895,7 @@ function GifPicker({ onPick, onCancel, busy }: { onPick: (g: GifCard) => void; o
       ) : (
         <div style={{ columnCount: 2, columnGap: 6, maxHeight: 260, overflowY: "auto" }}>
           {items.map((g) => (
-            <button key={g.id} disabled={busy} onClick={() => onPick({ url: g.url, preview: g.preview, width: g.width, height: g.height })}
+            <button key={g.id} disabled={busy} onClick={() => onPick({ url: g.url, preview: g.preview, mp4: g.mp4, width: g.width, height: g.height })}
               style={{ display: "block", width: "100%", marginBottom: 6, padding: 0, border: `1px solid ${LINE}`, borderRadius: 9, overflow: "hidden", background: PITCH, cursor: busy ? "default" : "pointer", breakInside: "avoid" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={g.preview} alt="" loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
@@ -952,6 +956,25 @@ export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   // Phase 5a — the message currently being reported (opens the sheet).
   const [reportFor, setReportFor] = useState<ChatMessage | null>(null);
+
+  // The composer is `position: fixed`, which pins it to the LAYOUT viewport —
+  // the iOS keyboard doesn't shrink that, only the VISUAL viewport, so without
+  // this the field being typed into sits behind the keyboard until some
+  // reflow nudges it up (same problem, same fix as shared.tsx's Sheet — see
+  // its own comment on this). `kbGap` is the gap the keyboard (or any other
+  // visual-viewport-shrinking chrome) has opened up at the bottom of the
+  // layout viewport; 0 whenever nothing's covering it, in which case the
+  // composer keeps its ordinary above-the-nav offset below.
+  const [kbGap, setKbGap] = useState(0);
+  useEffect(() => {
+    const visual = window.visualViewport;
+    if (!visual) return;
+    const update = () => setKbGap(Math.max(0, window.innerHeight - (visual.height + visual.offsetTop)));
+    update();
+    visual.addEventListener("resize", update);
+    visual.addEventListener("scroll", update);
+    return () => { visual.removeEventListener("resize", update); visual.removeEventListener("scroll", update); };
+  }, []);
 
   // @mention autocomplete (Phase 1A) — the composer's caret position and the
   // entities picked from autocomplete, same pattern CreatePostSheet/
@@ -1507,10 +1530,14 @@ export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
       )}
 
       {/* Composer — FIXED just above the bottom nav, so it never scrolls away. An
-          archived gameweek takes no new posts. */}
+          archived gameweek takes no new posts. While the on-screen keyboard is
+          up, `kbGap` overrides the nav offset so the composer sits flush above
+          the keyboard instead of the (now keyboard-covered) nav — see kbGap's
+          own comment, above, for why a plain `bottom: 0` doesn't work here. */}
       {!readOnly && (
         <div style={{
-          position: "fixed", left: 0, right: 0, bottom: "calc(84px + env(safe-area-inset-bottom))", zIndex: 30,
+          position: "fixed", left: 0, right: 0,
+          bottom: kbGap > 0 ? `${kbGap}px` : "calc(84px + env(safe-area-inset-bottom))", zIndex: 30,
           background: "rgba(9,14,11,0.9)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
           borderTop: `1px solid ${LINE}`,
         }}>

@@ -40,8 +40,12 @@ export async function GET(req: NextRequest) {
     url.searchParams.set("key", key);
     url.searchParams.set("client_key", "yourscore-fantasy");
     url.searchParams.set("limit", String(LIMIT));
-    // gif = the full media we post; tinygif = the light preview in the grid.
-    url.searchParams.set("media_filter", "gif,tinygif");
+    // gif = the full media we post; tinygif = the light preview in the grid;
+    // tinymp4 = the same clip re-encoded as video, a fraction of the .gif's
+    // weight (chat/feed render it in a muted looping <video> when present —
+    // see chat.ts's postGif and FeedStream's GifTile — falling back to the
+    // .gif itself only when it's missing, never to tinygif's smaller frame).
+    url.searchParams.set("media_filter", "gif,tinygif,tinymp4");
     url.searchParams.set("contentfilter", "high"); // strictest safe filter — keep the league clean
     if (q) url.searchParams.set("q", q);
     if (pos) url.searchParams.set("pos", pos);
@@ -62,9 +66,10 @@ export async function GET(req: NextRequest) {
         const tiny = r.media_formats?.tinygif ?? full;
         if (!full?.url || !tiny?.url) return null;
         const [w = 0, h = 0] = full.dims ?? [];
-        return { id: r.id, url: full.url, preview: tiny.url, width: w, height: h };
+        const mp4 = r.media_formats?.tinymp4?.url ?? null;
+        return { id: r.id, url: full.url, preview: tiny.url, mp4, width: w, height: h };
       })
-      .filter((x): x is { id: string; url: string; preview: string; width: number; height: number } => !!x);
+      .filter((x): x is { id: string; url: string; preview: string; mp4: string | null; width: number; height: number } => !!x);
 
     return { results, next: data.next ?? null };
   });

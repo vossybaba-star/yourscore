@@ -444,7 +444,17 @@ function CompetitionDetailSheet({ code, competitionId, viewerId, isOwner, onClos
             <CompetitionStandings standings={detail.standings} format={detail.format} viewerId={viewerId} />
           </div>
 
-          {detail.status === "open" && !hasMyEntry && detail.packId && (
+          {/* Eligibility (P2, 6 Aug) — the ONLY way a viewer learns why they
+              never show up above: they played this pack before the window
+              opened, and quiz_attempts' unique (user, pack) index means they
+              physically cannot replay it. Plain, non-blaming, no emoji. */}
+          {detail.viewerIneligible && (
+            <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 14px", lineHeight: 1.45 }}>
+              You played this quiz before the competition opened, so that run does not count here.
+            </p>
+          )}
+
+          {detail.status === "open" && !hasMyEntry && !detail.viewerIneligible && detail.packId && (
             <div style={{ marginBottom: 12 }}>
               <Link href={`/play/new?packId=${detail.packId}`} onClick={onClose} style={{ display: "block" }}>
                 <Btn gold>Play now</Btn>

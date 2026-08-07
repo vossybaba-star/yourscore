@@ -65,7 +65,10 @@ export interface SquadCard {
 }
 export interface NewsCard { title: string; source: string; url: string; image: string | null; internal: boolean }
 export interface CompareCard { a: PlayerCard; b: PlayerCard }
-export interface GifCard { url: string; preview: string; width: number; height: number }
+/** `mp4` (a fraction of the .gif's weight) renders when present; `url` — an
+ *  animated .gif itself, unlike `preview`'s lighter picker-grid tinygif — is
+ *  the fallback for a message posted before mp4 storage shipped. */
+export interface GifCard { url: string; preview: string; mp4?: string | null; width: number; height: number }
 /** One photo dropped straight into the chat (Phase 4a, AC4). */
 export interface ImageCard { url: string; width: number; height: number }
 /** One video dropped straight into the chat (Phase 2c) — never autoplays;
@@ -152,6 +155,9 @@ export interface CompetitionDetail {
   standings: CompetitionEntry[];
   winner: { userId: string; name: string } | null;
   provisional: boolean;
+  /** True when the viewer played this competition's pack before the window
+   *  opened, so their run doesn't (and never can) count. */
+  viewerIneligible: boolean;
 }
 
 // ── Games tab (Phase 4A) ──────────────────────────────────────────────────

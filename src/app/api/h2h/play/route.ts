@@ -3,11 +3,26 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimitDistributed } from "@/lib/ratelimit";
 import { notifyUsers } from "@/lib/notify";
+import { tryEmitFeedEvent } from "@/lib/fantasy/feed";
 import {
   scoreAnswer,
   calculatePerfectRoundBonus,
   H2H_QUESTION_WINDOW_MS,
 } from "@/lib/scoring";
+
+/** Emit a feed event for a completed h2h — the winner only, once per
+ *  completed match (P3, 6 Aug: h2h never posted to the feed at all before
+ *  this). Same restraint solo-complete's own quiz_result applies ("a brag,
+ *  not a confession" — see that route's own comment): a loss or a tie never
+ *  posts, so a feed event here always means someone won. tryEmitFeedEvent
+ *  itself excludes synthetic/bot actors and never throws, matching every
+ *  other call site. */
+async function emitH2hFeedResult(
+  db: ReturnType<typeof createServiceClient>,
+  winnerId: string, winnerScore: number, loserScore: number, title: string | null,
+) {
+  await tryEmitFeedEvent(db, winnerId, "h2h_result", null, { yourScore: winnerScore, opponentScore: loserScore, title });
+}
 
 // Server-authoritative scoring for head-to-head challenges (v2 formula).
 // Uses the unified scoring engine: Base × DifficultyMult × SpeedMult + bonuses.
@@ -73,7 +88,7 @@ function gradeAnswers(
 async function submitDuel(
   db: ReturnType<typeof createServiceClient>,
   userId: string,
-  ch: { id: string; challenger_id: string; invited_user_id: string | null; quiz_pack_id: string },
+  ch: { id: string; challenger_id: string; invited_user_id: string | null; quiz_pack_id: string; quiz_pack_name?: string | null },
   questions: Array<{ answer: string; difficulty?: string }>,
   answers: SubmittedAnswer[],
 ) {
@@ -122,6 +137,15 @@ async function submitDuel(
         status: "complete",
       })
       .eq("id", ch.id);
+
+    // Feed emission (P3, 6 Aug) — winner only, once per completed duel.
+    const challengerScore = challengerRow?.score ?? 0;
+    const opponentScore = opponentRow?.score ?? 0;
+    if (challengerScore > opponentScore) {
+      await emitH2hFeedResult(db, ch.challenger_id, challengerScore, opponentScore, ch.quiz_pack_name ?? null);
+    } else if (opponentScore > challengerScore && opponentRow) {
+      await emitH2hFeedResult(db, opponentRow.user_id, opponentScore, challengerScore, ch.quiz_pack_name ?? null);
+    }
 
     return NextResponse.json({
       yourScore: score,
@@ -259,6 +283,17 @@ export async function POST(req: NextRequest) {
 
   if (error || !updated) {
     return NextResponse.json({ error: "Challenge already completed" }, { status: 409 });
+  }
+
+  // Feed emission (P3, 6 Aug) — winner only, once per completed scorecard
+  // challenge. The challenger's own score was locked in earlier (before this
+  // route ever ran — see the file doc above), so this is the first and only
+  // moment either side's win is known for certain.
+  const challengerScore = ch.challenger_score ?? 0;
+  if (score > challengerScore) {
+    await emitH2hFeedResult(db, user.id, score, challengerScore, ch.quiz_pack_name ?? null);
+  } else if (challengerScore > score) {
+    await emitH2hFeedResult(db, ch.challenger_id, challengerScore, score, ch.quiz_pack_name ?? null);
   }
 
   // Tell the challenger their challenge just got played → opens /h2h/<id> result.

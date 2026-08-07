@@ -13,7 +13,7 @@ import {
 
 // ── pointsForResult ───────────────────────────────────────────────────────
 
-test("pointsForResult: win 3 / draw 1 / loss 0 — locked", () => {
+test("pointsForResult: win 3 / draw 1 / loss 0 , locked", () => {
   assert.equal(pointsForResult("win"), 3);
   assert.equal(pointsForResult("draw"), 1);
   assert.equal(pointsForResult("loss"), 0);
@@ -122,7 +122,7 @@ test("deriveGamesTabAction: pending + viewer is the opponent is decline_or_play,
   assert.equal(deriveGamesTabAction({ ...base, status: "pending", gameMode: "duel" }, "opponent"), "decline_or_play");
 });
 
-test("deriveGamesTabAction: pending + viewer is the challenger is null — they're the one waiting", () => {
+test("deriveGamesTabAction: pending + viewer is the challenger is null , they're the one waiting", () => {
   assert.equal(deriveGamesTabAction({ ...base, status: "pending", gameMode: "scorecard" }, "challenger"), null);
   assert.equal(deriveGamesTabAction({ ...base, status: "pending", gameMode: "duel" }, "challenger"), null);
 });
@@ -131,26 +131,26 @@ test("deriveGamesTabAction: scorecard active + viewer is the opponent is play", 
   assert.equal(deriveGamesTabAction({ ...base, status: "active", gameMode: "scorecard" }, "opponent"), "play");
 });
 
-test("deriveGamesTabAction: scorecard active + viewer is the challenger is null — they already played at creation", () => {
+test("deriveGamesTabAction: scorecard active + viewer is the challenger is null , they already played at creation", () => {
   assert.equal(deriveGamesTabAction({ ...base, status: "active", gameMode: "scorecard" }, "challenger"), null);
 });
 
-test("deriveGamesTabAction: scorecard has no awaiting_opponent state — always null there", () => {
+test("deriveGamesTabAction: scorecard has no awaiting_opponent state , always null there", () => {
   assert.equal(deriveGamesTabAction({ ...base, status: "awaiting_opponent", gameMode: "scorecard" }, "opponent"), null);
   assert.equal(deriveGamesTabAction({ ...base, status: "awaiting_opponent", gameMode: "scorecard" }, "challenger"), null);
 });
 
-test("deriveGamesTabAction: duel active — whichever side has NOT played gets resume", () => {
+test("deriveGamesTabAction: duel active , whichever side has NOT played gets resume", () => {
   assert.equal(deriveGamesTabAction({ ...base, status: "active", gameMode: "duel", challengerDone: false }, "challenger"), "resume");
   assert.equal(deriveGamesTabAction({ ...base, status: "active", gameMode: "duel", opponentDone: false }, "opponent"), "resume");
 });
 
-test("deriveGamesTabAction: duel active — a side that's already played gets null even though the row is still open", () => {
+test("deriveGamesTabAction: duel active , a side that's already played gets null even though the row is still open", () => {
   assert.equal(deriveGamesTabAction({ ...base, status: "active", gameMode: "duel", challengerDone: true }, "challenger"), null);
   assert.equal(deriveGamesTabAction({ ...base, status: "active", gameMode: "duel", opponentDone: true }, "opponent"), null);
 });
 
-test("deriveGamesTabAction: duel awaiting_opponent — the side that hasn't played gets resume, the done side gets null", () => {
+test("deriveGamesTabAction: duel awaiting_opponent , the side that hasn't played gets resume, the done side gets null", () => {
   const row = { ...base, status: "awaiting_opponent", gameMode: "duel" as const, challengerDone: true, opponentDone: false };
   assert.equal(deriveGamesTabAction(row, "opponent"), "resume");
   assert.equal(deriveGamesTabAction(row, "challenger"), null);

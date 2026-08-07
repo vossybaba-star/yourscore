@@ -61,6 +61,22 @@ export function isEligibleAttempt(
   return t >= new Date(opensAt).getTime() && t < new Date(closesAt).getTime();
 }
 
+/** True when a viewer has a scorecard for this competition's pack that exists
+ *  but falls outside the window (isEligibleAttempt's own doc above — almost
+ *  always: they played it before the competition opened). Distinct from
+ *  "hasn't played yet": that reads as `null` here, not `false` — the detail
+ *  sheet needs to tell those two apart (nothing to explain vs. something to
+ *  explain) and a boolean alone can't carry that. quiz_attempts is unique per
+ *  (user_id, pack_id), so an ineligible attempt can never be replayed into an
+ *  eligible one — this is what makes that exclusion visible to the one
+ *  person it actually affects, instead of just an absence from the standings. */
+export function viewerIneligibleReason(
+  attempt: { completedAt: string } | null, opensAt: string, closesAt: string,
+): boolean | null {
+  if (!attempt) return null;
+  return !isEligibleAttempt(attempt, opensAt, closesAt);
+}
+
 // ── Ranking ───────────────────────────────────────────────────────────────
 
 export interface QuizAttemptForRanking {

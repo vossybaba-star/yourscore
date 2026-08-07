@@ -28,7 +28,7 @@ import { syntheticActors } from "@/lib/fantasy/feed";
 import { notifyFantasy } from "@/lib/fantasy/notify";
 import { competitionFormat } from "@/lib/fantasy/competitionFormats";
 import {
-  deriveCompetitionStatus, isEligibleAttempt, rankLeagueQuiz, resolveBeatTarget, competitionResultLine,
+  deriveCompetitionStatus, isEligibleAttempt, viewerIneligibleReason, rankLeagueQuiz, resolveBeatTarget, competitionResultLine,
   type CompetitionFormatId, type QuizAttemptForRanking,
 } from "@/lib/fantasy/competitions-pure";
 
@@ -546,6 +546,13 @@ export interface CompetitionDetailDTO {
   standings: CompetitionEntryDTO[];
   winner: { userId: string; name: string } | null;
   provisional: boolean;
+  /** True when THIS viewer played the competition's pack, but outside the
+   *  window (almost always: before it opened) — quiz_attempts is unique per
+   *  (user, pack), so they can never earn a fresh, eligible attempt. Always
+   *  false once they have a standings entry, and always false for a guest.
+   *  Computed here, not inferred client-side, because only the server can
+   *  see the viewer's own (possibly excluded) attempt row. */
+  viewerIneligible: boolean;
 }
 
 /** One competition's full standings — live/provisional pre-lock, frozen once
@@ -569,6 +576,19 @@ export async function competitionDetail(db: Db, competitionId: string, viewerId:
 
   const profOf = await profilesById(db, [...standings.map((s) => s.userId), ...(reconciled.winner_user_id ? [reconciled.winner_user_id] : [])]);
 
+  // Eligibility (P2, 6 Aug) — a viewer who played this pack before the window
+  // opened never appears in `standings` above (isEligibleAttempt already
+  // excluded their row) and quiz_attempts' unique (user, pack) index means
+  // they can never earn a fresh one. Only worth the extra read when they're
+  // actually missing AND there's a real pack to have played.
+  let viewerIneligible = false;
+  if (reconciled.pack_id && !standings.some((s) => s.userId === viewerId)) {
+    const { data: attemptRow } = await db.from("quiz_attempts")
+      .select("completed_at").eq("pack_id", reconciled.pack_id).eq("user_id", viewerId).maybeSingle();
+    const attempt = attemptRow ? { completedAt: (attemptRow as { completed_at: string }).completed_at } : null;
+    viewerIneligible = viewerIneligibleReason(attempt, reconciled.opens_at, reconciled.closes_at) === true;
+  }
+
   return {
     id: reconciled.id, format: reconciled.format, title: reconciled.title, status: reconciled.status, source: reconciled.source,
     opensAt: reconciled.opens_at, closesAt: reconciled.closes_at, packId: reconciled.pack_id, targetScore: reconciled.target_score,
@@ -576,6 +596,7 @@ export async function competitionDetail(db: Db, competitionId: string, viewerId:
       userId: s.userId, name: nameFromProfile(profOf.get(s.userId)), avatarUrl: profOf.get(s.userId)?.avatar_url ?? null,
       score: s.score, rank: s.rank, result: s.result,
     })),
+    viewerIneligible,
     winner: reconciled.status === "completed" && reconciled.winner_user_id
       ? { userId: reconciled.winner_user_id, name: nameFromProfile(profOf.get(reconciled.winner_user_id)) }
       : null,

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { HttpError } from "@/lib/fantasy/server";
 import { tryEmitFeedEvent } from "@/lib/fantasy/feed";
+import { clientPool } from "@/lib/fantasy/pool";
 import { withFantasyUser } from "../_lib";
 
 // Authed + founder-gated + service-role, exactly like the sibling routes.
@@ -43,7 +44,18 @@ export async function POST(req: NextRequest) {
       .from("fantasy_shortlist")
       .upsert({ user_id: userId, player_id: playerId }, { onConflict: "user_id,player_id" });
     if (error) throw new HttpError(500, error.message);
-    if (!had) await tryEmitFeedEvent(db, userId, "shortlist_add", null, { player: playerId });
+    if (!had) {
+      // Snapshot (P2, 5 Aug fix) — the player's identity frozen at the moment
+      // they were starred, so the feed tile never silently rewrites itself as
+      // pool.json changes later. Absent (rather than a thrown error) if the id
+      // doesn't resolve — the star itself already succeeded above and must
+      // not fail over a feed-only nicety.
+      const found = clientPool().players.find((p) => p.id === playerId);
+      await tryEmitFeedEvent(db, userId, "shortlist_add", null, {
+        player: playerId,
+        ...(found ? { playerSnapshot: { name: found.name, club: found.club, price: found.price, pos: found.pos } } : {}),
+      });
+    }
     return { ok: true };
   });
 }
