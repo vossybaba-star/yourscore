@@ -6,7 +6,18 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-07 night (**Play home v2 + Home league gating** (PR #99): the Play
+> **Confirmed:** 2026-08-07 late (**Home Feed tab + iPhone safe-area sweep** (PR #100):
+> Home's sticky header gains a **TODAY | FEED** switch — Today keeps the football-happening
+> modules, Feed gives AROUND THE GAME its own full-height tab (`?view=feed` deep-links;
+> FeedStream still lazy-mounts only when opened). **Back controls cleared of the iPhone
+> clock:** 13 pages that rendered their top back control with no safe-area handling got
+> `pt-safe` / env-inset offsets (38-0 live + WC surfaces, debate, play/pack, play/new,
+> matchweek leaderboard, `l/[slug]` events, the four admin pages, and the quiz intro's
+> absolute Back). **Smart-back sweep:** 22 `BackPill href=` usages converted to
+> `fallback=` so back retraces the player's real path (nav-trail), hard route only on
+> deep links; legal pages keep deliberate hard targets, gameplay Quit controls untouched.)
+>
+> **Previously confirmed:** 2026-08-07 night (**Play home v2 + Home league gating** (PR #99): the Play
 > home now leads with **GAMEDAY QUIZ** — the live packs rail plus the fixtures carousel
 > (gameweek chips, crests, KO times, **NOTIFY ME** per fixture; `UpcomingQuizzes` reused
 > from /matchweek, heading retitled) — then **TODAY'S QUIZ** with an arrow into the
@@ -924,6 +935,9 @@ Confirmed preamble above and the referenced section.
   404), 38-0 feed events (no sentence template fits a football match), and fixture
   postponement (wiring it would add SportMonks calls on days gameday-publish promises
   zero, and a health check asserts that).
+- **2026-08-07 late** — **Home Feed tab + safe-area sweep** (PR #100, merged). TODAY | FEED
+  switch on Home; 13 pages' back controls cleared of the iPhone clock (pt-safe); 22 back
+  pills now retrace via fallback.
 - **2026-08-07 night** — **Play home v2** (PR #99, merged). GAMEDAY QUIZ leads (fixtures
   carousel + NOTIFY ME), TODAY'S QUIZ art carousel with catalogue arrow, QUICK PLAY
   art-led, /play switchers removed; Home leagues gated to a single genuine-highlight card.
