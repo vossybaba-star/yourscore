@@ -72,29 +72,48 @@ export default function LeaguePage() {
   // for exactly one LeagueGamesView mount, mirroring the openGwChat pattern
   // History already uses to deep-link into another tab with extra state.
   const [gamesAutoChallenge, setGamesAutoChallenge] = useState(false);
-  // A competition chat card's tap through (UI wave) — same deep-link shape
-  // as gamesAutoChallenge above, just carrying an id instead of a flag.
-  const [gamesAutoCompetitionId, setGamesAutoCompetitionId] = useState<string | null>(null);
+  // Which competition's detail sheet is open in Games, if any. Lives in the
+  // URL as `c` (same idea as `gw` for a chat archive) so a competition can be
+  // linked and survives a reload, rather than sitting only in local state.
+  const [compId, setCompId] = useState<string | null>(null);
 
   // Restore + persist the tab in the URL, so back from settings/a profile returns
-  // to the tab you were on. `gw` deep-links a gameweek's chat (from History).
+  // to the tab you were on. `gw` deep-links a gameweek's chat (from History);
+  // `c` deep-links a competition's detail sheet (from a chat card or Hub module).
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const t = sp.get("t");
-    if (t === "chat" || t === "table" || t === "games" || t === "history") setTab(t);
+    const legacyTab = sp.get("tab");
+    // `tab` is a legacy param name; `t` is canonical (what goTab writes). A
+    // link carrying both never anchors on the stale one — `t` always wins —
+    // and the legacy param is stripped so it can't linger across taps.
+    const resolved = t ?? legacyTab;
+    if (resolved === "chat" || resolved === "table" || resolved === "games" || resolved === "history") setTab(resolved);
     const gw = sp.get("gw");
     if (gw && /^\d+$/.test(gw)) setChatGw(Number(gw));
+    const c = sp.get("c");
+    if (c) setCompId(c);
+    if (legacyTab !== null) {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("tab");
+      if (resolved) u.searchParams.set("t", resolved);
+      window.history.replaceState(null, "", u);
+    }
   }, []);
   const goTab = useCallback((t: Tab) => {
     setTab(t);
     if (t === "chat") setChatGw(null); // the tab bar always opens the live thread
-    // Opening Games clears its own badge — the viewer's seen what was
-    // waiting on them. Not a re-fetch: the count just goes quiet until the
-    // next league load picks up anything genuinely new.
-    if (t === "games") setGamesPulse((p) => (p ? { ...p, myActionCount: 0 } : p));
+    if (t === "games") {
+      // Opening Games clears its own badge — the viewer's seen what was
+      // waiting on them. Not a re-fetch: the count just goes quiet until the
+      // next league load picks up anything genuinely new.
+      setGamesPulse((p) => (p ? { ...p, myActionCount: 0 } : p));
+      setCompId(null); // the tab bar always opens the overview, not a specific competition
+    }
     const u = new URL(window.location.href);
     u.searchParams.set("t", t);
     if (t === "chat") u.searchParams.delete("gw");
+    if (t === "games") u.searchParams.delete("c");
     window.history.replaceState(null, "", u);
   }, []);
   // From History: open a past gameweek's chat archive.
@@ -111,11 +130,14 @@ export default function LeaguePage() {
     goTab("games");
   }, [goTab]);
   // A competition card's tap through (chat card or Hub module) — switch to
-  // Games AND tell it which competition to open its detail sheet for.
+  // Games AND tell it which competition to open its detail sheet for, via
+  // the same `c` URL param a direct link or reload would use.
   const openGamesCompetition = useCallback((competitionId: string) => {
-    setGamesAutoCompetitionId(competitionId);
-    goTab("games");
-  }, [goTab]);
+    setCompId(competitionId); setTab("games");
+    const u = new URL(window.location.href);
+    u.searchParams.set("t", "games"); u.searchParams.set("c", competitionId);
+    window.history.replaceState(null, "", u);
+  }, []);
 
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
@@ -325,7 +347,12 @@ export default function LeaguePage() {
         <LeagueGamesView
           code={code} isOwner={league.isOwner}
           autoOpenChallenge={gamesAutoChallenge} onAutoOpenChallengeHandled={() => setGamesAutoChallenge(false)}
-          autoOpenCompetitionId={gamesAutoCompetitionId} onAutoOpenCompetitionHandled={() => setGamesAutoCompetitionId(null)}
+          initialCompetitionId={compId} onCompetitionIdChange={(id) => {
+            setCompId(id);
+            const u = new URL(window.location.href);
+            if (id) u.searchParams.set("c", id); else u.searchParams.delete("c");
+            window.history.replaceState(null, "", u);
+          }}
         />
       )}
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}

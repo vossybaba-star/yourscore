@@ -45,8 +45,6 @@ interface H2HChallenge {
   opponent_id: string | null;
   opponent_score: number | null;
   opponent_correct: number | null;
-  challenger_answers: { letter: Letter | null; correct: boolean }[] | null;
-  opponent_answers: { letter: Letter | null; correct: boolean }[] | null;
   created_at: string;
   expires_at: string;
   /** Phase 3B — 'scorecard' (default, the whole page above this comment was
@@ -70,6 +68,9 @@ interface RawQuestion {
   difficulty: string;
   category: string;
 }
+
+type Pick = { letter: Letter | null; correct: boolean };
+interface PickLog { challenger: Pick[] | null; opponent: Pick[] | null }
 
 interface AnswerRecord {
   idx: number;
@@ -206,6 +207,12 @@ export default function H2HPage({ params }: { params: { id: string } }) {
 
   // Quiz engine state
   const [questions, setQuestions] = useState<RawQuestion[]>([]);
+  /** Both sides' per-question picks for the finished-run comparison. Served by
+   *  /api/h2h/[id]/questions, which checks participation, rather than read off
+   *  the challenge row: migration 262 withholds those columns from the browser
+   *  so a passer-by cannot mine a completed challenge for a pack's key. Null
+   *  until the run is complete and the viewer is one of the two players. */
+  const [picks, setPicks] = useState<PickLog | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selected, setSelected] = useState<Letter | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -245,6 +252,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       const res = await fetch(`/api/h2h/${challengeId}/questions`);
       if (res.ok) {
         const json = await res.json();
+        if (json.picks) setPicks(json.picks as PickLog);
         if (Array.isArray(json.questions)) {
           const qs = json.questions as RawQuestion[];
           setQuestions(qs);
@@ -277,9 +285,15 @@ export default function H2HPage({ params }: { params: { id: string } }) {
         setOpponentName(profile?.display_name ?? "You");
       }
 
+      // Explicit columns, never select("*"). Migration 262 withholds
+      // challenger_answers/opponent_answers from anon and authenticated, and a
+      // star select asks for every column including those, so PostgREST rejects
+      // the whole query (42501) rather than omitting them — which surfaced as
+      // every challenge link reading "expired or not found". The per-question
+      // picks now come from /api/h2h/[id]/questions, which checks participation.
       const { data: chRow } = await supabase
         .from("h2h_challenges")
-        .select("*")
+        .select("id, quiz_pack_id, quiz_pack_name, challenger_id, challenger_name, challenger_score, challenger_correct, total_questions, max_score, opponent_id, opponent_score, opponent_correct, created_at, expires_at, mode, invited_user_id")
         .eq("id", id)
         .single();
 
@@ -306,9 +320,9 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       if (ch.mode === "duel") {
         if (ch.opponent_score !== null) {
           setPageState("results");
-          if (ch.challenger_answers && ch.opponent_answers) {
-            await loadQuestions(id);
-          }
+          // The route decides whether a reveal is allowed (complete AND the
+          // viewer played it) and returns picks only then.
+          await loadQuestions(id);
           return;
         }
         const isParticipant = !!uid && (uid === ch.challenger_id || uid === ch.invited_user_id);
@@ -338,11 +352,10 @@ export default function H2HPage({ params }: { params: { id: string } }) {
       // ── Scorecard (quiz_battle / gameday_quiz) — unchanged from before Phase 3B.
       if (ch.opponent_score !== null) {
         setPageState("results");
-        // Pull the pack's questions so the reveal can show both players' picks —
-        // only when we actually have per-question data for both sides.
-        if (ch.challenger_answers && ch.opponent_answers) {
-          await loadQuestions(id);
-        }
+        // Pull the pack's questions AND both sides' picks so the reveal can
+        // render. The route returns picks only when the run is finished and the
+        // viewer is one of the two players.
+        await loadQuestions(id);
       } else if (uid === ch.challenger_id) {
         setPageState("own_challenge");
       } else if (!uid) {
@@ -543,7 +556,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                 // shape client-side, then reuse the existing results render.
                 const supabase = createClient();
                 const { data: freshRow } = await supabase
-                  .from("h2h_challenges").select("*").eq("id", ch.id).single();
+                  .from("h2h_challenges").select("id, quiz_pack_id, quiz_pack_name, challenger_id, challenger_name, challenger_score, challenger_correct, total_questions, max_score, opponent_id, opponent_score, opponent_correct, created_at, expires_at, mode, invited_user_id").eq("id", ch.id).single();
                 if (freshRow) setChallenge(freshRow as unknown as H2HChallenge);
                 setScore(data.yourScore);
                 setPageState("results");
@@ -966,7 +979,7 @@ export default function H2HPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Question-by-question reveal — only when both players' per-question data exists */}
-          {challenge.challenger_answers && challenge.opponent_answers && questions.length > 0 && (
+          {picks?.challenger && picks?.opponent && questions.length > 0 && (
             <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: "1px solid rgba(255,255,255,0.07)" }}>
               <p className="font-display text-xs tracking-widest mb-4" style={{ color: "#586058" }}>QUESTION BY QUESTION</p>
               <div className="flex flex-col gap-3.5">
@@ -977,8 +990,8 @@ export default function H2HPage({ params }: { params: { id: string } }) {
                       <p className="font-body text-sm text-white mb-1 leading-snug">{i + 1}. {q.question}</p>
                       <p className="font-body text-xs mb-2.5" style={{ color: "#8a948f" }}>Answer: <span style={{ color: "#aeea00" }}>{correctLetter}. {q.options?.[correctLetter] ?? ""}</span></p>
                       <div className="flex gap-2">
-                        <PickChip name={challenge.challenger_name} pick={challenge.challenger_answers?.[i]} />
-                        <PickChip name={opponentDisplayName} pick={challenge.opponent_answers?.[i]} />
+                        <PickChip name={challenge.challenger_name} pick={picks.challenger?.[i]} />
+                        <PickChip name={opponentDisplayName} pick={picks.opponent?.[i]} />
                       </div>
                     </div>
                   );
