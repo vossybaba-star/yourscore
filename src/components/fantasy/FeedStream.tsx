@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ErrorState, INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
+import { ErrorState, GifPlayer, INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
 import { PullToRefresh } from "@/components/fantasy/PullToRefresh";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
@@ -115,31 +115,15 @@ export interface FeedEvent {
   mentionedUsers?: { username: string; userId: string }[] | null;
 }
 
-/** A post's GIF: mp4 renders as a looping muted autoplay video; otherwise the
- *  webp/gif image fallback. An IntersectionObserver pauses the video once it
- *  scrolls out of view and resumes it on the way back in, so a feed full of GIFs
- *  doesn't play every one of them at once. */
+/** A post's GIF — the feed's own container (rounded, bordered card, capped
+ *  height) around the shared GifPlayer (shared.tsx), which owns the actual
+ *  mp4-vs-image decision and the offscreen-pause behaviour so this file and
+ *  league chat's SharedGif don't carry two copies of that logic. */
 function GifTile({ gif }: { gif: FeedGif }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => { if (entry.isIntersecting) void el.play().catch(() => {}); else el.pause(); });
-    }, { threshold: 0.4 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
   const imgSrc = gif.webp ?? gif.gifUrl;
   return (
     <div style={{ marginTop: 10, borderRadius: 12, overflow: "hidden", border: `1px solid ${LINE}`, background: PANEL_2 }}>
-      {gif.mp4 ? (
-        <video ref={videoRef} src={gif.mp4} loop muted playsInline autoPlay
-          style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover" }} />
-      ) : imgSrc ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={imgSrc} alt="" loading="lazy" style={{ display: "block", width: "100%", maxHeight: 420, objectFit: "cover" }} />
-      ) : null}
+      <GifPlayer mp4={gif.mp4} imgSrc={imgSrc} style={{ maxHeight: 420, objectFit: "cover" }} />
     </div>
   );
 }

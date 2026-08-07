@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AMBER, CORAL, ErrorState, GOLD, INK, LIME, LINE, Loading, MUTED, PANEL, PANEL_2, PITCH, PosTag, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
+import { AMBER, CORAL, ErrorState, GifPlayer, GOLD, INK, LIME, LINE, Loading, MUTED, PANEL, PANEL_2, PITCH, PosTag, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
 import { MediaGallery } from "@/components/fantasy/MediaGallery";
@@ -379,9 +379,14 @@ function SharedNews({ msg, onOpen }: { msg: ChatMessage; onOpen: () => void }) {
   );
 }
 
-/** A GIF someone dropped in the chat. Renders the animated preview at a chat-
- *  friendly width; the aspect ratio is reserved from the stored dims so the
- *  thread doesn't jump as it loads. */
+/** A GIF someone dropped in the chat, at a chat-friendly width; the aspect
+ *  ratio is reserved from the stored dims so the thread doesn't jump as it
+ *  loads. Renders through the shared GifPlayer (shared.tsx, also used by the
+ *  feed's GifTile) so the two surfaces can't drift into two copies of the
+ *  mp4-vs-image decision again — this file only owns the bubble's own size
+ *  cap and border. `url` (an animated .gif in its own right), never
+ *  `preview` (Tenor's lighter tinygif, meant for the picker's search grid),
+ *  is the image fallback for a message with no mp4. */
 function SharedGif({ msg }: { msg: ChatMessage }) {
   const g = msg.gif!;
   return (
@@ -391,8 +396,7 @@ function SharedGif({ msg }: { msg: ChatMessage }) {
         borderRadius: 13, overflow: "hidden", border: `1px solid ${msg.isMe ? tint(TEAL, "44") : LINE}`, background: PANEL,
         aspectRatio: g.width && g.height ? `${g.width} / ${g.height}` : undefined,
       }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={g.preview} alt="GIF" loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />
+        <GifPlayer mp4={g.mp4} imgSrc={g.url} style={{ height: "auto" }} />
       </div>
     </div>
   );
@@ -849,7 +853,7 @@ function MessageBody({ m, onView, onOpenNews, onVote, onViewImage, onViewFeed, o
   );
 }
 
-type GifResult = { id: string; url: string; preview: string; width: number; height: number };
+type GifResult = { id: string; url: string; preview: string; mp4: string | null; width: number; height: number };
 
 /** The GIF picker sheet — sits above the composer like the poll composer.
  *  Trending on open, search-as-you-type after that. Degrades to a friendly
@@ -891,7 +895,7 @@ function GifPicker({ onPick, onCancel, busy }: { onPick: (g: GifCard) => void; o
       ) : (
         <div style={{ columnCount: 2, columnGap: 6, maxHeight: 260, overflowY: "auto" }}>
           {items.map((g) => (
-            <button key={g.id} disabled={busy} onClick={() => onPick({ url: g.url, preview: g.preview, width: g.width, height: g.height })}
+            <button key={g.id} disabled={busy} onClick={() => onPick({ url: g.url, preview: g.preview, mp4: g.mp4, width: g.width, height: g.height })}
               style={{ display: "block", width: "100%", marginBottom: 6, padding: 0, border: `1px solid ${LINE}`, borderRadius: 9, overflow: "hidden", background: PITCH, cursor: busy ? "default" : "pointer", breakInside: "avoid" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={g.preview} alt="" loading="lazy" style={{ width: "100%", height: "auto", display: "block" }} />

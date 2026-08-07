@@ -776,3 +776,32 @@ export function PosTag({ pos }: { pos: Pos | string }) {
   const c = POS_COLOR[pos as Pos] ?? MUTED;
   return <span style={{ color: c, fontWeight: 700 }}>{pos}</span>;
 }
+
+/** A GIF's rendering strategy — shared by the feed and league chat so the two
+ *  surfaces never drift into two copies of this again (the audit's own
+ *  finding). mp4 (a fraction of a .gif's weight) plays as a muted looping
+ *  video, paused by an IntersectionObserver once it scrolls out of view so a
+ *  screen full of GIFs doesn't autoplay every one at once; otherwise `imgSrc`
+ *  renders as a plain image — the caller passes an actual animated .gif URL
+ *  there, never a static frame, for the mp4-less fallback (an old message, or
+ *  a provider miss) to still animate. Callers own their own container
+ *  (border, radius, max-width/height) — this only ever renders the media
+ *  itself. */
+export function GifPlayer({ mp4, imgSrc, style }: { mp4?: string | null; imgSrc: string | null; style?: CSSProperties }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { if (entry.isIntersecting) void el.play().catch(() => {}); else el.pause(); });
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  if (mp4) {
+    return <video ref={videoRef} src={mp4} loop muted playsInline autoPlay style={{ display: "block", width: "100%", ...style }} />;
+  }
+  if (!imgSrc) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={imgSrc} alt="GIF" loading="lazy" style={{ display: "block", width: "100%", ...style }} />;
+}
