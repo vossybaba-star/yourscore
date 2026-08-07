@@ -1008,12 +1008,14 @@ export default function ChallengePage() {
             Back
           </button>
 
-          <div className="flex flex-col items-center pt-24 pb-8 px-6">
+          <div className="flex flex-col items-center pt-20 pb-6 px-6">
             {pack.metadata?.cover_image ? (
               // The cover is a designed card (logo + title baked in) — show it
               // WHOLE: the image sets its own height, no fixed-aspect crop.
-              <div className="relative w-full mb-6"
-                style={{ maxWidth: 440, borderRadius: 22, overflow: "hidden",
+              // Sized so the PLAY button lands on the first screen (320px keeps
+              // the whole cover visible AND the CTA above the fold at 390x844).
+              <div className="relative w-full mb-5"
+                style={{ maxWidth: 320, borderRadius: 22, overflow: "hidden",
                   border: `1.5px solid ${accentBorder}`,
                   boxShadow: `0 12px 40px ${isRecords ? "rgba(174,234,0,0.3)" : "rgba(255,140,0,0.25)"}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1091,37 +1093,6 @@ export default function ChallengePage() {
           )}
 
           <>
-              {/* Pack description */}
-              {pack.description && (
-                <p className="font-body text-sm text-center px-2" style={{ color: "#9aa39d", lineHeight: 1.6 }}>
-                  {pack.description}
-                </p>
-              )}
-
-              {/* Speed scoring explainer */}
-              <div className="rounded-2xl px-4 py-4 bg-surface"
-                style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-base">⚡</span>
-                  <p className="font-display text-sm text-white tracking-wide">Speed scoring</p>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  {/* Real engine shape (scoring.ts): points = base × speed multiplier;
-                      Lightning ×2 inside the first 20% of the 30s window. */}
-                  {[
-                    { time: "under 6s", pts: "×2", color: "#aeea00" },
-                    { time: "under 12s", pts: "×1.5", color: "#00d8c0" },
-                    { time: "slower", pts: "×1 ↓", color: "#ff4757" },
-                  ].map(({ time, pts, color }) => (
-                    <div key={time} className="flex-1 rounded-xl py-2.5 px-2 text-center"
-                      style={{ background: `${color}10`, border: `1px solid ${color}25` }}>
-                      <p className="font-display text-sm" style={{ color }}>{pts}</p>
-                      <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{time}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Signed-in only. A guest's score never reaches the leaderboard, so telling them
                   "your first score counts" contradicted the "sign in first to save your score"
                   line 40px below it (ux-walk, 23 Jul). For guests that line says it all.
@@ -1144,6 +1115,9 @@ export default function ChallengePage() {
                 </div>
               )}
 
+              {/* PLAY leads (2026-08-07 simplification): the button sits directly
+                  under the hero, above description, scoring detail and the
+                  leaderboard — one screen, one obvious action. */}
               <Button
                 variant="primary"
                 tone="teal"
@@ -1152,7 +1126,7 @@ export default function ChallengePage() {
                 onClick={() => { window.scrollTo(0, 0); trackGamePlay("quiz", { mode: groupId ? "group" : "solo" }); setPhase("playing"); }}
                 className="mt-1"
               >
-                START · {questions.length} Qs
+                PLAY · {questions.length} Qs
               </Button>
 
               {!userId && (
@@ -1163,6 +1137,38 @@ export default function ChallengePage() {
                   {" "}to save your score
                 </p>
               )}
+
+              {/* Pack description */}
+              {pack.description && (
+                <p className="font-body text-sm text-center px-2" style={{ color: "#9aa39d", lineHeight: 1.6 }}>
+                  {pack.description}
+                </p>
+              )}
+
+              {/* Speed scoring — collapsed by default. Gameplay teaches the
+                  mechanic; the detail is here for whoever wants it. */}
+              <details className="rounded-2xl bg-surface" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+                <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer list-none">
+                  <span className="text-base">⚡</span>
+                  <p className="font-display text-sm text-white tracking-wide">How scoring works</p>
+                  <span className="ml-auto font-body text-xs" style={{ color: "#586058" }}>Fast answers score more</span>
+                </summary>
+                <div className="flex items-center justify-between gap-2 px-4 pb-4">
+                  {/* Real engine shape (scoring.ts): points = base × speed multiplier;
+                      Lightning ×2 inside the first 20% of the 30s window. */}
+                  {[
+                    { time: "under 6s", pts: "×2", color: "#aeea00" },
+                    { time: "under 12s", pts: "×1.5", color: "#00d8c0" },
+                    { time: "slower", pts: "×1 ↓", color: "#ff4757" },
+                  ].map(({ time, pts, color }) => (
+                    <div key={time} className="flex-1 rounded-xl py-2.5 px-2 text-center"
+                      style={{ background: `${color}10`, border: `1px solid ${color}25` }}>
+                      <p className="font-display text-sm" style={{ color }}>{pts}</p>
+                      <p className="font-body text-xs mt-0.5" style={{ color: "#8a948f" }}>{time}</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
 
               <PackLeaderboard entries={leaderboard} userId={userId} accent={accent} loading={leaderLoading} maxVisible={10} />
           </>
