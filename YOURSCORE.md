@@ -6,7 +6,22 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-08 (**Community polish** (PR #101, migration 263 APPLIED to prod):
+> **Confirmed:** 2026-08-08 (**Scout's Latest — a daily, auto-published rotating recommender**
+> (commit `59e2d8e`, migration 264 `fantasy_scout_latest` APPLIED to prod). The Four Picks are one
+> frozen set per gameweek behind a manual approve gate, so they sat unchanged for a week; Scout's
+> Latest is the opposite — 1 to 3 player IDEAS at the top of the Picks tab (`/fantasy/news?tab=picks`),
+> refreshed daily. Three signals, each on its own clock so the set rotates: **momentum** (ownership
+> climbing over ~24h, the genuinely daily-fresh signal), **fixture swing** (a club whose run turns kind
+> → its best available outfielder, carrying the news doc's own fixture insight), and **watch** (a new
+> doubt over a widely-owned player). Selection is 100% code (`scoutLatestSelect.ts`, unit tested incl.
+> the 2-day dedup that stops an idea repeating); the model writes only ONE grounded, number-free
+> narrative line, falling back to code copy. A daily cron (`/api/cron/scout-latest`, 08:45) auto-publishes
+> behind **`FANTASY_SCOUT_LATEST_ENABLED`** (must be set to `true` in Vercel to run — kill switch by
+> design); the read hides itself if the newest day is >2 days stale, so it can never rot the way the Four
+> Picks did. NOTE: PR #101 also used migration number 263 (`fantasy_leagues` bio/links) — this table was
+> renamed to 264 to avoid the collision; both are already applied to prod.)
+>
+> **Previously confirmed:** 2026-08-08 (**Community polish** (PR #101, migration 263 APPLIED to prod):
 > the Home Feed tab got its composer back (avatar + "What's happening?" pill →
 > CreatePostSheet, Top | Latest sort, post refreshes For You). **Leagues present as
 > communities**: `fantasy_leagues` gained `bio` + `links` (mig 263); tiles carry big

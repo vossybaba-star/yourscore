@@ -1,4 +1,5 @@
--- 263: Scout's Latest — the daily, auto-published Scout recommender.
+-- 264: Scout's Latest — the daily, auto-published Scout recommender.
+-- (Numbered 263 originally; renamed to 264 because PR #101 also claimed 263.)
 --
 -- One row per day holding 1-3 code-selected player IDEAS (fixture swings,
 -- ownership momentum, new doubts), each with an AI-written narrative reason
