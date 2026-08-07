@@ -50,7 +50,9 @@ export function UpcomingQuizzes() {
     // so cards scroll within the column instead of across the whole viewport.
     <div className="max-w-lg mx-auto px-4 pt-5">
       <div className="flex items-center justify-between mb-2.5">
-        <span className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>UPCOMING QUIZZES</span>
+        {/* Titled GAMEDAY QUIZ (founder 2026-08-07 eve): this carousel is the
+            top of the Play home — the heading names the product, not the list. */}
+        <span className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>GAMEDAY QUIZ</span>
         <span className="font-body text-xs" style={{ color: "#8a948f" }}>{current.fixtures.length} this gameweek</span>
       </div>
 
