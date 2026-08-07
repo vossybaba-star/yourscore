@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { TIMEOUT_PENALTY, calculatePerfectRoundBonus } from "@/lib/scoring";
 import { QUIZ_BOT_ID } from "@/lib/versus/quizBot";
 import { notifyShadowResult, type ShadowInfo } from "@/lib/versus/shadow";
+import { tryEmitFeedEvent, syntheticActors } from "@/lib/fantasy/feed";
 
 const QUESTION_DURATION_MS = 20_000;
 
@@ -157,10 +158,33 @@ export async function POST(req: NextRequest) {
 
     // (Room already marked completed by the atomic claim above.)
 
+    const shadow = (room.shadow ?? null) as ShadowInfo | null;
+
+    // Feed emission (P3, 6 Aug) — Versus (Quiz Battle) is head-to-head too
+    // (queueOrPairQuiz always pairs exactly 2), so a genuine live win rides
+    // the SAME h2h_result type/sentence/Discover-filter h2h/play's route
+    // uses — never a second copy of that wording. Winner only, and only a
+    // real live 1v1: never for beating the CPU/shadow bot (a recording isn't
+    // a live opponent), never a synthetic QA account either side.
+    if (!shadow) {
+      const { data: memberRows } = await sb.from("room_members").select("user_id").eq("room_id", roomId);
+      const humans = ((memberRows ?? []) as { user_id: string }[]).map((m) => m.user_id).filter((id) => id !== QUIZ_BOT_ID);
+      const bots = syntheticActors();
+      if (humans.length === 2 && !humans.some((id) => bots.has(id))) {
+        const [a, b] = humans;
+        const aScore = finalScores.get(a) ?? 0;
+        const bScore = finalScores.get(b) ?? 0;
+        const title = room.pack_id
+          ? ((await sb.from("quiz_packs").select("name").eq("id", room.pack_id).maybeSingle()).data?.name ?? null)
+          : null;
+        if (aScore > bScore) await tryEmitFeedEvent(sb, a, "h2h_result", null, { yourScore: aScore, opponentScore: bScore, title });
+        else if (bScore > aScore) await tryEmitFeedEvent(sb, b, "h2h_result", null, { yourScore: bScore, opponentScore: aScore, title });
+      }
+    }
+
     // Shadow match finished → tell the run's owner, under the anti-pestering
     // rules (max one push per rolling 24h; absorbed plays aggregate into the
     // next push — see notifyShadowResult). Fire-and-forget; never blocks.
-    const shadow = (room.shadow ?? null) as ShadowInfo | null;
     if (shadow?.userId) {
       void (async () => {
         const humanId = room.created_by as string;
