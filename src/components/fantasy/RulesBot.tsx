@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FAQ, type FaqItem } from "@/lib/fantasy/rulesFaq";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
-import { INK, LINE, MUTED, PANEL, PANEL_2, TEAL, tint } from "@/components/fantasy/shared";
+import { INK, LINE, MUTED, PANEL_2, Sheet, TEAL, tint } from "@/components/fantasy/shared";
 
 const MAX_QUESTION = 300;
 const FALLBACK_NOTICE = "I can only answer from the saved questions right now, friend. Tap one below.";
@@ -115,12 +115,6 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, thinking]);
@@ -195,152 +189,130 @@ function RulesSheet({ onClose }: { onClose: () => void }) {
   }, []);
 
   return (
-    <div
-      role="presentation"
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 60, background: "rgba(4,8,6,0.72)",
-        display: "flex", alignItems: "flex-end", justifyContent: "center",
-        padding: "0 0 env(safe-area-inset-bottom)",
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="rules-bot-title"
-        onClick={(e) => e.stopPropagation()}
-        className="rounded-t-3xl"
-        style={{
-          width: "100%", maxWidth: 512, maxHeight: "75dvh",
-          background: PANEL, border: `1px solid ${tint(TEAL, "44")}`, borderBottom: "none",
-          display: "flex", flexDirection: "column",
-          animation: "slideUp 0.22s ease",
-        }}
-      >
-        <div style={{ padding: "18px 18px 10px", flexShrink: 0 }}>
-          <div className="rounded-full" style={{ width: 36, height: 4, background: LINE, margin: "0 auto 14px" }} />
-          <div id="rules-bot-title" className="font-display" style={{ fontSize: 19, fontWeight: 700, color: INK }}>
-            Ask about the rules
-          </div>
-          <p style={{ fontSize: 12.5, color: MUTED, margin: "3px 0 0" }}>
-            Tap a question, or type your own.
-          </p>
+    <Sheet onClose={onClose} labelledBy="rules-bot-title" variant="panel" layout="flex" maxHeight="75dvh" animation="slideUp 0.22s ease">
+      <div style={{ padding: "18px 18px 10px", flexShrink: 0 }}>
+        <div className="rounded-full" style={{ width: 36, height: 4, background: LINE, margin: "0 auto 14px" }} />
+        <div id="rules-bot-title" className="font-display" style={{ fontSize: 19, fontWeight: 700, color: INK }}>
+          Ask about the rules
         </div>
+        <p style={{ fontSize: 12.5, color: MUTED, margin: "3px 0 0" }}>
+          Tap a question, or type your own.
+        </p>
+      </div>
 
-        <div ref={listRef} className="no-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "0 18px" }}>
-          {messages.length === 0 && (
-            <>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 7, paddingBottom: 6 }}>
-                {PILLS.map((f) => (
-                  <button
-                    key={f.q}
-                    type="button"
-                    onClick={() => tapPill(f)}
-                    className="font-body rounded-full"
-                    style={{
-                      fontSize: 12, padding: "7px 12px", textAlign: "left",
-                      background: PANEL_2, border: `1px solid ${LINE}`, color: INK, cursor: "pointer",
-                    }}
-                  >
-                    {f.q}
-                  </button>
-                ))}
-              </div>
-              <p style={{ fontSize: 12, color: MUTED, margin: "4px 2px 10px", lineHeight: 1.4 }}>
-                Or ask anything about the rules in your own words below.
-              </p>
-            </>
-          )}
-
-          {messages.map((m, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-              <div className="rounded-2xl" style={{
-                maxWidth: "82%", padding: "9px 13px", fontSize: 13, lineHeight: 1.5,
-                background: m.role === "user" ? tint(TEAL, "1c") : PANEL_2,
-                border: `1px solid ${m.role === "user" ? tint(TEAL, "44") : LINE}`,
-                color: INK,
-              }}>
-                {m.text}
-                {m.cta && (
-                  <a href={m.cta.href} className="font-body rounded-lg" style={{
-                    display: "block", textAlign: "center", marginTop: 8, padding: "8px 14px",
-                    fontSize: 13, fontWeight: 700, background: TEAL, color: "#03211d",
-                    textDecoration: "none",
-                  }}>
-                    {m.cta.label}
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {thinking && (
-            <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
-              <div className="rounded-2xl" style={{
-                padding: "9px 13px", fontSize: 13, background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED,
-              }}>
-                One moment...
-              </div>
-            </div>
-          )}
-
-          {messages.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 0 10px" }}>
-              {PILLS.slice(0, 3).map((f) => (
+      <div ref={listRef} className="no-scrollbar" style={{ flex: 1, overflowY: "auto", padding: "0 18px" }}>
+        {messages.length === 0 && (
+          <>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7, paddingBottom: 6 }}>
+              {PILLS.map((f) => (
                 <button
                   key={f.q}
                   type="button"
                   onClick={() => tapPill(f)}
                   className="font-body rounded-full"
                   style={{
-                    fontSize: 11, padding: "5px 10px",
-                    background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED, cursor: "pointer",
+                    fontSize: 12, padding: "7px 12px", textAlign: "left",
+                    background: PANEL_2, border: `1px solid ${LINE}`, color: INK, cursor: "pointer",
                   }}
                 >
                   {f.q}
                 </button>
               ))}
             </div>
-          )}
-        </div>
+            <p style={{ fontSize: 12, color: MUTED, margin: "4px 2px 10px", lineHeight: 1.4 }}>
+              Or ask anything about the rules in your own words below.
+            </p>
+          </>
+        )}
 
-        <form
-          onSubmit={(e) => { e.preventDefault(); if (!thinking) ask(input); }}
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
+            <div className="rounded-2xl" style={{
+              maxWidth: "82%", padding: "9px 13px", fontSize: 13, lineHeight: 1.5,
+              background: m.role === "user" ? tint(TEAL, "1c") : PANEL_2,
+              border: `1px solid ${m.role === "user" ? tint(TEAL, "44") : LINE}`,
+              color: INK,
+            }}>
+              {m.text}
+              {m.cta && (
+                <a href={m.cta.href} className="font-body rounded-lg" style={{
+                  display: "block", textAlign: "center", marginTop: 8, padding: "8px 14px",
+                  fontSize: 13, fontWeight: 700, background: TEAL, color: "#03211d",
+                  textDecoration: "none",
+                }}>
+                  {m.cta.label}
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {thinking && (
+          <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
+            <div className="rounded-2xl" style={{
+              padding: "9px 13px", fontSize: 13, background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED,
+            }}>
+              One moment...
+            </div>
+          </div>
+        )}
+
+        {messages.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 0 10px" }}>
+            {PILLS.slice(0, 3).map((f) => (
+              <button
+                key={f.q}
+                type="button"
+                onClick={() => tapPill(f)}
+                className="font-body rounded-full"
+                style={{
+                  fontSize: 11, padding: "5px 10px",
+                  background: PANEL_2, border: `1px solid ${LINE}`, color: MUTED, cursor: "pointer",
+                }}
+              >
+                {f.q}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <form
+        onSubmit={(e) => { e.preventDefault(); if (!thinking) ask(input); }}
+        style={{
+          display: "flex", gap: 8, padding: "10px 18px",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+          borderTop: `1px solid ${LINE}`, flexShrink: 0,
+        }}
+      >
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          maxLength={MAX_QUESTION}
+          placeholder="Ask a question about the rules"
+          aria-label="Ask a question about the rules"
+          className="font-body rounded-xl"
           style={{
-            display: "flex", gap: 8, padding: "10px 18px",
-            paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
-            borderTop: `1px solid ${LINE}`, flexShrink: 0,
+            flex: 1, minWidth: 0, padding: "10px 13px", fontSize: 13.5,
+            background: PANEL_2, border: `1px solid ${LINE}`, color: INK,
+          }}
+        />
+        <button
+          type="submit"
+          disabled={thinking || !input.trim()}
+          aria-label="Send"
+          className="font-body rounded-xl"
+          style={{
+            flexShrink: 0, padding: "10px 16px", fontSize: 13.5, fontWeight: 700,
+            background: TEAL, color: "#03211d", border: `1px solid ${TEAL}`,
+            opacity: thinking || !input.trim() ? 0.45 : 1,
+            cursor: thinking || !input.trim() ? "default" : "pointer",
           }}
         >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            maxLength={MAX_QUESTION}
-            placeholder="Ask a question about the rules"
-            aria-label="Ask a question about the rules"
-            className="font-body rounded-xl"
-            style={{
-              flex: 1, minWidth: 0, padding: "10px 13px", fontSize: 13.5,
-              background: PANEL_2, border: `1px solid ${LINE}`, color: INK,
-            }}
-          />
-          <button
-            type="submit"
-            disabled={thinking || !input.trim()}
-            aria-label="Send"
-            className="font-body rounded-xl"
-            style={{
-              flexShrink: 0, padding: "10px 16px", fontSize: 13.5, fontWeight: 700,
-              background: TEAL, color: "#03211d", border: `1px solid ${TEAL}`,
-              opacity: thinking || !input.trim() ? 0.45 : 1,
-              cursor: thinking || !input.trim() ? "default" : "pointer",
-            }}
-          >
-            Ask
-          </button>
-        </form>
-      </div>
-    </div>
+          Ask
+        </button>
+      </form>
+    </Sheet>
   );
 }
 

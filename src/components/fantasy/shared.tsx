@@ -206,10 +206,39 @@ export function Deadline({ iso, compact = false }: { iso: string | null; compact
  *
  * `labelledBy` points at the id of the sheet's own heading, so the announcement
  * is the question being asked rather than the word "dialog".
+ *
+ * `variant`/`layout` exist so the six hand-rolled sheets that bypassed this
+ * primitive (accessibility sweep, Aug) could adopt the focus trap/Escape/scroll
+ * lock WITHOUT losing their shipped look — re-skinning six surfaces to the glass
+ * treatment was out of scope for an a11y fix.
+ *   "glass" (default) = the reference translucent, all-corner panel above.
+ *   "panel" = solid PANEL background, top corners only, teal-tinted border —
+ *     the pickers'/rules bot's existing look.
+ *   layout "flex" hands children a zero-padding flex column (height/maxHeight
+ *     controlled by the caller) so a sticky header can sit above a scrolling
+ *     body, e.g. a search box that shouldn't scroll away with its results.
  */
-export function Sheet({ onClose, labelledBy, children }: {
+export function Sheet({ onClose, labelledBy, children, variant = "glass", layout = "padded", height, maxHeight, animation, border, padding = 18 }: {
   onClose: () => void; labelledBy: string; children: ReactNode;
+  variant?: "glass" | "panel";
+  layout?: "padded" | "flex";
+  height?: string;
+  maxHeight?: string;
+  /** CSS `animation` shorthand for the panel's entrance — e.g. RulesBot's
+   *  `"slideUp 0.22s ease"` (@keyframes in globals.css). Omitted by default;
+   *  most of the migrated sheets shipped with no entrance animation. */
+  animation?: string;
+  /** Overrides "panel"'s default teal-tinted border — InviteToLeagueSheet and
+   *  ReportSheet shipped with a plain hairline (LINE) border, not teal. */
+  border?: string;
+  /** Overrides the default 18px padding — e.g. an asymmetric bottom that clears
+   *  the home-indicator safe area on a "panel" sheet flush to the screen edge,
+   *  which InviteToLeagueSheet/ReportSheet shipped with. Ignored by layout "flex",
+   *  which is always zero-padding (the child owns its own header/body padding). */
+  padding?: number | string;
 }) {
+  const panel = variant === "panel";
+  const flex = layout === "flex";
   const ref = useRef<HTMLDivElement>(null);
   const returnTo = useRef<HTMLElement | null>(null);
   // Portal to <body>: every fantasy route sets `main[data-fantasy] > * { z-index:1 }`,
@@ -314,7 +343,9 @@ export function Sheet({ onClose, labelledBy, children }: {
         top: vv ? vv.top : 0, height: vv ? vv.height : "100%",
         zIndex: 60, background: "rgba(4,8,6,0.72)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
-        padding: "14px 14px calc(14px + env(safe-area-inset-bottom)) 14px",
+        // "panel" sheets sit flush to the screen edge (their own shipped look);
+        // "glass" keeps the 14px surround so the rounded card reads as floating.
+        padding: panel ? 0 : "14px 14px calc(14px + env(safe-area-inset-bottom)) 14px",
       }}>
       <div
         ref={ref}
@@ -323,20 +354,31 @@ export function Sheet({ onClose, labelledBy, children }: {
         aria-labelledby={labelledBy}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="rounded-2xl"
+        className={panel ? undefined : "rounded-2xl"}
         style={{
           // Glassy surface (founder, 6 Aug): translucent panel over a heavy
           // backdrop blur, a hairline top highlight for the glossy edge, and a
           // deep soft shadow so the sheet reads as a floating pane of glass
-          // rather than a flat card.
-          background: "rgba(14,22,17,0.82)",
-          backdropFilter: "blur(24px) saturate(1.3)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.3)",
-          border: `1px solid rgba(255,255,255,0.10)`,
-          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.10), 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px ${tint(TEAL, "14")}`,
-          padding: 18,
-          width: "100%", maxWidth: 480, maxHeight: "100%", overflowY: "auto",
+          // rather than a flat card. "panel" trades that for the solid,
+          // top-rounded-only surface the pickers/rules bot shipped with.
+          background: panel ? PANEL : "rgba(14,22,17,0.82)",
+          backdropFilter: panel ? undefined : "blur(24px) saturate(1.3)",
+          WebkitBackdropFilter: panel ? undefined : "blur(24px) saturate(1.3)",
+          border: panel ? `1px solid ${border ?? tint(TEAL, "44")}` : `1px solid rgba(255,255,255,0.10)`,
+          borderBottom: panel ? "none" : undefined,
+          borderTopLeftRadius: panel ? 18 : undefined,
+          borderTopRightRadius: panel ? 18 : undefined,
+          boxShadow: panel ? undefined : `inset 0 1px 0 rgba(255,255,255,0.10), 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px ${tint(TEAL, "14")}`,
+          padding: flex ? 0 : padding,
+          width: "100%", maxWidth: 480,
+          height,
+          maxHeight: maxHeight ?? "100%",
+          overflowY: flex ? undefined : "auto",
+          overflow: flex ? "hidden" : undefined,
+          display: flex ? "flex" : undefined,
+          flexDirection: flex ? "column" : undefined,
           overscrollBehavior: "contain",
+          animation,
         }}>
         {children}
       </div>
