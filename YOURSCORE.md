@@ -6,7 +6,25 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-06 (**Trust Sprint 1 shipped: quiz answer keys no longer sent to the browser (the leak was a public API route, not the database), Social post comments closed to signed out readers, community accounts labelled, pnpm test + security probes added; mig 262 still to apply after verification — see Recently Shipped top entry. Same day, League Competitions Wave 1 shipped: League Quiz + Beat the Target league wide, official Gameday League Quiz auto created per league, owner create flow, separate competition standings — see Recently Shipped top entry. Same day, League Games Hub shipped: Games tab in every league, live games leaderboard, hub module, history results, action badge — see Recently Shipped top entry. Same day, challenge engine COMPLETE: lifecycle, Quiz Duel + Gameday adapters, rematches, result actions — see the three Recently Shipped entries. Adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
+> **Confirmed:** 2026-08-07 (**Play home simplified — /play now opens on a curated home**
+> (PR #94): Today's Game hero with PLAY above the fold, Quick Play row for the other four
+> games (fed by the canonical `GAMES` list in `GameSwitcher.tsx`), PLAY WITH PEOPLE rows
+> (challenge a friend / find an opponent / play your league) and one MORE GAMES door into
+> the catalogue. The catalogue (Featured / World Cup / PL Club / Records / Build) is
+> unchanged behind it — `?solo=` deep links and club-page back-retrace still work; a
+> `‹ Play` control in the tab row returns home. The full-height Versus ad banner is GONE,
+> superseded by the PLAY WITH PEOPLE section (founder approved 2026-08-07; supersedes the
+> 2026-08-02 banner call). Quiz intro now leads with `PLAY · N Qs` above the fold (cover
+> capped at 320px, still shown whole) with speed scoring collapsed behind "How scoring
+> works". CTA language unified: cards that start a game say PLAY; club cards say OPEN CLUB.
+> Flash fixes: club/records/EOS cards read badges synchronously (the async wrapper caused
+> the tab-switch flash), /versus/quiz no longer blanks its grid while auth resolves, and
+> /play, /versus, /38-0 got bg-matched `loading.tsx`. Home MASTERMIND tile (finished WC)
+> → Perfect 10. Dead `LiveLobbies.tsx` + `GroupChallengeButton.tsx` deleted. Audit +
+> deferred backlog (bundle splitting of the 50–73KB game files, shared entry/result
+> shells, 38-0 landing diet, exit consistency): `docs/AUDIT-2026-08-07-play-simplify.md`.)
+>
+> **Previously confirmed:** 2026-08-06 (**Trust Sprint 1 shipped: quiz answer keys no longer sent to the browser (the leak was a public API route, not the database), Social post comments closed to signed out readers, community accounts labelled, pnpm test + security probes added; mig 262 still to apply after verification — see Recently Shipped top entry. Same day, League Competitions Wave 1 shipped: League Quiz + Beat the Target league wide, official Gameday League Quiz auto created per league, owner create flow, separate competition standings — see Recently Shipped top entry. Same day, League Games Hub shipped: Games tab in every league, live games leaderboard, hub module, history results, action badge — see Recently Shipped top entry. Same day, challenge engine COMPLETE: lifecycle, Quiz Duel + Gameday adapters, rematches, result actions — see the three Recently Shipped entries. Adapters Phase 3B shipped: Quiz Duel and Gameday Quiz playable as challenges, game picker in the challenge sheet — see Recently Shipped top entry. Same day, Challenge lifecycle Phase 3A shipped: one-tap accept,
 > cancel, quiet decline, server-derived results posting into league chat, challenge
 > messages + rate limiting — see Recently Shipped top entry. Same day: video/photo
 > upload unblocked in prod (CSP + missing bucket policies).** Earlier: **Native video shipped across Social: uploads, inline +
@@ -816,6 +834,15 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-07** — **Play home simplified** (PR #94, merged). /play opens on a curated
+  home: Today's Game hero (PLAY above the fold), Quick Play row (other four games, from
+  the canonical `GAMES` list), PLAY WITH PEOPLE rows, one MORE GAMES door; catalogue +
+  `?solo=` deep links intact behind it. Versus ad banner replaced by the people section
+  (supersedes the 2 Aug banner call, founder approved). Quiz intro leads with `PLAY · N Qs`
+  above the fold; scoring explainer collapsed. PLAY CTA unified; tab-switch badge flash
+  fixed (sync lookups); `loading.tsx` on /play /versus /38-0; MASTERMIND home tile →
+  Perfect 10; dead LiveLobbies + GroupChallengeButton deleted. Deferred backlog:
+  `docs/AUDIT-2026-08-07-play-simplify.md`.
 - **2026-08-06** — **TRUST SPRINT 1 SHIPPED** (PR #89; mig 261 applied, **mig 262 deliberately NOT applied yet**):
   quiz answer keys are no longer handed to the browser. The real hole was not
   the database: `/api/challenges/pack` was a public, unauthenticated, CDN cached
