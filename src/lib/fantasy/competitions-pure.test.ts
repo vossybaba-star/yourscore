@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  deriveCompetitionStatus, isEligibleAttempt, rankLeagueQuiz, resolveBeatTarget, competitionResultLine,
+  deriveCompetitionStatus, isEligibleAttempt, viewerIneligibleReason, rankLeagueQuiz, resolveBeatTarget, competitionResultLine,
 } from "./competitions-pure";
 
 // ── deriveCompetitionStatus ───────────────────────────────────────────────
@@ -67,6 +67,33 @@ test("isEligibleAttempt: an attempt completed BEFORE opens_at is excluded, not e
 
 test("isEligibleAttempt: an attempt completed after closes_at is excluded", () => {
   assert.equal(isEligibleAttempt({ completedAt: "2026-08-11T00:00:01Z" }, "2026-08-10T00:00:00Z", "2026-08-11T00:00:00Z"), false);
+});
+
+// ── viewerIneligibleReason ────────────────────────────────────────────────
+
+test("viewerIneligibleReason: no attempt at all is null — nothing to explain", () => {
+  assert.equal(viewerIneligibleReason(null, "2026-08-10T00:00:00Z", "2026-08-11T00:00:00Z"), null);
+});
+
+test("viewerIneligibleReason: an attempt inside the window is false — they're just in standings", () => {
+  assert.equal(
+    viewerIneligibleReason({ completedAt: "2026-08-10T12:00:00Z" }, "2026-08-10T00:00:00Z", "2026-08-11T00:00:00Z"),
+    false,
+  );
+});
+
+test("viewerIneligibleReason: an attempt played BEFORE the window opened is true", () => {
+  assert.equal(
+    viewerIneligibleReason({ completedAt: "2026-08-09T23:59:59Z" }, "2026-08-10T00:00:00Z", "2026-08-11T00:00:00Z"),
+    true,
+  );
+});
+
+test("viewerIneligibleReason: an attempt played after the window closed is also true", () => {
+  assert.equal(
+    viewerIneligibleReason({ completedAt: "2026-08-11T00:00:01Z" }, "2026-08-10T00:00:00Z", "2026-08-11T00:00:00Z"),
+    true,
+  );
 });
 
 // ── rankLeagueQuiz ────────────────────────────────────────────────────────

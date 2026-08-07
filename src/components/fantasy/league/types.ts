@@ -155,6 +155,9 @@ export interface CompetitionDetail {
   standings: CompetitionEntry[];
   winner: { userId: string; name: string } | null;
   provisional: boolean;
+  /** True when the viewer played this competition's pack before the window
+   *  opened, so their run doesn't (and never can) count. */
+  viewerIneligible: boolean;
 }
 
 // ── Games tab (Phase 4A) ──────────────────────────────────────────────────
