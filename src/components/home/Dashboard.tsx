@@ -80,16 +80,6 @@ export interface PlayNextInfo {
   sub: string;
 }
 
-export interface LeaguePosition {
-  id: string;
-  name: string;
-  myPos: number;
-  total: number;
-  myScore: number;
-  gapAbove: number | null;
-  aboveName: string | null;
-}
-
 export interface DashboardData {
   userId: string;
   displayName: string;
@@ -98,7 +88,6 @@ export interface DashboardData {
   weekDots: WeekDot[];
   rivalry: RivalryInfo | null;
   wcRun: WcRunInfo | null;
-  leagues: LeaguePosition[];
   /** The single hero: today's featured game (Europe/London calendar day). */
   todaysGame: TodaysGame;
   /** null = not signed in / not yet checked; done=false = not played today. */
@@ -450,6 +439,76 @@ function FeedToggle({ tab, onChange }: { tab: FeedTab; onChange: (t: FeedTab) =>
   );
 }
 
+// ── League highlight ─────────────────────────────────────────────────────────
+// Home shows a league ONLY when something real is happening in one (founder
+// 2026-08-07 eve). One card max: the league with the most unread chat, else a
+// join within the last day. Quiet leagues render nothing — the Leagues tab is
+// where the full list lives. 401s (guest) and errors self-hide.
+
+interface LeagueHighlightRow {
+  id: string;
+  name: string;
+  code: string;
+  unread: number;
+  highlight?: { tone: string; author: string | null; text: string; at: string | null } | null;
+}
+
+function LeagueHighlightCard() {
+  const [pick, setPick] = useState<LeagueHighlightRow | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/fantasy/leagues")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!live || !j?.leagues) return;
+        const rows = j.leagues as LeagueHighlightRow[];
+        const unread = rows.filter((l) => l.unread > 0).sort((a, b) => b.unread - a.unread)[0];
+        if (unread) { setPick(unread); return; }
+        const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+        const fresh = rows.find(
+          (l) => l.highlight && (l.highlight.tone === "join" || l.highlight.tone === "chat") &&
+            l.highlight.at && Date.parse(l.highlight.at) > dayAgo
+        );
+        if (fresh) setPick(fresh);
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, []);
+
+  if (!pick) return null;
+  const line = pick.unread > 0
+    ? `${pick.unread} new message${pick.unread === 1 ? "" : "s"}`
+    : pick.highlight
+    ? `${pick.highlight.author ? `${pick.highlight.author}: ` : ""}${pick.highlight.text}`
+    : "";
+  return (
+    <div>
+      <SectionHead title="Your leagues" href="/fantasy/leagues" hrefLabel="All →" />
+      <Link
+        href={`/fantasy/leagues/${pick.code}`}
+        className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:opacity-90 active:scale-[0.99]"
+        style={{ background: "rgba(255,194,51,0.07)", border: "1px solid rgba(255,194,51,0.25)" }}
+      >
+        <span
+          className="flex items-center justify-center flex-shrink-0 rounded-xl"
+          style={{ width: 40, height: 40, background: "rgba(255,194,51,0.12)", border: "1px solid rgba(255,194,51,0.3)" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 11.5a8.5 8.5 0 01-12.5 7.5L3 21l2-5.5A8.5 8.5 0 1121 11.5z" />
+          </svg>
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="font-body text-sm font-bold text-white truncate">{pick.name}</p>
+          <p className="font-body text-xs truncate" style={{ color: "#c9a43f" }}>{line}</p>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: GOLD, flexShrink: 0 }}>
+          <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </Link>
+    </div>
+  );
+}
+
 function FeedSection() {
   const [tab, setTab] = useState<FeedTab>("global");
   return (
@@ -506,7 +565,7 @@ function PendingTurnsNotice() {
 // ── Main ────────────────────────────────────────────────────────────────────────
 
 export function Dashboard({ data }: { data: DashboardData }) {
-  const { displayName, rank, dayStreak, weekDots, leagues, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
+  const { displayName, rank, dayStreak, weekDots, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
 
   // Deep-link from a daily push: /?focus=today|debate scrolls that home card
   // into view so a tap lands the player right on the game / debate to act on.
@@ -582,49 +641,11 @@ export function Dashboard({ data }: { data: DashboardData }) {
           <DebateCard signInNext="/" withSignUpPitch={false} />
         </div>
 
-        {/* Your leagues — sits with the football-that's-mine content, ahead
-            of the open feed */}
-        <div>
-          <SectionHead title="Your leagues" href="/leagues" hrefLabel="All →" />
-          {leagues.length === 0 ? (
-            <Link href="/leagues" className="block rounded-2xl px-5 py-5 text-center transition-all hover:opacity-90 active:scale-[0.99]"
-              style={{ background: "rgba(174,234,0,0.06)", border: "1px dashed rgba(174,234,0,0.3)" }}>
-              <p className="font-display text-lg text-white">Start a league with your friends</p>
-              <p className="font-body text-xs text-text-muted mt-1">Compete on a private board all season →</p>
-            </Link>
-          ) : (
-            <div className="space-y-2.5">
-              {leagues.map((lg) => {
-                const top = lg.myPos === 1;
-                return (
-                  <Link key={lg.id} href={`/league/${lg.id}`}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all hover:opacity-90 active:scale-[0.99] bg-surface"
-                    style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <div className="flex flex-col items-center justify-center flex-shrink-0" style={{ width: 44 }}>
-                      <span className="font-display leading-none" style={{ fontSize: 24, color: top ? GOLD : LIME }}>
-                        {top ? "🥇" : `#${lg.myPos}`}
-                      </span>
-                      <span className="font-body text-[10px] text-text-muted mt-0.5">of {lg.total}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-bold text-white truncate">{lg.name}</p>
-                      <p className="font-body text-xs text-text-muted truncate">
-                        {top
-                          ? `Leading · ${lg.myScore.toLocaleString()} pts`
-                          : lg.gapAbove !== null && lg.aboveName
-                          ? `${lg.gapAbove.toLocaleString()} pts behind ${lg.aboveName}`
-                          : `${lg.myScore.toLocaleString()} pts`}
-                      </p>
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" style={{ color: "#8a948f", flexShrink: 0 }}>
-                      <path d="M6 3l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* League highlight — leagues live in their own tab now (founder
+            2026-08-07 eve: "not on the home screen unless there's a major
+            highlight"). This renders at most ONE card, and only when a
+            league has something genuinely new: unread chat or a fresh join. */}
+        <LeagueHighlightCard />
 
         {/* The feed — everyone else's football, open by default */}
         <FeedSection />

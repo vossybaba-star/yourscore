@@ -18,7 +18,9 @@ import { useUser } from "@/hooks/useUser";
 // gameplay (game pages raise the useHideGamesNav flag mid-run).
 
 const GAME_ROUTES: Record<string, GameKey> = {
-  "/play": "quiz",
+  // "/play" removed (founder 2026-08-07 eve): the Play home carries its own
+  // curated structure — no Solo|Versus toggle, no game switcher above it.
+  // The bar still rides the individual game sections for cross-game hops.
   "/38-0": "draft",
   "/play/game/perfect-10": "perfect10",
   "/play/game/higher-lower": "higher-lower",

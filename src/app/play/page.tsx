@@ -9,7 +9,8 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import { Button } from "@/components/ui/Button";
 import { getTeamBadgeUrlSync } from "@/lib/teamImages";
 import { getCompetitionBadgeUrlSync } from "@/lib/competitionImages";
-import { QuickPlayGrid, PlayWithPeople, MoreGamesDoor, SectionLabel } from "@/components/games/PlayHome";
+import { QuickPlayGrid, PlayWithPeople, MoreGamesDoor, SectionLabel, QuizCarousel, packHref, type CarouselPack } from "@/components/games/PlayHome";
+import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
 import { RECORDS_EMOJI } from "@/lib/theme";
@@ -719,8 +720,28 @@ function PlayPageInner() {
   const heroPack =
     soloTab === "featured" && filtered[0]?.metadata?.cover_image ? filtered[0] : null;
   const gridPacks = heroPack ? filtered.slice(1) : filtered;
-  // The Play home's Today's Game: the lead featured pack with cover art.
-  const homeHero = featuredTabPacks[0]?.metadata?.cover_image ? featuredTabPacks[0] : null;
+  // TODAY'S QUIZ carousel curation: the best featured packs with a mix of
+  // clubs threaded in (founder 2026-08-07 eve: "best ones/trending for now
+  // and mix of clubs"). Two featured, then a club, repeating — max 9 cards.
+  const clubPacks = packs.filter((p) => p.type === "club" && p.metadata?.cover_image);
+  const curatedPacks: CarouselPack[] = (() => {
+    const feat = featuredTabPacks.filter((p) => p.metadata?.cover_image).slice(0, 6);
+    const clubs = clubPacks.slice(0, 3);
+    const mixed: typeof feat = [];
+    let f = 0, c = 0;
+    while (mixed.length < 9 && (f < feat.length || c < clubs.length)) {
+      if (f < feat.length) mixed.push(feat[f++]);
+      if (f < feat.length) mixed.push(feat[f++]);
+      if (c < clubs.length) mixed.push(clubs[c++]);
+    }
+    return mixed.map((p) => ({
+      id: p.id,
+      name: p.name,
+      question_count: p.question_count,
+      href: packHref(p, challengeTo),
+      cover: p.metadata?.cover_image ?? null,
+    }));
+  })();
 
   return (
     <div className="min-h-screen bg-bg" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
@@ -832,51 +853,60 @@ function PlayPageInner() {
       {mainTab === "solo" && (
         <>
           {/* ── PLAY HOME (default) ─────────────────────────────────────────
-              The curated view (2026-08-07 simplification): one obvious game,
-              a short quick-play row, people, one door to the catalogue. The
-              full-height Versus ad banner this replaces is superseded by the
-              PLAY WITH PEOPLE section — same job, above the fold, no ad. */}
+              Founder order (2026-08-07 eve): GAMEDAY QUIZ leads (live packs +
+              the fixtures carousel with notify buttons), then TODAY'S QUIZ
+              with an arrow into the catalogue and a curated pack carousel,
+              then art-led Quick Play, then people. The Solo|Versus toggle and
+              the game switcher no longer render here (GamesNav dropped /play). */}
           {soloTab === "home" && (
-            <div className="max-w-lg mx-auto px-4 pt-4 space-y-5">
-              {/* Today's Game — the one major playable object. */}
-              <div>
-                {homeHero ? (
-                  <>
-                    <div className="flex items-baseline justify-between mb-2">
-                      <SectionLabel>TODAY&apos;S GAME</SectionLabel>
-                      <span className="font-body text-[11px]" style={{ color: "#7a857f", fontVariantNumeric: "tabular-nums" }}>
-                        {homeHero.question_count} questions · ~2 min
-                      </span>
-                    </div>
-                    <HeroPackCard pack={homeHero} challengeTo={challengeTo} />
-                  </>
-                ) : packsLoading ? (
-                  // Fixed-height placeholder so the hero zone never collapses
-                  // and re-expands while the pack list loads.
-                  <div className="rounded-3xl bg-surface" style={{ height: 340, border: "1px solid rgba(255,255,255,0.06)", opacity: 0.3 }} />
-                ) : null}
-              </div>
-
-              {/* Gameday rail — every PL fixture with a published pack. Self-hides
-                  off matchday (useGamedayToday), so quiet weeks lose the section
-                  entirely rather than showing an empty rail. */}
+            <>
+              {/* GAMEDAY QUIZ — live packs first (matchdays), then every
+                  upcoming fixture with a NOTIFY ME button. Both self-hide
+                  when empty. */}
               <GamedayRail />
+              <UpcomingQuizzes />
 
-              {/* Quick Play — the other four games, straight in. */}
-              <div>
-                <div className="mb-2"><SectionLabel>QUICK PLAY</SectionLabel></div>
-                <QuickPlayGrid />
+              {/* TODAY'S QUIZ — heading arrows into the full catalogue; the
+                  carousel is the curation: best featured packs mixed with
+                  clubs. */}
+              <div className="max-w-lg mx-auto px-4 pt-5">
+                <button
+                  onClick={() => selectSoloTab("featured")}
+                  className="w-full flex items-center justify-between mb-2.5"
+                  aria-label="See all quizzes"
+                >
+                  <SectionLabel>TODAY&apos;S QUIZ</SectionLabel>
+                  <span className="font-display text-sm" style={{ color: "#00d8c0" }}>→</span>
+                </button>
+                {packsLoading ? (
+                  <div className="flex gap-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="rounded-2xl bg-surface flex-shrink-0"
+                        style={{ width: 168, height: 220, border: "1px solid rgba(255,255,255,0.06)", opacity: 0.3 }} />
+                    ))}
+                  </div>
+                ) : (
+                  <QuizCarousel packs={curatedPacks} />
+                )}
               </div>
 
-              {/* Play with people — the three multiplayer verbs. */}
-              <div>
-                <div className="mb-2"><SectionLabel>PLAY WITH PEOPLE</SectionLabel></div>
-                <PlayWithPeople />
-              </div>
+              <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+                {/* Quick Play — art-led cards, straight into each game. */}
+                <div>
+                  <div className="mb-2"><SectionLabel>QUICK PLAY</SectionLabel></div>
+                  <QuickPlayGrid />
+                </div>
 
-              {/* One door into the deep catalogue. */}
-              <MoreGamesDoor count={packs.length} onOpen={() => selectSoloTab("featured")} />
-            </div>
+                {/* Play with people — the three multiplayer verbs. */}
+                <div>
+                  <div className="mb-2"><SectionLabel>PLAY WITH PEOPLE</SectionLabel></div>
+                  <PlayWithPeople />
+                </div>
+
+                {/* One door into the deep catalogue. */}
+                <MoreGamesDoor count={packs.length} onOpen={() => selectSoloTab("featured")} />
+              </div>
+            </>
           )}
 
           {/* Gameday rail in the catalogue too — players used to finding fixture

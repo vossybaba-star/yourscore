@@ -14,7 +14,6 @@ import {
 import {
   Dashboard,
   type DashboardData,
-  type LeaguePosition,
   type RivalryInfo,
 } from "@/components/home/Dashboard";
 
@@ -164,7 +163,6 @@ export default async function RootPage({
   const [
     { data: profile },
     { data: rankRows },
-    { data: standingRows },
     { data: recentMatches },
     { data: wcRunRows },
     { data: attemptDays },
@@ -178,7 +176,6 @@ export default async function RootPage({
     sb.from("profiles").select("display_name, total_score, notifications_read_at").eq("id", userId).single(),
     // Unified rank (two-track) — same RPC the profile uses; gives rank + chase gap.
     sb.rpc("get_yourscore_rank", { p_user_id: userId }),
-    supabase.rpc("get_my_league_standings", { p_user_id: userId, p_limit: 20 }),
     // 38-0 play days (45d) — feeds the day streak + week dots. Was limit(12)
     // with NO date floor: a busy day's 12 matches silently wiped every earlier
     // streak day from this source.
@@ -354,36 +351,6 @@ export default async function RootPage({
   const todaysGameCompletion = await resolveTodaysCompletion(supabase, userId, todaysGame);
   const gamedayFixture = await resolveGamedayFixture(supabase, userId);
 
-  // ── Leagues: my position + gap to the spot above, per league ────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const byLeague = new Map<string, { id: string; name: string; members: { uid: string; name: string; score: number }[] }>();
-  for (const r of standingRows ?? []) {
-    let lg = byLeague.get(r.league_id);
-    if (!lg) {
-      lg = { id: r.league_id, name: r.league_name, members: [] };
-      byLeague.set(r.league_id, lg);
-    }
-    lg.members.push({ uid: r.user_id ?? "", name: r.display_name ?? "Player", score: r.total_score ?? 0 });
-  }
-  const leagues: LeaguePosition[] = [];
-  for (const lg of Array.from(byLeague.values())) {
-    const sorted = [...lg.members].sort((a, b) => b.score - a.score);
-    const idx = sorted.findIndex((m) => m.uid === userId);
-    if (idx === -1) continue;
-    const me = sorted[idx];
-    const above = idx > 0 ? sorted[idx - 1] : null;
-    leagues.push({
-      id: lg.id,
-      name: lg.name,
-      myPos: idx + 1,
-      total: sorted.length,
-      myScore: me.score,
-      gapAbove: above ? Math.max(0, above.score - me.score) : null,
-      aboveName: above ? above.name : null,
-    });
-  }
-  // Surface leagues where the race is tightest (smallest gap) first.
-  leagues.sort((a, b) => (a.gapAbove ?? -1) - (b.gapAbove ?? -1));
 
   const data: DashboardData = {
     userId,
@@ -393,7 +360,6 @@ export default async function RootPage({
     weekDots,
     rivalry,
     wcRun,
-    leagues,
     todaysGame,
     todaysGameCompletion,
     gamedayFixture,

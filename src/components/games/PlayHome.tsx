@@ -9,6 +9,9 @@
 
 import Link from "next/link";
 import { GAMES } from "@/components/ui/GameSwitcher";
+import { PitchArt } from "@/components/versus/GameTileArt";
+import { coverUrl } from "@/lib/img";
+import { slugify } from "@/lib/utils";
 
 // Per-game quick-play metadata keyed by GAMES.key. Quiz is deliberately absent:
 // the hero card above the row IS the quiz entry.
@@ -21,48 +24,138 @@ const QUICK_META: Record<string, { time: string; sub: string; autostart?: boolea
   "guess-the-player": { time: "~60 sec", sub: "Clues drip in, name them", autostart: true },
 };
 
+// Cover art per game. HL / GTP / Perfect 10 have designed square covers in
+// /game-covers; 38-0 draws its own pitch (PitchArt) — no photo, on-brand.
+const QUICK_ART: Record<string, string> = {
+  perfect10: "/game-covers/perfect-10.webp",
+  "higher-lower": "/game-covers/higher-lower.webp",
+  "guess-the-player": "/game-covers/guess-the-player.webp",
+};
+
 export function QuickPlayGrid() {
   const games = GAMES.filter((g) => QUICK_META[g.key]);
   return (
     <div className="grid grid-cols-2 gap-2.5">
-      {games.map(({ key, href, label, color, Icon }) => {
+      {games.map(({ key, href, label, color }) => {
         const meta = QUICK_META[key];
+        const art = QUICK_ART[key];
         return (
           <Link
             key={key}
             href={meta.autostart ? `${href}?start=1` : href}
-            className="rounded-2xl px-4 pt-3.5 pb-3 transition-all duration-150 active:scale-[0.97]"
+            className="rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.97]"
             style={{
               background: "linear-gradient(160deg, #0e1611 0%, #15211a 100%)",
               border: "1px solid rgba(255,255,255,0.08)",
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span style={{ color }}>
-                <Icon active />
-              </span>
+            {/* Art zone — fixed aspect so the grid never shifts while covers load. */}
+            <div className="relative w-full" style={{ aspectRatio: "16 / 10", background: "#0b120d" }}>
+              {art ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={art}
+                  alt=""
+                  loading="eager"
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full"
+                  style={{ objectFit: "cover", objectPosition: "center 32%" }}
+                />
+              ) : (
+                <PitchArt />
+              )}
               <span
-                className="font-body text-[10px] font-semibold"
-                style={{ color: "#7a857f", fontVariantNumeric: "tabular-nums" }}
+                className="absolute bottom-1.5 right-1.5 font-body text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(8,13,10,0.75)", color: "#c4ccc6", fontVariantNumeric: "tabular-nums" }}
               >
                 {meta.time}
               </span>
             </div>
-            <p className="font-display text-base leading-tight text-white">{label.toUpperCase()}</p>
-            <p className="font-body text-[11px] leading-snug mt-0.5 mb-2.5" style={{ color: "#8a948f" }}>
-              {meta.sub}
-            </p>
-            <span
-              className="inline-block font-display text-[11px] tracking-widest px-3.5 py-1 rounded-full"
-              style={{ background: color, color: "#0a0f0a" }}
-            >
-              PLAY
-            </span>
+            <div className="px-3.5 pt-2.5 pb-3">
+              <p className="font-display text-base leading-tight text-white">{label.toUpperCase()}</p>
+              <p className="font-body text-[11px] leading-snug mt-0.5 mb-2.5" style={{ color: "#8a948f" }}>
+                {meta.sub}
+              </p>
+              <span
+                className="inline-block font-display text-[11px] tracking-widest px-3.5 py-1 rounded-full"
+                style={{ background: color, color: "#0a0f0a" }}
+              >
+                PLAY
+              </span>
+            </div>
           </Link>
         );
       })}
     </div>
   );
+}
+
+// ── Today's Quiz carousel ────────────────────────────────────────────────────
+// A horizontal, snap-scrolling rail of curated quiz packs (best + trending +
+// a mix of clubs — the caller curates, this just renders). Cards are cover-led:
+// the art is the card, with a PLAY pill riding on it.
+
+export interface CarouselPack {
+  id: string;
+  name: string;
+  question_count: number;
+  href: string;
+  cover: string | null;
+}
+
+export function QuizCarousel({ packs }: { packs: CarouselPack[] }) {
+  if (packs.length === 0) return null;
+  return (
+    <div
+      className="flex gap-3 overflow-x-auto no-scrollbar pb-2 snap-x -mx-4 px-4"
+      style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+    >
+      {packs.map((p) => (
+        <Link
+          key={p.id}
+          href={p.href}
+          className="flex-shrink-0 snap-start rounded-2xl overflow-hidden transition-all duration-150 active:scale-[0.97]"
+          style={{ width: 168, background: "#0e1611", border: "1px solid rgba(0,216,192,0.2)" }}
+        >
+          <div className="relative w-full" style={{ aspectRatio: "1 / 1", background: "#0b120d" }}>
+            {p.cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverUrl(p.cover, 340) ?? p.cover}
+                alt={p.name}
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 w-full h-full"
+                style={{ objectFit: "contain" }}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="font-display text-3xl" style={{ color: "rgba(0,216,192,0.5)" }}>{p.name[0]}</span>
+              </div>
+            )}
+          </div>
+          <div className="px-3 pt-2 pb-2.5 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="font-body text-xs font-bold text-white leading-tight line-clamp-1">{p.name}</p>
+              <p className="font-body text-[10px] mt-0.5" style={{ color: "#7a857f" }}>{p.question_count} questions</p>
+            </div>
+            <span
+              className="flex-shrink-0 font-display text-[10px] tracking-widest px-2.5 py-1 rounded-full"
+              style={{ background: "#00d8c0", color: "#04231f" }}
+            >
+              PLAY
+            </span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/** Build a carousel href for a pack (club packs open their club hub). */
+export function packHref(p: { name: string; type?: string | null }, challengeTo?: string | null): string {
+  const base = p.type === "club" ? `/club/${slugify(p.name)}` : `/challenges/${slugify(p.name)}`;
+  return challengeTo ? `${base}?challenge=${challengeTo}` : base;
 }
 
 // "Play with people" — the three multiplayer verbs, in plain words. Compact
