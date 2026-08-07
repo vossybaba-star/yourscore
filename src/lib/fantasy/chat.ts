@@ -314,33 +314,39 @@ export async function momentsForGw(db: Db, memberIds: string[], gw: number): Pro
   return moments.slice(0, 6);
 }
 
-export async function leagueChat(db: Db, userId: string, code: string, gwParam?: number | null) {
-  // Club and Founder leagues are OPEN to read (founder, 3 Aug — "go into other
-  // clubs' leagues to see what they talk about"). A non-member gets the chat in
-  // read-only mode with a notice; every other league stays members-only.
-  // pinned_message_id is probed with a fallback (AC1/AC6): pre-migration the
-  // column doesn't exist yet, and PostgREST fails the WHOLE select if an unknown
-  // column is named, so a first-try-then-fallback is the only way to keep the
-  // rest of the league loading while the column is absent.
+export async function leagueChat(db: Db, userId: string | null, code: string, gwParam?: number | null) {
+  // Club/Founder leagues are OPEN to read (founder, 3 Aug — "go into other
+  // clubs' leagues to see what they talk about"), and so is any PUBLIC league
+  // (founder, 7 Aug — leagues read as communities; a public one's chat is
+  // previewable like a Discord public server, same as its table already is
+  // via leagueDetail's optional viewerId). A non-member — signed in or fully
+  // signed out (userId null) — gets the chat in read-only mode with a notice;
+  // a genuinely PRIVATE league stays members-only, no change there.
+  // pinned_message_id/is_public are probed with a fallback (AC1/AC6): pre-migration
+  // pinned_message_id doesn't exist yet, and PostgREST fails the WHOLE select if an
+  // unknown column is named, so a first-try-then-fallback is the only way to keep
+  // the rest of the league loading while the column is absent.
   let pinSupported = true;
   let leagueQuery = await db.from("fantasy_leagues")
-    .select("id, name, owner_id, stakes, kind, club, pinned_message_id").eq("join_code", code.toUpperCase()).maybeSingle() as ProbeResult;
+    .select("id, name, owner_id, stakes, kind, club, is_public, pinned_message_id").eq("join_code", code.toUpperCase()).maybeSingle() as ProbeResult;
   if (leagueQuery.error) {
     pinSupported = false;
     leagueQuery = await db.from("fantasy_leagues")
-      .select("id, name, owner_id, stakes, kind, club").eq("join_code", code.toUpperCase()).maybeSingle() as ProbeResult;
+      .select("id, name, owner_id, stakes, kind, club, is_public").eq("join_code", code.toUpperCase()).maybeSingle() as ProbeResult;
   }
   const leagueRow = leagueQuery.data;
   if (!leagueRow) throw new HttpError(404, "league not found");
   const league = leagueRow as {
     id: string; name: string; owner_id: string; stakes: string | null; kind: string | null; club: string | null;
-    pinned_message_id?: string | null;
+    is_public: boolean; pinned_message_id?: string | null;
   };
 
-  const { data: member } = await db.from("fantasy_league_members")
-    .select("user_id").eq("league_id", league.id).eq("user_id", userId).maybeSingle();
+  const { data: member } = userId
+    ? await db.from("fantasy_league_members")
+        .select("user_id").eq("league_id", league.id).eq("user_id", userId).maybeSingle()
+    : { data: null };
   const isMember = !!member;
-  const openToRead = league.kind === "club" || league.kind === "founder";
+  const openToRead = league.kind === "club" || league.kind === "founder" || league.is_public === true;
   if (!isMember && !openToRead) throw new HttpError(403, "not in this league");
 
   // A non-member is browsing — tell them why they can't post. Members get the
@@ -348,7 +354,11 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
   const notice = isMember ? null
     : league.kind === "club"
       ? `Viewing the ${league.club ?? "club"} fans' league. Only ${league.club ?? "its"} fans can post here.`
-      : "Viewing the Founder League. The first 1,000 managers to build a squad post here.";
+      : league.kind === "founder"
+        ? "Viewing the Founder League. The first 1,000 managers to build a squad post here."
+        : userId
+          ? "Viewing a public league. Join to post here."
+          : "Viewing a public league. Sign in and join to post here.";
 
   // Opening the chat marks it read — advance this member's last_read_at so the
   // league's unread badge clears. AWAITED (not fire-and-forget): a serverless
@@ -554,7 +564,10 @@ export async function leagueChat(db: Db, userId: string, code: string, gwParam?:
       .map((m) => { const id = (m.payload as { competitionId?: unknown }).competitionId; return typeof id === "string" ? id : ""; })
       .filter(Boolean),
   ));
-  const competitionCardById = competitionIds.length ? await competitionCardsByIds(db, competitionIds, userId) : new Map<string, CompetitionCardDTO>();
+  // competitionCardsByIds wants a definite viewerId string (for "is this me"
+  // personalisation) — "" for a guest is a safe no-op sentinel, never matches
+  // a real user_id, so myEntry just comes back null, which is correct.
+  const competitionCardById = competitionIds.length ? await competitionCardsByIds(db, competitionIds, userId ?? "") : new Map<string, CompetitionCardDTO>();
 
   const cardFor = (m: { id: string; kind: string | null; payload: unknown }): { kind: ChatKind; player?: PlayerCard | null; poll?: PollCard | null; squad?: SquadCard | null; news?: NewsCard | null; compare?: CompareCard | null; gif?: GifCard | null; image?: ImageCard | null; video?: VideoCard | null; feed?: FeedShareCard | null; challenge?: ChallengeCardData | null; competition?: CompetitionCardDTO | null } => {
     // System rows (Phase 4b, AC3) carry no card — just the kind, so the client

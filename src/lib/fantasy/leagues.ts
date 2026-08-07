@@ -34,6 +34,17 @@ function db(): Db {
 const NAME_MAX = 40;
 const MAX_OWNED = 20;
 const MAX_MEMBERS = 50;
+const BIO_MAX = 200;
+const LINK_VALUE_MAX = 200;
+
+/** A league's social links (migration 263) — Discord-like community chips.
+ *  Discord is restricted to discord.gg/discord.com; every value must be an
+ *  https URL, validated on write (validateLinks below). */
+export interface LeagueLinks {
+  discord?: string; x?: string; instagram?: string; tiktok?: string; website?: string;
+}
+const LINK_KEYS = ["discord", "x", "instagram", "tiktok", "website"] as const;
+const MAX_LINK_KEYS = 5;
 
 /** A short "what's happening" line for a My Leagues tile, so the list feels alive
  *  instead of a row of names. Priority: latest chat > a recent joiner > a quiet
@@ -55,9 +66,16 @@ export interface LeagueSummary {
   kind: string;
   /** A league YourScore itself runs (club / Founder / mixed) — carries a tick. */
   official: boolean;
+  /** Community identity (migration 263) — a short "about" line, capped ~200
+   *  chars app-side. Null until the owner sets one. */
+  bio: string | null;
+  /** Social chips — Discord-like community presence. Empty object until the
+   *  owner adds any. */
+  links: LeagueLinks;
 }
 export interface PublicLeagueSummary {
   id: string; name: string; code: string; memberCount: number; imageUrl: string | null; official: boolean;
+  bio: string | null; links: LeagueLinks;
 }
 export interface LeagueRow {
   rank: number; userId: string; username: string | null; displayName: string | null;
@@ -102,6 +120,80 @@ async function requireOwnerLeague(svc: Db, code: string, userId: string): Promis
   const league = await findLeagueByCode(svc, code);
   if (league.owner_id !== userId) throw new HttpError(403, "Only the league owner can do this");
   return league;
+}
+
+/** bio/links (migration 263) — read in a SEPARATE query from every list/detail
+ *  read above, and wrapped so a pre-migration database (the columns don't
+ *  exist yet) degrades to an empty map instead of failing the whole read.
+ *  PostgREST fails the entire select when an unknown column is named, so this
+ *  can't be folded into the main `fantasy_leagues` select those callers already
+ *  run — same probe/fallback discipline as chat.ts's pinned_message_id. */
+async function leagueProfiles(svc: Db, leagueIds: string[]): Promise<Map<string, { bio: string | null; links: LeagueLinks }>> {
+  const out = new Map<string, { bio: string | null; links: LeagueLinks }>();
+  if (!leagueIds.length) return out;
+  try {
+    const { data, error } = await svc.from("fantasy_leagues").select("id, bio, links").in("id", leagueIds);
+    if (error) throw error;
+    for (const r of (data ?? []) as { id: string; bio: string | null; links: unknown }[]) {
+      out.set(r.id, { bio: r.bio ?? null, links: sanitizeStoredLinks(r.links) });
+    }
+  } catch (e) {
+    console.error("[fantasy:leagues] bio/links probe failed (migration 263 not applied yet?) — degrading to empty:", e);
+  }
+  return out;
+}
+const emptyProfile = { bio: null as string | null, links: {} as LeagueLinks };
+
+/** Defensive pass over a stored `links` jsonb value on the way OUT — never
+ *  trust it's still shaped like LeagueLinks (a future migration, a hand-edit,
+ *  whatever) beyond known keys + string values. Mirrors validateLinks's
+ *  allowlist but doesn't re-validate URL shape; the write path already did. */
+function sanitizeStoredLinks(raw: unknown): LeagueLinks {
+  if (!raw || typeof raw !== "object") return {};
+  const input = raw as Record<string, unknown>;
+  const out: LeagueLinks = {};
+  for (const key of LINK_KEYS) {
+    const v = input[key];
+    if (typeof v === "string" && v) out[key] = v;
+  }
+  return out;
+}
+
+function validateBio(raw: unknown): string | null {
+  if (raw == null) return null;
+  const bio = typeof raw === "string" ? raw.trim().slice(0, BIO_MAX) : "";
+  if (!bio) return null;
+  const why = commentRejection(bio);
+  if (why) throw new HttpError(400, why);
+  return bio;
+}
+
+/** Owner-set social links — Discord-like community chips. Strips empty
+ *  strings, caps at 5 keys from the allowed set, requires https, and holds
+ *  discord to its own domains so a chip can never link somewhere unexpected. */
+function validateLinks(raw: unknown): LeagueLinks {
+  if (raw == null) return {};
+  if (typeof raw !== "object") throw new HttpError(400, "Bad links");
+  const input = raw as Record<string, unknown>;
+  const out: LeagueLinks = {};
+  let count = 0;
+  for (const key of LINK_KEYS) {
+    const v = input[key];
+    if (typeof v !== "string") continue;
+    const trimmed = v.trim();
+    if (!trimmed) continue; // strip empty strings
+    if (count >= MAX_LINK_KEYS) throw new HttpError(400, "Too many links");
+    if (trimmed.length > LINK_VALUE_MAX) throw new HttpError(400, `That ${key} link is too long`);
+    let url: URL;
+    try { url = new URL(trimmed); } catch { throw new HttpError(400, `That ${key} link isn't a valid URL`); }
+    if (url.protocol !== "https:") throw new HttpError(400, `The ${key} link must start with https://`);
+    if (key === "discord" && !(trimmed.startsWith("https://discord.gg/") || trimmed.startsWith("https://discord.com/"))) {
+      throw new HttpError(400, "Discord links must start with https://discord.gg/ or https://discord.com/");
+    }
+    out[key] = trimmed;
+    count++;
+  }
+  return out;
 }
 
 async function memberCounts(svc: Db, leagueIds: string[]): Promise<Map<string, number>> {
@@ -378,8 +470,10 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
     return { tone: "empty", author: null, text: "Invite your friends to get going.", at: null, msgCount: 0 };
   };
 
+  const profiles = await leagueProfiles(svc, ids);
   const out = ((leagues ?? []) as unknown as LeagueRecord[]).map((l) => {
     const memberCount = counts.get(l.id) ?? 1;
+    const profile = profiles.get(l.id) ?? emptyProfile;
     return {
       id: l.id, name: l.name, code: l.join_code, memberCount,
       isPublic: l.is_public, isOwner: l.owner_id === userId, imageUrl: l.image_url ?? null,
@@ -387,6 +481,7 @@ export async function myLeagues(userId: string): Promise<LeagueSummary[]> {
       unread: unread.get(l.id) ?? 0,
       kind: (l as { kind?: string }).kind ?? "private",
       official: (l as { official?: boolean }).official ?? false,
+      bio: profile.bio, links: profile.links,
     };
   });
 
@@ -420,7 +515,11 @@ export async function publicLeagues(userId: string): Promise<PublicLeagueSummary
     .slice(0, 30);
 
   const counts = await memberCounts(svc, filtered.map((l) => l.id));
-  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null, official: l.official ?? false }));
+  const profiles = await leagueProfiles(svc, filtered.map((l) => l.id));
+  return filtered.map((l) => {
+    const profile = profiles.get(l.id) ?? emptyProfile;
+    return { id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null, official: l.official ?? false, bio: profile.bio, links: profile.links };
+  });
 }
 
 /** Search PUBLIC leagues by name (Social → Discover → Leagues). Private leagues
@@ -446,7 +545,11 @@ export async function searchPublicLeagues(userId: string, qRaw: unknown): Promis
     .slice(0, 20);
 
   const counts = await memberCounts(svc, filtered.map((l) => l.id));
-  return filtered.map((l) => ({ id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null, official: l.official ?? false }));
+  const profiles = await leagueProfiles(svc, filtered.map((l) => l.id));
+  return filtered.map((l) => {
+    const profile = profiles.get(l.id) ?? emptyProfile;
+    return { id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1, imageUrl: l.image_url ?? null, official: l.official ?? false, bio: profile.bio, links: profile.links };
+  });
 }
 
 /** One Discover row — a league anyone can look at, plus whether THIS viewer can
@@ -454,6 +557,7 @@ export async function searchPublicLeagues(userId: string, qRaw: unknown): Promis
 export interface DiscoverLeague {
   id: string; name: string; code: string; memberCount: number; imageUrl: string | null;
   official: boolean; kind: string; club: string | null; isMember: boolean; canContribute: boolean;
+  bio: string | null; links: LeagueLinks;
 }
 export interface DiscoverLeaguesResult {
   /** Mixed cross-fan leagues + the Founder League — YourScore's own, up top. */
@@ -501,16 +605,18 @@ export async function discoverLeagues(viewerId: string | null): Promise<Discover
   type Row = { id: string; name: string; join_code: string; image_url: string | null; kind: string | null; club: string | null; official: boolean };
   const allRows = [...((ours ?? []) as Row[]), ...((publicRows ?? []) as Row[])];
   const counts = await memberCounts(svc, allRows.map((l) => l.id));
+  const profiles = await leagueProfiles(svc, allRows.map((l) => l.id));
 
   const toDiscover = (l: Row): DiscoverLeague => {
     const kind = l.kind ?? "private";
     const isMember = memberOf.has(l.id);
     const isClubGated = kind === "club" || kind === "founder";
     const canContribute = isMember || (!isClubGated) || (kind === "club" && !!l.club && supportedClubs.has(l.club));
+    const profile = profiles.get(l.id) ?? emptyProfile;
     return {
       id: l.id, name: l.name, code: l.join_code, memberCount: counts.get(l.id) ?? 1,
       imageUrl: l.image_url ?? null, official: l.official ?? false, kind, club: l.club ?? null,
-      isMember, canContribute,
+      isMember, canContribute, bio: profile.bio, links: profile.links,
     };
   };
 
@@ -632,6 +738,10 @@ export interface LeagueDetail {
     /** Whether THIS viewer may post here. A club league is browsable by anyone
      *  but only its club's fans (its members) can contribute. */
     canContribute: boolean;
+    /** Community identity (migration 263) — a short "about" line + social
+     *  chips. bio null / links {} until the owner sets any. */
+    bio: string | null;
+    links: LeagueLinks;
   };
   /** The current gameweek and its phase, for the Hub's summary card. */
   gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
@@ -751,6 +861,8 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
   const kind = league.kind ?? "private";
   const canContribute = isMember;
 
+  const profile = (await leagueProfiles(svc, [league.id])).get(league.id) ?? emptyProfile;
+
   // ── AC1: pre-deadline readiness — one extra query, ONLY in the pre phase
   // (nothing to show once scoring's started). fantasy_squads is written in a
   // single upsert covering picks + xi + bench + captain + vice together
@@ -810,6 +922,7 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
       memberCount: ids.length, isPublic: league.is_public, isMember, isOwner,
       stakes: league.stakes, imageUrl: league.image_url ?? null,
       kind, club: league.club ?? null, official: league.official ?? false, canContribute,
+      bio: profile.bio, links: profile.links,
     },
     gw: { number: currentGw.gw, phase, deadline: currentGw.deadline },
     season, month, lastMonth, readiness, gwRecap,
@@ -948,6 +1061,31 @@ export async function setVisibility(
   const league = await requireOwnerLeague(svc, code, userId);
   await svc.from("fantasy_leagues").update({ is_public: isPublic }).eq("id", league.id);
   return { name: league.name, isPublic };
+}
+
+/** Owner-only: set the community bio and/or social links (migration 263).
+ *  Either field is optional — only the ones present in `body` are validated
+ *  and written, so a settings page saving just the bio never clobbers links
+ *  (or vice versa). Same requireOwnerLeague gate as rename/setVisibility
+ *  above — this IS the server-side owner check for the settings page. */
+export async function setLeagueProfile(
+  userId: string, code: string, body: { bio?: unknown; links?: unknown },
+): Promise<{ bio: string | null; links: LeagueLinks }> {
+  const svc = db();
+  const league = await requireOwnerLeague(svc, code, userId);
+  const update: Record<string, unknown> = {};
+  if ("bio" in body) update.bio = validateBio(body.bio);
+  if ("links" in body) update.links = validateLinks(body.links);
+  if (!Object.keys(update).length) throw new HttpError(400, "Nothing to update");
+  const { error } = await svc.from("fantasy_leagues").update(update).eq("id", league.id);
+  if (error) throw new HttpError(500, "Could not save");
+  // Read back whatever wasn't in this call so the response is always the
+  // full current profile, not just the half this call touched.
+  const current = (await leagueProfiles(svc, [league.id])).get(league.id) ?? emptyProfile;
+  return {
+    bio: "bio" in body ? (update.bio as string | null) : current.bio,
+    links: "links" in body ? (update.links as LeagueLinks) : current.links,
+  };
 }
 
 export async function leaveLeague(userId: string, code: string): Promise<void> {

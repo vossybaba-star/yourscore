@@ -14,6 +14,7 @@ import Link from "next/link";
 import {
   AMBER, Btn, CORAL, GOLD, INK, LIME, LINE, MUTED, PANEL, PosTag, TEAL, page, tint, Skel,
 } from "@/components/fantasy/shared";
+import { CREDIT_CAP } from "@/lib/fantasy/engine";
 import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
@@ -29,16 +30,15 @@ interface FeedEvent {
   board?: FeedBoard | null; player?: FeedFace | null; playerId?: number | null;
 }
 interface ScoutPick { category: string; id: number; name: string; club: string; pos: string; price: number; avatarUrl: string | null }
-interface LeagueCard { code: string; name: string; memberCount: number; latest: { author: string; preview: string } | null; msgCount: number; unread: number }
+interface LeagueCard { code: string; name: string; memberCount: number; latest: { author: string; preview: string } | null; msgCount: number; unread: number; imageUrl: string | null }
 interface HomeData {
   you: { hasSquad: boolean; gw: number | null; phase: "pre" | "live" | "final"; deadline: string | null;
     rank: number | null; points: number; played: number; totalPlayers: number; gapToFirst: number | null;
-    board: FeedBoard | null };
+    board: FeedBoard | null; bank: number | null };
   leagues: LeagueCard[];
   moves: FeedEvent[];
   movesScope: "following" | "global";
   followingCount: number;
-  scout: ScoutPick[];
   proposed: { pickIds: number[]; players: BoardPlayer[] } | null;
   todo: { squad: boolean; league: boolean; follow: boolean };
 }
@@ -288,22 +288,66 @@ function NeedsAttention({ you, todo }: { you: HomeData["you"]; todo: HomeData["t
   );
 }
 
-// ── EARN A TRANSFER — the weekly knowledge round, styled as a game (lime),
-// not a settings card. Mirrors FantasyHub's round card copy + target route. ──
-function EarnTransferCard() {
+// ── The transfer bank as a five-slot pip row — mirrors MovesBank's own bars
+// (lib/fantasy/engine.ts CREDIT_CAP = 5) at a compact size, so the same store
+// of earned moves reads the same wherever it shows up. Gold fill = held. ─────
+function BankPips({ held, cap }: { held: number; cap: number }) {
+  const filled = Math.max(0, Math.min(cap, held));
+  return (
+    <div style={{ display: "flex", gap: 5, margin: "0 0 10px" }} role="img" aria-label={`${filled} of ${cap} transfers banked`}>
+      {Array.from({ length: cap }).map((_, i) => (
+        <span key={i} style={{
+          flex: 1, height: 6, borderRadius: 4,
+          background: i < filled ? `linear-gradient(180deg, #ffd977, ${GOLD})` : "rgba(255,255,255,0.08)",
+          border: `1px solid ${i < filled ? tint(GOLD, "66") : "rgba(255,255,255,0.06)"}`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// ── EARN TRANSFERS — the weekly knowledge round, styled as a game (lime),
+// not a settings card. Mirrors FantasyHub's round card copy + target route.
+// Shows the real transfer bank as pips when there's a squad to hold credits;
+// with no squad yet there's nothing banked, so the pips are skipped rather
+// than faked. ─────────────────────────────────────────────────────────────
+function EarnTransferCard({ bank }: { bank: number | null }) {
   const router = useRouter();
   return (
     <div style={{
       borderRadius: 16, padding: 16, marginTop: 12,
       background: `linear-gradient(150deg, ${tint(LIME, "1c")}, ${PANEL})`, border: `1px solid ${tint(LIME, "4a")}`,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <svg width={17} height={17} viewBox="0 0 24 24" fill={LIME} stroke="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" /></svg>
-        <span className="font-display tracking-widest" style={{ fontSize: 15, letterSpacing: "0.03em", color: LIME }}>EARN A TRANSFER</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width={17} height={17} viewBox="0 0 24 24" fill={LIME} stroke="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" /></svg>
+          <span className="font-display tracking-widest" style={{ fontSize: 15, letterSpacing: "0.03em", color: LIME }}>EARN TRANSFERS</span>
+        </div>
+        {bank != null && <span className="font-display" style={{ fontSize: 13, color: GOLD, fontVariantNumeric: "tabular-nums" }}>{Math.max(0, Math.min(CREDIT_CAP, bank))} / {CREDIT_CAP}</span>}
       </div>
+      {bank != null && <BankPips held={bank} cap={CREDIT_CAP} />}
       <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.45 }}>Get answers right in the weekly quiz to unlock extra moves.</p>
       <Btn lime onClick={() => router.push("/fantasy/round")}>PLAY</Btn>
     </div>
+  );
+}
+
+// ── League display picture — real art when the league has one, a drawn
+// shield with the league's initial otherwise (same fallback idiom as
+// DiscoverLeagues' LeagueCrest, sized up for the home row). ──────────────────
+function LeagueDp({ name, imageUrl, size = 56 }: { name: string; imageUrl: string | null; size?: number }) {
+  if (imageUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={imageUrl} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: 14, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />;
+  }
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  return (
+    <span style={{ position: "relative", width: size, height: size, flexShrink: 0, borderRadius: 14, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", inset: 0, opacity: 0.55 }}>
+        <path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" />
+      </svg>
+      <span className="font-display" style={{ fontSize: size * 0.36, color: TEAL, lineHeight: 1 }}>{initial}</span>
+    </span>
   );
 }
 
@@ -328,27 +372,27 @@ function LeagueChats({ leagues }: { leagues: LeagueCard[] }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {leagues.map((l) => (
-            <button key={l.code} onClick={() => router.push(`/fantasy/leagues/${l.code}?t=chat`)} style={{ width: "100%", textAlign: "left", cursor: "pointer", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                <span style={{ width: 26, height: 26, borderRadius: 8, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL,"44")}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.5 8.5 0 01-12.5 7.5L3 21l2-5.5A8.5 8.5 0 1121 11.5z" /></svg>
-                </span>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
-                    {l.unread > 0 && <span aria-label={`${l.unread} unread`} style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 800, color: "#04231f", background: TEAL, borderRadius: 999, padding: "1px 6px", minWidth: 16, textAlign: "center" }}>{l.unread > 99 ? "99+" : l.unread}</span>}
+            <button key={l.code} onClick={() => router.push(`/fantasy/leagues/${l.code}?t=chat`)} style={{ width: "100%", textAlign: "left", cursor: "pointer", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12, display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <LeagueDp name={l.name} imageUrl={l.imageUrl} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</span>
+                      {l.unread > 0 && <span aria-label={`${l.unread} unread`} style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 800, color: "#04231f", background: TEAL, borderRadius: 999, padding: "1px 6px", minWidth: 16, textAlign: "center" }}>{l.unread > 99 ? "99+" : l.unread}</span>}
+                    </div>
+                    <div style={{ fontSize: 11, color: MUTED }}>{l.memberCount} member{l.memberCount === 1 ? "" : "s"}</div>
                   </div>
-                  <div style={{ fontSize: 11, color: MUTED }}>{l.memberCount} member{l.memberCount === 1 ? "" : "s"}</div>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL, whiteSpace: "nowrap" }}>{l.latest ? "Open chat →" : "Say something →"}</span>
                 </div>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: TEAL, whiteSpace: "nowrap" }}>{l.latest ? "Open chat →" : "Say something →"}</span>
+                {l.latest ? (
+                  <div style={{ fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <b style={{ color: INK, fontWeight: 700 }}>{l.latest.author}:</b> {l.latest.preview}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12.5, color: MUTED }}>Quiet so far. Get the banter going.</div>
+                )}
               </div>
-              {l.latest ? (
-                <div style={{ fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  <b style={{ color: INK, fontWeight: 700 }}>{l.latest.author}:</b> {l.latest.preview}
-                </div>
-              ) : (
-                <div style={{ fontSize: 12.5, color: MUTED }}>Quiet so far. Get the banter going.</div>
-              )}
             </button>
           ))}
         </div>
@@ -509,12 +553,10 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
           <GameweekHero you={data.you} proposed={data.proposed} onAdopt={adopt} adopting={adopting} />
           {/* 2. NEEDS ATTENTION — only renders when there's a real signal to flag. */}
           <NeedsAttention you={data.you} todo={data.todo} />
-          {/* 3. EARN A TRANSFER — the weekly knowledge round, played as a game. */}
-          <EarnTransferCard />
+          {/* 3. EARN TRANSFERS — the weekly knowledge round, played as a game. */}
+          <EarnTransferCard bank={data.you.bank} />
           {/* 4. YOUR LEAGUES — one tap into the conversation. */}
           <LeagueChats leagues={data.leagues} />
-          {/* 5. SCOUT SAYS — top recommendation only. */}
-          <ScoutRail picks={data.scout} limit={1} label="SCOUT SAYS" cta="See why →" />
           <div style={{ marginTop: 12 }}><RatePhotoHero /></div>
           <RulesRow />
         </PullToRefresh>

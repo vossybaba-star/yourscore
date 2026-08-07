@@ -9,8 +9,24 @@ import {
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BottomNav } from "@/components/ui/BottomNav";
-import type { LeagueDetail } from "@/components/fantasy/league/types";
+import type { LeagueDetail as BaseLeagueDetail } from "@/components/fantasy/league/types";
 import { nameOf } from "@/components/fantasy/league/types";
+
+/** league.bio / league.links (migration 263) — not yet on the shared
+ *  league/types.ts DTO, so extended locally (see the same pattern in the
+ *  league detail page). The API always returns both. */
+interface LeagueLinks {
+  discord?: string; x?: string; instagram?: string; tiktok?: string; website?: string;
+}
+type LeagueDetail = BaseLeagueDetail & { league: BaseLeagueDetail["league"] & { bio: string | null; links: LeagueLinks } };
+const BIO_MAX = 200;
+const LINK_FIELDS: { key: keyof LeagueLinks; label: string; placeholder: string }[] = [
+  { key: "discord", label: "Discord", placeholder: "https://discord.gg/your-invite" },
+  { key: "x", label: "X", placeholder: "https://x.com/yourleague" },
+  { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/yourleague" },
+  { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@yourleague" },
+  { key: "website", label: "Website", placeholder: "https://example.com" },
+];
 
 async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, init);
@@ -48,12 +64,33 @@ export default function LeagueSettingsPage() {
   const [confirm, setConfirm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Bio + social links (migration 263) — always-editable fields (not a click-
+  // to-edit toggle like Stakes below: six fields is one form, not six tiny
+  // ones). Seeded from the server ONCE the first time detail loads, via a ref
+  // rather than every render, so a later load() (after uploading a picture,
+  // renaming, etc.) never clobbers text the owner's mid-typing here.
+  const [bioDraft, setBioDraft] = useState("");
+  const [linksDraft, setLinksDraft] = useState<LeagueLinks>({});
+  const [savingProfile, setSavingProfile] = useState(false);
+  const seededProfileRef = useRef(false);
 
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
     catch (e) { setErr((e as Error).message); }
   }, [code]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!detail || seededProfileRef.current) return;
+    setBioDraft(detail.league.bio ?? "");
+    setLinksDraft({ ...detail.league.links });
+    seededProfileRef.current = true;
+  }, [detail]);
+  const saveProfile = async () => {
+    setSavingProfile(true); setErr(null);
+    try { await apiRaw(`leagues/${code}`, json({ bio: bioDraft, links: linksDraft })); await load(); }
+    catch (e) { setErr((e as Error).message); }
+    setSavingProfile(false);
+  };
 
   const patch = async (body: unknown) => {
     setBusy(true); setErr(null);
@@ -171,6 +208,43 @@ export default function LeagueSettingsPage() {
               </div>
             </div>
             <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} style={{ display: "none" }} />
+          </Card>
+        </Section>
+      )}
+
+      {isOwner && (
+        <Section title="COMMUNITY">
+          <Card>
+            <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 6 }}>Bio</label>
+            <textarea
+              value={bioDraft}
+              onChange={(e) => setBioDraft(e.target.value.slice(0, BIO_MAX))}
+              maxLength={BIO_MAX}
+              rows={3}
+              placeholder="Tell people what this league's about."
+              style={{
+                width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: 9, fontSize: 13.5,
+                background: PANEL, color: INK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.45,
+              }}
+            />
+            <div style={{ textAlign: "right", fontSize: 11, color: MUTED, margin: "4px 0 16px" }}>{bioDraft.length}/{BIO_MAX}</div>
+
+            {LINK_FIELDS.map(({ key, label, placeholder }) => (
+              <div key={key} style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 6 }}>{label}</label>
+                <input
+                  value={linksDraft[key] ?? ""}
+                  onChange={(e) => setLinksDraft((prev) => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={placeholder}
+                  style={{ width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: 9, fontSize: 13.5, background: PANEL, color: INK, border: `1px solid ${LINE}`, outline: "none" }}
+                />
+              </div>
+            ))}
+            <p style={{ fontSize: 11, color: MUTED, margin: "0 0 12px", lineHeight: 1.4 }}>
+              Links must be https. Discord invites only (discord.gg or discord.com).
+            </p>
+
+            <Btn small gold disabled={savingProfile} onClick={saveProfile}>{savingProfile ? "Saving…" : "Save"}</Btn>
           </Card>
         </Section>
       )}

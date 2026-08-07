@@ -23,6 +23,51 @@ import { DiscoverLeagues } from "@/components/fantasy/DiscoverLeagues";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { VerifiedTick } from "@/components/ui/Seal";
 
+/** A league's social links (migration 263) — Discord-like community chips.
+ *  Re-declared locally (not imported) the same way this file already
+ *  re-declares LeagueHighlight/MyLeague below, mirroring the API shape
+ *  without pulling in the server-only lib/fantasy/leagues.ts. */
+interface LeagueLinks {
+  discord?: string; x?: string; instagram?: string; tiktok?: string; website?: string;
+}
+const LINK_META: { key: keyof LeagueLinks; label: string; accent: string; icon: React.ReactNode }[] = [
+  { key: "discord", label: "Discord", accent: "#5865F2", icon: <path d="M8 8.5C10.3 7.3 13.7 7.3 16 8.5M6.5 9c-1.4 2.8-1.4 5.6 0 8.5 1.4.5 2.8.3 3.8-.6M17.5 9c1.4 2.8 1.4 5.6 0 8.5-1.4.5-2.8.3-3.8-.6M9 13a1.2 1.2 0 102.4 0 1.2 1.2 0 00-2.4 0zM12.6 13a1.2 1.2 0 102.4 0 1.2 1.2 0 00-2.4 0z" /> },
+  { key: "x", label: "X", accent: "#eef2f0", icon: <><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></> },
+  { key: "instagram", label: "Instagram", accent: "#E1306C", icon: <><rect x="4.5" y="4.5" width="15" height="15" rx="5" /><circle cx="12" cy="12" r="3.4" /><circle cx="16" cy="8" r="0.6" fill="currentColor" stroke="none" /></> },
+  { key: "tiktok", label: "TikTok", accent: "#25F4EE", icon: <path d="M14 4v9.6a3 3 0 11-2.6-2.97M14 4a4.6 4.6 0 004.5 4.5" /> },
+  { key: "website", label: "Website", accent: TEAL, icon: <><circle cx="12" cy="12" r="8" /><line x1="4" y1="12" x2="20" y2="12" /><path d="M12 4c2 2.2 3 5 3 8s-1 5.8-3 8c-2-2.2-3-5-3-8s1-5.8 3-8z" /></> },
+];
+/** Icon-only circular chips for a league's social links — Discord/X/Instagram/
+ *  TikTok/website, only the ones set. stopPropagation so tapping a chip opens
+ *  the link in a new tab instead of navigating into the league (these render
+ *  inside a clickable tile everywhere they're used). */
+function SocialChips({ links, size = 26 }: { links?: LeagueLinks | null; size?: number }) {
+  if (!links) return null;
+  const entries = LINK_META.filter((m) => links[m.key]);
+  if (!entries.length) return null;
+  return (
+    <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      {entries.map(({ key, label, accent, icon }) => (
+        <span
+          key={key} role="button" tabIndex={0} aria-label={label}
+          onClick={(e) => { e.stopPropagation(); window.open(links[key], "_blank", "noopener,noreferrer"); }}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault(); e.stopPropagation(); window.open(links[key], "_blank", "noopener,noreferrer");
+          }}
+          style={{
+            width: size, height: size, flexShrink: 0, borderRadius: "50%", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: tint(accent, "1c"), border: `1px solid ${tint(accent, "44")}`, color: accent,
+          }}
+        >
+          <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 interface LeagueHighlight {
   tone: "chat" | "join" | "quiet" | "empty";
   author: string | null;
@@ -36,8 +81,10 @@ interface MyLeague {
   unread: number;
   kind: string;
   official?: boolean;
+  bio?: string | null;
+  links?: LeagueLinks;
 }
-interface PublicLeague { id: string; name: string; code: string; memberCount: number; imageUrl?: string | null; official?: boolean }
+interface PublicLeague { id: string; name: string; code: string; memberCount: number; imageUrl?: string | null; official?: boolean; bio?: string | null; links?: LeagueLinks }
 // "leagues" (My Leagues) and "discover" are the primary split — the global
 // bottom-nav Leagues tab, "my people" (product model 2026-08-07). Competition
 // stays reachable but isn't a top-level pill any more: it's a compact
@@ -117,16 +164,26 @@ export default function LeaguesHome() {
   };
 
   // The crest badge (a league image once set, else a shield) shared by both tiles.
-  const crest = (imageUrl?: string | null) => (
+  // Community-card sized (founder, 7 Aug): 76px, rounded-2xl — the shield fallback
+  // scales up with it so a picture-less league still reads as a real tile.
+  const crest = (imageUrl?: string | null, size = 76) => (
     imageUrl ? (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={imageUrl} alt="" width={44} height={44} style={{ width: 44, height: 44, borderRadius: 12, objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
+      <img src={imageUrl} alt="" width={size} height={size} style={{ width: size, height: size, borderRadius: Math.round(size * 0.23), objectFit: "cover", flexShrink: 0, border: `1px solid ${LINE}` }} />
     ) : (
-      <span style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 12, background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
+      <span style={{ width: size, height: size, flexShrink: 0, borderRadius: Math.round(size * 0.23), background: tint(TEAL, "1c"), border: `1px solid ${tint(TEAL, "44")}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <svg width={size * 0.48} height={size * 0.48} viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z" /></svg>
       </span>
     )
   );
+  // A muted 1-2 line "about" strip — only when the owner's set one.
+  const bioLine = (bio?: string | null) => bio ? (
+    <p style={{
+      fontSize: 12, color: MUTED, lineHeight: 1.4, margin: 0,
+      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+    }}>{bio}</p>
+  ) : null;
+  const hasLinks = (links?: LeagueLinks | null) => !!links && LINK_META.some((m) => links[m.key]);
 
   // The small badge on the highlight strip — a chat bubble for talk, a person+ for
   // a new joiner or an empty league. SVG, never an emoji (per the UI-icon rule).
@@ -206,6 +263,12 @@ export default function LeaguesHome() {
           {inviteControl(l)}
           <span style={{ color: TEAL, fontSize: 18, flexShrink: 0 }}>›</span>
         </div>
+        {(l.bio || hasLinks(l.links)) && (
+          <div style={{ marginLeft: 88, marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+            {bioLine(l.bio)}
+            {hasLinks(l.links) && <SocialChips links={l.links} size={22} />}
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, padding: "8px 10px", background: PANEL_2, borderRadius: 10, border: `1px solid ${LINE}` }}>
           {highlightIcon(h.tone)}
           <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: "#c7d0cb", lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
