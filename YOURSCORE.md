@@ -944,6 +944,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-07** — **Fantasy WILDCARD is back + transfer cap cut to 2** (branch
+  `feat/fantasy-wildcard`, mig **265**, NOT merged — awaiting founder OK to push). Founder call:
+  round now earns at most **2** extra transfers (**5 correct → 1, 10 → 2**, was 3/6/9/11 → up to
+  4). The **wildcard returns "same as FPL"**: a separate half-season resource (1 per half,
+  use-it-or-lose-it at the GW19 deadline, unlimited free transfers that gameweek), on its OWN
+  track — NOT in the monthly Triple Captain / Bench Boost / Insight rotation, so it never burns
+  a monthly chip; it only shares the one-chip-per-gameweek slot. No perfect-round bonus wildcard.
+  Also fixed a latent drift: `/fantasy/round` had its own hardcoded `[3,5,7,9]` curve copy (stale
+  through two curve changes) — now derived from `creditsForRound`. Engine 129 tests + tsc + build
+  green. (§ fantasy)
 - **2026-08-07** — **AUDIT REMEDIATION Sprints 2 to 4 SHIPPED** (PRs #93, #95, #97),
   closing the coherence audit's broken behaviour, UI system and media continuity waves.
   **Sprint 2 (#93):** a failed feed load no longer renders as "No moves yet" (the same

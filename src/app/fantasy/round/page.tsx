@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   api, Btn, Card, Chip, Deadline, ErrorState, GOLD, Header, INK, LINE, Loading, MUTED, page, PANEL, Skel, TEAL, tint,
 } from "@/components/fantasy/shared";
-import { CREDIT_CAP } from "@/lib/fantasy/engine";
+import { CREDIT_CAP, creditsForRound } from "@/lib/fantasy/engine";
 
 interface Clues { nationality?: string; flag?: string; jersey?: number }
 interface Served { idx: number; format: string; prompt: string; options: { id: number; label: string }[]; position: string; clues?: Clues }
@@ -13,9 +13,22 @@ interface StartRes { questions: Served[]; answered: number; correct: number; don
 interface StepRes { correct: boolean; answerId: number; correctCount: number; answered: number; done: boolean; creditsEarned: number | null }
 
 const TIMER_SECONDS = 20; // uniform, display-only (anti-look-up; never scored)
-/** Credit curve: 3 correct → 1 transfer, 5 → 2, 7 → 3, 9 → 4. */
-const THRESHOLDS = [3, 5, 7, 9];
-const creditsAt = (correct: number) => THRESHOLDS.filter((t) => correct >= t).length;
+// The correct-counts at which the round awards each next transfer, DERIVED from
+// the engine's creditsForRound so this UI can never drift from the real economy
+// (it did once — this page shrugged off two curve changes with its own copy).
+// Current curve: 5 correct → 1, 10 → 2, so CREDIT_STEPS = [5, 10].
+const CREDIT_STEPS: number[] = (() => {
+  const steps: number[] = [];
+  let last = 0;
+  for (let c = 0; c <= 11; c++) { const v = creditsForRound(c); if (v > last) { steps.push(c); last = v; } }
+  return steps;
+})();
+const TOP_STEP = CREDIT_STEPS[CREDIT_STEPS.length - 1];
+const creditsAt = (correct: number) => creditsForRound(correct);
+// "5 correct earns 1 transfer, 10 earns 2" — spelled out from the same source.
+const CURVE_COPY = CREDIT_STEPS
+  .map((c, i) => (i === 0 ? `${c} correct earns ${i + 1} transfer` : `${c} earns ${i + 1}`))
+  .join(", ");
 
 export default function RoundPage() {
   const router = useRouter();
@@ -133,14 +146,13 @@ export default function RoundPage() {
 // Did THIS answer just tip us over a credit threshold? That's a moment worth
   // marking — the founder shouldn't have to wait until the round ends to learn
   // he's earned a transfer.
-  const justEarned = !!reveal && reveal.correct && THRESHOLDS.includes(reveal.correctCount);
+  const justEarned = !!reveal && reveal.correct && CREDIT_STEPS.includes(reveal.correctCount);
 
   if (finished) {
     const credits = round.creditsEarned;
     const got = correctCount || round.correct;
-    // Curve: 3→1, 5→2, 7→3, 9→4. Show progress to the NEXT credit.
-    const THRESHOLDS = [3, 5, 7, 9];
-    const nextAt = THRESHOLDS.find((t) => got < t);
+    // Show progress to the NEXT credit, off the same engine-derived steps.
+    const nextAt = CREDIT_STEPS.find((t) => got < t);
     return (
       <main data-fantasy style={page}>
         <Header right={<Chip gold>✓ {got}/11</Chip>} />
@@ -152,13 +164,13 @@ export default function RoundPage() {
           <p style={{ fontSize: 13.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.5 }}>
             {got}/11 correct.{" "}
             {credits === 0
-              ? "You need 3 right to earn your first transfer."
+              ? `You need ${CREDIT_STEPS[0]} right to earn your first transfer.`
               : nextAt
                 ? `${nextAt - got} more next time would've earned another.`
                 : "Top of the curve. The most a round can earn."}
           </p>
           <p style={{ fontSize: 11.5, color: MUTED, margin: "0 0 16px" }}>
-            How it works: 3 correct = 1 transfer · 5 = 2 · 7 = 3 · 9 = 4. Transfers bank up to five.
+            How it works: {CURVE_COPY}. Transfers bank up to {CREDIT_CAP}.
           </p>
           <Btn gold onClick={() => router.push("/fantasy")}>Back to my squad</Btn>
         </Card>
@@ -170,8 +182,8 @@ export default function RoundPage() {
   // play. Every number is real: the credit curve, the cap, the banked total.
   const answeredSoFar = reveal ? k + 1 : k;
   const earnedThisRound = creditsAt(correctCount);
-  const nextThreshold = THRESHOLDS.find((t) => correctCount < t);
-  const prevThreshold = THRESHOLDS.filter((t) => correctCount >= t).pop() ?? 0;
+  const nextThreshold = CREDIT_STEPS.find((t) => correctCount < t);
+  const prevThreshold = CREDIT_STEPS.filter((t) => correctCount >= t).pop() ?? 0;
   const toNext = nextThreshold ? nextThreshold - correctCount : 0;
   const questionsLeft = round.questions.length - answeredSoFar;
   const perfectOn = answeredSoFar === correctCount && correctCount < round.questions.length;
@@ -329,7 +341,7 @@ export default function RoundPage() {
               <div style={{ fontSize: 12.5, color: MUTED, marginTop: 2 }}>
                 {reveal.correctCount} correct, so that&apos;s {creditsAt(reveal.correctCount)} transfer
                 {creditsAt(reveal.correctCount) === 1 ? "" : "s"} this week.
-                {reveal.correctCount < 9 && ` Get to ${THRESHOLDS.find((t) => reveal.correctCount < t)} for another.`}
+                {reveal.correctCount < TOP_STEP && ` Get to ${CREDIT_STEPS.find((t) => reveal.correctCount < t)} for another.`}
               </div>
             </div>
           )}

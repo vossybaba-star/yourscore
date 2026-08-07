@@ -40,7 +40,7 @@ export const CORAL = "#e0653c";
 export const tint = (hex: string, a = "1e") => `${hex}${a}`;
 
 export type Pos = "GK" | "DEF" | "MID" | "FWD";
-export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance";
+export type ChipName = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
 export interface ClientPoolPlayer {
   id: number; name: string; club: string; clubId: number; pos: Pos; price: number;
   avatarUrl?: string | null; // SportMonks headshot, baked by pool id (~99% coverage); falls back to faceFor()
@@ -66,6 +66,10 @@ export interface FantasyState {
     /** The chips playable right now (monthly rotation): the current set-of-three
      *  minus what's used, or empty once this month's one chip is spent. */
     available: ChipName[]; playedThisMonth: boolean;
+    /** Wildcard track, separate from the rotation: how many are held and valid
+     *  THIS half (0 if the held one belongs to a half you've left), and which
+     *  half that is (drives the "expires at GW19/38" line). */
+    wildcards: number; wildcardHalf: number | null;
     playedThisGw: ChipName | null;
   } | null;
   entry: {

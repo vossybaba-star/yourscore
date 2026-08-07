@@ -31,7 +31,7 @@ import "server-only";
  *      deadline is sacred."
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { cashOverflow, grantBaseline, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
+import { cashOverflow, grantBaseline, halfOf, scoreEntry, type Chip, type LockedSelection, type SquadPick } from "./engine";
 import { aggregateFixtures, fetchGwFixtures, toPlayerScores } from "./ingest";
 import { enginePool, gwPrices } from "./pool";
 import { SCORING_VERSION, ZERO_FACTS, type MatchFacts } from "./values";
@@ -143,7 +143,55 @@ export async function lockGameweek(db: Db, gw: SeasonGw): Promise<{ locked: numb
     if (upErr) throw new Error(`lock upsert: ${upErr.message}`);
   }
   await db.from("fantasy_gameweeks").update({ status: "locked" }).eq("gw", gw.gw);
+
+  await issueWildcards(db, halfOf(gw.gw));
   return { locked: rows.length, rolledOver };
+}
+
+/**
+ * One issued wildcard per half, use-it-or-lose-it (founder 7 Aug, "same as FPL").
+ *
+ * Two separate questions, and they need two separate columns — collapsing them
+ * into one is a bug that would only surface in December:
+ *   - `wildcard_half`: the half the wildcards you HOLD are valid in. Crossing into
+ *     a new half kills them (that IS the expiry).
+ *   - `issued_half`:   the half we last handed out the wildcard for. It is what
+ *     makes issuance idempotent — a manager who has already SPENT this half's
+ *     wildcard (wildcards=0, wildcard_half=this half) must not be handed another.
+ */
+async function issueWildcards(db: Db, half: 1 | 2): Promise<void> {
+  const squads = await pageAll<{
+    user_id: string; wildcards: number; wildcard_half: number | null; issued_half: number | null;
+  }>(
+    (from, to) => db.from("fantasy_squads")
+      .select("user_id, wildcards, wildcard_half, issued_half").range(from, to),
+    "wildcard issuance",
+  );
+
+  // Grouped by the balance each manager should END on, so this is a handful of
+  // updates rather than one per manager. The per-row loop was a thousand
+  // sequential round-trips inside a 60-second cron — the lock would time out
+  // long before it finished handing wildcards out.
+  const byTarget = new Map<number, string[]>();
+  for (const s of squads) {
+    if (s.issued_half === half && s.wildcard_half === half) continue; // already settled for this half
+    // Anything held for a previous half is dead. Expire, then issue.
+    const live = s.wildcard_half === half ? s.wildcards : 0;
+    const grant = s.issued_half === half ? 0 : 1;
+    const target = live + grant;
+    const bucket = byTarget.get(target) ?? [];
+    bucket.push(s.user_id);
+    byTarget.set(target, bucket);
+  }
+
+  for (const [wildcards, ids] of Array.from(byTarget)) {
+    for (const batch of chunk(ids, 500)) {
+      const { error } = await db.from("fantasy_squads")
+        .update({ wildcards, wildcard_half: half, issued_half: half })
+        .in("user_id", batch);
+      if (error) throw new Error(`wildcard issuance: ${error.message}`);
+    }
+  }
 }
 
 // ── prices: FPL → fantasy_player_prices, once at gameweek open ───────────────

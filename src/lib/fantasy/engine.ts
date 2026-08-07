@@ -91,12 +91,12 @@ export function validateSelection(squad: Squad, xi: number[], bench: number[], c
 }
 
 // ── Credits (founder-locked 11 Jul — kinder floor after playtest) ─────────────
-// Thresholds 3/6/9/11 (founder 28 Jul): 3 correct earns your first transfer,
-// then a step every three — but the FOURTH transfer needs a flawless 11/11. A
-// perfect round is the only way to the full slate. (FPL gives 1 free/week; a
-// great round here still out-earns that.)
+// Cap of TWO earned transfers (founder 7 Aug): 5 correct earns your first extra
+// transfer, 10 earns the second. Below 5 the round earns nothing beyond the
+// baseline move everyone gets. (FPL gives 1 free/week; a strong round here still
+// out-earns that, and the wildcard is back for the full-rebuild weeks.)
 export function creditsForRound(correct: number): number {
-  return correct >= 11 ? 4 : correct >= 9 ? 3 : correct >= 6 ? 2 : correct >= 3 ? 1 : 0;
+  return correct >= 10 ? 2 : correct >= 5 ? 1 : 0;
 }
 export function bankCredits(current: number, minted: number): number {
   return Math.min(CREDIT_CAP, current + minted);
@@ -160,19 +160,25 @@ export function sellPrice(buyTenths: number, currentTenths: number): number {
   if (currentTenths <= buyTenths) return currentTenths;
   return buyTenths + Math.floor((currentTenths - buyTenths) / 2);
 }
-/** How the next transfer is paid: knowledge first, points after. */
-export function transferCost(creditsLeft: number): { paid: "credit" | "hit" } {
+/** How the next transfer is paid: knowledge first, points after.
+ *  On a wildcard week every move is free — that's the whole chip. */
+export function transferCost(creditsLeft: number, wildcard = false): { paid: "credit" | "hit" | "free" } {
+  if (wildcard) return { paid: "free" };
   return { paid: creditsLeft > 0 ? "credit" : "hit" };
 }
 
 // ── Chips (monthly, founder 28 Jul) ──────────────────────────────────────────
-/** The three chips. The WILDCARD was removed entirely: a free full-rebuild
- *  contradicts the earn-your-transfers economy, and in a monthly competition a
- *  bad squad isn't a season-wrecker — the fix is already the knowledge loop. Its
- *  half-season issue/expiry machinery and the perfect-round bonus went with it. */
-export type Chip = "triple_captain" | "bench_boost" | "insight" | "second_chance";
+/** The chips. `triple_captain` / `bench_boost` / `insight` run on the MONTHLY
+ *  rotation (one a month, use all three before repeating). The WILDCARD is back
+ *  (founder 7 Aug), same as FPL: a separate resource issued once per half-season,
+ *  use-it-or-lose-it at the halfway deadline, giving unlimited free transfers for
+ *  one gameweek. It is deliberately NOT in the monthly rotation below — playing it
+ *  never burns your monthly chip and never touches the set-of-three maths. It only
+ *  shares the ONE-chip-per-gameweek slot (entry.chip), FPL-style. */
+export type Chip = "triple_captain" | "bench_boost" | "insight" | "second_chance" | "wildcard";
 // "second_chance" stays in the TYPE (historic entry rows may carry it) but is no
 // longer PLAYABLE — the founder cut it on 22 Jul ("remove the Second Chance").
+// The monthly rotation is exactly these three — the wildcard runs on its own track.
 export const CHIPS: readonly Chip[] = ["triple_captain", "bench_boost", "insight"];
 
 /** Chips run on the MONTHLY competition clock, not the season (founder 28 Jul).
@@ -220,10 +226,15 @@ export function chipPlayable(log: ChipPlay[], chip: Chip, month: string): { ok: 
   return { ok: true };
 }
 
-// Wildcards are gone (founder 28 Jul), and with them the season-half machinery:
-// HALF_SEASON_GW / halfOf (which existed only to expire wildcards) and
-// perfectRoundReward (a perfect round no longer mints a chip — quizzes earn
-// transfers ONLY). A perfect 11/11 is now rewarded purely by creditsForRound = 4.
+/** Season halves — a wildcard is use-it-or-lose-it at the halfway deadline
+ *  (FPL's Christmas spike). GW1-19 are the first half, GW20-38 the second, and a
+ *  wildcard held for the half you've left is dead. One issued per half.
+ *
+ *  No perfect-round bonus wildcard: FPL doesn't have one, and minting chips from
+ *  quizzes reopens the Insight→free-wildcard exploit. Quizzes earn transfer
+ *  credits ONLY; the wildcard arrives purely on the half-season clock. */
+export const HALF_SEASON_GW = 19;
+export const halfOf = (gw: number): 1 | 2 => (gw <= HALF_SEASON_GW ? 1 : 2);
 
 // ── Transfers ────────────────────────────────────────────────────────────────
 /** Swap `outId` → `inId` (same position, club cap holds, bank stays ≥ 0). */
@@ -359,6 +370,8 @@ export function scoreEntry(
     return { id, points: pts, captain: isCap, subbedIn: subbedIn.has(id), facts: scores.get(id)?.facts ?? ZERO_FACTS };
   });
 
+  // A wildcard week's transfers were free, so there is nothing to deduct — the
+  // caller records 0 hits for that week, and this stays a pure sum either way.
   const hitsDeducted = hits * HIT_POINTS;
   total -= hitsDeducted;
   // Credits the bank couldn't hold, cashed at the same rate a transfer costs.

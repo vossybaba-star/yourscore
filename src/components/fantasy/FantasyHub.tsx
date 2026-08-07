@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  api, Btn, Card, Deadline, EMPTY_CONTEXT, ErrorState, fmtM, GOLD, INK,
+  api, Btn, Card, CORAL, Deadline, EMPTY_CONTEXT, ErrorState, fmtM, GOLD, INK,
   LIME, LINE, Loading, MUTED, page, PANEL, PANEL_2, POS_COLOR, Sheet, Skel, TEAL, tint,
   type ChipName, type ClientPoolPlayer, type FantasyContext, type FantasyState, type Pos,
 } from "@/components/fantasy/shared";
@@ -24,7 +24,7 @@ import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { pitchName, DEPARTED_NAME, DEPARTED_PITCH, type BoardPlayer, type LiveDatum } from "@/lib/fantasy/board";
 import { faceFor } from "@/lib/fantasy/faces";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
-import { BUDGET_TENTHS, CREDIT_CAP, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
+import { BUDGET_TENTHS, CREDIT_CAP, HALF_SEASON_GW, MAX_PER_CLUB, SQUAD_SIZE } from "@/lib/fantasy/engine";
 import { KNOWLEDGE_NAME } from "@/lib/fantasy/brand";
 
 type Result = NonNullable<NonNullable<FantasyState["entry"]>["result"]>;
@@ -49,6 +49,12 @@ const CHIP_META: { key: ChipName; label: string; blurb: string; earn: string; ac
     earn: "One a month — use the other two before it comes back" },
 ];
 const CHIP_LABEL: Record<ChipName, string> = Object.fromEntries(CHIP_META.map((c) => [c.key, c.label])) as Record<ChipName, string>;
+// The wildcard sits OUTSIDE CHIP_META — it's a half-season resource, not a
+// monthly-rotation chip — so its label/blurb are looked up first before falling
+// back to the rotation. Keeps CHIP_META (and the set-of-three UI) three-wide.
+const WILDCARD_BLURB = "Unlimited free transfers this gameweek";
+const labelOf = (c: ChipName): string => (c === "wildcard" ? "Wildcard" : CHIP_LABEL[c]);
+const blurbOf = (c: ChipName): string => (c === "wildcard" ? WILDCARD_BLURB : CHIP_META.find((m) => m.key === c)?.blurb ?? "");
 
 async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, init);
@@ -946,7 +952,7 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
                 background: "#233B2C", border: `1px solid ${GOLD}`, borderRadius: 10, padding: "9px 12px", marginTop: 6,
               }}>
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: GOLD }}>
-                  {CHIP_LABEL[chips.playedThisGw]} played this gameweek
+                  {labelOf(chips.playedThisGw)} played this gameweek
                 </span>
                 <Btn small disabled={busy} onClick={undoChip}>Undo</Btn>
               </div>
@@ -991,19 +997,57 @@ export function FantasyHub({ embedded = false }: { embedded?: boolean } = {}) {
         </div>
       )}
 
+      {/* Wildcard — a SEPARATE resource from the monthly chips (founder 7 Aug,
+          "same as FPL"): one per half of the season, unlimited free transfers for
+          one gameweek. It shares only the one-chip-per-gameweek slot, so it's
+          hidden the moment any chip is already played this week. */}
+      {phase === "open" && roundOpen && chips && !chips.playedThisGw && (
+        <Card style={{ marginBottom: 12, background: `linear-gradient(150deg, ${tint(CORAL, "14")}, ${tint(CORAL, "04")})`, border: `1px solid ${tint(CORAL, "33")}` }}>
+          <div className="font-display" style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4, color: CORAL, letterSpacing: "0.02em" }}>Wildcard</div>
+          <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 8px", lineHeight: 1.45 }}>
+            Rebuild as much as you like for one gameweek, every transfer free. One
+            for each half of the season, so spend it on a week worth rebuilding.
+          </p>
+          {chips.wildcards > 0 ? (
+            <button disabled={busy || preseason} onClick={() => playChipAction("wildcard")} style={{
+              width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+              padding: "9px 12px", borderRadius: 10, textAlign: "left",
+              background: `linear-gradient(150deg, ${tint(CORAL, "16")}, ${tint(CORAL, "04")})`,
+              border: `1px solid ${tint(CORAL, "3a")}`, borderLeft: `3px solid ${CORAL}`,
+              color: preseason ? MUTED : INK, cursor: preseason ? "default" : "pointer", opacity: preseason ? 0.55 : 1,
+            }}>
+              <span style={{ fontSize: 12.5 }}>
+                1 wildcard ready. Expires at the GW{(chips.wildcardHalf ?? 1) === 1 ? HALF_SEASON_GW : total} deadline.
+              </span>
+              <span style={{ fontSize: 11, color: preseason ? MUTED : CORAL, fontWeight: 700, flexShrink: 0 }}>
+                {preseason ? "GW1" : "Play"}
+              </span>
+            </button>
+          ) : (
+            <p style={{ fontSize: 11.5, color: "#5b645e", margin: 0, lineHeight: 1.4 }}>
+              {(chips.wildcardHalf ?? 1) >= 2
+                ? "Both wildcards used. A fresh one arrives next season."
+                : `Your next wildcard arrives at the GW${HALF_SEASON_GW + 1} deadline, for the second half.`}
+            </p>
+          )}
+        </Card>
+      )}
+
       {/* Chip confirm, in the app's own voice. Anchored bottom on a phone so the
           answer is under your thumb, not in the middle of the screen. */}
       {confirmChip && chips && (
         <Sheet onClose={() => setConfirmChip(null)} labelledBy="chip-confirm-title">
           <div id="chip-confirm-title" className="font-display" style={{ fontSize: 22, lineHeight: 1.05, marginBottom: 6 }}>
-            Play {CHIP_LABEL[confirmChip]}?
+            Play {labelOf(confirmChip)}?
           </div>
           <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "0 0 6px", lineHeight: 1.45 }}>
-            {CHIP_META.find((c) => c.key === confirmChip)?.blurb}. It applies to gameweek {gwN} and
+            {blurbOf(confirmChip)}. It applies to gameweek {gwN} and
             can be taken back until the matches start.
           </p>
-          <p className="font-body" style={{ fontSize: 12.5, color: GOLD, margin: "0 0 14px" }}>
-            This is your one chip for the month.
+          <p className="font-body" style={{ fontSize: 12.5, color: confirmChip === "wildcard" ? CORAL : GOLD, margin: "0 0 14px" }}>
+            {confirmChip === "wildcard"
+              ? "Your wildcard for this half of the season. Use it or lose it at the half deadline."
+              : "This is your one chip for the month."}
           </p>
           <div style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: 1 }}><Btn onClick={() => setConfirmChip(null)}>Not yet</Btn></div>

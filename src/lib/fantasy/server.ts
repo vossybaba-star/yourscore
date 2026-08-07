@@ -12,7 +12,7 @@ import { buildRound, clientView, grade, questionKey, type Round } from "@/lib/ga
 import type { GateQuestion } from "@/lib/gates/types";
 import {
   applyTransfer, availableChips, BASELINE_CREDITS_PER_GW, CHIPS, chipPlayable, creditsForRound,
-  grantBaseline, playedChipThisMonth, raisePending, scoreEntry, smartDefaults, transferCost,
+  grantBaseline, halfOf, playedChipThisMonth, raisePending, scoreEntry, smartDefaults, transferCost,
   validateSelection, validateSquad,
   RuleError, type Chip, type ChipPlay, type LockedSelection, type Squad, type SquadPick,
 } from "./engine";
@@ -54,6 +54,10 @@ export interface SquadRow {
   xi: number[]; bench: number[]; captain: number; vice: number; version: number;
   created_gw: number;
   chip_log: ChipPlay[];
+  // Wildcard track — separate from the monthly chip_log. `wildcards` is how many
+  // are held right now (0 or 1 within a half); `wildcard_half` the half they're
+  // valid in (they expire crossing into the next).
+  wildcards: number; wildcard_half: number | null;
   pending_credits: number; pending_gameday_done: boolean; pending_source: string | null;
 }
 export interface EntryRow {
@@ -197,6 +201,11 @@ export async function getState(db: Db, userId: string) {
       // one is already spent. No "held count" — you simply have the current set.
       available: availableChips(squad.chip_log, monthKeyOf(gw)),
       playedThisMonth: playedChipThisMonth(squad.chip_log, monthKeyOf(gw)),
+      // Wildcard track: how many are held and valid RIGHT NOW (a wildcard held for
+      // a half you've left is dead, so it reads as 0). Its own slot, separate from
+      // the monthly rotation above.
+      wildcards: squad.wildcard_half === halfOf(gw.gw) ? squad.wildcards : 0,
+      wildcardHalf: squad.wildcard_half,
       playedThisGw: entry?.chip ?? null,
     },
     entry: entry && {
@@ -547,7 +556,9 @@ export async function applyTransferTx(db: Db, userId: string, outId: number, inI
   let next: Squad;
   const priced = await pricedPool(db, gw.gw);
   try { next = applyTransfer(squadShape(squad), outId, inId, priced); } catch (e) { asHttp(e); throw e; }
-  const { paid } = transferCost(squad.credits);
+  // A wildcard week's transfers are free — unlimited moves, not unlimited money;
+  // budget and the club cap inside applyTransfer still hold.
+  const { paid } = transferCost(squad.credits, entry.chip === "wildcard");
   const swap = (arr: number[]) => arr.map((id) => (id === outId ? inId : id));
   const patch = {
     picks: next.picks, bank_tenths: next.bankTenths,
@@ -590,14 +601,18 @@ export async function setSelection(db: Db, userId: string, sel: {
 }
 
 // ── chips (monthly rotation) ─────────────────────────────────────────────────
-/** Play a chip for the current gameweek. The rules are monthly (founder 28 Jul):
- *  ONE chip a month, and a chip can't come back until the other two have been
- *  used (a fresh set of three each quarter). Both are derived from the append-only
- *  chip_log; playing appends {chip, month}. The entry write is the gate (CAS on
- *  chip IS NULL): only the request that wins it may go on to append, so a
- *  double-tap can never play two. */
+/** Play a chip for the current gameweek. Two tracks, one per-gameweek slot:
+ *   - The monthly rotation (triple_captain/bench_boost/insight, founder 28 Jul):
+ *     ONE a month, and one can't come back until the other two are used. Derived
+ *     from the append-only chip_log; playing appends {chip, month}.
+ *   - The WILDCARD (founder 7 Aug, "same as FPL"): a half-season resource, gated
+ *     on a held wildcard valid THIS half — never on chip_log — and spent by
+ *     decrementing its own counter, so it never touches the monthly maths.
+ *  Either way the entry write is the gate (CAS on chip IS NULL): only the request
+ *  that wins it may go on to spend, so a double-tap can never play two. */
 export async function playChip(db: Db, userId: string, chip: Chip) {
-  if (!CHIPS.includes(chip)) throw new HttpError(400, "unknown chip", "unknown-chip");
+  const isWildcard = chip === "wildcard";
+  if (!isWildcard && !CHIPS.includes(chip)) throw new HttpError(400, "unknown chip", "unknown-chip");
   const gw = await currentGw(db, userId);
   const squad = await getSquad(db, userId);
   if (!squad) throw new HttpError(409, "no squad", "no-squad");
@@ -606,10 +621,15 @@ export async function playChip(db: Db, userId: string, chip: Chip) {
   if (entry.chip) throw new HttpError(409, "you've already played a chip this gameweek", "chip-played");
 
   const month = monthKeyOf(gw);
-  const { ok, reason } = chipPlayable(squad.chip_log, chip, month);
-  if (!ok) {
-    if (reason === "month") throw new HttpError(409, "you've already played a chip this month", "chip-month");
-    throw new HttpError(409, "use your other chips before this one comes back", "chip-set");
+  if (isWildcard) {
+    if (squad.wildcards <= 0 || squad.wildcard_half !== halfOf(gw.gw))
+      throw new HttpError(409, "no wildcard to play", "no-wildcard");
+  } else {
+    const { ok, reason } = chipPlayable(squad.chip_log, chip, month);
+    if (!ok) {
+      if (reason === "month") throw new HttpError(409, "you've already played a chip this month", "chip-month");
+      throw new HttpError(409, "use your other chips before this one comes back", "chip-set");
+    }
   }
 
   const { data: claimed, error: eErr } = await db.from("fantasy_entries")
@@ -617,9 +637,12 @@ export async function playChip(db: Db, userId: string, chip: Chip) {
   if (eErr) throw new HttpError(500, eErr.message);
   if (!claimed?.length) throw new HttpError(409, "you've already played a chip this gameweek", "chip-played");
 
-  // Append this play to the log (newest last). CAS on version so a concurrent
-  // change can't clobber it; on a lost race, undo the entry claim.
-  const spendPatch = { chip_log: [...squad.chip_log, { chip, month }], version: squad.version + 1 };
+  // Spend it. A wildcard decrements its own counter; a monthly chip appends to
+  // the rotation log (newest last). CAS on version so a concurrent change can't
+  // clobber it; on a lost race, undo the entry claim.
+  const spendPatch = isWildcard
+    ? { wildcards: squad.wildcards - 1, version: squad.version + 1 }
+    : { chip_log: [...squad.chip_log, { chip, month }], version: squad.version + 1 };
   const { data: spent, error: sErr } = await db.from("fantasy_squads").update(spendPatch)
     .eq("user_id", userId).eq("version", squad.version).select("version");
   if (sErr) throw new HttpError(500, sErr.message);
@@ -645,18 +668,25 @@ export async function removeChip(db: Db, userId: string) {
 
   // A chip whose effect has already FIRED cannot be un-played — otherwise you
   // could take the 50/50, undo Insight, and spend the refunded chip on Triple
-  // Captain. Triple Captain / Bench Boost only act at scoring, so they stay
-  // freely undoable until the deadline.
+  // Captain. Same for a wildcard that has already funded free transfers. Triple
+  // Captain / Bench Boost only act at scoring, so they stay freely undoable until
+  // the deadline.
   const extras = entry as unknown as { round_hint_k: number | null };
   if (chip === "insight" && extras.round_hint_k !== null)
     throw new HttpError(409, "Insight is already used this round — it can't be taken back", "consumed");
+  if (chip === "wildcard" &&
+      (entry.transfers as { paid?: string }[]).some((t) => t?.paid === "free"))
+    throw new HttpError(409, "the wildcard has already funded free transfers — it can't be taken back", "consumed");
 
   const { data: cleared, error: eErr } = await db.from("fantasy_entries")
     .update({ chip: null }).eq("user_id", userId).eq("gw", gw.gw).eq("chip", chip).select("gw");
   if (eErr) throw new HttpError(500, eErr.message);
   if (!cleared?.length) throw new HttpError(409, "no chip played this gameweek", "no-chip-played");
 
-  const refundPatch = { chip_log: squad.chip_log.slice(0, -1), version: squad.version + 1 };
+  // A wildcard returns to its own counter; a monthly chip pops off the rotation log.
+  const refundPatch = chip === "wildcard"
+    ? { wildcards: squad.wildcards + 1, version: squad.version + 1 }
+    : { chip_log: squad.chip_log.slice(0, -1), version: squad.version + 1 };
   const { data: refunded, error: sErr } = await db.from("fantasy_squads").update(refundPatch)
     .eq("user_id", userId).eq("version", squad.version).select("version");
   if (sErr) throw new HttpError(500, sErr.message);
@@ -881,7 +911,7 @@ export async function getLedger(db: Db, userId: string): Promise<{ items: Ledger
   ]);
   const nameOf = (id: number) => nameMap.get(id) ?? `#${id}`;
   const CHIP_LABEL: Record<string, string> = {
-    triple_captain: "Triple Captain",
+    wildcard: "Wildcard", triple_captain: "Triple Captain",
     bench_boost: "Bench Boost", insight: "Insight", second_chance: "Second Chance",
   };
 
@@ -909,7 +939,7 @@ export async function getLedger(db: Db, userId: string): Promise<{ items: Ledger
       });
     }
     for (const t of e.transfers ?? []) {
-      const cost = t.paid === "hit" ? "−4 pts" : "used a transfer";
+      const cost = t.paid === "hit" ? "−4 pts" : t.paid === "free" ? "free (wildcard)" : "used a transfer";
       items.push({
         gw: e.gw, kind: t.paid === "hit" ? "hit" : "transfer", at: e.locked_at,
         text: `${nameOf(t.out)} → ${nameOf(t.in)}`,

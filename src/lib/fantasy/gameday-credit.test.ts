@@ -65,16 +65,16 @@ test("gamedayEarn: first gameday quiz counts, not the best; halftime packs are i
     ],
     quiz_attempts: [
       at("a_ht", "u1", "p_ht", 11, "09"), // earliest, but halftime → excluded before first-of
-      at("a1", "u1", "p_gd", 6, "10"),    // FIRST gameday (6 → 2)
-      at("a2", "u1", "p_gd", 11, "11"),   // later, higher (11 → 4) → must be ignored
+      at("a1", "u1", "p_gd", 10, "10"),   // FIRST gameday (10 → 2)
+      at("a2", "u1", "p_gd", 5, "11"),    // later, lower (5 → 1) → must never lower the tray
     ],
     fantasy_squads: squads,
   });
 
   const r = await gamedayEarn(db, GW);
   assert.equal(r.updated, 1);
-  assert.equal(squads[0].pending_credits, raisePending(1, creditsForRound(6)), "tray = max(1, first quiz=2) = 2");
-  assert.equal(squads[0].pending_credits, 2, "NOT 4 (the higher second) and NOT the halftime pack");
+  assert.equal(squads[0].pending_credits, raisePending(1, creditsForRound(10)), "tray = max(1, first quiz=2) = 2");
+  assert.equal(squads[0].pending_credits, 2, "NOT the lower later quiz (1) and NOT the halftime pack");
   assert.equal(squads[0].pending_gameday_done, true, "the gameday slot locked for the cycle");
   assert.equal(squads[0].pending_source, "gameday", "gameday now leads the tray (2 > 1)");
 });
@@ -86,11 +86,11 @@ test("gamedayEarn: raises an empty tray, and a bombed quiz still locks the slot"
   ];
   const db = fakeDb({
     quiz_packs: [{ id: "p", metadata: { gameday: {} } }],
-    quiz_attempts: [at("a1", "a", "p", 9, "10"), at("b1", "b", "p", 2, "10")],
+    quiz_attempts: [at("a1", "a", "p", 10, "10"), at("b1", "b", "p", 2, "10")],
     fantasy_squads: squads,
   });
   await gamedayEarn(db, GW);
-  assert.equal(squads[0].pending_credits, 3, "9/11 → 3 into an empty tray");
+  assert.equal(squads[0].pending_credits, 2, "10/11 → 2 into an empty tray");
   assert.equal(squads[1].pending_credits, 0, "2/11 → 0, but…");
   assert.equal(squads[1].pending_gameday_done, true, "…the first quiz still spends the slot");
 });

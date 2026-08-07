@@ -582,7 +582,7 @@ const CARDS: CardDef[] = [
   {
     title: "Play a chip",
     Scene: ChipsScene,
-    body: `You get one chip a month, your pick of three. Triple Captain scores your captain at ×3, Bench Boost scores all ${SQUAD_SIZE} of your players including the bench, and Insight removes two wrong answers from one question in the round. A chip cannot come back around until you have used the other two.`,
+    body: `You get one chip a month, your pick of three. Triple Captain scores your captain at ×3, Bench Boost scores all ${SQUAD_SIZE} of your players including the bench, and Insight removes two wrong answers from one question in the round. A chip cannot come back around until you have used the other two. The Wildcard runs separately: unlimited free transfers for one gameweek, one for each half of the season, use it or lose it.`,
   },
   {
     title: "Score on real matches",

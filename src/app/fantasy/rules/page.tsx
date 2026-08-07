@@ -17,7 +17,7 @@
  */
 import { useRouter } from "next/navigation";
 import {
-  BUDGET_TENTHS, CASH_POINTS, CREDIT_CAP,
+  BUDGET_TENTHS, CASH_POINTS, CREDIT_CAP, HALF_SEASON_GW,
   HIT_POINTS, MAX_PER_CLUB, SQUAD_QUOTA, SQUAD_SIZE, XI_SIZE,
   BASELINE_CREDITS_PER_GW, creditsForRound,
 } from "@/lib/fantasy/engine";
@@ -276,6 +276,11 @@ export default function RulesPage() {
             <li><b style={{ color: INK }}>Triple Captain</b> — your captain scores ×3</li>
             <li><b style={{ color: INK }}>Bench Boost</b> — all {SQUAD_SIZE} players score, bench included</li>
             <li><b style={{ color: INK }}>Insight</b> — takes two wrong answers off one question of the round</li>
+            <li>
+              <b style={{ color: INK }}>Wildcard</b> — unlimited free transfers for one gameweek, on its own
+              track. You get one for each half of the season. Use the first before the gameweek{" "}
+              {HALF_SEASON_GW} deadline or lose it
+            </li>
           </ul>
         </Card>
       </Section>

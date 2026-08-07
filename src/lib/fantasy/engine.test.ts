@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   applyTransfer, autoSubs, availableChips, bankCredits, cashOverflow, chipPlayable, chipSetUsed,
-  creditsForRound, grantBaseline, playedChipThisMonth,
+  creditsForRound, grantBaseline, halfOf, HALF_SEASON_GW, playedChipThisMonth,
   effectiveCaptain, raisePending, scoreEntry, sellPrice, smartDefaults,
   transferCost, validateSelection, validateSquad,
   type ChipPlay, type LockedSelection, type PoolPlayer, type Squad, RuleError, BUDGET_TENTHS,
@@ -110,15 +110,25 @@ test("validateSelection: rejects 2 GKs in XI, <3 DEF, 0 FWD, captain=vice, outsi
 });
 
 // ── credits ───────────────────────────────────────────────────────────────────
-test("creditsForRound: full curve table (3→1, 6→2, 9→3, 11→4 — the 4th needs a perfect round)", () => {
-  const want = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 4];
+test("creditsForRound: cap of two (5→1, 10→2 — founder 7 Aug)", () => {
+  const want = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2];
   for (let c = 0; c <= 11; c++) assert.equal(creditsForRound(c), want[c], `correct=${c}`);
 });
-test("bankCredits caps at 5; transferCost credit-then-hit", () => {
+test("halfOf: GW1-19 first half, GW20-38 second (wildcard expiry boundary)", () => {
+  assert.equal(HALF_SEASON_GW, 19);
+  assert.equal(halfOf(1), 1);
+  assert.equal(halfOf(HALF_SEASON_GW), 1);
+  assert.equal(halfOf(HALF_SEASON_GW + 1), 2);
+  assert.equal(halfOf(38), 2);
+});
+test("bankCredits caps at 5; transferCost credit-then-hit, wildcard is free", () => {
   assert.equal(bankCredits(4, 3), 5);
   assert.equal(bankCredits(0, 2), 2);
   assert.equal(transferCost(1).paid, "credit");
   assert.equal(transferCost(0).paid, "hit");
+  // On a wildcard week every move is free, even with no credits banked.
+  assert.equal(transferCost(0, true).paid, "free");
+  assert.equal(transferCost(3, true).paid, "free");
 });
 test("raisePending: the 'earned for next week' tray only ever RISES (override-upward)", () => {
   assert.equal(raisePending(0, 3), 3); // first result sets the tray
@@ -341,8 +351,8 @@ test("cashOverflow: the round is NEVER worth zero to a settled manager", () => {
   const atCap = [1, 2, 3, 4].map((m) => cashOverflow(CREDIT_CAP, m).points);
   assert.deepEqual(atCap, [4, 8, 12, 16]);
   // and more correct still pays more — the reason to answer all eleven
-  assert.ok(cashOverflow(CREDIT_CAP, creditsForRound(9)).points
-    > cashOverflow(CREDIT_CAP, creditsForRound(3)).points, "9 correct beats 3 correct");
+  assert.ok(cashOverflow(CREDIT_CAP, creditsForRound(10)).points
+    > cashOverflow(CREDIT_CAP, creditsForRound(5)).points, "10 correct beats 5 correct");
 });
 
 // ── sell price: FPL's half-the-rise rule (founder-locked 14 Jul) ──────────────

@@ -280,6 +280,7 @@ export async function momentsForGw(db: Db, memberIds: string[], gw: number): Pro
         gw,
       });
     }
+    if (r.chip === "wildcard") moments.push({ emoji: "🃏", text: `${nameOf(r.user_id)} hit the panic button — full wildcard rebuild.`, gw });
     if (r.chip === "triple_captain") moments.push({ emoji: "©️", text: `${nameOf(r.user_id)} went Triple Captain this week.`, gw });
     if (r.cash_points > 0) moments.push({ emoji: "🧠", text: `${nameOf(r.user_id)}'s quiz bank overflowed — +${r.cash_points} points straight from knowledge.`, gw });
     if (!r.round_done_at) moments.push({ emoji: "😴", text: `${nameOf(r.user_id)} forgot the round this week. The team played itself.`, gw });

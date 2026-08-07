@@ -10,7 +10,7 @@
  * grounding document the model is allowed to answer from.
  */
 import {
-  BASELINE_CREDITS_PER_GW, BUDGET_TENTHS, CASH_POINTS, CREDIT_CAP,
+  BASELINE_CREDITS_PER_GW, BUDGET_TENTHS, CASH_POINTS, CREDIT_CAP, HALF_SEASON_GW,
   HIT_POINTS, MAX_PER_CLUB, SQUAD_QUOTA, SQUAD_SIZE, XI_SIZE,
   creditsForRound,
 } from "./engine";
@@ -68,7 +68,7 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "What are the chips, and how often can I play one?",
-    a: "One chip a month, your pick of three: Triple Captain, Bench Boost or Insight. A chip cannot come back until you have used the other two.",
+    a: "One chip a month, your pick of three: Triple Captain, Bench Boost or Insight. A chip cannot come back until you have used the other two. The Wildcard is separate, on its own track: unlimited free transfers for one gameweek, one for each half of the season, use it or lose it at the halfway deadline.",
   },
   {
     q: "How does scoring work? Is there a bonus points panel?",
@@ -156,6 +156,7 @@ export function buildRulesDoc(): string {
     `THE KNOWLEDGE ROUND: optional, never required. Skipping it still lets the team play and score the gameweek normally.`,
     `THE CREDIT CURVE: ${creditLines()}. If the bank is full, further earned transfers cash out at ${CASH_POINTS} points each.`,
     `CHIPS: one chip a month, choice of Triple Captain, Bench Boost or Insight. A chip cannot return until the other two have been used. Triple Captain makes the captain score triple instead of double for that gameweek. Bench Boost makes all ${SQUAD_SIZE} players score, bench included. Insight removes two wrong answers from one question of the ${KNOWLEDGE_NAME} round.`,
+    `WILDCARD: a separate chip on its own track, not part of the monthly rotation. It gives unlimited free transfers for one gameweek, no points hits. You get one for each half of the season and it is use it or lose it, expiring at the gameweek ${HALF_SEASON_GW} deadline for the first half.`,
     "SCORING: every point comes from a real match fact. There is no bonus points panel and no judged score. The exact values by position (GK, DEF, MID, FWD):",
     ...scoringLines(),
     "The captain's points count double after all facts are scored.",
