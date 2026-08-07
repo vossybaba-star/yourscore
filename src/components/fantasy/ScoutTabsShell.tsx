@@ -33,6 +33,7 @@ export function ScoutTabsShell({ initial = "briefing", signedIn, slots }: {
 }) {
   const router = useRouter();
   const [active, setActive] = useState<ScoutTabKey>(initial);
+  const goAuth = () => router.push("/auth/sign-in?next=/fantasy/news");
   const go = (k: ScoutTabKey) => {
     setActive(k);
     // Keep the URL honest without a navigation, so a refresh/back lands right —
@@ -59,36 +60,72 @@ export function ScoutTabsShell({ initial = "briefing", signedIn, slots }: {
         })}
       </div>
 
-      {signedIn ? (
-        // Render EVERY slot up front, toggle visibility with display. The slots
-        // include server components (Picks = FourPicks), which have no client
-        // payload if they were gated to null on the server render — lazy-mounting
-        // them then throws notFound(). Eager render keeps them in the RSC payload.
-        TABS.map((t) => (
+      {/* Render EVERY tab up front, toggle visibility with display. The slots
+          include server components (Picks = FourPicks), which have no client
+          payload if they were gated to null on the server render — lazy-mounting
+          them then throws notFound(). Eager render keeps them in the RSC payload.
+          Signed out, a tab either shows its public TASTE (Scout's Latest + Four
+          Picks + Fixtures) with a compact unlock CTA under it, or the full
+          sign-up wall for the account-only tabs (Players / Shortlist / Your
+          Squad) that have no public slot. */}
+      {TABS.map((t) => {
+        const content = slots?.[t.key] ?? null;
+        return (
           <div key={t.key} style={{ display: t.key === active ? "block" : "none" }}>
-            {slots?.[t.key] ?? null}
+            {signedIn ? content
+              : content ? (
+                <div style={{ display: "grid", gap: 12 }}>
+                  {content}
+                  <UnlockRest onAuth={goAuth} />
+                </div>
+              ) : (
+                <FullWall tab={t.key} onAuth={goAuth} />
+              )}
           </div>
-        ))
-      ) : (
-        <div style={{ marginTop: 6, borderRadius: 16, padding: 18, background: `linear-gradient(150deg, ${tint(TEAL, "16")}, ${PANEL})`, border: `1px solid ${tint(TEAL, "44")}` }}>
-          <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: TEAL }}>THE SCOUT</div>
-          <div className="font-display" style={{ fontSize: 22, color: INK, lineHeight: 1.1, margin: "8px 0 4px" }}>
-            {active === "briefing" ? "This week's team news and tips"
-              : active === "picks" ? "The Scout's four picks"
-              : active === "players" ? "Every player, ranked and compared"
-              : active === "fixtures" ? "Every club's next five, by difficulty"
-              : active === "shortlist" ? "Your saved players"
-              : "Injuries and doubts in your squad"}
-          </div>
-          <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
-            Create a free account to read the Scout: picks, player data, team news and your own shortlist. It only takes a moment.
-          </p>
-          <Btn gold onClick={() => router.push("/auth/sign-in?next=/fantasy/news")}>Create your free account</Btn>
-          <p style={{ fontSize: 12, color: MUTED, margin: "10px 0 0", textAlign: "center" }}>
-            Already play? <span onClick={() => router.push("/auth/sign-in?next=/fantasy/news")} style={{ color: TEAL, fontWeight: 700, cursor: "pointer" }}>Sign in</span>
-          </p>
-        </div>
-      )}
+        );
+      })}
+    </div>
+  );
+}
+
+/** A compact "there's more behind an account" prompt shown UNDER a guest's
+ *  taste (the public Scout's Latest + Four Picks), so the free content sells
+ *  the account rather than a bare wall doing it. */
+function UnlockRest({ onAuth }: { onAuth: () => void }) {
+  return (
+    <div style={{ borderRadius: 16, padding: 16, background: `linear-gradient(150deg, ${tint(TEAL, "16")}, ${PANEL})`, border: `1px solid ${tint(TEAL, "44")}` }}>
+      <div className="font-display" style={{ fontSize: 15.5, color: INK, lineHeight: 1.2, marginBottom: 4 }}>
+        Read the rest of the Scout
+      </div>
+      <p style={{ fontSize: 12.5, color: MUTED, margin: "0 0 12px", lineHeight: 1.5 }}>
+        Team news, every player ranked and compared, and your own shortlist. Free, and it saves your squad too.
+      </p>
+      <Btn gold onClick={onAuth}>Create your free account</Btn>
+      <p style={{ fontSize: 12, color: MUTED, margin: "10px 0 0", textAlign: "center" }}>
+        Already play? <span onClick={onAuth} style={{ color: TEAL, fontWeight: 700, cursor: "pointer" }}>Sign in</span>
+      </p>
+    </div>
+  );
+}
+
+/** The full sign-up wall, for a signed-out visitor on an account-only tab that
+ *  has no public taste to show. */
+function FullWall({ tab, onAuth }: { tab: ScoutTabKey; onAuth: () => void }) {
+  return (
+    <div style={{ marginTop: 6, borderRadius: 16, padding: 18, background: `linear-gradient(150deg, ${tint(TEAL, "16")}, ${PANEL})`, border: `1px solid ${tint(TEAL, "44")}` }}>
+      <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: TEAL }}>THE SCOUT</div>
+      <div className="font-display" style={{ fontSize: 22, color: INK, lineHeight: 1.1, margin: "8px 0 4px" }}>
+        {tab === "players" ? "Every player, ranked and compared"
+          : tab === "shortlist" ? "Your saved players"
+          : "Injuries and doubts in your squad"}
+      </div>
+      <p style={{ fontSize: 13, color: MUTED, margin: "0 0 14px", lineHeight: 1.5 }}>
+        Create a free account to read the Scout: picks, player data, team news and your own shortlist. It only takes a moment.
+      </p>
+      <Btn gold onClick={onAuth}>Create your free account</Btn>
+      <p style={{ fontSize: 12, color: MUTED, margin: "10px 0 0", textAlign: "center" }}>
+        Already play? <span onClick={onAuth} style={{ color: TEAL, fontWeight: 700, cursor: "pointer" }}>Sign in</span>
+      </p>
     </div>
   );
 }

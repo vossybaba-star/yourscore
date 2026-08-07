@@ -91,10 +91,43 @@ export default async function ScoutBriefing({ searchParams }: { searchParams?: {
   const signedIn = !!user;
   const initial = (VALID.includes(searchParams?.tab as ScoutTabKey) ? searchParams!.tab : "briefing") as ScoutTabKey;
 
+  // Fixtures is public data (a fixture grid, nothing per-user), so it renders
+  // the same whether or not you're signed in — the taste a guest gets too.
+  const fixturesNode = (() => {
+    const gws = doc?.fixtures?.gws ?? [];
+    const runs = doc?.fixtures?.runs ?? [];
+    const dl = doc?.deadline && new Date(doc.deadline).getTime() > Date.now() ? `GW${doc.gw} deadline · ${ukTime(doc.deadline)}` : null;
+    return runs.length === 0 ? (
+      <section style={card}>
+        <div style={{ color: INK, fontSize: 14, fontWeight: 600 }}>Fixtures land when the season opens</div>
+        <div style={{ color: MUTED, fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
+          Once the gameweek calendar is set, this shows every club&apos;s next five, colour-coded by how hard each game is.
+        </div>
+      </section>
+    ) : <FixturesGrid gws={gws} runs={runs} deadlineLine={dl} />;
+  })();
+
+  // The public "taste" the Scout shows a signed-out visitor: the daily Scout's
+  // Latest ideas and the Four Picks (both already public, no auth) so the tab is
+  // alive rather than a bare wall, with the sign-up CTA (in ScoutTabsShell)
+  // below to unlock the rest. Players/Shortlist/Your Squad stay walled.
+  //
+  // NOTE: ScoutLatest and FourPicks are async Server Components, so each slot
+  // needs its OWN element instance — reusing one shared `<div>…</div>` node
+  // across two slots makes React reconcile the same async node in two tree
+  // positions and throws an internal "reading 'is'" error. So the briefing and
+  // picks slots build the taste inline rather than sharing a variable.
+  const taste = () => <div style={{ display: "grid", gap: 12 }}><ScoutLatest /><FourPicks /></div>;
+
   const slots = signedIn ? {
     briefing: (
       <div style={{ display: "grid", gap: 14 }}>
         <DecisionGrid />
+        {/* The Scout's fresh daily reads lead the front door — the same rotating
+            ideas as the Picks tab, so landing on Scout is immediately useful
+            (founder, 8 Aug: "fill in the scout tab well"). Renders nothing on a
+            day with no ideas, so the news stream below still leads then. */}
+        <ScoutLatest />
         <div className="font-display tracking-widest" style={{ fontSize: 12, color: "#586058", marginBottom: -6 }}>
           THIS WEEK
         </div>
@@ -109,22 +142,14 @@ export default async function ScoutBriefing({ searchParams }: { searchParams?: {
     ),
     picks: <div style={{ display: "grid", gap: 12 }}><ScoutLatest /><FourPicks /></div>,
     players: <><CompareEntry /><ScoutPlayersBrowser /></>,
-    fixtures: (() => {
-      const gws = doc?.fixtures?.gws ?? [];
-      const runs = doc?.fixtures?.runs ?? [];
-      const dl = doc?.deadline && new Date(doc.deadline).getTime() > Date.now() ? `GW${doc.gw} deadline · ${ukTime(doc.deadline)}` : null;
-      return runs.length === 0 ? (
-        <section style={card}>
-          <div style={{ color: INK, fontSize: 14, fontWeight: 600 }}>Fixtures land when the season opens</div>
-          <div style={{ color: MUTED, fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>
-            Once the gameweek calendar is set, this shows every club&apos;s next five, colour-coded by how hard each game is.
-          </div>
-        </section>
-      ) : <FixturesGrid gws={gws} runs={runs} deadlineLine={dl} />;
-    })(),
+    fixtures: fixturesNode,
     shortlist: <ShortlistView />,
     squad: <ScoutYourSquad />,
-  } : undefined;
+  } : {
+    briefing: taste(),
+    picks: taste(),
+    fixtures: fixturesNode,
+  };
 
   return (
     <>
