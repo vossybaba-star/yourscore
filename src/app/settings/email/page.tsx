@@ -65,7 +65,7 @@ function EmailPrefsInner() {
         <p className="font-body mt-3" style={{ fontSize: 14, color: "#8a948f", lineHeight: 1.55 }}>
           Open this from the link at the bottom of any YourScore email to manage your emails.
         </p>
-        <div className="mt-6"><BackPill href="/" label="Home" tone="neutral" /></div>
+        <div className="mt-6"><BackPill fallback="/" label="Home" tone="neutral" /></div>
       </>,
     );
   }

@@ -595,8 +595,10 @@ export default function ChallengePage() {
           <button
             type="button"
             onClick={() => router.push(smartBackTarget("/play"))}
-            className="absolute top-12 left-5 flex items-center gap-1.5 font-body text-xs z-10"
-            style={{ color: "rgba(255,255,255,0.5)" }}
+            className="absolute left-5 flex items-center gap-1.5 font-body text-xs z-10"
+            // Clear of the iPhone status bar / Dynamic Island: the old top-12
+            // (48px) sat under the clock on notched phones.
+            style={{ color: "rgba(255,255,255,0.5)", top: "calc(env(safe-area-inset-top, 0px) + 20px)" }}
           >
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
               <path d="M11 4L6 9l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

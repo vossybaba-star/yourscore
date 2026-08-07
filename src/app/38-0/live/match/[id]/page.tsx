@@ -134,7 +134,7 @@ export default function LiveMatchScreen() {
   const sim = (m.sim ?? null) as MatchSim | null;
 
   return (
-    <div className="min-h-[100dvh] pb-32" style={{ background: BG, color: "#e8e8f0" }}>
+    <div className="min-h-[100dvh] pb-32 pt-safe" style={{ background: BG, color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-4 pt-8">
         {/* Scoreline header */}
         <Header view={view} phase={m.phase} secondsLeft={secondsLeft} opponentOnline={opponentOnline} oppPos={oppPos} />
@@ -308,7 +308,7 @@ function Header({ view, phase, secondsLeft, opponentOnline, oppPos }: { view: Vi
   return (
     <div>
       <div className="flex items-center justify-between text-sm">
-        <BackPill href="/38-0/live" label="Live" tone="draft" />
+        <BackPill fallback="/38-0/live" label="Live" tone="draft" />
         {secondsLeft != null
           ? <span className="font-mono rounded-full px-2.5 py-1" style={{ fontSize: 14, fontWeight: 700, color: secondsLeft <= 5 ? "#ff7a88" : "#ffb800", background: secondsLeft <= 5 ? "rgba(255,71,87,0.14)" : "rgba(255,184,0,0.12)" }}>⏱ {secondsLeft}s</span>
           : phase === "lobby" && <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: "#9aa39d" }}><span className="h-2 w-2 rounded-full animate-pulse" style={{ background: "#ffb800" }} />waiting</span>}

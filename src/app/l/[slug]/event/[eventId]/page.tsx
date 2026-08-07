@@ -271,9 +271,9 @@ export default function ClubEventPage() {
   const chipColor = ev.window === "live" ? "#aeea00" : ev.window === "upcoming" ? "#60a5fa" : "#8a948f";
 
   return (
-    <main className="min-h-dvh bg-bg pb-28">
+    <main className="min-h-dvh bg-bg pb-28 pt-safe">
       <div className="max-w-lg mx-auto px-5 pt-6 space-y-4">
-        <BackPill href={`/l/${params.slug}`} label={data.league.name} tone="neutral" />
+        <BackPill fallback={`/l/${params.slug}`} label={data.league.name} tone="neutral" />
 
         <div className="rounded-2xl p-5" style={{ background: "#0e1611", border: `1px solid ${brand}33` }}>
           <span className="font-body text-xs font-bold px-2 py-0.5 rounded-md" style={{ color: chipColor, background: `${chipColor}1f` }}>

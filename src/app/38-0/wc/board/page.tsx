@@ -51,7 +51,7 @@ export default function WorldCupBoard() {
       {/* Sticky back bar — a real pill button that stays put however far down you scroll. */}
       <div className="sticky top-0 z-30" style={{ background: "rgba(10,10,15,0.82)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingTop: "calc(env(safe-area-inset-top,0px) + 10px)", paddingBottom: 10 }}>
         <div className="max-w-lg mx-auto px-5">
-          <BackPill href="/38-0/wc" label="World Cup" tone="wc" />
+          <BackPill fallback="/38-0/wc" label="World Cup" tone="wc" />
         </div>
       </div>
       <div className="max-w-lg mx-auto px-5 pt-5">

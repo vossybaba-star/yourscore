@@ -385,7 +385,7 @@ export default function MatchPage({ params }: { params: { id: string } }) {
       <main className="min-h-dvh bg-bg flex flex-col items-center justify-center px-6">
         <p className="font-display text-5xl mb-4">🤔</p>
         <h1 className="font-display text-3xl text-white mb-3">Match not found</h1>
-        <BackPill href="/" label="Home" tone="neutral" />
+        <BackPill fallback="/" label="Home" tone="neutral" />
       </main>
     );
   }

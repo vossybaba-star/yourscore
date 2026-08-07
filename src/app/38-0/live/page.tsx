@@ -157,9 +157,9 @@ export default function LiveEntry() {
   }
 
   return (
-    <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
+    <div className="min-h-[100dvh] pb-32 pt-safe" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-5 pt-10">
-        <BackPill href="/38-0" label="38-0" tone="draft" />
+        <BackPill fallback="/38-0" label="38-0" tone="draft" />
         <h1 className="font-display tracking-wide mt-3" style={{ fontSize: 34, color: "#aeea00" }}>Live H2H</h1>
         <p className="mt-1 text-sm" style={{ color: "#9aa39d" }}>
           Two halves. Swap before kick-off and at halftime. Beat your opponent over 90.

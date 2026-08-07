@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
         )}
 
         <div className="mt-6 flex justify-center">
-          <BackPill href="/" label="Home" tone="neutral" />
+          <BackPill fallback="/" label="Home" tone="neutral" />
         </div>
       </div>
     </main>

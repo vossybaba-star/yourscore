@@ -500,7 +500,7 @@ export default function WorldCupEntry() {
     return (
       <div className="min-h-[100dvh] pb-16" style={{ background: "#0a0a0f" }}>
         <div className="max-w-lg mx-auto px-4 pt-safe">
-          <div className="pt-4"><BackPill href="/38-0" label="Back" tone="wc" /></div>
+          <div className="pt-4"><BackPill fallback="/38-0" label="Back" tone="wc" /></div>
           {/* In-game hero — the first thing ad traffic lands on. */}
           <div className="mt-3 mb-4">
             <DraftHubHero

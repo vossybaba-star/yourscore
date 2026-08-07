@@ -118,7 +118,7 @@ export default function MatchResult() {
 
       <div className="relative mx-auto max-w-lg px-4 pt-safe">
         <div className="flex items-center justify-between py-3">
-          <BackPill href="/38-0" label="38-0" tone="draft" />
+          <BackPill fallback="/38-0" label="38-0" tone="draft" />
         </div>
 
         <Scorecard m={m} context="Quick Match" />

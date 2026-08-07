@@ -132,9 +132,9 @@ export default function PlayerHistory() {
   const run = runs?.[sel];
 
   return (
-    <div className="min-h-[100dvh] pb-32" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
+    <div className="min-h-[100dvh] pb-32 pt-safe" style={{ background: "#0a0a0f", color: "#e8e8f0" }}>
       <div className="max-w-lg mx-auto px-5 pt-10">
-        <BackPill href="/38-0/wc/board" label="Season board" tone="wc" />
+        <BackPill fallback="/38-0/wc/board" label="Season board" tone="wc" />
 
         {/* ── Player header ── */}
         <div className="flex items-center gap-3 mt-3">

@@ -61,10 +61,10 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <main className="min-h-dvh bg-bg px-5 py-8">
+    <main className="min-h-dvh bg-bg px-5 pb-8" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)" }}>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <BackPill href="/admin" label="Admin" tone="neutral" />
+          <BackPill fallback="/admin" label="Admin" tone="neutral" />
           <h1 className="font-display text-3xl text-white tracking-wide mt-2">Reports</h1>
           <p className="font-body text-sm mt-1" style={{ color: "#8a948f" }}>
             Newest first. Dismiss clears a report with no other effect. Hide subject applies

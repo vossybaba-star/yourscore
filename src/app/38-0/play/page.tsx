@@ -268,7 +268,7 @@ export default function DraftPlay() {
     <div className="min-h-[100dvh] pb-44" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-4 pt-safe">
         <div className="pt-4">
-          <BackPill href="/38-0" label="Back" tone="draft" />
+          <BackPill fallback="/38-0" label="Back" tone="draft" />
         </div>
         {/* header: formation + overall */}
         <div className="flex items-center justify-between pt-2">

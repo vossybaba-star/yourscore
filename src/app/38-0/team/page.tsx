@@ -262,7 +262,7 @@ export default function TeamScreen() {
     <div className="min-h-[100dvh] pb-28" style={{ background: "#0a0a0f" }}>
       <div className="max-w-lg mx-auto px-5 pt-safe">
         <div className="flex items-center justify-between pt-4 pb-2">
-          <BackPill href="/38-0" label="Draft XI" tone="draft" />
+          <BackPill fallback="/38-0" label="Draft XI" tone="draft" />
           <div className="flex items-center gap-2">
             {/* The EXPERT badge went with the mode (retired 2026-07-23) — a badge for a
                 format that no longer exists only puzzles whoever still has one saved. */}
