@@ -12,10 +12,10 @@
  * Either side renders its own honest empty state (no squad yet / not
  * available) rather than a broken pane — this never assumes both sides loaded.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GOLD, INK, LINE, MUTED, PANEL_2, POS_COLOR, Sheet, TEAL, tint } from "@/components/fantasy/shared";
+import { GOLD, INK, LINE, MUTED, PANEL_2, POS_COLOR, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 import { trackCompareSquadsOpened, trackMemberActionSelected } from "@/lib/analytics/trackSocial";
@@ -65,11 +65,28 @@ function SideEmpty({ label, note }: { label: string; note: string }) {
   );
 }
 
-function SideColumn({ label, avatarUrl, seed, side }: {
-  label: string; avatarUrl: string | null; seed: string; side: Side;
+function SideColumn({ label, avatarUrl, seed, side, onRetry }: {
+  label: string; avatarUrl: string | null; seed: string; side: Side; onRetry: () => void;
 }) {
-  if (side.status === "loading") return <SideEmpty label={label} note="Loading…" />;
-  if (side.status === "error") return <SideEmpty label={label} note={side.message} />;
+  if (side.status === "loading") {
+    return (
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <Skel h={11} w="60%" /><Skel h={11} w="80%" /><Skel h={11} w="70%" /><Skel h={11} w="55%" />
+        </div>
+      </div>
+    );
+  }
+  if (side.status === "error") {
+    return (
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: INK, marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+        <p style={{ fontSize: 12, color: MUTED, margin: "0 0 6px", lineHeight: 1.45 }}>{side.message}</p>
+        <button onClick={onRetry} style={{ background: "none", border: "none", padding: 0, color: TEAL, fontSize: 11.5, fontWeight: 700, cursor: "pointer" }}>Try again</button>
+      </div>
+    );
+  }
   const { team, players } = side.data;
   if (!team || team.xi.length === 0) return <SideEmpty label={label} note="No squad this gameweek." />;
   const byId = new Map(players.map((p) => [p.id, p]));
@@ -104,15 +121,23 @@ export function CompareSquadsSheet({ leagueCode, viewerId, target, onClose }: {
   const router = useRouter();
   const [me, setMe] = useState<Side>({ status: "loading" });
   const [them, setThem] = useState<Side>({ status: "loading" });
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  const loadMe = useCallback(() => {
+    setMe({ status: "loading" });
+    fetchSquad(leagueCode, viewerId).then((s) => { if (mountedRef.current) setMe(s); });
+  }, [leagueCode, viewerId]);
+  const loadThem = useCallback(() => {
+    setThem({ status: "loading" });
+    fetchSquad(leagueCode, target.userId).then((s) => { if (mountedRef.current) setThem(s); });
+  }, [leagueCode, target.userId]);
 
   useEffect(() => {
     trackCompareSquadsOpened();
-    let live = true;
-    fetchSquad(leagueCode, viewerId).then((s) => { if (live) setMe(s); });
-    fetchSquad(leagueCode, target.userId).then((s) => { if (live) setThem(s); });
-    return () => { live = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leagueCode, viewerId, target.userId]);
+    loadMe();
+    loadThem();
+  }, [loadMe, loadThem]);
 
   // Shared vs differential — computed off the full squad (XI + bench), not
   // just the XI, so a player benched on one side still counts as "shared".
@@ -145,9 +170,9 @@ export function CompareSquadsSheet({ leagueCode, viewerId, target, onClose }: {
       <p style={{ fontSize: 12, color: MUTED, margin: "0 0 14px" }}>This gameweek, facts only.</p>
 
       <div style={{ display: "flex", gap: 14, marginBottom: 16 }}>
-        <SideColumn label="You" avatarUrl={null} seed={viewerId} side={me} />
+        <SideColumn label="You" avatarUrl={null} seed={viewerId} side={me} onRetry={loadMe} />
         <div style={{ width: 1, background: LINE, flexShrink: 0 }} />
-        <SideColumn label={target.name} avatarUrl={target.avatarUrl} seed={target.userId} side={them} />
+        <SideColumn label={target.name} avatarUrl={target.avatarUrl} seed={target.userId} side={them} onRetry={loadThem} />
       </div>
 
       {hasBothSquads && (

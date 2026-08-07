@@ -36,18 +36,47 @@ function gamesStatusLine(pulse: GamesPulse): string {
 
 /** A one-line summary of a message for the hub preview. A structured card can't
  *  show its whole self here, so it says what it is in plain words — never the raw
- *  internal body ("shared their captain"), which read as broken third person. */
-function previewText(m: ChatMessage): string {
+ *  internal body ("shared their captain"), which read as broken third person.
+ *
+ *  Returns {icon, text} rather than a single string: the icon renders as a bare
+ *  SVG (house rule; no emoji in UI — see LeagueChatView's ChipIcon), which a
+ *  plain string couldn't carry. Duplicated here rather than imported from
+ *  LeagueChatView's CHIP_ICON, matching how summariseChatMessage in types.ts is
+ *  already duplicated rather than shared across these two files. */
+type PreviewIconKind = "player" | "squad" | "news" | "compare" | "poll" | null;
+function previewParts(m: ChatMessage): { icon: PreviewIconKind; text: string } {
   const mine = m.isMe;
   switch (m.kind) {
-    case "player": return `📤 shared ${m.player?.name ?? "a player"}`;
-    case "captain": return `Ⓒ captain pick${m.player ? `: ${m.player.name}` : ""}`;
-    case "squad": return `👕 shared ${mine ? "your" : "their"} squad`;
-    case "news": return `📰 ${m.news?.title ?? "shared some news"}`;
-    case "compare": return m.compare ? `⚖️ ${m.compare.a.name} vs ${m.compare.b.name}` : "⚖️ shared a comparison";
-    case "poll": return `📊 ${m.poll?.question ?? "started a poll"}`;
-    default: return m.body;
+    case "player": return { icon: "player", text: `shared ${m.player?.name ?? "a player"}` };
+    case "captain": return { icon: null, text: `Ⓒ captain pick${m.player ? `: ${m.player.name}` : ""}` };
+    case "squad": return { icon: "squad", text: `shared ${mine ? "your" : "their"} squad` };
+    case "news": return { icon: "news", text: m.news?.title ?? "shared some news" };
+    case "compare": return { icon: "compare", text: m.compare ? `${m.compare.a.name} vs ${m.compare.b.name}` : "shared a comparison" };
+    case "poll": return { icon: "poll", text: m.poll?.question ?? "started a poll" };
+    default: return { icon: null, text: m.body };
   }
+}
+
+const PREVIEW_ICON_PATH: Record<Exclude<PreviewIconKind, null>, string> = {
+  // Shared player: an upload/share glyph.
+  player: "M12 3v10 M8 7l4-4 4 4 M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5",
+  // Shared squad: the same shirt CreatePostSheet/LeagueChatView already use.
+  squad: "M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z",
+  news: "M6 3h9l3 3v15H6z M15 3v3h3 M9 11h6 M9 15h6",
+  // Player comparison: two arrows meeting in the middle, i.e. "versus".
+  compare: "M4 8h10 M10 4l4 4-4 4 M20 16H10 M14 12l-4 4 4 4",
+  // Poll: the same bar list CreatePostSheet/LeagueChatView use for a poll.
+  poll: "M4 6h12 M4 12h16 M4 18h8",
+};
+
+/** The chat preview's activity glyph. Bare SVG, not emoji (house rule). aria-hidden
+ *  since the accessible name comes from the adjacent preview text. */
+function PreviewIcon({ kind }: { kind: Exclude<PreviewIconKind, null> }) {
+  return (
+    <svg width={12.5} height={12.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginRight: 3, verticalAlign: -1.5 }}>
+      <path d={PREVIEW_ICON_PATH[kind]} />
+    </svg>
+  );
 }
 
 function countdown(iso: string | null): string | null {
@@ -257,7 +286,9 @@ export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
                 <PlayerAvatar name={m.name} avatarUrl={m.avatarUrl} size={22} />
                 <div style={{ minWidth: 0 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: m.isMe ? TEAL : INK }}>{m.isMe ? "You" : m.name}: </span>
-                  <span style={{ fontSize: 12.5, color: MUTED, overflowWrap: "anywhere" }}>{previewText(m)}</span>
+                  <span style={{ fontSize: 12.5, color: MUTED, overflowWrap: "anywhere" }}>
+                    {(() => { const p = previewParts(m); return <>{p.icon && <PreviewIcon kind={p.icon} />}{p.text}</>; })()}
+                  </span>
                 </div>
               </div>
             ))}

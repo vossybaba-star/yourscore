@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { fantasyVisible } from "@/lib/fantasy/flag";
 import { faceFor } from "@/lib/fantasy/faces";
 import { trackDiag } from "@/lib/analytics/trackGame";
+import { GOLD } from "@/components/fantasy/shared";
 
-const GOLD = "#ffc400";
 const HAS_SQUAD_KEY = "ys:fantasy:pop:hasSquad";
 const DONE_KEY = "ys:fantasy:pop:done";
 

@@ -6,7 +6,7 @@
  *  sort; tap opens the shared MemberActionSheet. No online status (product
  *  brief: unreliable, not worth showing). */
 import { useEffect, useMemo, useState } from "react";
-import { GOLD, INK, LINE, MUTED, PANEL, PANEL_2, Sheet, TEAL, tint } from "@/components/fantasy/shared";
+import { ErrorState, GOLD, INK, LINE, Loading, MUTED, PANEL, PANEL_2, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { MemberActionSheet, nameOfMember, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
 import type { LeagueRow } from "./types";
@@ -23,19 +23,25 @@ export function LeagueMembersView({ code, rows, viewerId, onClose }: {
 }) {
   const [roster, setRoster] = useState<MemberActionMember[] | null>(null);
   const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [rosterErr, setRosterErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const havePoints = rows.some((r) => r.played > 0);
   const [sort, setSort] = useState<Sort>(havePoints ? "position" : "az");
   const [selected, setSelected] = useState<MemberActionMember | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let live = true;
+    setRosterErr(null);
     fetch(`/api/fantasy/leagues/${code}/members`)
-      .then((r) => (r.ok ? r.json() : { members: [], ownerId: null }))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d) => { if (live) { setRoster(d.members ?? []); setOwnerId(d.ownerId ?? null); } })
-      .catch(() => { if (live) setRoster([]); });
+      // A failed fetch used to land on setRoster([]) — identical to an
+      // empty-but-real league, so "No members match" was showing for a dead
+      // request too. Keep roster null and surface the failure instead.
+      .catch((e) => { if (live) setRosterErr((e as Error).message || "Couldn't load members."); });
     return () => { live = false; };
-  }, [code]);
+  }, [code, reload]);
 
   // /members deliberately excludes the caller AND anyone without a username
   // (it exists to feed @mention autocomplete — see lib/fantasy/chat.ts). The
@@ -94,8 +100,14 @@ export function LeagueMembersView({ code, rows, viewerId, onClose }: {
         ))}
       </div>
 
-      {!filtered ? (
-        <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>Loading…</p>
+      {rosterErr ? (
+        <ErrorState message={rosterErr} onRetry={() => setReload((n) => n + 1)} />
+      ) : !filtered ? (
+        <Loading label="Loading members">
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <Skel h={44} r={10} /><Skel h={44} r={10} /><Skel h={44} r={10} />
+          </div>
+        </Loading>
       ) : filtered.length === 0 ? (
         <p style={{ fontSize: 12.5, color: MUTED, margin: 0 }}>No members match.</p>
       ) : (
