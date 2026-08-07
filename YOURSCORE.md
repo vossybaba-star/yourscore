@@ -6,7 +6,21 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-07 eve (**PRODUCT MODEL SHIPPED — five-tab navigation** (PR #98):
+> **Confirmed:** 2026-08-07 night (**Play home v2 + Home league gating** (PR #99): the Play
+> home now leads with **GAMEDAY QUIZ** — the live packs rail plus the fixtures carousel
+> (gameweek chips, crests, KO times, **NOTIFY ME** per fixture; `UpcomingQuizzes` reused
+> from /matchweek, heading retitled) — then **TODAY'S QUIZ** with an arrow into the
+> catalogue and a curated cover-art carousel (best featured packs, a club every third
+> card, `QuizCarousel`/`packHref` in PlayHome.tsx), then **QUICK PLAY re-skinned art-led**
+> (game covers + drawn `PitchArt` for 38-0, duration chip on the art), then Play With
+> People + MORE GAMES. **The Solo|Versus toggle and the game switcher no longer render on
+> /play** (GamesNav dropped the route; the bar still rides 38-0/P10/HL/GTP pages).
+> **Home: the Your Leagues standings block is GONE** (founder: not on Home unless a major
+> highlight) — Home shows at most ONE league card, only on unread chat or a join/chat
+> within 24h (`LeagueHighlightCard`, reads /api/fantasy/leagues, self-hides for guests
+> and quiet leagues); the `get_my_league_standings` fetch went with it.)
+>
+> **Previously confirmed:** 2026-08-07 eve (**PRODUCT MODEL SHIPPED — five-tab navigation** (PR #98):
 > the app now reads Home (football happening) · Play (football played) · Fantasy (my team) ·
 > **Leagues** (my people, gold trophy tab) · Profile (me). **The Premier League bottom-nav tab
 > is REMOVED** — PL is content context, not architecture; `/matchweek` stays fully routable
@@ -910,6 +924,9 @@ Confirmed preamble above and the referenced section.
   404), 38-0 feed events (no sentence template fits a football match), and fixture
   postponement (wiring it would add SportMonks calls on days gameday-publish promises
   zero, and a health check asserts that).
+- **2026-08-07 night** — **Play home v2** (PR #99, merged). GAMEDAY QUIZ leads (fixtures
+  carousel + NOTIFY ME), TODAY'S QUIZ art carousel with catalogue arrow, QUICK PLAY
+  art-led, /play switchers removed; Home leagues gated to a single genuine-highlight card.
 - **2026-08-07 eve** — **PRODUCT MODEL: five-tab nav** (PR #98, merged). Home/Play/Fantasy/
   Leagues/Profile; PL tab removed (/matchweek routable, news on Home); Leagues tab →
   /fantasy/leagues (invite links safe); Fantasy = Home·Squad·Scout; Home rebuilt as
