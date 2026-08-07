@@ -141,7 +141,46 @@ function clearGuestRun() {
   try { localStorage.removeItem(GUEST_RUN_KEY); } catch { /* ignore */ }
 }
 
-type Phase = "intro" | "loading" | "playing" | "results";
+type Phase = "intro" | "loading" | "playing" | "results" | "countdown";
+
+// A 3-2-1-GO countdown runs before these fast, timed reaction games so the
+// player isn't dropped straight into a live timer (founder 7 Aug). Games with
+// their own appropriate pre-game flow are deliberately NOT in this set.
+const COUNTDOWN_GAMES = new Set(["higher-lower", "guess-the-player"]);
+// Guess the Player has no categories or settings to configure, so its intro /
+// how-to-play screen is a forced step with nothing to do — skip straight to the
+// countdown (founder 7 Aug). Its flow becomes: Quick Play → countdown → game.
+const SKIP_INTRO_GAMES = new Set(["guess-the-player"]);
+
+// A clean 3 → 2 → 1 → GO gate. Self-contained: runs its sequence once on mount
+// and calls onDone when GO clears; the game's timer stays paused until then
+// because it only ticks in the "playing" phase.
+function GameCountdown({ accent, onDone }: { accent: string; onDone: () => void }) {
+  const [n, setN] = useState(3); // 0 renders as GO
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
+  useEffect(() => {
+    const step = 650;
+    const timers = [
+      setTimeout(() => setN(2), step),
+      setTimeout(() => setN(1), step * 2),
+      setTimeout(() => setN(0), step * 3),
+      setTimeout(() => doneRef.current(), step * 4),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+  const go = n === 0;
+  return (
+    <main style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", background: "#080d0a", color: "#eef2f0" }}>
+      <style>{`@keyframes gdPop { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
+        @media (prefers-reduced-motion: reduce) { .gd-pop { animation: none !important; } }`}</style>
+      <div key={n} className="gd-pop font-display" aria-live="assertive"
+        style={{ fontSize: go ? 76 : 128, lineHeight: 1, letterSpacing: "0.01em", color: go ? accent : "#eef2f0", animation: "gdPop 0.55s ease-out both" }}>
+        {go ? "GO" : n}
+      </div>
+    </main>
+  );
+}
 
 function scoreData(pct: number) {
   if (pct >= 0.9) return { emoji: "🏆", label: "Elite Knowledge", color: "#00d8c0" };
@@ -435,7 +474,7 @@ export default function GameTypeGame() {
   const [phase, setPhase] = useState<Phase>("intro");
   // "loading" here is the post-START deal — already part of the run, so the
   // persistent GamesNav steps away for it too, not just for "playing".
-  useHideGamesNav(phase === "playing" || phase === "loading");
+  useHideGamesNav(phase === "playing" || phase === "loading" || phase === "countdown");
   const [topic, setTopic] = useState<string>("mixed"); // Higher-or-Lower topic
   const [copied, setCopied] = useState(false); // results share confirmation
   // Set from the server's own re-grade of the finished run. `rank` is the
@@ -477,9 +516,15 @@ export default function GameTypeGame() {
     if (typeof window === "undefined") return;
     if (autoStartedRef.current) return;
     if (phase !== "intro") return;
-    if (new URLSearchParams(window.location.search).get("start") !== "1") return;
+    // Start on ?start=1 (autostart from Quick Play), OR always for games whose
+    // intro is a forced empty step (Guess the Player) — skip straight to the game.
+    const wants = new URLSearchParams(window.location.search).get("start") === "1";
+    if (!wants && !SKIP_INTRO_GAMES.has(type)) return;
     autoStartedRef.current = true;
     void startRound();
+    // startRound/type are stable for this effect's purpose; autoStartedRef guards
+    // against a double fire, so we intentionally key only off phase.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
   // Whether the pinned round has been drawn yet in THIS session — consumed
   // on the first draw, so "Play Again" (and any later visit to the intro
@@ -655,7 +700,8 @@ export default function GameTypeGame() {
       setWindowMs(typeof data.window === "number" ? data.window : 25_000);
       setQuestions(data.questions as ServedQuestion[]);
       resetRoundState();
-      setPhase("playing");
+      // Reaction games get a 3-2-1-GO first; the rest go straight in.
+      setPhase(COUNTDOWN_GAMES.has(type) ? "countdown" : "playing");
     } catch {
       setLoadError(true);
       setPhase("intro");
@@ -746,6 +792,13 @@ export default function GameTypeGame() {
   }
 
   const accent = config.accent;
+
+  // ── Countdown ────────────────────────────────────────────────────────────
+  // 3-2-1-GO before a reaction game. The timer only ticks in "playing", so the
+  // round is genuinely paused behind this.
+  if (phase === "countdown") {
+    return <GameCountdown accent={accent} onDone={() => setPhase("playing")} />;
+  }
 
   // ── Loading ──────────────────────────────────────────────────────────────
   if (phase === "loading") {
