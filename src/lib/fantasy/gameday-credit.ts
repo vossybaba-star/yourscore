@@ -4,9 +4,11 @@ import "server-only";
  * replaces the old halftime-link, which minted a credit per qualifying attempt).
  *
  * Your FIRST gameday quiz this gameweek earns transfers for NEXT gameweek, on the
- * same 3/6/9/11 scale as the neutral round. It feeds the same "earned for next
- * week" tray the round does: we RAISE the tray to the better of what's there and
- * what this quiz scored (raisePending). The rules, all founder-locked:
+ * EXACT same scale as the neutral round — both call engine `creditsForRound`, so
+ * the cap-of-2 curve (5 correct → 1, 10 → 2, founder 7 Aug) applies identically
+ * whichever quiz a manager plays. It feeds the same "earned for next week" tray
+ * the round does: we RAISE the tray to the better of what's there and what this
+ * quiz scored (raisePending). The rules, all founder-locked:
  *   - only the FIRST gameday quiz played counts — a later, higher-scoring one is
  *     ignored (pending_gameday_done locks the slot for the cycle);
  *   - club is irrelevant — own club or not, first played is the one that counts;

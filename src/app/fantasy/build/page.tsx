@@ -28,6 +28,13 @@ import { useUser } from "@/hooks/useUser";
 
 const BUDGET = 1000;
 const DRAFT_KEY = "ys-fantasy-draft";
+// Set the instant a signed-out guest taps "sign in to save my squad", cleared
+// the instant we act on it. It rides in localStorage (not a ?query) so it
+// survives EVERY auth route home — OAuth callback, magic-link, password — none
+// of which reliably carry a query string back. On return it tells the builder to
+// confirm the drafted squad automatically, so the pick they made before signing
+// up simply becomes their squad with no second tap.
+const AUTOSAVE_KEY = "ys-fantasy-autosave";
 const POS_WORD: Record<Pos, string> = { GK: "keepers", DEF: "defenders", MID: "midfielders", FWD: "forwards" };
 
 export default function BuildPage() {
@@ -45,6 +52,7 @@ export default function BuildPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState(false); // rebuilding an existing squad
   const [restored, setRestored] = useState(false);
+  const [autoHandled, setAutoHandled] = useState(false); // guest post-signup auto-confirm done
   const [anchors, setAnchors] = useState<number[]>([]);        // up to 3 core players
   const [activePreset, setActivePreset] = useState<string | null>(null); // loaded shape, for flip highlight
   const [lastPreset, setLastPreset] = useState<string | null>(null);     // last shape loaded, for re-solving after a hand edit
@@ -195,8 +203,13 @@ export default function BuildPage() {
   const submit = async () => {
     // Saving is the one thing that needs an account (founder, 4 Aug). A guest has
     // built a full team by now; send them to sign-in with the draft still in
-    // localStorage, so they land back on the builder and confirm in one tap.
-    if (!user) { router.push("/auth/sign-in?next=/fantasy/build"); return; }
+    // localStorage AND an autosave flag, so on return the builder confirms the
+    // squad they picked automatically — no second tap (founder, 7 Aug).
+    if (!user) {
+      try { localStorage.setItem(AUTOSAVE_KEY, "1"); } catch { /* private mode */ }
+      router.push("/auth/sign-in?next=/fantasy/build");
+      return;
+    }
     setBusy(true); setErr(null);
     try {
       await api("squad", { pickIds: picked });
@@ -209,6 +222,26 @@ export default function BuildPage() {
       setErr((e as Error).message); setBusy(false);
     }
   };
+
+  // Guest → sign up → their squad is confirmed for them. When a returning user
+  // set the autosave flag (they tapped "sign in to save" as a guest), the moment
+  // we have their auth, their restored draft and the pool to judge it complete,
+  // we confirm that exact squad — no second tap. Runs once: the flag is cleared
+  // and `autoHandled` latches. Guards: a legal, complete 15 only, and never over
+  // an existing squad (editing) — a rebuild is a deliberate act, not an autosave.
+  // If the draft is incomplete the stale intent is dropped and they just build on.
+  useEffect(() => {
+    if (autoHandled || !user || !restored || !pool.length) return;
+    let intended = false;
+    try { intended = localStorage.getItem(AUTOSAVE_KEY) === "1"; } catch { /* private mode */ }
+    if (!intended) return;
+    setAutoHandled(true);
+    try { localStorage.removeItem(AUTOSAVE_KEY); } catch { /* private mode */ }
+    if (!editing && complete) void submit();
+    // submit/complete/editing are recomputed each render; the latch above makes
+    // this fire exactly once, so they need not be reactive dependencies.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoHandled, user, restored, pool.length]);
 
   const needle = q.trim().toLowerCase();
   const listed = useMemo(() => {
