@@ -6,7 +6,32 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-07 pm (**Universal game shells + 38-0 landing diet shipped** (PR #96):
+> **Confirmed:** 2026-08-07 eve (**PRODUCT MODEL SHIPPED — five-tab navigation** (PR #98):
+> the app now reads Home (football happening) · Play (football played) · Fantasy (my team) ·
+> **Leagues** (my people, gold trophy tab) · Profile (me). **The Premier League bottom-nav tab
+> is REMOVED** — PL is content context, not architecture; `/matchweek` stays fully routable
+> (deep links, gameday links) and its news resurfaces on Home. The Leagues tab targets
+> `/fantasy/leagues` (no route move — live invite links unbroken); quiz leagues
+> (`/league*`) also light it. **Fantasy is three tabs: Home · Squad · Scout** — the Social
+> pill's feed moved to the global Home, the Leagues pill went global (both routes still
+> resolve for deep links). **Home (signed-in) rebuilt as "football happening":** progress →
+> TODAY (gameday + season tiles) → Today's Game hero → THE LATEST (PL briefing tile, More →
+> /matchweek) → daily debate → your leagues → AROUND THE GAME: the social feed (lazy
+> `FeedStream`, For You | Following toggle, read-first, NO composer). Promo modules deleted
+> (38-0 tile, mode tiles, discovery rail, lobbies nudge + their orphaned server fetches).
+> Fantasy Home = GW status hero + EDIT SQUAD, contextual NEEDS ATTENTION, ⚡ EARN A TRANSFER
+> styled as a game, YOUR LEAGUES preview, one SCOUT SAYS pick (transfers-available + bank
+> not in the home payload, so omitted, never invented). Squad = pitch first, one dominant
+> EDIT SQUAD, compact pills (Transfers/Plan ahead/Chips/Scout/Share), history/rules/
+> knowledge/quiz-guide/leagues demoted into one MORE card. Scout briefing opens with a
+> decision grid (Captain/Transfers/My Squad/Compare). League detail = 4 pills (Hub/Chat/
+> Table/Games), History reachable from the Hub's bottom "Season history" row; Hub order:
+> table summary → Games with LIVE NOW → HAPPENING NOW rail → RECENT CHAT preview → members.
+> Profile guest state sells the accumulating identity. ⚠️ Feed WRITES remain allowlist-gated
+> until `NEXT_PUBLIC_FANTASY_ENABLED` flips — ordinary signed-in users can read the Home
+> feed but posting 403s until fantasy launches; decide before 21 Aug.)
+>
+> **Previously confirmed:** 2026-08-07 pm (**Universal game shells + 38-0 landing diet shipped** (PR #96):
 > three shared components in `src/components/games/` — `GameEntry` (compact fixed-aspect
 > cover, PLAY above the fold, "How to play" collapsed), `GameHeader` (the one in-game
 > chrome: progress, Quit, timer, score, difficulty) and `ResultShell` (score hero → one
@@ -885,6 +910,12 @@ Confirmed preamble above and the referenced section.
   404), 38-0 feed events (no sentence template fits a football match), and fixture
   postponement (wiring it would add SportMonks calls on days gameday-publish promises
   zero, and a health check asserts that).
+- **2026-08-07 eve** — **PRODUCT MODEL: five-tab nav** (PR #98, merged). Home/Play/Fantasy/
+  Leagues/Profile; PL tab removed (/matchweek routable, news on Home); Leagues tab →
+  /fantasy/leagues (invite links safe); Fantasy = Home·Squad·Scout; Home rebuilt as
+  football-happening with the feed last (For You|Following, read-first); Squad pitch-first;
+  Scout decision grid; League Hub reordered + History demoted; Profile guest identity
+  state. ⚠️ feed writes allowlist-gated until fantasy launch flag flips.
 - **2026-08-07 pm** — **Universal game shells + 38-0 diet** (PR #96, merged). GameEntry /
   GameHeader / ResultShell shared components; HL + GTP migrated with `?start=1` autostart
   from Quick Play (one tap to question one); Perfect 10 on the shells + state-preserving
