@@ -29,6 +29,8 @@ npx tsc \
   src/lib/fantasy/months.test.ts \
   src/lib/fantasy/clubKey.ts \
   src/lib/fantasy/context.test.ts \
+  src/lib/fantasy/scoutLatestSelect.ts \
+  src/lib/fantasy/scoutLatestSelect.test.ts \
   src/lib/fantasy/ops-diff.ts \
   src/lib/fantasy/ops.test.ts \
   src/lib/fantasy/screenshotMatch.ts \

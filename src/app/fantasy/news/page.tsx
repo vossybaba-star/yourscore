@@ -14,6 +14,7 @@ import { ScoutCover } from "@/components/fantasy/ScoutCover";
 import { ScoutTabsShell, type ScoutTabKey } from "@/components/fantasy/ScoutTabsShell";
 import { NewsFeed } from "@/components/fantasy/NewsFeed";
 import { FourPicks } from "@/components/fantasy/FourPicks";
+import { ScoutLatest } from "@/components/fantasy/ScoutLatest";
 import { ScoutPlayersBrowser } from "@/components/fantasy/ScoutPlayersBrowser";
 import { CompareEntry } from "@/components/fantasy/CompareEntry";
 import { ShortlistView } from "@/components/fantasy/ShortlistView";
@@ -106,7 +107,7 @@ export default async function ScoutBriefing({ searchParams }: { searchParams?: {
         />
       </div>
     ),
-    picks: <FourPicks />,
+    picks: <div style={{ display: "grid", gap: 12 }}><ScoutLatest /><FourPicks /></div>,
     players: <><CompareEntry /><ScoutPlayersBrowser /></>,
     fixtures: (() => {
       const gws = doc?.fixtures?.gws ?? [];

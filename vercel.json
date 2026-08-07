@@ -9,6 +9,7 @@
     { "path": "/api/cron/expire-challenges", "schedule": "0 3 * * *" },
     { "path": "/api/cron/fpl-snapshot", "schedule": "42 * * * *" },
     { "path": "/api/cron/fantasy-news", "schedule": "30 * * * *" },
+    { "path": "/api/cron/scout-latest", "schedule": "45 8 * * *" },
     { "path": "/api/cron/fantasy-tick", "schedule": "*/10 * * * *" },
     { "path": "/api/cron/fantasy-ops", "schedule": "15 * * * *" },
     { "path": "/api/cron/fantasy-bots", "schedule": "52 * * * *" },
