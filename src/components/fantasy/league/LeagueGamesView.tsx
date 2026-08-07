@@ -848,7 +848,7 @@ function GameDetailSheet({ game, recentResults, viewerId, onChallenge, onRematch
 type PrepTarget = { opponent: { userId: string; name: string; avatarUrl: string | null }; initialGame?: string; rematchOf?: string };
 
 export function LeagueGamesView({
-  code, isOwner, autoOpenChallenge, onAutoOpenChallengeHandled, autoOpenCompetitionId, onAutoOpenCompetitionHandled,
+  code, isOwner, autoOpenChallenge, onAutoOpenChallengeHandled, initialCompetitionId = null, onCompetitionIdChange,
 }: {
   code: string;
   /** The league page already knows this off leagueDetail() (leagues.ts) —
@@ -864,12 +864,13 @@ export function LeagueGamesView({
    *  and back to Games never re-opens it uninvited. */
   autoOpenChallenge?: boolean;
   onAutoOpenChallengeHandled?: () => void;
-  /** A competition chat card's tap through (UI wave) — mirrors
-   *  autoOpenChallenge above exactly, just carrying an id: page.tsx switches
-   *  to this tab AND tells this view which competition's detail sheet to
-   *  open. Cleared the same way once acted on. */
-  autoOpenCompetitionId?: string | null;
-  onAutoOpenCompetitionHandled?: () => void;
+  /** Which competition's detail sheet to open on mount — a chat card's tap
+   *  through, the Hub module, or a page load carrying `?c=`. page.tsx owns
+   *  the `c` URL param; this view reports every open/close of the sheet back
+   *  through onCompetitionIdChange (same mirror pattern LeagueChatView uses
+   *  for initialGw) so the URL always matches what's actually on screen. */
+  initialCompetitionId?: string | null;
+  onCompetitionIdChange?: (competitionId: string | null) => void;
 }) {
   const router = useRouter();
   const { user } = useUser();
@@ -886,7 +887,13 @@ export function LeagueGamesView({
   const [competitions, setCompetitions] = useState<CompetitionCard[] | null>(null);
   const [compErr, setCompErr] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [detailCompetitionId, setDetailCompetitionId] = useState<string | null>(null);
+  const [detailCompetitionId, setDetailCompetitionId] = useState<string | null>(initialCompetitionId);
+  // Every open/close of the detail sheet is reported up so the `c` URL param
+  // (owned by page.tsx) always matches what's actually on screen.
+  const openCompetitionDetail = (competitionId: string | null) => {
+    setDetailCompetitionId(competitionId);
+    onCompetitionIdChange?.(competitionId);
+  };
 
   // The rival picker (Quick Challenge / a per-game "Challenge someone") and
   // the prep sheet it (or a Rematch tap) hands off to — one PrepTarget state
@@ -963,17 +970,6 @@ export function LeagueGamesView({
       clearInterval(t);
     };
   }, [loadCompetitions]);
-
-  // The chat card / Hub module deep-link (UI wave) — open the detail sheet
-  // for the competition id the parent flagged, then tell it it's handled so
-  // navigating away and back never re-opens it uninvited (same shape as
-  // autoOpenChallenge below).
-  useEffect(() => {
-    if (!autoOpenCompetitionId) return;
-    setDetailCompetitionId(autoOpenCompetitionId);
-    onAutoOpenCompetitionHandled?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoOpenCompetitionId]);
 
   // The league roster (Quick Challenge's picker) — same lighter-than-
   // leagueDetail fetch the chat tray's Challenge entry uses, fetched once.
@@ -1134,14 +1130,14 @@ export function LeagueGamesView({
           {activeCompetitions.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {activeCompetitions.map((c) => (
-                <CompetitionRow key={c.id} card={c} onOpen={() => setDetailCompetitionId(c.id)} />
+                <CompetitionRow key={c.id} card={c} onOpen={() => openCompetitionDetail(c.id)} />
               ))}
             </div>
           )}
           {completedCompetitions.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: activeCompetitions.length > 0 ? 8 : 0 }}>
               {completedCompetitions.map((c) => (
-                <CompetitionCompactRow key={c.id} card={c} onOpen={() => setDetailCompetitionId(c.id)} />
+                <CompetitionCompactRow key={c.id} card={c} onOpen={() => openCompetitionDetail(c.id)} />
               ))}
             </div>
           )}
@@ -1330,7 +1326,7 @@ export function LeagueGamesView({
       {detailCompetitionId && (
         <CompetitionDetailSheet
           code={code} competitionId={detailCompetitionId} viewerId={viewerId} isOwner={isOwner}
-          onClose={() => setDetailCompetitionId(null)}
+          onClose={() => openCompetitionDetail(null)}
           onChanged={() => void loadCompetitions()}
         />
       )}
