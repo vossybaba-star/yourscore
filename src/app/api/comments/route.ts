@@ -21,7 +21,7 @@ import { parseVideoAttachment, isPostVideoUrl, type FeedVideo } from "@/lib/fant
 // batched query. comments has NO FK to profiles (same as league_members) —
 // author info is a second fetch, never an embedded select.
 
-const SUBJECT_TYPES = new Set(["pack", "debate", "fantasy_feed"]);
+const SUBJECT_TYPES = new Set(["pack", "debate", "fantasy_feed", "content"]);
 
 export const fetchCache = "force-no-store"; // live threads — see debate/today/route.ts
 

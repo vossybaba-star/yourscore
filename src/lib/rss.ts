@@ -34,6 +34,23 @@ export interface RssItem {
   /** Coarse classification for the live feed (founder 8 Aug): transfer / manager
    *  / video / report. Keyword-derived; "report" is the catch-all. */
   category?: "transfer" | "manager" | "video" | "report";
+  /** Synthetic, STABLE uuid used as the comments/reactions subject for this item
+   *  on the interactive content feed (founder 8 Aug). Set by the live feed, not
+   *  by the generic parser — see contentSubjectId. */
+  subjectKey?: string;
+}
+
+/** Turn an item's stable id into a synthetic RFC-4122-shaped uuid, so external
+ *  content (which has no DB row) can be the subject of comments + reactions with
+ *  no ingestion table: the same item always maps to the same subject. Salted so
+ *  it can never collide with a real record id. Deterministic (server + anywhere
+ *  else compute the same value). */
+export function contentSubjectId(seed: string): string {
+  const h = createHash("sha1").update(`yourscore:content:${seed}`).digest("hex").split("");
+  h[12] = "5"; // version 5
+  h[16] = ((parseInt(h[16], 16) & 0x3) | 0x8).toString(16); // variant 10xx
+  const s = h.slice(0, 32).join("");
+  return `${s.slice(0, 8)}-${s.slice(8, 12)}-${s.slice(12, 16)}-${s.slice(16, 20)}-${s.slice(20, 32)}`;
 }
 
 /** Classify a news item for the live feed by keywords in its title + summary. */

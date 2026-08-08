@@ -193,7 +193,7 @@ export function DiscussionThread({
   embedded = false,
   focusCommentId = null,
 }: {
-  subjectType: "pack" | "debate" | "fantasy_feed";
+  subjectType: "pack" | "debate" | "fantasy_feed" | "content";
   subjectId: string;
   title?: string;
   accent?: string;

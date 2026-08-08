@@ -1,5 +1,5 @@
 import "server-only";
-import { fetchFeeds, type RssItem, type RssSource } from "@/lib/rss";
+import { contentSubjectId, fetchFeeds, type RssItem, type RssSource } from "@/lib/rss";
 import { PL_SOURCES } from "./news";
 
 /**
@@ -54,5 +54,8 @@ export async function fetchLiveFeed(): Promise<LiveFeed> {
     }
   }
 
-  return { items: items.slice(0, 50), updatedAt: new Date().toISOString(), sources: { ...news.sources, ...video.sources } };
+  // Attach the synthetic comments/reactions subject so every card is interactive
+  // (founder 8 Aug — like/comment/share like the X feed) with no ingestion table.
+  const withSubjects = items.slice(0, 50).map((it) => ({ ...it, subjectKey: contentSubjectId(it.id) }));
+  return { items: withSubjects, updatedAt: new Date().toISOString(), sources: { ...news.sources, ...video.sources } };
 }
