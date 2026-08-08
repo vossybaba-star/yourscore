@@ -6,7 +6,9 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-08 (**Scout tab filled in** (commit `1a50986`). Two changes on the Scout
+> **Confirmed:** 2026-08-08 (**Content feed made interactive** — react/comment/share on every
+> news + video card, mig 267, commit `69c7ac8`; see top of Recently shipped. Prior:
+> **Scout tab filled in** (commit `1a50986`). Two changes on the Scout
 > tab (`/fantasy/news`): (1) signed in, the Briefing (the Scout's front door) now LEADS with the daily
 > Scout's Latest ideas above the news stream, so landing on Scout is immediately useful rather than a
 > sparse pre-season feed. (2) Signed out, the Scout was a bare sign-up wall showing none of it; it now
@@ -944,6 +946,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Content feed is interactive — react, comment, share** (commit `69c7ac8`,
+  mig 267). Every news/video card is now an X-style post: an emoji reaction bar (😂👀🔥👏❤️😭,
+  one switchable reaction per user), a comment thread (the shipped `DiscussionThread`, new
+  subject type **`content`**), and share. External RSS items get a STABLE synthetic subject
+  uuid (`contentSubjectId` in `src/lib/rss.ts`, attached by the live feed) so interactions
+  persist with no ingestion table. New `content_reactions` table (public read) +
+  **/api/feed/content/react** (toggle) + **/api/feed/content/state** (batched counts). Reads
+  are public (signed-out can read + see counts); reacting/commenting needs an account (401 →
+  sign-in). Applies to all three `ContentFeed` surfaces below. Verified e2e
+  (`scripts/verify-content-interactions.mjs`).
 - **2026-08-08** — **Live content feeds** (commits `05cbe86` pt.1, `dde39a9` pt.2). Real
   football news + embeddable YouTube video, sources founder-approved. `src/lib/rss.ts`
   extended for video (yt:videoId, kind/category); `src/lib/pl/liveFeed.ts` merges the
