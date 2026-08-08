@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Btn, Card, GOLD, INK, LIME, LINE, MUTED, PANEL, PANEL_2, SectionLabel, Sheet, Skel, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
+import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { ChallengePrepSheet } from "@/components/fantasy/ChallengePrepSheet";
 import { acceptChallengeAction, declineChallengeAction, cancelChallengeAction, ChallengeActionConflict } from "@/lib/fantasy/challengeClientActions";
 import { useUser } from "@/hooks/useUser";
@@ -1185,13 +1186,21 @@ export function LeagueGamesView({
       )}
       {competitions !== null && competitions.length === 0 && isOwner && (
         <div style={{ marginBottom: 18 }}>
-          <button onClick={() => setCreateOpen(true)} style={{
-            width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer",
-            background: PANEL, color: GOLD, border: `1px solid ${tint(GOLD, "44")}`, textAlign: "left",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+          {/* Starter Competition — a graphic tile (founder 8 Aug). */}
+          <button onClick={() => setCreateOpen(true)} className="active:scale-[0.99]" style={{
+            width: "100%", position: "relative", overflow: "hidden", cursor: "pointer", textAlign: "left",
+            borderRadius: 16, padding: "15px 16px", transition: "transform 0.1s",
+            background: `linear-gradient(100deg, ${tint(TEAL, "2a")}, ${PANEL} 74%)`, border: `1px solid ${tint(TEAL, "55")}`,
           }}>
-            Start a league competition
-            <span aria-hidden style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+            <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
+              style={{ position: "absolute", right: -6, bottom: -14, width: 96, height: 96, opacity: 0.16 }}>
+              <path d="M6 4h12v3a6 6 0 01-12 0V4z M6 6H4v1a3 3 0 003 3 M18 6h2v1a3 3 0 01-3 3 M9 17h6 M8 20h8 M12 13v4" />
+            </svg>
+            <div style={{ position: "relative" }}>
+              <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: TEAL, marginBottom: 3 }}>STARTER COMPETITION</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: INK }}>Start a league competition</div>
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Run a mini table for your members.</div>
+            </div>
           </button>
         </div>
       )}
@@ -1212,16 +1221,22 @@ export function LeagueGamesView({
 
           {actionErr && <p style={{ color: "#E08A6B", fontSize: 12.5, margin: "0 0 12px" }}>{actionErr}</p>}
 
-          {/* Quick Challenge — always here, empty league or not. */}
+          {/* Challenge — a graphic tile (founder 8 Aug), always here. */}
           <div style={{ marginBottom: 18 }}>
-            <button onClick={() => openPicker(null)} style={{
-              width: "100%", padding: "13px 16px", borderRadius: 14, fontSize: 14.5, fontWeight: 700, cursor: "pointer",
-              background: `linear-gradient(100deg, ${tint(GOLD, "1c")}, ${PANEL} 70%)`,
-              border: `1px solid ${tint(GOLD, "44")}`, color: GOLD, textAlign: "left",
-              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+            <button onClick={() => openPicker(null)} className="active:scale-[0.99]" style={{
+              width: "100%", position: "relative", overflow: "hidden", cursor: "pointer", textAlign: "left",
+              borderRadius: 16, padding: "15px 16px", transition: "transform 0.1s",
+              background: `linear-gradient(100deg, ${tint(GOLD, "2a")}, ${PANEL} 74%)`, border: `1px solid ${tint(GOLD, "55")}`,
             }}>
-              Challenge a league member
-              <span aria-hidden style={{ fontSize: 18, lineHeight: 1 }}>→</span>
+              <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
+                style={{ position: "absolute", right: -6, bottom: -14, width: 96, height: 96, opacity: 0.16 }}>
+                <path d="M7 4l3 8-3 8 M17 4l-3 8 3 8" />
+              </svg>
+              <div style={{ position: "relative" }}>
+                <div className="font-display tracking-widest" style={{ fontSize: 10.5, color: GOLD, marginBottom: 3 }}>HEAD TO HEAD</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: INK }}>Challenge a league member</div>
+                <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Pick a rival and a game. Winner takes it.</div>
+              </div>
             </button>
           </div>
 
@@ -1267,32 +1282,34 @@ export function LeagueGamesView({
 
           <div>
             <GamesHead label="GAME HUB" tone="play" />
-            {/* An icon-forward launcher grid, not a stack of buttons (founder
-                8 Aug). Each tile is a game: tap it to open the detail sheet,
-                which carries the "Challenge someone" CTA. Two per row on phones,
-                so the section reads as a hub of games to pick from. */}
+            {/* Graphic game tiles (founder 8 Aug: "actual graphics", not empty
+                icon boxes). Each tile has an art band (accent gradient + a big
+                faded motif) over the name; tap opens the game detail. Gameday
+                Quiz is NOT a tile here — it's the carousel below. */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {overview.availableGames.map((g) => {
+              {overview.availableGames.filter((g) => g.id !== "gameday_quiz").map((g) => {
                 const v = GAME_VISUAL[g.id] ?? GAME_VISUAL_FALLBACK;
+                const paths = v.path.split(" M").map((seg, i) => (i ? "M" : "") + seg);
                 return (
                   <button key={g.id} onClick={() => openGameDetail(g)} aria-label={`${g.name} — ${g.typicalDuration}`}
                     className="active:scale-[0.97]"
                     style={{
-                      textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: 9,
-                      padding: 13, borderRadius: 16, transition: "transform 0.1s",
-                      background: `linear-gradient(150deg, ${tint(v.accent, "1c")}, ${PANEL} 70%)`,
-                      border: `1px solid ${tint(v.accent, "3a")}`,
+                      textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", overflow: "hidden",
+                      borderRadius: 16, transition: "transform 0.1s", background: PANEL, border: `1px solid ${tint(v.accent, "3a")}`,
                     }}>
-                    <span aria-hidden style={{
-                      width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      background: tint(v.accent, "1f"), border: `1px solid ${tint(v.accent, "44")}`, color: v.accent,
-                    }}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                        {v.path.split(" M").map((seg, i) => <path key={i} d={(i ? "M" : "") + seg} />)}
+                    {/* Art band — big faded motif + a crisp glyph. */}
+                    <span aria-hidden style={{ position: "relative", height: 82, display: "block", background: `linear-gradient(150deg, ${tint(v.accent, "33")}, ${tint(v.accent, "0a")})` }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke={v.accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ position: "absolute", right: -10, bottom: -12, width: 92, height: 92, opacity: 0.18 }}>
+                        {paths.map((d, i) => <path key={i} d={d} />)}
                       </svg>
+                      <span style={{ position: "absolute", left: 12, top: 12, width: 38, height: 38, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: tint(v.accent, "22"), border: `1px solid ${tint(v.accent, "55")}`, color: v.accent }}>
+                        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                          {paths.map((d, i) => <path key={i} d={d} />)}
+                        </svg>
+                      </span>
                     </span>
-                    <span style={{ minWidth: 0 }}>
+                    <span style={{ padding: "10px 12px" }}>
                       <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: INK, lineHeight: 1.15 }}>{g.name}</span>
                       <span style={{ display: "block", fontSize: 11, color: MUTED, marginTop: 3 }}>{g.typicalDuration}</span>
                     </span>
@@ -1300,6 +1317,9 @@ export function LeagueGamesView({
                 );
               })}
             </div>
+            {/* Gameday quizzes — the carousel (founder 8 Aug), self-hides when
+                none are scheduled. */}
+            <div style={{ marginTop: 4 }}><UpcomingQuizzes seeAllHref="/gameday-quiz" /></div>
           </div>
         </>
       )}
