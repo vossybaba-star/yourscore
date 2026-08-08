@@ -35,6 +35,7 @@ import { LeagueChatView } from "@/components/fantasy/league/LeagueChatView";
 import { LeagueTableView } from "@/components/fantasy/league/LeagueTableView";
 import { LeagueGamesView } from "@/components/fantasy/league/LeagueGamesView";
 import { LeagueBubbleSwitcher } from "@/components/fantasy/league/LeagueBubbleSwitcher";
+import { CreateLeagueFlow } from "@/components/fantasy/league/LeagueFlows";
 import { LeagueHistoryView } from "@/components/fantasy/league/LeagueHistoryView";
 import type { ChatData, GamesPulse, LeagueDetail as BaseLeagueDetail } from "@/components/fantasy/league/types";
 
@@ -115,6 +116,7 @@ export default function LeaguePage() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("hub");
   const [chatGw, setChatGw] = useState<number | null>(null);
 
@@ -319,7 +321,7 @@ export default function LeaguePage() {
   );
   if (!detail) return (
     <main data-fantasy style={page}>
-      <Header />
+      <LeagueBubbleSwitcher currentCode={code} onCreate={() => setCreateOpen(true)} />
       <Loading label="Loading the league">
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <Skel w="55%" h={22} /><Skel w="70%" h={12} style={{ marginBottom: 6 }} />
@@ -338,13 +340,10 @@ export default function LeaguePage() {
   return (
     <>
     <main data-fantasy style={page}>
-      {/* "Leagues" now means the browse/Discover list (?browse=1) — landing on
-          /fantasy/leagues drops you back into a league, so link the list directly. */}
-      <Header exit={{ label: "Leagues", onClick: () => router.push("/fantasy/leagues?browse=1") }} />
-
-      {/* Bubble switcher — hop between your football groups without leaving.
-          onSwitch swaps the league in place (no navigation, no remount). */}
-      <LeagueBubbleSwitcher currentCode={code} onSwitch={switchLeague} current={{ name: league.name, imageUrl: league.imageUrl }} />
+      {/* No back pill, no "YOURSCORE FANTASY" wordmark here (founder 8 Aug): this
+          IS a top-level tab, and the bubble strip is its navigation. The + bubble
+          (create/browse) and the Competition bubble live inside the switcher. */}
+      <LeagueBubbleSwitcher currentCode={code} onSwitch={switchLeague} onCreate={() => setCreateOpen(true)} current={{ name: league.name, imageUrl: league.imageUrl }} />
 
       {switching ? (
         <Loading label="Loading the league">
@@ -510,6 +509,8 @@ export default function LeaguePage() {
         </Sheet>
       )}
     </main>
+      {/* Create-league flow, opened from the bubble strip's "+" menu. */}
+      <CreateLeagueFlow open={createOpen} onClose={() => setCreateOpen(false)} />
       <BottomNav />
     </>
   );
