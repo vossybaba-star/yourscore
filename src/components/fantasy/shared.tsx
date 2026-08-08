@@ -236,12 +236,16 @@ const sheetScrollLock: {
   prev: { bodyOverflow: string; bodyTouch: string; htmlOverflow: string } | null;
 } = { depth: 0, prev: null };
 
-export function Sheet({ onClose, labelledBy, children, variant = "glass", layout = "padded", height, maxHeight, animation, border, padding = 18 }: {
+export function Sheet({ onClose, labelledBy, children, variant = "glass", layout = "padded", height, maxHeight, animation, border, padding = 18, backdrop }: {
   onClose: () => void; labelledBy: string; children: ReactNode;
   variant?: "glass" | "panel";
   layout?: "padded" | "flex";
   height?: string;
   maxHeight?: string;
+  /** Overrides the scrim behind the sheet. Defaults to a heavy near-opaque
+   *  dim; the Feed composer passes a lighter value so the feed's content is
+   *  still visible in shadow behind it (X-style, founder 8 Aug). */
+  backdrop?: string;
   /** CSS `animation` shorthand for the panel's entrance — e.g. RulesBot's
    *  `"slideUp 0.22s ease"` (@keyframes in globals.css). Omitted by default;
    *  most of the migrated sheets shipped with no entrance animation. */
@@ -387,7 +391,7 @@ export function Sheet({ onClose, labelledBy, children, variant = "glass", layout
         // above) so flex-end lands the sheet just above the keyboard.
         position: "fixed", left: 0, right: 0,
         top: vv ? vv.top : 0, height: vv ? vv.height : "100%",
-        zIndex: 60, background: "rgba(4,8,6,0.72)",
+        zIndex: 60, background: backdrop ?? "rgba(4,8,6,0.72)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
         // "panel" sheets sit flush to the screen edge (their own shipped look);
         // "glass" keeps the 14px surround so the rounded card reads as floating.

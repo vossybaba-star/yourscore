@@ -877,6 +877,18 @@ function GamesHead({ label, tone, count, live, action }: {
   );
 }
 
+/** Per-game visual identity for the game-hub grid (founder 8 Aug: "it's a
+ *  games place — make it a game hub", icons over buttons). Keyed by the
+ *  registry id; an unknown id falls back to a neutral play glyph so a new game
+ *  never renders blank. Brand SVG glyphs only, no emoji. */
+const GAME_VISUAL: Record<string, { accent: string; path: string }> = {
+  quiz_battle: { accent: TEAL, path: "M13 2L4 13h6l-1 9 9-12h-6z" },                         // a bolt — fast, sent
+  quiz_duel:   { accent: LIME, path: "M7 4l3 8-3 8 M17 4l-3 8 3 8" },                          // facing brackets — vs
+  gameday_quiz:{ accent: GOLD, path: "M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 9h16 M8 3v4 M16 3v4" }, // calendar — matchday
+  "38_0":      { accent: "#b98cff", path: "M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z" }, // shield — the run
+};
+const GAME_VISUAL_FALLBACK = { accent: TEAL, path: "M8 5v14l11-7z" };
+
 export function LeagueGamesView({
   code, isOwner, autoOpenChallenge, onAutoOpenChallengeHandled, initialCompetitionId = null, onCompetitionIdChange,
 }: {
@@ -1254,27 +1266,39 @@ export function LeagueGamesView({
           )}
 
           <div>
-            <GamesHead label="PLAY A GAME" tone="play" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {overview.availableGames.map((g) => (
-                <div key={g.id} style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: 12 }}>
-                  {/* Name/body opens the game detail sheet (Phase 4D) — the
-                      Challenge someone button below stays a separate,
-                      sibling control so this never nests an interactive
-                      element inside another. */}
-                  <div role="button" tabIndex={0} onClick={() => openGameDetail(g)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openGameDetail(g); } }}
-                    style={{ cursor: "pointer" }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: INK, marginBottom: 3 }}>{g.name}</div>
-                    <p style={{ fontSize: 12, color: MUTED, margin: "0 0 4px", lineHeight: 1.4 }}>{g.shortDesc}</p>
-                    <div style={{ fontSize: 11, color: MUTED, marginBottom: 9 }}>{g.typicalDuration}</div>
-                  </div>
-                  <button onClick={() => openPicker(g.id)} style={{
-                    padding: "7px 13px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                    background: tint(TEAL, "14"), color: TEAL, border: `1px solid ${tint(TEAL, "40")}`,
-                  }}>Challenge someone</button>
-                </div>
-              ))}
+            <GamesHead label="GAME HUB" tone="play" />
+            {/* An icon-forward launcher grid, not a stack of buttons (founder
+                8 Aug). Each tile is a game: tap it to open the detail sheet,
+                which carries the "Challenge someone" CTA. Two per row on phones,
+                so the section reads as a hub of games to pick from. */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {overview.availableGames.map((g) => {
+                const v = GAME_VISUAL[g.id] ?? GAME_VISUAL_FALLBACK;
+                return (
+                  <button key={g.id} onClick={() => openGameDetail(g)} aria-label={`${g.name} — ${g.typicalDuration}`}
+                    className="active:scale-[0.97]"
+                    style={{
+                      textAlign: "left", cursor: "pointer", display: "flex", flexDirection: "column", gap: 9,
+                      padding: 13, borderRadius: 16, transition: "transform 0.1s",
+                      background: `linear-gradient(150deg, ${tint(v.accent, "1c")}, ${PANEL} 70%)`,
+                      border: `1px solid ${tint(v.accent, "3a")}`,
+                    }}>
+                    <span aria-hidden style={{
+                      width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: tint(v.accent, "1f"), border: `1px solid ${tint(v.accent, "44")}`, color: v.accent,
+                    }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        {v.path.split(" M").map((seg, i) => <path key={i} d={(i ? "M" : "") + seg} />)}
+                      </svg>
+                    </span>
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: INK, lineHeight: 1.15 }}>{g.name}</span>
+                      <span style={{ display: "block", fontSize: 11, color: MUTED, marginTop: 3 }}>{g.typicalDuration}</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </>

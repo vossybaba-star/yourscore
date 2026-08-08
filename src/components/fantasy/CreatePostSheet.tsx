@@ -390,7 +390,7 @@ export function CreatePostSheet({ open, onClose, onPosted, quoting = null, initi
   const showFixtureBtn = !gif && !player && !fixture;
 
   return (
-    <Sheet onClose={close} labelledBy="create-post-title">
+    <Sheet onClose={close} labelledBy="create-post-title" backdrop="rgba(4,8,6,0.42)">
       {/* prefers-reduced-motion (AC5): the upload spinner is the only
           animation in this sheet, so it's the only thing to guard. */}
       <style>{`

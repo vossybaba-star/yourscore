@@ -17,7 +17,6 @@ import { trackShare } from "@/lib/analytics/trackGame";
 import { TodaysQuestionPreview } from "@/components/home/TodaysQuestionPreview";
 import { SeasonSection } from "@/components/home/SeasonSection";
 import { BriefingTile } from "@/components/matchweek/BriefingTile";
-import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import type { PlBriefing } from "@/lib/pl/briefing";
 import type { TodaysGame, TodaysGameStats } from "@/lib/daily-game";
 
@@ -39,7 +38,6 @@ const CreatePostSheet = dynamic(
 const LIME = "#aeea00";
 const TEAL = "#00d8c0";
 const GOLD = "#ffc233";
-const PANEL = "#0e1611";
 const LINE = "rgba(255,255,255,0.07)";
 const MUTED = "#8a948f";
 const SIGN_IN = "/auth/sign-in?next=/";
@@ -123,12 +121,9 @@ const DASH_ANIM = `
   .d-4 { animation: dashSlide 0.35s ease-out 0.22s both; }
   .d-5 { animation: dashSlide 0.35s ease-out 0.28s both; }
   .flame { display: inline-block; animation: flameFlick 1.1s ease-in-out infinite; }
-  /* The Feed fades gently up as it mounts below Today — you watch it arrive. */
-  .feed-arrive { animation: dashSlide 0.4s ease-out both; }
   @media (prefers-reduced-motion: reduce) {
     .d-1,.d-2,.d-3,.d-4,.d-5 { animation: none; }
     .flame { animation: none; }
-    .feed-arrive { animation: none; }
   }
 `;
 
@@ -527,35 +522,30 @@ function LeagueHighlightCard() {
   );
 }
 
-function FeedSection() {
+// The Feed is its own tab now (founder 8 Aug: "a separate feed tab — because
+// when you're in feed you need to be able to swipe up to update"). As the
+// top-of-page scroll surface, the browser's native pull-to-refresh reaches it,
+// and re-tapping the Feed tab bumps `refreshKey` to refetch. The composer is an
+// X-style "+" that floats bottom-right and opens over the feed — no inline
+// field taking a row at the top.
+function FeedSection({ refreshKey }: { refreshKey: number }) {
   const router = useRouter();
   const { user } = useUser();
   const [tab, setTab] = useState<FeedTab>("global");
   const [sort, setSort] = useState<FeedSort>("top");
   // The composer + a key that reloads For You after a new post lands (same
-  // pattern as SocialHome's liveKey).
+  // pattern as SocialHome's liveKey). refreshKey (from the parent, on tab
+  // re-entry / pull) also remounts the stream so it refetches.
   const [composeOpen, setComposeOpen] = useState(false);
   const [liveKey, setLiveKey] = useState(0);
+  const forYouKey = `foryou-${refreshKey}-${liveKey}`;
 
   return (
-    <div className="d-5">
-      <SectionHead title="Around the game" />
-
-      {/* Composer entry point — write a post to the public feed. Home only
-          renders this signed in, but keep the sign-in guard for the rare case
-          the session drops out from under the tab. */}
-      <button onClick={() => (user ? setComposeOpen(true) : router.push(SIGN_IN))} style={{
-        width: "100%", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
-        padding: "9px 12px", borderRadius: 999, background: PANEL, border: `1px solid ${LINE}`, marginBottom: 12,
-      }}>
-        <PlayerAvatar
-          name={user?.user_metadata?.display_name ?? "You"}
-          avatarUrl={user?.user_metadata?.avatar_url ?? null}
-          size={30}
-        />
-        <span style={{ fontSize: 13.5, color: MUTED }}>What&apos;s happening?</span>
-      </button>
-
+    // NB: no transform-based animation on this wrapper (or any ancestor) — the
+    // "+" FAB below is position:fixed, and a transformed ancestor would make it
+    // anchor to that box instead of the viewport (founder 8 Aug: FAB must sit
+    // bottom-right of the screen).
+    <div>
       <FeedToggle tab={tab} onChange={setTab} />
 
       {/* Sort the open feed by engagement (Top) or newest (Latest). Following
@@ -575,8 +565,27 @@ function FeedSection() {
         </div>
       )}
 
-      <FeedStream key={tab === "global" ? liveKey : "following"} embedded chrome={false} controlledScope={tab}
+      <FeedStream key={tab === "global" ? forYouKey : `following-${refreshKey}`} embedded chrome={false} controlledScope={tab}
         controlledSort={tab === "global" ? sort : "recent"} signInNext="/" />
+
+      {/* X-style composer: a floating "+" bottom-right, above the BottomNav.
+          It opens the composer over the feed with a see-through scrim, so the
+          feed stays visible in shadow behind it (founder 8 Aug). */}
+      <button
+        onClick={() => (user ? setComposeOpen(true) : router.push(SIGN_IN))}
+        aria-label="New post"
+        className="fixed z-40 flex items-center justify-center rounded-full transition-transform active:scale-90"
+        style={{
+          right: 18, bottom: "calc(env(safe-area-inset-bottom, 0px) + 82px)",
+          width: 56, height: 56,
+          background: `linear-gradient(140deg, ${LIME}, ${TEAL})`, color: "#04231f",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12) inset",
+        }}
+      >
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
 
       <CreatePostSheet open={composeOpen}
         onClose={() => setComposeOpen(false)}
@@ -632,76 +641,31 @@ function PendingTurnsNotice() {
 export function Dashboard({ data }: { data: DashboardData }) {
   const { displayName, rank, dayStreak, weekDots, todaysGame, todaysGameCompletion, gamedayFixture, unreadNotifications } = data;
 
-  // Home is ONE continuous page (founder 2026-08-07): the football-happening
-  // modules (Today), then the Feed right below them, so scrolling flows straight
-  // from one into the other — you watch the Feed slide up, no view swap, no jump.
-  // The Today|Feed toggle is a quick-jump: tap Feed to smooth-scroll down to it,
-  // Today to glide back to the top. Which tab reads active is derived from where
-  // you've scrolled, and mirrored to ?view=feed for deep links + back.
+  // Home is TWO tabs (founder 8 Aug): Today (the football-happening modules) and
+  // Feed (around the game), each its own view — NOT one continuous scroll. The
+  // Feed as a top-of-page surface is the point: the browser's native
+  // pull-to-refresh reaches it, and re-tapping Feed refetches. The Today|Feed
+  // toggle swaps the view and is mirrored to ?view=feed for deep links + back.
   const [activeTab, setActiveTab] = useState<"today" | "feed">("today");
-  const [feedMounted, setFeedMounted] = useState(false);
-  const navRef = useRef<HTMLDivElement | null>(null);
-  const feedRef = useRef<HTMLDivElement | null>(null);
+  const [feedMounted, setFeedMounted] = useState(false); // lazy: FeedStream is heavy
+  const [feedRefresh, setFeedRefresh] = useState(0);      // bump = refetch the feed
   const syncedOnce = useRef(false);
-
-  // The scroll offset that parks the Feed's top just under the sticky nav.
-  // feedRef's offsetTop is fixed by the Today content above it, so this is stable
-  // whether or not the (lazy) Feed has laid out its own body yet.
-  const feedScrollTop = () => {
-    const navH = navRef.current?.offsetHeight ?? 116;
-    return Math.max(0, (feedRef.current?.offsetTop ?? 0) - navH - 8);
-  };
 
   const selectTab = (v: "today" | "feed") => {
     if (v === "feed") {
-      setFeedMounted(true);         // make sure it's there to land on
-      setActiveTab("feed");         // highlight immediately; scroll confirms it
-      requestAnimationFrame(() => window.scrollTo({ top: feedScrollTop(), behavior: "smooth" }));
+      setFeedMounted(true);
+      // Re-tapping Feed while already on it (or entering it) scrolls to the top
+      // and refetches — the "swipe up to update" affordance, on tap.
+      if (activeTab === "feed") setFeedRefresh((k) => k + 1);
+      setActiveTab("feed");
     } else {
       setActiveTab("today");
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
+    window.scrollTo({ top: 0, behavior: "auto" });
   };
 
-  // Lazy-mount the Feed as it approaches (heavy: FeedStream) so first paint never
-  // pays for it, yet it is ready as it slides into view. IntersectionObserver, not
-  // scroll math, so it tracks the REAL post-layout position — a raw scroll check
-  // fires early while the async Today cards are still settling the page height.
-  // Observed after a short beat for the same reason. selectTab / deep-link mount
-  // it directly.
-  useEffect(() => {
-    const el = feedRef.current;
-    if (!el || feedMounted) return;
-    const io = new IntersectionObserver((ents) => {
-      if (ents.some((e) => e.isIntersecting)) { setFeedMounted(true); io.disconnect(); }
-    }, { rootMargin: "400px 0px" });
-    const t = setTimeout(() => io.observe(el), 500);
-    return () => { clearTimeout(t); io.disconnect(); };
-  }, [feedMounted]);
-
-  // The active tab follows the scroll: FEED once the Feed section rises past the
-  // middle of the screen, or once you are at the very bottom with it in view at
-  // all (so a short or still-loading Feed still registers as "you're in it").
-  useEffect(() => {
-    const onScroll = () => {
-      const top = feedRef.current?.offsetTop ?? Infinity;
-      const onScreen = top - window.scrollY; // px from the viewport top to the Feed's top
-      const dist = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
-      const inFeed = onScreen < window.innerHeight * 0.5 || (dist <= 4 && onScreen < window.innerHeight);
-      setActiveTab(inFeed ? "feed" : "today");
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
-  // Mirror the active section to ?view=feed (deep links + back) — but only when it
-  // CHANGES, never on every scroll tick, and skip the very first run so an initial
-  // ?view=feed deep link isn't wiped before the deep-link effect below can use it.
+  // Mirror the active tab to ?view=feed (deep links + back) — skip the first run
+  // so an initial ?view=feed deep link isn't wiped before the effect below reads it.
   useEffect(() => {
     if (!syncedOnce.current) { syncedOnce.current = true; return; }
     const u = new URL(window.location.href);
@@ -710,14 +674,11 @@ export function Dashboard({ data }: { data: DashboardData }) {
     window.history.replaceState(null, "", u);
   }, [activeTab]);
 
-  // Deep link straight to the Feed (?view=feed): mount it and glide down once the
-  // page has laid out.
+  // Deep link straight to the Feed (?view=feed): open that tab on load.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("view") !== "feed") return;
     setFeedMounted(true);
-    const t = setTimeout(() => window.scrollTo({ top: feedScrollTop(), behavior: "smooth" }), 140);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setActiveTab("feed");
   }, []);
 
   // Deep-link from a daily push: /?focus=today|debate scrolls that home card
@@ -741,7 +702,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
       <div className="fixed top-0 right-0 w-[350px] h-[350px] pointer-events-none" style={{ background: "radial-gradient(circle at 100% 0%, rgba(174,234,0,0.08) 0%, transparent 60%)" }} />
 
       {/* Nav */}
-      <div ref={navRef} className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="sticky top-0 z-30 pt-safe" style={{ background: "rgba(10,10,15,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <nav className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
           <Image src="/logo.png" alt="YourScore" width={95} height={28} priority style={{ height: 28, width: "auto" }} />
           <div className="flex items-center gap-3">
@@ -761,9 +722,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
             </Link>
           </div>
         </nav>
-        {/* Home section jump — Today (football happening) | Feed (around the game,
-            right below Today in one scroll). Tapping glides you there; the active
-            one follows your scroll (founder 2026-08-07). */}
+        {/* Home tabs — Today (football happening) | Feed (around the game). Two
+            separate views; tapping swaps them and jumps to the top (founder
+            8 Aug). */}
         <div className="max-w-lg mx-auto px-5 pb-3">
           <div className="flex gap-1 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.04)" }}>
             {([["today", "Today"], ["feed", "Feed"]] as const).map(([k, label]) => {
@@ -784,9 +745,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
         </div>
       </div>
 
-      {/* Today — the football-happening modules. Always rendered; the Feed sits
-          right below it in one continuous scroll. */}
-      <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4">
+      {/* Today — the football-happening modules. Kept mounted (display toggle)
+          so switching tabs is instant and its scroll/data survive. */}
+      <div className="relative z-0 max-w-lg mx-auto px-5 space-y-4 pt-4" style={{ display: activeTab === "today" ? undefined : "none" }}>
 
         {/* 1. Progress at a glance */}
         <ProgressCard rank={rank} dayStreak={dayStreak} weekDots={weekDots} />
@@ -825,14 +786,11 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
       </div>
 
-      {/* Feed — AROUND THE GAME, right below Today in one continuous scroll, so it
-          slides into view as you reach the end of Today (you watch it arrive). It
-          mounts lazily as you approach (heavy: FeedStream) so first paint never
-          pays for it, then fades up. `feedRef` is the Feed tab's jump target. */}
-      <div ref={feedRef} className="relative z-0 max-w-lg mx-auto px-5 pt-6">
-        {feedMounted
-          ? <div className="feed-arrive"><FeedSection /></div>
-          : <div aria-hidden style={{ minHeight: 260 }} />}
+      {/* Feed — AROUND THE GAME, its own tab. Mounts lazily on first entry
+          (heavy: FeedStream) and stays mounted after, so flicking back to it is
+          instant. As the top-of-page view, native pull-to-refresh reaches it. */}
+      <div className="relative z-0 max-w-lg mx-auto px-5 pt-4" style={{ display: activeTab === "feed" ? undefined : "none" }}>
+        {feedMounted && <FeedSection refreshKey={feedRefresh} />}
       </div>
 
       <BottomNav />
