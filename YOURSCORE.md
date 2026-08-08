@@ -944,6 +944,25 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Premier League page → clean News/Table/Fixtures/Feed hub** (commit
+  `6a32ce4`). `/matchweek` is now one clean PL hub; the "Matchweek | Gameday Quiz" section
+  bar is gone. The whole Gameday Quiz experience moved to its own hub at **/gameday-quiz**
+  (promoted from a static explainer to explainer + live `<GamedayHub/>`); the home Gameday
+  tile + old `?section=live` deep-link redirect there. The **club-fan leaderboard moved into
+  Leagues** (Competition subtab) — founder: leagues are the social home for EVERY game, not
+  just fantasy. `HowItWorksTile`/`LiveQuizIntro` now unused (explainer covers them).
+- **2026-08-08** — **Feed is its own Home tab + X-style composer; Leagues "Game Hub"**
+  (commit `cc19336`). Home is now TWO separate tabs (Today | Feed), NOT one continuous
+  scroll (reverses the 2026-08-07 continuous-page change) — Feed as top-of-page enables
+  native pull-to-refresh; re-tapping Feed refetches. Inline composer replaced by a floating
+  "+" FAB opening the composer over a see-through scrim (new `Sheet` `backdrop` prop). The
+  league Games tab's "PLAY A GAME" button-stack is now a "GAME HUB" icon-tile grid.
+- **2026-08-08** — **UX fixes** (commit `c1b7ace`). Award modal close clears the notch;
+  Play heading clears the clock (safe-area); Gameday Quiz heading enlarged to match.
+- **2026-08-08** — **Light/dark mode PARKED on branch `feat/light-mode`** (commit `9e2a3a2`,
+  NOT merged). Full theming architecture (CSS-var tokens, tailwind + fantasy neutral tokens,
+  ThemeProvider + Settings toggle) built; founder rejected the auto-chosen light palette —
+  redo palette WITH approval before shipping. See [[feedback_theme_palette_approval]].
 - **2026-08-08** — **Leagues UX pass, increment 1: bubble switcher + compact header** (branch
   `feat/leagues-ux`). A horizontal, story-style league bubble strip at the top of every league
   (`LeagueBubbleSwitcher`) — hop between your football groups without going back to the list; each
