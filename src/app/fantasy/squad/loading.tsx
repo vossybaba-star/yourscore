@@ -1,1 +1,1 @@
-export { default } from "@/components/fantasy/RouteSkeleton";
+export { default } from "@/components/fantasy/FantasyTabSkeleton";

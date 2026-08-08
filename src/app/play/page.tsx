@@ -13,7 +13,6 @@ import { QuickPlayGrid, PlayWithPeople, MoreGamesDoor, SectionLabel, QuizCarouse
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
-import { rivalsOf } from "@/lib/clubRivals";
 import { RECORDS_EMOJI } from "@/lib/theme";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { GamedayRail } from "@/components/quiz/GamedayRail";
@@ -541,23 +540,6 @@ function PlayPageInner() {
     return () => { alive = false; };
   }, [user]);
 
-  // Recommendation signals (founder 8 Aug: Today's Quiz should skip what you've
-  // played, feature your club + its rivals, and lean on popular picks). Both are
-  // per-user, so client-side (can't ride the edge-cached pack list).
-  const [playedIds, setPlayedIds] = useState<Set<string>>(new Set());
-  const [myClub, setMyClub] = useState<string | null>(null);
-  useEffect(() => {
-    if (!user) { setPlayedIds(new Set()); setMyClub(null); return; }
-    let alive = true;
-    createClient().from("quiz_attempts").select("pack_id").eq("user_id", user.id)
-      .then(({ data }: { data: { pack_id: string }[] | null }) => { if (alive) setPlayedIds(new Set((data ?? []).map((r) => r.pack_id))); });
-    // The supported club is served by /api/clubs/me (not a profiles column).
-    fetch("/api/clubs/me").then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (alive) setMyClub(d?.club ?? null); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, [user]);
-
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -706,10 +688,17 @@ function PlayPageInner() {
     if (res.ok) router.push(`/play/${data.room.id}`);
   }
 
-  // Pack filtering (mirrors challenges page logic)
+  // Pack filtering (mirrors challenges page logic). Order by LATEST, not by the
+  // old featured_order (founder 8 Aug — that encoded "most popular fan groups",
+  // the 12 biggest clubs, which we're dropping): newest published pack leads, so
+  // our latest quiz is always the featured hero. featured_order only breaks ties
+  // between packs published the same day.
   const featuredPacks = packs
     .filter((p) => p.featured)
-    .sort((a, b) => (a.featured_order ?? 99) - (b.featured_order ?? 99));
+    .sort((a, b) => {
+      const t = new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+      return t !== 0 ? t : (a.featured_order ?? 99) - (b.featured_order ?? 99);
+    });
   const endOfSeasonPacks = packs.filter(
     (p) => p.parameter === "2025/26 End of Season" && !p.featured
   );
@@ -738,43 +727,25 @@ function PlayPageInner() {
   const heroPack =
     soloTab === "featured" && filtered[0]?.metadata?.cover_image ? filtered[0] : null;
   const gridPacks = heroPack ? filtered.slice(1) : filtered;
-  // TODAY'S QUIZ carousel curation (founder 8 Aug): recommend by (1) skip what
-  // you've already played, (2) feature YOUR club + its closest rivals, (3) lean
-  // on popular picks (featured = the curated/trending set) — with a club mix.
-  const clubPacks = packs.filter((p) => p.type === "club" && p.metadata?.cover_image);
+  // TODAY'S QUIZ carousel (founder 8 Aug v2): NO personalization — the old
+  // per-user recommendation (skip-played + your-club + rivals) recomputed once
+  // playedIds/myClub loaded async, so the carousel visibly reshuffled after
+  // paint. We don't have the infra for that, so it's a FIXED, deterministic
+  // order: our doing-well neutral quizzes and our most recent, newest first.
+  // featuredTabPacks is already latest-first (see featuredPacks sort above), so
+  // the most recent quiz always leads and nothing depends on async state.
+  const hasCover = (p: QuizPack) => !!p.metadata?.cover_image;
+  const clubPacks = packs
+    .filter((p) => p.type === "club" && p.metadata?.cover_image)
+    .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
   const curatedPacks: CarouselPack[] = (() => {
-    const unplayed = <T extends QuizPack>(list: T[]) => list.filter((p) => !playedIds.has(p.id));
-    const hasCover = (p: QuizPack) => !!p.metadata?.cover_image;
-
-    // (2) The user's club + its rivals — match a club pack by name/parameter.
-    const wanted = [myClub, ...rivalsOf(myClub)].filter(Boolean) as string[];
-    const matchesClub = (p: QuizPack, club: string) =>
-      `${p.name} ${p.parameter ?? ""}`.toLowerCase().includes(club.toLowerCase());
-    const teamPacks = wanted.length
-      ? unplayed(clubPacks).filter((p) => wanted.some((c) => matchesClub(p, c)))
-      : [];
-
-    // (3) Popular neutrals = the featured/trending set (with cover), unplayed.
-    const popular = unplayed(featuredTabPacks.filter(hasCover));
-    // Any other club packs, to keep the mix varied.
-    const otherClubs = unplayed(clubPacks).filter((p) => !teamPacks.includes(p));
-
-    // Build: your team/rivals first (up to 3), then a popular-then-club weave,
-    // deduped, capped at 9. Fall back to played packs only if we'd otherwise be
-    // empty (a completist who's played everything still gets a carousel).
     const seen = new Set<string>();
     const out: QuizPack[] = [];
     const push = (p?: QuizPack) => { if (p && !seen.has(p.id)) { seen.add(p.id); out.push(p); } };
-    teamPacks.slice(0, 3).forEach(push);
-    let pi = 0, ci = 0;
-    while (out.length < 9 && (pi < popular.length || ci < otherClubs.length)) {
-      push(popular[pi++]); push(popular[pi++]); push(otherClubs[ci++]);
-    }
-    if (out.length === 0) {
-      // everything's been played (or no signals yet) — fall back to the old mix.
-      featuredTabPacks.filter(hasCover).slice(0, 6).forEach(push);
-      clubPacks.slice(0, 3).forEach(push);
-    }
+    // Doing-well neutrals + most recent (latest-first), then a few recent club
+    // packs for variety — all deterministic, so the order never changes on load.
+    featuredTabPacks.filter(hasCover).forEach(push);
+    clubPacks.slice(0, 4).forEach(push);
     return out.slice(0, 9).map((p) => ({
       id: p.id,
       name: p.name,
@@ -918,10 +889,13 @@ function PlayPageInner() {
                 <button
                   onClick={() => selectSoloTab("featured")}
                   className="w-full flex items-center justify-between mb-2.5"
-                  aria-label="See all quizzes"
+                  aria-label="More quizzes"
                 >
                   <SectionLabel lg>TODAY&apos;S QUIZ</SectionLabel>
-                  <span className="font-display text-lg" style={{ color: "#00d8c0" }}>→</span>
+                  <span className="flex items-center gap-1 font-display text-sm" style={{ color: "#00d8c0" }}>
+                    More Quizzes
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
+                  </span>
                 </button>
                 {packsLoading ? (
                   <div className="flex gap-3">

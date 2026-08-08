@@ -136,21 +136,14 @@ export default function LeaguesHome() {
     </>
   );
 
-  // Deciding or redirecting into a league → a quiet loader, never the picker.
-  if (!showList && !redirecting) {
+  // Deciding or redirecting into a league → a quiet loader with NO heading
+  // (founder 8 Aug: the old "LEAGUES" title flashed at the top before the
+  // redirect landed, reading like a stale page). Landing on the Leagues tab
+  // should slide straight into your league; this in-between never shows chrome.
+  if ((!showList && !redirecting) || redirecting) {
     return (
       <main data-fantasy style={page}>
-        <div style={{ marginBottom: 14 }}>
-          <h1 className="font-display" style={{ fontSize: 27, color: INK, lineHeight: 1, margin: 0 }}>LEAGUES</h1>
-        </div>
-        <p style={{ fontSize: 13, color: MUTED }}>Opening your league…</p>
-      </main>
-    );
-  }
-  if (redirecting) {
-    return (
-      <main data-fantasy style={page}>
-        <p style={{ fontSize: 13, color: MUTED, marginTop: 20 }}>Opening your league…</p>
+        <p style={{ fontSize: 13, color: MUTED, marginTop: 24, textAlign: "center", opacity: 0.7 }}>Opening your league…</p>
       </main>
     );
   }

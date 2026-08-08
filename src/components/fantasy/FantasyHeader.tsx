@@ -43,14 +43,15 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
   // of action, not the door.
   const hrefFor = (href: string) => href;
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <div>
-          <h1 className="font-display" style={{ fontSize: 27, color: INK, lineHeight: 1, letterSpacing: "-0.005em", margin: 0 }}>
+          {/* Compact wordmark (founder 8 Aug — the big title ate too much space). */}
+          <h1 className="font-display" style={{ fontSize: 17, color: INK, lineHeight: 1.05, letterSpacing: "0.01em", margin: 0 }}>
             YourScore Fantasy PL
           </h1>
           {subtitle && (
-            <p className="font-body" style={{ fontSize: 13, color: MUTED, margin: "6px 0 0" }}>{subtitle}</p>
+            <p className="font-body" style={{ fontSize: 12.5, color: MUTED, margin: "4px 0 0" }}>{subtitle}</p>
           )}
         </div>
         {/* Notifications entry point (Social/Leagues had none — the bell on
@@ -58,7 +59,7 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
             glyph as Dashboard's nav bell; no unread dot here since that needs
             a fetch this header doesn't already make — plain link only. */}
         <Link href="/notifications" aria-label="Notifications" style={{
-          flexShrink: 0, marginTop: 1, width: 36, height: 36, borderRadius: 999,
+          flexShrink: 0, width: 34, height: 34, borderRadius: 999,
           display: "flex", alignItems: "center", justifyContent: "center",
           background: "rgba(255,255,255,0.04)", border: "1.5px solid rgba(255,255,255,0.1)",
         }}>
@@ -70,7 +71,7 @@ export function FantasyHeader({ subtitle }: { subtitle?: string }) {
       </div>
       <div style={{
         display: "flex", gap: 4, padding: 4, borderRadius: 16,
-        background: "rgba(255,255,255,0.04)", marginTop: 12,
+        background: "rgba(255,255,255,0.04)", marginTop: 10,
       }}>
         {TABS.map((t) => {
           const on = t.match(pathname);
