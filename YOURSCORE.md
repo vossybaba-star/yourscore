@@ -944,6 +944,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Leagues/home polish** (commits `d58eade` wave 1, `0471234` wave 2).
+  Wave 1: the bubble "+" dropdown no longer clips behind content (pinned outside the scroll
+  strip + lifted z-index); the **Competition bubble opens IN PLACE** beneath the strip (no
+  page nav, `COMPETITION_CODE` sentinel); the chat composer sits flush on the nav (BottomNav
+  publishes `--bottom-nav-h`); Table tab lost its "Members →" button; Play home dropped the
+  "PLAY"/"Pick a game and go" heading and the Gameday header shows "More →" to /gameday-quiz;
+  Home's Gameday tile is now a **Premier League** tile → the PL tab; "Your Progress" is
+  tighter; Today's Game promotes fantasy/more-quizzes once done. Wave 2: the Games tab is
+  graphic tiles — "Challenge a league member" + "Start a competition" as art tiles, and the
+  GAME HUB as art game tiles (Quiz Battle/Duel) + a Gameday Quiz carousel.
 - **2026-08-08** — **Leagues = social home for every game** (commits `56ccc94` Phase 1,
   `2333358` Phase 2). Phase 1: the list-style "My Leagues" tab is GONE — the **bubble strip
   IS the league nav** (first bubble is a "+" → Create / Browse→Discover; a pinned
