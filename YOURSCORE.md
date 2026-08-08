@@ -944,6 +944,16 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Live content feeds** (commits `05cbe86` pt.1, `dde39a9` pt.2). Real
+  football news + embeddable YouTube video, sources founder-approved. `src/lib/rss.ts`
+  extended for video (yt:videoId, kind/category); `src/lib/pl/liveFeed.ts` merges the
+  approved news RSS (PL_SOURCES: BBC/Guardian/Sky/etc.) + YouTube channel RSS (verified: the
+  official Premier League channel — add more channel_ids there), weaving a video every ~4
+  news; served edge-cached at **/api/feed/live** (no cron/table). New `ContentFeed` component
+  (`src/components/feed/`): attributed news cards (link out) + video cards that autoplay muted
+  ONLY while in view (IntersectionObserver poster⇄embed). Surfaces: **PL page Feed tab** =
+  the live "what's happening now"; **Home Feed tab** = combined (fantasy activity for league
+  members, else the live PL feed); **Fantasy home** = an "AROUND THE GAME" content section.
 - **2026-08-08** — **Smarter Today's Quiz recommendations** (commit `01ec7f7`). The Play
   home's Today's Quiz carousel now excludes already-played packs, features the user's club +
   its rivals first (new `src/lib/clubRivals.ts`), and leans on the featured/trending set as
