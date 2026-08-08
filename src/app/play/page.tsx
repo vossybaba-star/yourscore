@@ -13,6 +13,7 @@ import { QuickPlayGrid, PlayWithPeople, MoreGamesDoor, SectionLabel, QuizCarouse
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { slugify } from "@/lib/utils";
 import { coverUrl } from "@/lib/img";
+import { rivalsOf } from "@/lib/clubRivals";
 import { RECORDS_EMOJI } from "@/lib/theme";
 import { useYourTurns, type InboxChallenge } from "@/hooks/useYourTurns";
 import { GamedayRail } from "@/components/quiz/GamedayRail";
@@ -540,6 +541,23 @@ function PlayPageInner() {
     return () => { alive = false; };
   }, [user]);
 
+  // Recommendation signals (founder 8 Aug: Today's Quiz should skip what you've
+  // played, feature your club + its rivals, and lean on popular picks). Both are
+  // per-user, so client-side (can't ride the edge-cached pack list).
+  const [playedIds, setPlayedIds] = useState<Set<string>>(new Set());
+  const [myClub, setMyClub] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) { setPlayedIds(new Set()); setMyClub(null); return; }
+    let alive = true;
+    createClient().from("quiz_attempts").select("pack_id").eq("user_id", user.id)
+      .then(({ data }: { data: { pack_id: string }[] | null }) => { if (alive) setPlayedIds(new Set((data ?? []).map((r) => r.pack_id))); });
+    // The supported club is served by /api/clubs/me (not a profiles column).
+    fetch("/api/clubs/me").then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive) setMyClub(d?.club ?? null); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [user]);
+
   const [joinSheetOpen, setJoinSheetOpen] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -720,21 +738,44 @@ function PlayPageInner() {
   const heroPack =
     soloTab === "featured" && filtered[0]?.metadata?.cover_image ? filtered[0] : null;
   const gridPacks = heroPack ? filtered.slice(1) : filtered;
-  // TODAY'S QUIZ carousel curation: the best featured packs with a mix of
-  // clubs threaded in (founder 2026-08-07 eve: "best ones/trending for now
-  // and mix of clubs"). Two featured, then a club, repeating — max 9 cards.
+  // TODAY'S QUIZ carousel curation (founder 8 Aug): recommend by (1) skip what
+  // you've already played, (2) feature YOUR club + its closest rivals, (3) lean
+  // on popular picks (featured = the curated/trending set) — with a club mix.
   const clubPacks = packs.filter((p) => p.type === "club" && p.metadata?.cover_image);
   const curatedPacks: CarouselPack[] = (() => {
-    const feat = featuredTabPacks.filter((p) => p.metadata?.cover_image).slice(0, 6);
-    const clubs = clubPacks.slice(0, 3);
-    const mixed: typeof feat = [];
-    let f = 0, c = 0;
-    while (mixed.length < 9 && (f < feat.length || c < clubs.length)) {
-      if (f < feat.length) mixed.push(feat[f++]);
-      if (f < feat.length) mixed.push(feat[f++]);
-      if (c < clubs.length) mixed.push(clubs[c++]);
+    const unplayed = <T extends QuizPack>(list: T[]) => list.filter((p) => !playedIds.has(p.id));
+    const hasCover = (p: QuizPack) => !!p.metadata?.cover_image;
+
+    // (2) The user's club + its rivals — match a club pack by name/parameter.
+    const wanted = [myClub, ...rivalsOf(myClub)].filter(Boolean) as string[];
+    const matchesClub = (p: QuizPack, club: string) =>
+      `${p.name} ${p.parameter ?? ""}`.toLowerCase().includes(club.toLowerCase());
+    const teamPacks = wanted.length
+      ? unplayed(clubPacks).filter((p) => wanted.some((c) => matchesClub(p, c)))
+      : [];
+
+    // (3) Popular neutrals = the featured/trending set (with cover), unplayed.
+    const popular = unplayed(featuredTabPacks.filter(hasCover));
+    // Any other club packs, to keep the mix varied.
+    const otherClubs = unplayed(clubPacks).filter((p) => !teamPacks.includes(p));
+
+    // Build: your team/rivals first (up to 3), then a popular-then-club weave,
+    // deduped, capped at 9. Fall back to played packs only if we'd otherwise be
+    // empty (a completist who's played everything still gets a carousel).
+    const seen = new Set<string>();
+    const out: QuizPack[] = [];
+    const push = (p?: QuizPack) => { if (p && !seen.has(p.id)) { seen.add(p.id); out.push(p); } };
+    teamPacks.slice(0, 3).forEach(push);
+    let pi = 0, ci = 0;
+    while (out.length < 9 && (pi < popular.length || ci < otherClubs.length)) {
+      push(popular[pi++]); push(popular[pi++]); push(otherClubs[ci++]);
     }
-    return mixed.map((p) => ({
+    if (out.length === 0) {
+      // everything's been played (or no signals yet) — fall back to the old mix.
+      featuredTabPacks.filter(hasCover).slice(0, 6).forEach(push);
+      clubPacks.slice(0, 3).forEach(push);
+    }
+    return out.slice(0, 9).map((p) => ({
       id: p.id,
       name: p.name,
       question_count: p.question_count,
