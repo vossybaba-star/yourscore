@@ -28,6 +28,14 @@ const FeedStream = dynamic(
   { ssr: false, loading: () => null }
 );
 
+// The live PL content feed (news + video) — shown to players NOT in a fantasy
+// league (founder 8 Aug: combined Home feed — fantasy activity for league
+// members, otherwise quiz + live PL football).
+const ContentFeed = dynamic(
+  () => import("@/components/feed/ContentFeed").then((m) => m.ContentFeed),
+  { ssr: false, loading: () => null }
+);
+
 // CreatePostSheet is the composer — same reasoning as FeedStream above, it
 // only loads once someone opens the Feed tab and taps the composer pill.
 const CreatePostSheet = dynamic(
@@ -565,6 +573,18 @@ function FeedSection({ refreshKey }: { refreshKey: number }) {
   const [composeOpen, setComposeOpen] = useState(false);
   const [liveKey, setLiveKey] = useState(0);
   const forYouKey = `foryou-${refreshKey}-${liveKey}`;
+  // Combined Home feed (founder 8 Aug): fantasy-league members see the fantasy
+  // activity feed; everyone else sees the live PL football feed. null = still
+  // resolving membership (a guest 401s → false).
+  const [inLeague, setInLeague] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/fantasy/leagues")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (live) setInLeague(Array.isArray(j?.leagues) && j.leagues.length > 0); })
+      .catch(() => { if (live) setInLeague(false); });
+    return () => { live = false; };
+  }, []);
 
   return (
     // NB: no transform-based animation on this wrapper (or any ancestor) — the
@@ -572,46 +592,52 @@ function FeedSection({ refreshKey }: { refreshKey: number }) {
     // anchor to that box instead of the viewport (founder 8 Aug: FAB must sit
     // bottom-right of the screen).
     <div>
-      <FeedToggle tab={tab} onChange={setTab} />
-
-      {/* Sort the open feed by engagement (Top) or newest (Latest). Following
-          stays newest-first — same split as SocialHome. */}
-      {tab === "global" && (
-        <div className="flex items-center justify-end gap-1 mb-3">
-          {([["top", "Top"], ["recent", "Latest"]] as [FeedSort, string][]).map(([s, label]) => {
-            const active = sort === s;
-            return (
-              <button key={s} onClick={() => setSort(s)} style={{
-                padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                background: active ? "rgba(0,216,192,0.14)" : "transparent", color: active ? TEAL : MUTED,
-                border: `1px solid ${active ? "rgba(0,216,192,0.55)" : LINE}`,
-              }}>{label}</button>
-            );
-          })}
-        </div>
+      {inLeague === false ? (
+        // Not in a fantasy league → the live PL football feed (news + video).
+        <ContentFeed />
+      ) : (
+        // Fantasy-league member (or still resolving) → the fantasy activity feed.
+        <>
+          <FeedToggle tab={tab} onChange={setTab} />
+          {tab === "global" && (
+            <div className="flex items-center justify-end gap-1 mb-3">
+              {([["top", "Top"], ["recent", "Latest"]] as [FeedSort, string][]).map(([s, label]) => {
+                const active = sort === s;
+                return (
+                  <button key={s} onClick={() => setSort(s)} style={{
+                    padding: "5px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                    background: active ? "rgba(0,216,192,0.14)" : "transparent", color: active ? TEAL : MUTED,
+                    border: `1px solid ${active ? "rgba(0,216,192,0.55)" : LINE}`,
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+          )}
+          <FeedStream key={tab === "global" ? forYouKey : `following-${refreshKey}`} embedded chrome={false} controlledScope={tab}
+            controlledSort={tab === "global" ? sort : "recent"} signInNext="/" />
+        </>
       )}
 
-      <FeedStream key={tab === "global" ? forYouKey : `following-${refreshKey}`} embedded chrome={false} controlledScope={tab}
-        controlledSort={tab === "global" ? sort : "recent"} signInNext="/" />
-
-      {/* X-style composer: a floating "+" bottom-right, above the BottomNav.
-          It opens the composer over the feed with a see-through scrim, so the
-          feed stays visible in shadow behind it (founder 8 Aug). */}
-      <button
-        onClick={() => (user ? setComposeOpen(true) : router.push(SIGN_IN))}
-        aria-label="New post"
-        className="fixed z-40 flex items-center justify-center rounded-full transition-transform active:scale-90"
-        style={{
-          right: 18, bottom: "calc(env(safe-area-inset-bottom, 0px) + 82px)",
-          width: 56, height: 56,
-          background: `linear-gradient(140deg, ${LIME}, ${TEAL})`, color: "#04231f",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12) inset",
-        }}
-      >
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-      </button>
+      {/* X-style composer: a floating "+" bottom-right (fantasy feed only — the
+          live PL feed is read-only, external content). Opens over the feed with a
+          see-through scrim (founder 8 Aug). */}
+      {inLeague !== false && (
+        <button
+          onClick={() => (user ? setComposeOpen(true) : router.push(SIGN_IN))}
+          aria-label="New post"
+          className="fixed z-40 flex items-center justify-center rounded-full transition-transform active:scale-90"
+          style={{
+            right: 18, bottom: "calc(env(safe-area-inset-bottom, 0px) + 82px)",
+            width: 56, height: 56,
+            background: `linear-gradient(140deg, ${LIME}, ${TEAL})`, color: "#04231f",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12) inset",
+          }}
+        >
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      )}
 
       <CreatePostSheet open={composeOpen}
         onClose={() => setComposeOpen(false)}

@@ -19,6 +19,7 @@ import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { Crest } from "@/components/ui/Crest";
 import { SquadBoard } from "@/components/fantasy/SquadBoard";
+import { ContentFeed } from "@/components/feed/ContentFeed";
 import type { BoardPlayer } from "@/lib/fantasy/board";
 import { timeAgo } from "@/lib/timeAgo";
 
@@ -563,6 +564,11 @@ export function FantasyHome({ mode = "member" }: { mode?: "member" | "public" })
           <LeagueChats leagues={data.leagues} />
           <div style={{ marginTop: 12 }}><RatePhotoHero /></div>
           <RulesRow />
+          {/* AROUND THE GAME — curated fantasy-relevant content (founder 8 Aug):
+              live PL news + video (injuries, transfers, player clips) from the
+              approved sources, alongside the activity/results above. */}
+          <SectionLabel>AROUND THE GAME</SectionLabel>
+          <ContentFeed />
         </PullToRefresh>
       )}
     </main>
