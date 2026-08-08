@@ -126,6 +126,14 @@ export default function LeaguePage() {
   // URL as `c` (same idea as `gw` for a chat archive) so a competition can be
   // linked and survives a reload, rather than sitting only in local state.
   const [compId, setCompId] = useState<string | null>(null);
+  // Seamless tab switching (founder 8 Aug: "not like you're jumping to a new
+  // page"): each tab mounts once, then we show/hide it instead of unmounting —
+  // so flipping between Hub / Chat / Table / Games is instant, with no reload
+  // flash and scroll/state preserved. `gamesKey` forces a fresh Games mount ONLY
+  // when a deep-link needs it (open a specific competition / the challenge
+  // picker), never on a plain tab tap.
+  const [visited, setVisited] = useState<Set<Tab>>(() => new Set<Tab>(["hub"]));
+  const [gamesKey, setGamesKey] = useState(0);
 
   // Restore + persist the tab in the URL, so back from settings/a profile returns
   // to the tab you were on. `gw` deep-links a gameweek's chat (from History);
@@ -177,17 +185,22 @@ export default function LeaguePage() {
   // Games AND tell it to open the picker itself on mount.
   const openGamesChallenge = useCallback(() => {
     setGamesAutoChallenge(true);
+    setGamesKey((k) => k + 1); // fresh mount so the picker opens even if Games was already visited
     goTab("games");
   }, [goTab]);
   // A competition card's tap through (chat card or Hub module) — switch to
   // Games AND tell it which competition to open its detail sheet for, via
   // the same `c` URL param a direct link or reload would use.
   const openGamesCompetition = useCallback((competitionId: string) => {
-    setCompId(competitionId); setTab("games");
+    setCompId(competitionId); setGamesKey((k) => k + 1); setTab("games");
     const u = new URL(window.location.href);
     u.searchParams.set("t", "games"); u.searchParams.set("c", competitionId);
     window.history.replaceState(null, "", u);
   }, []);
+
+  // Mark a tab visited the moment it becomes active, so the keep-mounted render
+  // below mounts it once and then just shows/hides it.
+  useEffect(() => { setVisited((v) => (v.has(tab) ? v : new Set(v).add(tab))); }, [tab]);
 
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
@@ -294,7 +307,9 @@ export default function LeaguePage() {
   return (
     <>
     <main data-fantasy style={page}>
-      <Header exit={{ label: "Leagues", onClick: () => router.push("/fantasy/leagues") }} />
+      {/* "Leagues" now means the browse/Discover list (?browse=1) — landing on
+          /fantasy/leagues drops you back into a league, so link the list directly. */}
+      <Header exit={{ label: "Leagues", onClick: () => router.push("/fantasy/leagues?browse=1") }} />
 
       {/* Bubble switcher — hop between your football groups without leaving. */}
       <LeagueBubbleSwitcher currentCode={code} current={{ name: league.name, imageUrl: league.imageUrl }} />
@@ -402,23 +417,36 @@ export default function LeaguePage() {
         })}
       </div>
 
-      {tab === "hub" && <LeagueHub detail={detail} chat={chat} onTab={goTab} onOpenGamesChallenge={openGamesChallenge} />}
-      {tab === "chat" && (league.isMember || league.kind === "club" || league.kind === "founder" || league.isPublic) && (
-        <LeagueChatView code={code} initialGw={chatGw} onOpenCompetition={openGamesCompetition} />
-      )}
-      {tab === "table" && <LeagueTableView detail={detail} code={code} />}
-      {tab === "games" && league.isMember && (
-        <LeagueGamesView
-          code={code} isOwner={league.isOwner}
-          autoOpenChallenge={gamesAutoChallenge} onAutoOpenChallengeHandled={() => setGamesAutoChallenge(false)}
-          initialCompetitionId={compId} onCompetitionIdChange={(id) => {
-            setCompId(id);
-            const u = new URL(window.location.href);
-            if (id) u.searchParams.set("c", id); else u.searchParams.delete("c");
-            window.history.replaceState(null, "", u);
-          }}
-        />
-      )}
+      {/* Keep-mounted tabs — each mounts once (when first visited) and is then
+          shown/hidden, so switching is instant with no reload flash. Chat and
+          Games remount only on a deep-link (a gameweek archive / a specific
+          competition or the challenge picker) via their keys. */}
+      <div style={{ display: tab === "hub" ? "block" : "none" }}>
+        {visited.has("hub") && <LeagueHub detail={detail} chat={chat} onTab={goTab} onOpenGamesChallenge={openGamesChallenge} />}
+      </div>
+      <div style={{ display: tab === "chat" ? "block" : "none" }}>
+        {visited.has("chat") && (league.isMember || league.kind === "club" || league.kind === "founder" || league.isPublic) && (
+          <LeagueChatView key={chatGw ?? "live"} code={code} initialGw={chatGw} onOpenCompetition={openGamesCompetition} />
+        )}
+      </div>
+      <div style={{ display: tab === "table" ? "block" : "none" }}>
+        {visited.has("table") && <LeagueTableView detail={detail} code={code} />}
+      </div>
+      <div style={{ display: tab === "games" ? "block" : "none" }}>
+        {visited.has("games") && league.isMember && (
+          <LeagueGamesView
+            key={gamesKey}
+            code={code} isOwner={league.isOwner}
+            autoOpenChallenge={gamesAutoChallenge} onAutoOpenChallengeHandled={() => setGamesAutoChallenge(false)}
+            initialCompetitionId={compId} onCompetitionIdChange={(id) => {
+              setCompId(id);
+              const u = new URL(window.location.href);
+              if (id) u.searchParams.set("c", id); else u.searchParams.delete("c");
+              window.history.replaceState(null, "", u);
+            }}
+          />
+        )}
+      </div>
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
 
       {inviteOpen && (

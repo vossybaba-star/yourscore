@@ -134,6 +134,23 @@ export function LeagueBubbleSwitcher({ currentCode, current }: {
           </button>
         );
       })}
+      {/* Browse / Discover — the way to the full list + find-more, now that the
+          picker is no longer the landing screen. */}
+      {leagues && (
+        <button
+          onClick={() => router.push("/fantasy/leagues?browse=1")}
+          aria-label="Browse all leagues"
+          style={{ flexShrink: 0, width: SIZE + 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: "transparent", border: "none", padding: 0, cursor: "pointer" }}
+        >
+          <span style={{
+            width: SIZE, height: SIZE, borderRadius: "50%", flexShrink: 0,
+            border: `1.5px dashed ${tint(MUTED, "66")}`, display: "flex", alignItems: "center", justifyContent: "center", color: MUTED,
+          }}>
+            <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+          </span>
+          <span style={{ fontSize: 10.5, lineHeight: 1.1, color: MUTED, fontWeight: 500 }}>Browse</span>
+        </button>
+      )}
     </div>
   );
 }

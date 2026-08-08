@@ -147,6 +147,24 @@ export default function LeaguesHome() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Land STRAIGHT in your league, not on a picker (founder 8 Aug: "the screen to
+  // select the league has got to go"). Tapping Leagues drops you into your
+  // primary league; the bubble switcher there hops between the rest. The list +
+  // Discover stay reachable, just not as the landing — a league's "Browse all"
+  // affordance links here with ?browse=1, which shows this page instead.
+  const [browse, setBrowse] = useState<boolean | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+  useEffect(() => { setBrowse(new URLSearchParams(window.location.search).get("browse") === "1"); }, []);
+  useEffect(() => {
+    if (browse === null || browse || !loaded || leagues.length === 0) return;
+    setRedirecting(true);
+    router.replace(`/fantasy/leagues/${leagues[0].code}`);
+  }, [browse, loaded, leagues, router]);
+  // Show the list only when explicitly browsing, or when you have no league to
+  // land in. Otherwise we're deciding / redirecting → a quiet loading state, so
+  // the picker never flashes up.
+  const showList = needsAuth || browse === true || (loaded && leagues.length === 0);
+
   // Invite share for a hub tile — native share sheet first, clipboard fallback
   // with a brief "Link copied" state per league (matches the [code] detail page).
   const shareInvite = async (l: MyLeague) => {
@@ -381,6 +399,25 @@ export default function LeaguesHome() {
       </Card>
     </>
   );
+
+  // Deciding or redirecting into a league → a quiet loader, never the picker.
+  if (!showList && !redirecting) {
+    return (
+      <main data-fantasy style={page}>
+        <div style={{ marginBottom: 14 }}>
+          <h1 className="font-display" style={{ fontSize: 27, color: "#eef2f0", lineHeight: 1, margin: 0 }}>LEAGUES</h1>
+        </div>
+        <p style={{ fontSize: 13, color: MUTED }}>Opening your league…</p>
+      </main>
+    );
+  }
+  if (redirecting) {
+    return (
+      <main data-fantasy style={page}>
+        <p style={{ fontSize: 13, color: MUTED, marginTop: 20 }}>Opening your league…</p>
+      </main>
+    );
+  }
 
   return (
     <>
