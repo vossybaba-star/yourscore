@@ -23,10 +23,10 @@ import { PlTable } from "@/components/matchweek/PlTable";
 import { PlNews } from "@/components/matchweek/PlNews";
 import { BottomNav } from "@/components/ui/BottomNav";
 
-// The football feed — same stream as Home's Feed tab, scoped to the public
-// timeline. Heavy (media, threads), so it only loads when the Feed tab is opened.
-const FeedStream = dynamic(
-  () => import("@/components/fantasy/FeedStream").then((m) => m.FeedStream),
+// The live "what's happening now" feed — recent PL news + embeddable videos
+// (founder 8 Aug). Heavy (media, embeds), so it only loads with the Feed tab.
+const ContentFeed = dynamic(
+  () => import("@/components/feed/ContentFeed").then((m) => m.ContentFeed),
   { ssr: false, loading: () => null }
 );
 
@@ -94,7 +94,7 @@ export default function MatchweekPage() {
       {plTab === "fixtures" && <PlFixtures />}
       {plTab === "feed" && (
         <div className="max-w-lg mx-auto px-4 pt-4">
-          <FeedStream embedded chrome={false} controlledScope="global" controlledSort="top" signInNext="/matchweek?tab=feed" />
+          <ContentFeed />
         </div>
       )}
 

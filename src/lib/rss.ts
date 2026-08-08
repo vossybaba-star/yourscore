@@ -27,6 +27,22 @@ export interface RssItem {
   /** The outlet's own standfirst, cleaned. Absent when the feed ships none. */
   summary?: string;
   publishedAt: string;
+  /** "news" (default) or "video" — YouTube Atom entries carry a yt:videoId. */
+  kind?: "news" | "video";
+  /** YouTube video id, for embedding (kind === "video"). */
+  videoId?: string;
+  /** Coarse classification for the live feed (founder 8 Aug): transfer / manager
+   *  / video / report. Keyword-derived; "report" is the catch-all. */
+  category?: "transfer" | "manager" | "video" | "report";
+}
+
+/** Classify a news item for the live feed by keywords in its title + summary. */
+export function classify(title: string, summary: string | undefined, isVideo: boolean): RssItem["category"] {
+  if (isVideo) return "video";
+  const t = `${title} ${summary ?? ""}`.toLowerCase();
+  if (/\b(sack|sacked|sacking|appoint|appointed|new (manager|boss|head coach)|steps down|leaves|departs|caretaker|dismiss|interim)\b/.test(t)) return "manager";
+  if (/\b(sign|signs|signing|signed|bid|deal|loan|transfer|joins|move|fee|medical|agree|swoop|target|linked|£\d)\b/.test(t)) return "transfer";
+  return "report";
 }
 
 export interface RssSource {
@@ -186,16 +202,27 @@ export function parseFeed(xml: string, source: RssSource, summaryMax?: number): 
       ?? block.match(/<published>([\s\S]*?)<\/published>/)?.[1]
       ?? block.match(/<updated>([\s\S]*?)<\/updated>/)?.[1];
     const desc = block.match(/<description>([\s\S]*?)<\/description>/)?.[1]
-      ?? block.match(/<summary[^>]*>([\s\S]*?)<\/summary>/)?.[1];
+      ?? block.match(/<summary[^>]*>([\s\S]*?)<\/summary>/)?.[1]
+      ?? block.match(/<media:description>([\s\S]*?)<\/media:description>/)?.[1];
+
+    // YouTube Atom entries carry <yt:videoId> — capture it for embedding, with a
+    // reliable thumbnail fallback if the feed's media:thumbnail isn't picked up.
+    const videoId = block.match(/<yt:videoId>([\s\S]*?)<\/yt:videoId>/)?.[1]?.trim();
+    const isVideo = !!videoId;
+    const cleanTitle = strip(title[1]);
+    const cleanSummary = desc ? summarise(desc, summaryMax) : undefined;
 
     items.push({
       id: sha1(url),
-      title: strip(title[1]),
+      title: cleanTitle,
       url,
       source: source.name,
-      image: pickImage(block),
-      summary: desc ? summarise(desc, summaryMax) : undefined,
+      image: pickImage(block) ?? (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null),
+      summary: cleanSummary,
       publishedAt: date ? parseDate(strip(date)) : new Date().toISOString(),
+      kind: isVideo ? "video" : "news",
+      ...(videoId ? { videoId } : {}),
+      category: classify(cleanTitle, cleanSummary, isVideo),
     });
   }
   return items;
