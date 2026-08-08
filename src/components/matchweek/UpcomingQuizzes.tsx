@@ -49,11 +49,12 @@ export function UpcomingQuizzes() {
     // rail bleeds to the column edge with -mx-4 px-4 (the GamedayRail pattern),
     // so cards scroll within the column instead of across the whole viewport.
     <div className="max-w-lg mx-auto px-4 pt-5">
-      <div className="flex items-center justify-between mb-2.5">
-        {/* Titled GAMEDAY QUIZ (founder 2026-08-07 eve): this carousel is the
-            top of the Play home — the heading names the product, not the list. */}
-        <span className="font-display text-xs tracking-widest" style={{ color: "#586058" }}>GAMEDAY QUIZ</span>
-        <span className="font-body text-xs" style={{ color: "#8a948f" }}>{current.fixtures.length} this gameweek</span>
+      <div className="flex items-baseline justify-between mb-2.5">
+        {/* Titled GAMEDAY QUIZ (founder 2026-08-07 eve): this carousel is the top
+            of the Play home — the heading names the product. Sized to match the
+            other Play headings (Today's Quiz / Quick Play), founder 8 Aug. */}
+        <span className="font-display" style={{ fontSize: 20, lineHeight: 1.1, letterSpacing: "0.01em", color: "#eef2f0", fontWeight: 700 }}>GAMEDAY QUIZ</span>
+        <span className="font-body text-xs flex-shrink-0" style={{ color: "#8a948f" }}>{current.fixtures.length} this gameweek</span>
       </div>
 
       {/* The carousel — shows the current gameweek's fixtures. The GW 1 / GW 2

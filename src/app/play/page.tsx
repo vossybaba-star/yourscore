@@ -749,8 +749,13 @@ function PlayPageInner() {
       {/* Sticky header — sits under the persistent GamesNav (root layout), which
           now carries the Solo|Versus toggle + game switcher, so this sticks at
           the nav's height, not the viewport top. */}
+      {/* When the GamesNav is above us it already clears the notch; when it's
+          hidden (the curated home), it reports 0 height and this header pins to
+          the very top — so add just enough top inset to clear the Dynamic Island
+          / status bar, floored at 0 so it never double-pads (founder 8 Aug:
+          "PLAY heading under the clock on 17 Pro Max"). */}
       <div className="sticky z-20"
-        style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingTop: "max(0px, calc(env(safe-area-inset-top, 0px) - var(--games-nav-h, 0px)))" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
 
           {/* Title row. On the curated home the header is one quiet line — the

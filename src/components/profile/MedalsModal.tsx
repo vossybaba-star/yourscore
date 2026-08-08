@@ -43,17 +43,17 @@ export function MedalsModal({ medals, onClose }: { medals: Medal[]; onClose: () 
       onClick={onClose}
     >
       <div
-        className="min-h-full max-w-lg mx-auto px-5 py-8"
+        className="min-h-full max-w-lg mx-auto px-5 pb-8"
         style={{ animation: "slideUp 0.24s ease" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Sticky header with an always-visible close — the bottom Close was the
-            only obvious exit and it sits below a long scroll of medals, so on a
-            small phone there was no way out without scrolling to the end
-            (founder 7 Aug). X stays put at the top, matching the app's modals. */}
+        {/* Sticky header with an always-visible close. The X MUST clear the
+            Dynamic Island / status bar (safe-area top ~59px on a Pro Max), or it
+            pins under the clock and reads as "no way out" (founder 8 Aug). The
+            header bg fills the notch; the X sits below it. */}
         <div
-          className="sticky top-0 z-10 flex items-center justify-between -mx-5 px-5 pb-3 pt-1 mb-4"
-          style={{ background: "rgba(10,12,10,0.86)", backdropFilter: "blur(10px)" }}
+          className="sticky top-0 z-10 flex items-center justify-between -mx-5 px-5 pb-3 mb-4"
+          style={{ background: "rgba(10,12,10,0.92)", backdropFilter: "blur(10px)", paddingTop: "calc(env(safe-area-inset-top, 0px) + 10px)" }}
         >
           <div className="flex items-baseline gap-3">
             <p className="font-display text-2xl text-white">Awards</p>
