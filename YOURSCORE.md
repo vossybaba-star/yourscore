@@ -944,6 +944,18 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Leagues = social home for every game** (commits `56ccc94` Phase 1,
+  `2333358` Phase 2). Phase 1: the list-style "My Leagues" tab is GONE — the **bubble strip
+  IS the league nav** (first bubble is a "+" → Create / Browse→Discover; a pinned
+  **Competition** bubble → the YourScore-wide tables + club-fan board via `?view=competition`).
+  The league page dropped the "← Leagues" back pill + "YOURSCORE FANTASY" wordmark. The Hub
+  is now a **natural activity hub** (Recent results / Upcoming fixtures / To play from the
+  league's own games overview + gameday quizzes) — the fantasy squad/readiness/mini-table/
+  rival/games-module tiles are gone. Phase 2: **venue leagues** (`kind='venue'`, migration
+  266 `venue_meta` jsonb) — a "Venue" label, a fifth **Info** tab (about / who to reach /
+  help email), an **OFFERS** section on the hub, and an owner Venue editor in settings. Admin
+  creates the venue (SQL/`kind` arg on createLeague), the owner edits `venue_meta`. See
+  [[project_yourscore_pl_page_hub]] and [[project_yourscore_league_competitions]].
 - **2026-08-08** — **Premier League page → clean News/Table/Fixtures/Feed hub** (commit
   `6a32ce4`). `/matchweek` is now one clean PL hub; the "Matchweek | Gameday Quiz" section
   bar is gone. The whole Gameday Quiz experience moved to its own hub at **/gameday-quiz**
