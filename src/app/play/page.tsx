@@ -758,21 +758,20 @@ function PlayPageInner() {
         style={{ top: "var(--games-nav-h, 0px)", background: "rgba(10,10,15,0.97)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingTop: "max(0px, calc(env(safe-area-inset-top, 0px) - var(--games-nav-h, 0px)))" }}>
         <div className="max-w-lg mx-auto px-5 pt-3 pb-3">
 
-          {/* Title row. On the curated home the header is one quiet line — the
-              hero below is the loud thing. The games-count chip only earns its
-              place in the catalogue, where the shelves are the point. */}
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="font-display text-2xl tracking-tight text-teal">
-                {mainTab === "solo" && soloTab === "home" ? "PLAY" : "QUIZ"}
-              </h1>
-              <p className="font-body text-xs mt-0.5 text-text-muted">
-                {mainTab === "solo" ? (soloTab === "home" ? "Pick a game and go" : "Test your football knowledge")
-                  : mainTab === "multiplayer" ? "Challenge friends · play on your own time"
-                  : "YourScore verified competitions"}
-              </p>
-            </div>
-            {!(mainTab === "solo" && soloTab === "home") && (
+          {/* Title row — hidden on the curated Play home (founder 8 Aug: the
+              "PLAY" heading + "Pick a game and go" just ate space; the hero below
+              is the loud thing). Sub-tabs (QUIZ etc.) keep their heading + the
+              games-count chip. */}
+          {!(mainTab === "solo" && soloTab === "home") && (
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="font-display text-2xl tracking-tight text-teal">QUIZ</h1>
+                <p className="font-body text-xs mt-0.5 text-text-muted">
+                  {mainTab === "solo" ? "Test your football knowledge"
+                    : mainTab === "multiplayer" ? "Challenge friends · play on your own time"
+                    : "YourScore verified competitions"}
+                </p>
+              </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
                 style={{ background: "rgba(0,216,192,0.08)", border: "1px solid rgba(0,216,192,0.2)" }}>
                 <span className="text-xs">⚡</span>
@@ -780,8 +779,8 @@ function PlayPageInner() {
                   {packsLoading ? "…" : `${packs.length} GAMES`}
                 </span>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Solo sub-tabs (Featured / World Cup / Club / Records) — scrollable so
               four pills never cramp on a narrow phone. */}
@@ -869,7 +868,7 @@ function PlayPageInner() {
                   upcoming fixture with a NOTIFY ME button. Both self-hide
                   when empty. */}
               <GamedayRail />
-              <UpcomingQuizzes />
+              <UpcomingQuizzes seeAllHref="/gameday-quiz" />
 
               {/* TODAY'S QUIZ — heading arrows into the full catalogue; the
                   carousel is the curation: best featured packs mixed with

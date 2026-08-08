@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
@@ -48,6 +48,23 @@ export function BottomNav() {
   // then shows that something is in flight. Purely cosmetic — it never blocks or
   // changes the navigation itself.
   const [pending, setPending] = useState<string | null>(null);
+
+  // Publish the nav's real height as --bottom-nav-h so fixed elements that sit
+  // ABOVE the nav (the chat composer, the feed FAB) can anchor to it flush,
+  // instead of guessing a px offset that leaves a gap / flashes on scroll
+  // (founder 8 Aug). Re-measured on resize + when the branch (guest/signed-in)
+  // changes, since the two navs differ slightly in height.
+  const navRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty("--bottom-nav-h", `${el.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    window.addEventListener("resize", set);
+    return () => { ro.disconnect(); window.removeEventListener("resize", set); };
+  }, [user, loading]);
 
   // `usePathname` flips as soon as the transition COMMITS, not when the new screen
   // is actually ready, so it can't tell us a fetch is still in flight. Driving the
@@ -149,6 +166,7 @@ export function BottomNav() {
   if (!user && !loading) {
     return (
       <div
+        ref={navRef}
         className="fixed bottom-0 left-0 right-0 z-50"
         style={{
           background: "rgba(8,13,10,0.97)",
@@ -226,6 +244,7 @@ export function BottomNav() {
   // 2026-07-16). Profile is kept — it is the only route to account + settings.
   return (
     <div
+      ref={navRef}
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
         background: "rgba(8,13,10,0.97)",

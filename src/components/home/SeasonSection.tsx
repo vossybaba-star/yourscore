@@ -14,10 +14,9 @@ const DEFAULT_FIXTURE: GamedayFixture = { home: "Arsenal", away: "Coventry City"
 // real star cutouts front Fantasy, a lightning/quiz motif fronts Gameday. The
 // shine keyframes live in globals.css so both homes animate.
 //   Fantasy League  → /fantasy (its own public teaser tab)
-//   Gameday Quizzes → /gameday-quiz (the Gameday Quiz hub)
+//   Premier League  → /matchweek (the PL tab) — founder 8 Aug, replaced Gameday
 
 const LIME = "#aeea00";
-const TEAL = "#00d8c0";
 
 // Star faces on the Fantasy tile — local /public cutouts (verified PL
 // headshots), so no external call on the home hero. Centre player forward and
@@ -91,27 +90,31 @@ function FixtureCrests({ fixture }: { fixture: GamedayFixture }) {
   );
 }
 
-function GamedayTile({ fixture }: { fixture: GamedayFixture }) {
+// Premier League tile (founder 8 Aug): replaced the Gameday Quizzes tile here —
+// this is the door to the PL tab (/matchweek). A crown emblem stands in for the
+// league crest as the backdrop (the official PL crest is trademarked; drop the
+// real asset in as a background-image here if/when licensed). The opening
+// fixture's crests sit at the foot.
+function PremierLeagueTile({ fixture }: { fixture: GamedayFixture }) {
+  const PURPLE = "#8b5cf6";
   return (
-    <Link href="/gameday-quiz"
+    <Link href="/matchweek"
       className="relative flex flex-col rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
-      style={{ aspectRatio: "0.95", background: "#06110f", border: `1px solid ${TEAL}80` }}>
-      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 22%, ${TEAL}48, rgba(6,17,15,0.15) 62%), #06110f` }} />
+      style={{ aspectRatio: "0.95", background: "#140a24", border: `1px solid ${PURPLE}80` }}>
+      <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 20%, ${PURPLE}55, rgba(20,10,36,0.15) 60%), #140a24` }} />
+      {/* Crown/crest motif standing in for the league crest backdrop. */}
       <svg viewBox="0 0 160 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full" style={{ opacity: 0.5 }}>
-        <path d="M92 24 55 108h30l-8 70 60-92h-33l14-64Z" fill={`${TEAL}44`} stroke={TEAL} strokeWidth="1.4" strokeLinejoin="round" />
+        <path d="M45 92 L58 60 L80 84 L102 60 L115 92 L108 120 L52 120 Z" fill={`${PURPLE}3a`} stroke={PURPLE} strokeWidth="1.6" strokeLinejoin="round" />
+        <circle cx="58" cy="56" r="4" fill={PURPLE} /><circle cx="80" cy="80" r="4" fill={PURPLE} /><circle cx="102" cy="56" r="4" fill={PURPLE} />
       </svg>
-      {/* top scrim keeps the title crisp; a bottom scrim keeps the crests +
-          tagline legible now they sit low and fill the square */}
-      <div className="absolute inset-x-0 top-0" style={{ height: "52%", background: "linear-gradient(to bottom, #06110f 30%, rgba(6,17,15,0.4) 78%, transparent)" }} />
-      <div className="absolute inset-x-0 bottom-0" style={{ height: "46%", background: "linear-gradient(to top, #06110f 12%, rgba(6,17,15,0.72) 55%, transparent)" }} />
+      <div className="absolute inset-x-0 top-0" style={{ height: "52%", background: "linear-gradient(to bottom, #140a24 30%, rgba(20,10,36,0.4) 78%, transparent)" }} />
+      <div className="absolute inset-x-0 bottom-0" style={{ height: "46%", background: "linear-gradient(to top, #140a24 12%, rgba(20,10,36,0.72) 55%, transparent)" }} />
       <span className="season-shine" style={{ animationDelay: "1.4s" }} />
       <div className="relative z-[5] px-3.5 pt-3 pb-3 flex flex-col h-full">
-        <p className="font-display text-2xl text-white leading-[0.92]">Gameday<br />Quizzes</p>
-        {/* push the fixture + tagline to the foot of the tile so the content
-            fills the square rather than clustering at the top (founder, 25 Jul) */}
+        <p className="font-display text-2xl text-white leading-[0.92]">Premier<br />League</p>
         <div className="mt-auto">
           <FixtureCrests fixture={fixture} />
-          <p className="font-body text-[13px] leading-snug font-semibold" style={{ color: "#a8ede4" }}>A quiz pack for every fixture. Rep your fanbase.</p>
+          <p className="font-body text-[13px] leading-snug font-semibold" style={{ color: "#d7c7f5" }}>26-27 season is two weeks out.</p>
         </div>
       </div>
     </Link>
@@ -127,7 +130,7 @@ export function SeasonSection({ className = "", fixture }: { className?: string;
       </div>
       <div className="grid grid-cols-2 gap-2.5">
         <FantasyTile />
-        <GamedayTile fixture={fixture ?? DEFAULT_FIXTURE} />
+        <PremierLeagueTile fixture={fixture ?? DEFAULT_FIXTURE} />
       </div>
     </div>
   );

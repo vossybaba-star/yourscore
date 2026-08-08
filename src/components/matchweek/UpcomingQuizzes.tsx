@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Crest } from "@/components/clubs/Crest";
 import { NotifyButton } from "./NotifyButton";
 import { useReminders } from "./useReminders";
@@ -26,7 +27,7 @@ const dayLabel = (iso: string) =>
 const timeLabel = (iso: string) =>
   new Date(iso).toLocaleString("en-GB", { timeZone: "Europe/London", hour: "2-digit", minute: "2-digit" });
 
-export function UpcomingQuizzes() {
+export function UpcomingQuizzes({ seeAllHref }: { seeAllHref?: string } = {}) {
   const [gws, setGws] = useState<Gameweek[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState<string | null>(null);
@@ -54,7 +55,14 @@ export function UpcomingQuizzes() {
             of the Play home — the heading names the product. Sized to match the
             other Play headings (Today's Quiz / Quick Play), founder 8 Aug. */}
         <span className="font-display" style={{ fontSize: 20, lineHeight: 1.1, letterSpacing: "0.01em", color: "#eef2f0", fontWeight: 700 }}>GAMEDAY QUIZ</span>
-        <span className="font-body text-xs flex-shrink-0" style={{ color: "#8a948f" }}>{current.fixtures.length} this gameweek</span>
+        {seeAllHref ? (
+          // On the Play tab: a door to the full Gameday Quiz page (founder 8 Aug).
+          <Link href={seeAllHref} className="font-body text-xs font-semibold flex-shrink-0 flex items-center gap-1" style={{ color: TEAL }}>
+            More <span aria-hidden>→</span>
+          </Link>
+        ) : (
+          <span className="font-body text-xs flex-shrink-0" style={{ color: "#8a948f" }}>{current.fixtures.length} this gameweek</span>
+        )}
       </div>
 
       {/* The carousel — shows the current gameweek's fixtures. The GW 1 / GW 2

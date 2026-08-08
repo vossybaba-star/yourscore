@@ -5,7 +5,6 @@
 import { useState } from "react";
 import { Card, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { LeagueTableRows } from "./LeagueTableRows";
-import { LeagueMembersView } from "./LeagueMembersView";
 import { MemberActionSheet, type MemberActionMember } from "@/components/fantasy/MemberActionSheet";
 import { useUser } from "@/hooks/useUser";
 import type { LeagueDetail, LeagueRow } from "./types";
@@ -15,7 +14,6 @@ export function LeagueTableView({ detail, code }: { detail: LeagueDetail; code: 
   const { user } = useUser();
   const [tab, setTab] = useState<"season" | "month">("season");
   const [selected, setSelected] = useState<MemberActionMember | null>(null);
-  const [membersOpen, setMembersOpen] = useState(false);
 
   const { season, month, lastMonth, league } = detail;
   const rows = tab === "season" ? season : month.rows;
@@ -31,13 +29,8 @@ export function LeagueTableView({ detail, code }: { detail: LeagueDetail; code: 
 
   return (
     <div>
-      {league.isMember && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-          <button onClick={() => setMembersOpen(true)} style={{ background: "none", border: "none", color: TEAL, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
-            Members →
-          </button>
-        </div>
-      )}
+      {/* Members button removed (founder 8 Aug) — the full member list lives on
+          the Hub's MEMBERS preview. */}
       {/* Season / This month */}
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
         {(["season", "month"] as const).map((t) => (
@@ -93,10 +86,6 @@ export function LeagueTableView({ detail, code }: { detail: LeagueDetail; code: 
           viewerId={user?.id ?? null}
           onClose={() => setSelected(null)}
         />
-      )}
-
-      {membersOpen && (
-        <LeagueMembersView code={code} rows={season} viewerId={user?.id ?? null} onClose={() => setMembersOpen(false)} />
       )}
     </div>
   );

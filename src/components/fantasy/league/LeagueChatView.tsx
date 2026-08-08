@@ -1537,7 +1537,10 @@ export function LeagueChatView({ code, initialGw = null, onOpenCompetition }: {
       {!readOnly && (
         <div style={{
           position: "fixed", left: 0, right: 0,
-          bottom: kbGap > 0 ? `${kbGap}px` : "calc(84px + env(safe-area-inset-bottom))", zIndex: 30,
+          // Sit flush on top of the BottomNav — its real height is published as
+          // --bottom-nav-h (founder 8 Aug: the old 84px guess left a gap that
+          // flashed on scroll). While the keyboard is up, kbGap wins.
+          bottom: kbGap > 0 ? `${kbGap}px` : "var(--bottom-nav-h, 60px)", zIndex: 30,
           background: "rgba(9,14,11,0.9)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
           borderTop: `1px solid ${LINE}`,
         }}>

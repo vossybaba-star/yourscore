@@ -31,6 +31,9 @@ function grad(name: string): string {
 }
 
 const SIZE = 52;
+/** Sentinel the Competition bubble passes to onSwitch — the parent renders the
+ *  global Competition view in place instead of switching to a real league. */
+export const COMPETITION_CODE = "__competition__";
 
 function Avatar({ b, size, active }: { b: Bubble; size: number; active: boolean }) {
   const ring = active ? `2.5px solid ${TEAL}` : `1px solid ${LINE}`;
@@ -69,7 +72,7 @@ function PinnedBubble({ label, ariaLabel, onClick, ring, color, children }: {
   );
 }
 
-export function LeagueBubbleSwitcher({ currentCode, current, onSwitch, onCreate }: {
+export function LeagueBubbleSwitcher({ currentCode, current, onSwitch, onCreate, competitionActive }: {
   currentCode: string;
   current?: { name: string; imageUrl?: string | null };
   /** When provided, tapping a bubble switches the league IN PLACE (no route
@@ -78,6 +81,9 @@ export function LeagueBubbleSwitcher({ currentCode, current, onSwitch, onCreate 
   /** Opens the Create-league flow (mounted by the parent). Falls back to Browse
    *  if not provided. */
   onCreate?: () => void;
+  /** When the Competition bubble is the active view (rendered in place by the
+   *  parent). Highlights the Competition bubble + dims the league bubbles. */
+  competitionActive?: boolean;
 }) {
   const router = useRouter();
   const [leagues, setLeagues] = useState<MyLeague[] | null>(null);
@@ -123,15 +129,20 @@ export function LeagueBubbleSwitcher({ currentCode, current, onSwitch, onCreate 
 
   const goBrowse = () => { setMenuOpen(false); router.push("/fantasy/leagues?browse=1"); };
   const goCreate = () => { setMenuOpen(false); if (onCreate) onCreate(); else goBrowse(); };
-  const goCompetition = () => router.push("/fantasy/leagues?view=competition");
+  // In-place when the parent supports it (founder 8 Aug: Competition shows its
+  // content beneath the strip like a league, not a separate page).
+  const goCompetition = () => { if (onSwitch) onSwitch(COMPETITION_CODE); else router.push("/fantasy/leagues?view=competition"); };
 
   return (
-    <div ref={stripRef} className="no-scrollbar" style={{
-      display: "flex", gap: 14, overflowX: "auto", padding: "2px 0 6px",
-      scrollbarWidth: "none", WebkitOverflowScrolling: "touch", margin: "0 -2px 6px",
-    }}>
-      {/* + bubble — create or browse. Leading, always present (founder 8 Aug). */}
-      <div ref={plusRef} style={{ position: "relative", flexShrink: 0 }}>
+    // Outer row does NOT scroll — so the "+" dropdown below isn't clipped by the
+    // strip's overflow (founder 8 Aug: the menu was hidden behind the content).
+    // The "+" is pinned left; Competition + your leagues scroll to its right.
+    // position:relative + a high z-index lifts the whole strip above the page's
+    // `main[data-fantasy] > * { z-index:1 }` siblings, so the dropdown (z-60
+    // inside) paints above the header/content beneath it, not behind.
+    <div style={{ position: "relative", zIndex: 40, display: "flex", gap: 14, alignItems: "flex-start", margin: "0 -2px 6px" }}>
+      {/* + bubble — create or browse. Pinned, always present. */}
+      <div ref={plusRef} style={{ position: "relative", flexShrink: 0, padding: "2px 0 6px" }}>
         <PinnedBubble
           label="New" ariaLabel="Create or browse leagues" onClick={() => setMenuOpen((o) => !o)}
           ring={`1.5px dashed ${tint(TEAL, "66")}`} color={TEAL}
@@ -140,7 +151,7 @@ export function LeagueBubbleSwitcher({ currentCode, current, onSwitch, onCreate 
         </PinnedBubble>
         {menuOpen && (
           <div role="menu" style={{
-            position: "absolute", top: SIZE + 8, left: 0, zIndex: 40, minWidth: 168,
+            position: "absolute", top: SIZE + 12, left: 0, zIndex: 60, minWidth: 168,
             background: "#101915", border: `1px solid ${LINE}`, borderRadius: 12, padding: 6,
             boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
           }}>
@@ -156,18 +167,23 @@ export function LeagueBubbleSwitcher({ currentCode, current, onSwitch, onCreate 
         )}
       </div>
 
+      {/* Scrollable strip — Competition + your leagues. */}
+      <div ref={stripRef} className="no-scrollbar" style={{
+        display: "flex", gap: 14, overflowX: "auto", padding: "2px 0 6px", flex: 1, minWidth: 0,
+        scrollbarWidth: "none", WebkitOverflowScrolling: "touch",
+      }}>
       {/* Competition — its own pinned bubble (founder 8 Aug): the YourScore-wide
-          tables + club-fan board. */}
+          tables + club-fan board, shown in place beneath the strip. */}
       <PinnedBubble
         label="Competition" ariaLabel="YourScore Competition" onClick={goCompetition}
-        ring={`1.5px solid ${tint(GOLD, "66")}`} color={GOLD}
+        ring={competitionActive ? `2.5px solid ${GOLD}` : `1.5px solid ${tint(GOLD, "66")}`} color={GOLD}
       >
         <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M6 4h12v3a6 6 0 01-12 0V4z" /><path d="M6 6H4v1a3 3 0 003 3M18 6h2v1a3 3 0 01-3 3M9 17h6M8 20h8M12 13v4" /></svg>
       </PinnedBubble>
 
       {/* Your leagues */}
       {(leagues ? list : Array.from({ length: 3 }, (_, i) => ({ code: `_s${i}`, name: "", imageUrl: null } as Bubble))).map((b) => {
-        const active = b.code.toUpperCase() === currentCode;
+        const active = !competitionActive && b.code.toUpperCase() === currentCode;
         const skeleton = !leagues;
         return (
           <button
@@ -209,6 +225,7 @@ export function LeagueBubbleSwitcher({ currentCode, current, onSwitch, onCreate 
           </button>
         );
       })}
+      </div>
     </div>
   );
 }

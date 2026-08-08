@@ -146,8 +146,8 @@ function ProgressCard({ rank, dayStreak, weekDots }: { rank: RankInfo; dayStreak
   return (
     <Link href="/profile" className="d-1 block rounded-2xl overflow-hidden transition-transform active:scale-[0.99]"
       style={{ background: "linear-gradient(160deg, rgba(174,234,0,0.07), #0e1611)", border: "1px solid rgba(174,234,0,0.22)" }}>
-      <div className="px-4 pt-3.5 pb-3">
-        <p className="font-body text-[10px] font-bold uppercase tracking-[0.24em] mb-2.5" style={{ color: GOLD }}>Your progress</p>
+      <div className="px-4 pt-2.5 pb-2.5">
+        <p className="font-body text-[10px] font-bold uppercase tracking-[0.24em] mb-2" style={{ color: GOLD }}>Your progress</p>
 
         <div className="flex items-stretch">
           {/* Streak — the zero state invites, never scolds: it's the first thing
@@ -180,11 +180,11 @@ function ProgressCard({ rank, dayStreak, weekDots }: { rank: RankInfo; dayStreak
         </div>
 
         {/* Weekday dots — filled = played that day (UK days) */}
-        <div className="flex items-center gap-1.5 mt-3">
+        <div className="flex items-center gap-1.5 mt-2">
           {weekDots.map((d, i) => (
             <span key={i} className="flex items-center justify-center rounded-full font-body font-bold"
               style={{
-                width: 22, height: 22, fontSize: 10,
+                width: 19, height: 19, fontSize: 9.5,
                 background: d.played ? LIME : "rgba(255,255,255,0.05)",
                 color: d.played ? "#10160c" : d.isFuture ? "#3a423d" : "#586058",
                 border: d.isToday ? `1.5px solid ${d.played ? LIME : "rgba(174,234,0,0.5)"}` : "1px solid rgba(255,255,255,0.06)",
@@ -278,9 +278,35 @@ function TodaysGameDone({ game, score }: { game: TodaysGame; score: number | nul
             </>
           )}
         </button>
-        <p className="font-body text-xs mt-3" style={{ color: "#8a948f" }}>Tomorrow&apos;s game lands at midnight — come back for the next one.</p>
       </div>
+
+      {/* Don't end the day here (founder 8 Aug) — point at what else there is to
+          do: build a fantasy squad, play more quizzes, jump into the feed. */}
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
+        <NextUpTile href="/fantasy" accent={LIME} title="Build your XI" sub="Fantasy squad"
+          icon="M8 4l-4 3 2 3 2-1v11h8V9l2 1 2-3-4-3a4 4 0 0 1-8 0z" />
+        <NextUpTile href="/play" accent={TEAL} title="Play another" sub="More quizzes"
+          icon="M8 5v14l11-7z" />
+      </div>
+      <p className="font-body text-xs mt-2.5 text-center" style={{ color: "#8a948f" }}>Tomorrow&apos;s game lands at midnight.</p>
     </div>
+  );
+}
+
+/** A compact "what next" tile shown after Today's Game is done — keeps the
+ *  player moving into fantasy / more quizzes instead of stopping for the day. */
+function NextUpTile({ href, accent, title, sub, icon }: { href: string; accent: string; title: string; sub: string; icon: string }) {
+  return (
+    <Link href={href} className="flex items-center gap-2.5 rounded-2xl px-3.5 py-3 transition-transform active:scale-[0.98]"
+      style={{ background: `linear-gradient(150deg, ${accent}1e, var(--surface))`, border: `1px solid ${accent}3a` }}>
+      <span className="flex items-center justify-center flex-shrink-0 rounded-xl" style={{ width: 34, height: 34, background: `${accent}22`, border: `1px solid ${accent}44`, color: accent }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={icon} /></svg>
+      </span>
+      <span style={{ minWidth: 0 }}>
+        <span className="block font-body text-sm font-bold text-text-primary leading-tight">{title}</span>
+        <span className="block font-body text-[11px]" style={{ color: "#8a948f" }}>{sub}</span>
+      </span>
+    </Link>
   );
 }
 

@@ -84,7 +84,9 @@ import { LeagueHub } from "@/components/fantasy/league/LeagueHub";
 import { LeagueChatView } from "@/components/fantasy/league/LeagueChatView";
 import { LeagueTableView } from "@/components/fantasy/league/LeagueTableView";
 import { LeagueGamesView } from "@/components/fantasy/league/LeagueGamesView";
-import { LeagueBubbleSwitcher } from "@/components/fantasy/league/LeagueBubbleSwitcher";
+import { LeagueBubbleSwitcher, COMPETITION_CODE } from "@/components/fantasy/league/LeagueBubbleSwitcher";
+import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
+import { ClubTableTile } from "@/components/clubs/ClubTableTile";
 import { CreateLeagueFlow } from "@/components/fantasy/league/LeagueFlows";
 import { LeagueHistoryView } from "@/components/fantasy/league/LeagueHistoryView";
 import type { ChatData, GamesPulse, LeagueDetail as BaseLeagueDetail } from "@/components/fantasy/league/types";
@@ -168,6 +170,9 @@ export default function LeaguePage() {
   const [copied, setCopied] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  // Competition bubble shows the YourScore-wide view IN PLACE beneath the strip
+  // (founder 8 Aug), instead of navigating to a separate page.
+  const [showCompetition, setShowCompetition] = useState(false);
   const [tab, setTab] = useState<Tab>("hub");
   const [chatGw, setChatGw] = useState<number | null>(null);
 
@@ -282,6 +287,14 @@ export default function LeaguePage() {
     window.scrollTo({ top: 0 });
   }, [code]);
 
+  // Bubble taps: the Competition sentinel shows the global view in place; any
+  // real league code leaves competition and switches league.
+  const onBubbleSwitch = useCallback((next: string) => {
+    if (next === COMPETITION_CODE) { setShowCompetition(true); window.scrollTo({ top: 0 }); return; }
+    setShowCompetition(false);
+    switchLeague(next);
+  }, [switchLeague]);
+
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
     catch (e) {
@@ -394,9 +407,16 @@ export default function LeaguePage() {
       {/* No back pill, no "YOURSCORE FANTASY" wordmark here (founder 8 Aug): this
           IS a top-level tab, and the bubble strip is its navigation. The + bubble
           (create/browse) and the Competition bubble live inside the switcher. */}
-      <LeagueBubbleSwitcher currentCode={code} onSwitch={switchLeague} onCreate={() => setCreateOpen(true)} current={{ name: league.name, imageUrl: league.imageUrl }} />
+      <LeagueBubbleSwitcher currentCode={code} onSwitch={onBubbleSwitch} onCreate={() => setCreateOpen(true)} competitionActive={showCompetition} current={{ name: league.name, imageUrl: league.imageUrl }} />
 
-      {switching ? (
+      {showCompetition ? (
+        // The YourScore-wide competition, shown IN PLACE beneath the strip
+        // (founder 8 Aug) — the global tables + club-fan board, no page nav.
+        <>
+          <LeagueCompetition />
+          <ClubTableTile />
+        </>
+      ) : switching ? (
         <Loading label="Loading the league">
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <Skel w="55%" h={22} /><Skel w="70%" h={12} style={{ marginBottom: 6 }} />
