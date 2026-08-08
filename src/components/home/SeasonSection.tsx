@@ -14,7 +14,7 @@ const DEFAULT_FIXTURE: GamedayFixture = { home: "Arsenal", away: "Coventry City"
 // real star cutouts front Fantasy, a lightning/quiz motif fronts Gameday. The
 // shine keyframes live in globals.css so both homes animate.
 //   Fantasy League  → /fantasy (its own public teaser tab)
-//   Gameday Quizzes → /matchweek?section=live (the Gameday Quiz section)
+//   Gameday Quizzes → /gameday-quiz (the Gameday Quiz hub)
 
 const LIME = "#aeea00";
 const TEAL = "#00d8c0";
@@ -93,7 +93,7 @@ function FixtureCrests({ fixture }: { fixture: GamedayFixture }) {
 
 function GamedayTile({ fixture }: { fixture: GamedayFixture }) {
   return (
-    <Link href="/matchweek?section=live"
+    <Link href="/gameday-quiz"
       className="relative flex flex-col rounded-2xl overflow-hidden transition-transform active:scale-[0.98]"
       style={{ aspectRatio: "0.95", background: "#06110f", border: `1px solid ${TEAL}80` }}>
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 50% 22%, ${TEAL}48, rgba(6,17,15,0.15) 62%), #06110f` }} />

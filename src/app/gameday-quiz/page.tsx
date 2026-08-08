@@ -1,17 +1,15 @@
 /**
- * /gameday-quiz — the Gameday Quiz explainer.
+ * /gameday-quiz — the Gameday Quiz hub (founder 8 Aug: promoted from a static
+ * explainer to the real hub, when the PL page became a clean News/Table/
+ * Fixtures/Feed hub and Gameday Quiz moved out of it).
  *
- * Reached from the "How it works" tile at the top of the Gameday Quiz tab
- * (founder, 25 Jul). Says what the thing IS in the order a new fan meets it:
- * a quiz for every fixture, a score, and a club table their score feeds. Copy
- * tracks the live tab (LiveQuizIntro + ClubTableTile) so the explainer never
- * promises something the tab doesn't do.
- *
- * Static content, so it prerenders and is SEO-indexable — no client state.
+ * Top: the explainer (what it IS, SEO-indexable, server-rendered). Below: the
+ * live experience — packs, the club quiz, the halftime rail — in <GamedayHub/>.
+ * The club-fan leaderboard is NOT here; it moved into Leagues.
  */
-import Link from "next/link";
 import { BackPill } from "@/components/ui/BackPill";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { GamedayHub } from "@/components/matchweek/GamedayHub";
 
 const TEAL = "#00d8c0";
 const BG = "#080d0a";
@@ -104,20 +102,12 @@ export default function GamedayQuizHowItWorks() {
           </div>
         </div>
 
-        {/* CTA back to the tab */}
-        <Link
-          href="/matchweek"
-          className="flex items-center justify-center rounded-2xl font-display active:scale-[0.99] transition-transform"
-          style={{
-            marginTop: 16, height: 52, fontSize: 15, letterSpacing: "0.01em",
-            background: TEAL, color: "#062018",
-          }}
-        >
-          Play today&rsquo;s quiz
-        </Link>
-        <p className="font-body" style={{ fontSize: 12, color: MUTED, marginTop: 10, textAlign: "center" }}>
-          Set your club once and your scores start counting toward its table.
-        </p>
+      </div>
+
+      {/* The live hub — packs, the club quiz, the halftime rail. Self-hides its
+          tiles off their moment. */}
+      <div className="max-w-lg mx-auto px-4 mt-2">
+        <GamedayHub />
       </div>
       <BottomNav />
     </main>

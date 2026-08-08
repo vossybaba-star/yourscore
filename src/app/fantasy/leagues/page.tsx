@@ -18,6 +18,7 @@ import {
   Btn, Card, GOLD, INK, LINE, LIME, MUTED, page, PANEL, PANEL_2, TEAL, tint,
 } from "@/components/fantasy/shared";
 import { LeagueCompetition } from "@/components/fantasy/LeagueCompetition";
+import { ClubTableTile } from "@/components/clubs/ClubTableTile";
 import { CreateLeagueFlow, JoinLeagueFlow, LeagueEmptyState } from "@/components/fantasy/league/LeagueFlows";
 import { DiscoverLeagues } from "@/components/fantasy/DiscoverLeagues";
 import { BottomNav } from "@/components/ui/BottomNav";
@@ -454,7 +455,16 @@ export default function LeaguesHome() {
         </div>
       )}
 
-      {tab === "competition" ? <LeagueCompetition /> : tab === "discover" ? discoverView : myLeagues}
+      {tab === "competition" ? (
+        <>
+          <LeagueCompetition />
+          {/* Club-fan leaderboard (founder 8 Aug: moved here from the PL page —
+              Leagues is the social home for every game, not just fantasy). A
+              global YourScore board, so it belongs with the Competition tables.
+              Self-hides until a gameweek has scores. */}
+          <ClubTableTile />
+        </>
+      ) : tab === "discover" ? discoverView : myLeagues}
     </main>
       <CreateLeagueFlow open={createOpen} onClose={() => setCreateOpen(false)} />
       <JoinLeagueFlow open={joinOpen} onClose={() => setJoinOpen(false)} />
