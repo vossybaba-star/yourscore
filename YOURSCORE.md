@@ -6,8 +6,10 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-08 (**Content feed made interactive** — react/comment/share on every
-> news + video card, mig 267, commit `69c7ac8`; see top of Recently shipped. Prior:
+> **Confirmed:** 2026-08-08 (**Fantasy first tab is now the players' FEED** (SocialHome, not a
+> squad dashboard; tab Home → Feed; commit `f720411`). Prior: **Content feed made interactive**
+> — react/comment/share on every news + video card, mig 267, commit `69c7ac8`; see top of
+> Recently shipped. Earlier:
 > **Scout tab filled in** (commit `1a50986`). Two changes on the Scout
 > tab (`/fantasy/news`): (1) signed in, the Briefing (the Scout's front door) now LEADS with the daily
 > Scout's Latest ideas above the news stream, so landing on Scout is immediately useful rather than a
@@ -946,6 +948,14 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Fantasy first tab is the players' FEED** (commit `f720411`). The first
+  Fantasy tab (`/fantasy`) now renders the fantasy social feed (`SocialHome`) instead of the
+  squad dashboard — For You / Following / Discover + a "What's happening?" composer, a stream
+  of other managers' activity + conversation (scores, squad picks, posts) with react/comment/
+  share. The place fantasy players talk to each other, by themselves. Tab renamed **Home →
+  Feed** in `FantasyHeader`. Squad management → Squad tab; Scout → Scout tab; `/fantasy/social`
+  stays routable for legacy deep links (renders the same feed). `src/app/fantasy/page.tsx` +
+  `src/components/fantasy/FantasyHeader.tsx`.
 - **2026-08-08** — **Content feed is interactive — react, comment, share** (commit `69c7ac8`,
   mig 267). Every news/video card is now an X-style post: an emoji reaction bar (😂👀🔥👏❤️😭,
   one switchable reaction per user), a comment thread (the shipped `DiscussionThread`, new
