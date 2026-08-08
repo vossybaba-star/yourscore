@@ -48,9 +48,12 @@ function Avatar({ b, size, active }: { b: Bubble; size: number; active: boolean 
   );
 }
 
-export function LeagueBubbleSwitcher({ currentCode, current }: {
+export function LeagueBubbleSwitcher({ currentCode, current, onSwitch }: {
   currentCode: string;
   current?: { name: string; imageUrl?: string | null };
+  /** When provided, tapping a bubble switches the league IN PLACE (no route
+   *  navigation) — the caller swaps its own data. Falls back to a normal push. */
+  onSwitch?: (code: string) => void;
 }) {
   const router = useRouter();
   const [leagues, setLeagues] = useState<MyLeague[] | null>(null);
@@ -98,7 +101,7 @@ export function LeagueBubbleSwitcher({ currentCode, current }: {
           <button
             key={b.code}
             data-active={active ? "1" : undefined}
-            onClick={() => { if (!skeleton && !active) router.push(`/fantasy/leagues/${b.code}`); }}
+            onClick={() => { if (!skeleton && !active) { if (onSwitch) onSwitch(b.code); else router.push(`/fantasy/leagues/${b.code}`); } }}
             aria-label={active ? `${b.name} (current)` : `Switch to ${b.name}`}
             aria-current={active ? "true" : undefined}
             style={{

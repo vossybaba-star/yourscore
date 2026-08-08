@@ -99,7 +99,14 @@ async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
 
 export default function LeaguePage() {
   const router = useRouter();
-  const code = String(useParams().code ?? "").toUpperCase();
+  // `code` is STATE, not read straight off the route, so switching leagues can
+  // happen IN PLACE — no route navigation, so nothing remounts, the bubble strip
+  // stays put and there's no loading-flash or scroll reset (founder 8 Aug:
+  // "switching between leagues should be seamless and smooth"). It still syncs to
+  // the real route on a deep-link / browser back-forward.
+  const routeCode = String(useParams().code ?? "").toUpperCase();
+  const [code, setCode] = useState(routeCode);
+  useEffect(() => { setCode(routeCode); }, [routeCode]);
 
   const [detail, setDetail] = useState<LeagueDetail | null>(null);
   const [chat, setChat] = useState<ChatData | null>(null);
@@ -202,6 +209,26 @@ export default function LeaguePage() {
   // below mounts it once and then just shows/hides it.
   useEffect(() => { setVisited((v) => (v.has(tab) ? v : new Set(v).add(tab))); }, [tab]);
 
+  // Switch leagues IN PLACE — no router.push, so the page + bubble strip stay
+  // mounted (the strip re-highlights instantly). We DON'T clear `detail`; the
+  // load effect (keyed on `code`) fetches the new league while the derived
+  // `switching` flag below shows a light loader in the content area only, so the
+  // old league never lingers and nothing flashes. The URL is updated with
+  // history.replaceState (invisible to the Next router → no navigation).
+  const switchLeague = useCallback((next: string) => {
+    const nc = String(next).toUpperCase();
+    if (!nc || nc === code) return;
+    setCode(nc);
+    setTab("hub"); setVisited(new Set<Tab>(["hub"]));
+    setChatGw(null); setCompId(null); setGamesKey((k) => k + 1);
+    setGamesPulse(null); setErr(null); setNotFound(false);
+    const u = new URL(window.location.href);
+    u.pathname = `/fantasy/leagues/${nc}`;
+    u.searchParams.delete("t"); u.searchParams.delete("gw"); u.searchParams.delete("c");
+    window.history.replaceState(null, "", u);
+    window.scrollTo({ top: 0 });
+  }, [code]);
+
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
     catch (e) {
@@ -303,6 +330,10 @@ export default function LeaguePage() {
   );
 
   const { league } = detail;
+  // True in the ~half-second after tapping another bubble, while the new
+  // league's data loads (detail still holds the OLD one). Drives a light content
+  // loader so the old league never shows under the new highlight.
+  const switching = detail.league.code.toUpperCase() !== code;
 
   return (
     <>
@@ -311,9 +342,18 @@ export default function LeaguePage() {
           /fantasy/leagues drops you back into a league, so link the list directly. */}
       <Header exit={{ label: "Leagues", onClick: () => router.push("/fantasy/leagues?browse=1") }} />
 
-      {/* Bubble switcher — hop between your football groups without leaving. */}
-      <LeagueBubbleSwitcher currentCode={code} current={{ name: league.name, imageUrl: league.imageUrl }} />
+      {/* Bubble switcher — hop between your football groups without leaving.
+          onSwitch swaps the league in place (no navigation, no remount). */}
+      <LeagueBubbleSwitcher currentCode={code} onSwitch={switchLeague} current={{ name: league.name, imageUrl: league.imageUrl }} />
 
+      {switching ? (
+        <Loading label="Loading the league">
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Skel w="55%" h={22} /><Skel w="70%" h={12} style={{ marginBottom: 6 }} />
+            <Skel h={120} r={14} /><Skel h={54} r={10} /><Skel h={54} r={10} />
+          </div>
+        </Loading>
+      ) : (<>
       {/* Compact header (founder 8 Aug): badge, name + members, invite + settings.
           Bio/chips are kept but slimmed to one line so the header stops eating
           vertical space — no oversized crest, no two-line clamp. */}
@@ -448,6 +488,7 @@ export default function LeaguePage() {
         )}
       </div>
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
+      </>)}
 
       {inviteOpen && (
         <Sheet onClose={() => setInviteOpen(false)} labelledBy="invite-title">
