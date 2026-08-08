@@ -18,14 +18,14 @@ const LIME = "#aeea00";
 const INK = "#eef2f0";
 const MUTED = "#8a948f";
 
-// Fantasy is "my team" — three tabs (product model 2026-08-07): Home · Squad ·
-// Scout. Leagues moved to the global bottom-nav Leagues tab ("my people"); the
-// social feed moved to the global Home ("football happening"). /fantasy/social
-// and /fantasy/leagues stay routable for deep links — they are just no longer
-// pills here (Social posts open with no fantasy pill lit, which is correct: the
-// feed belongs to Home now).
+// Fantasy — three tabs: Feed · Squad · Scout. The first tab IS the players' feed
+// (founder, 8 Aug): /fantasy now renders the fantasy social feed (SocialHome) —
+// activity + conversation from other managers, the place fantasy players talk to
+// each other. Squad management lives on the Squad tab; Leagues is the global
+// bottom-nav tab. /fantasy/social stays routable for legacy deep links (it
+// renders the same feed), so old notification/share URLs never dead-end.
 const TABS = [
-  { href: "/fantasy", label: "Home", accent: TEAL, match: (p: string) => p === "/fantasy" },
+  { href: "/fantasy", label: "Feed", accent: TEAL, match: (p: string) => p === "/fantasy" || p.startsWith("/fantasy/social") },
   { href: "/fantasy/squad", label: "Squad", accent: LIME, match: (p: string) => p === "/fantasy/squad" },
   {
     href: "/fantasy/news",

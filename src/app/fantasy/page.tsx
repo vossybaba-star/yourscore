@@ -14,6 +14,9 @@
 import { useEffect, useState } from "react";
 import { FantasyHome } from "@/components/fantasy/FantasyHome";
 import { FantasyTeaser } from "@/components/fantasy/FantasyTeaser";
+import { FantasyHeader } from "@/components/fantasy/FantasyHeader";
+import { SocialHome } from "@/components/fantasy/SocialHome";
+import { page } from "@/components/fantasy/shared";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { fantasyVisible } from "@/lib/fantasy/flag";
 import { useUser } from "@/hooks/useUser";
@@ -36,11 +39,23 @@ export default function FantasyPage() {
 
   // Signed OUT (no account) → the public browse home (best of the feed + a join
   // hook), whether or not the game is gated — a visitor always sees it being
-  // played. Signed in + allowed/released → the personal home. Signed in but not
-  // allowed (still gated) → the teaser.
+  // played. Signed in + allowed/released → the FEED (founder, 8 Aug): the first
+  // Fantasy tab is purely the players' own feed — activity + conversation from
+  // other managers, a place for fantasy players to talk to each other. No squad,
+  // scout or dashboard here; those live on the Squad + Scout tabs. Signed in but
+  // not allowed (still gated) → the teaser.
   return (
     <>
-      {!user ? <FantasyHome mode="public" /> : full ? <FantasyHome /> : <FantasyTeaser />}
+      {!user ? (
+        <FantasyHome mode="public" />
+      ) : full ? (
+        <main data-fantasy style={page}>
+          <FantasyHeader />
+          <SocialHome />
+        </main>
+      ) : (
+        <FantasyTeaser />
+      )}
       <BottomNav />
     </>
   );
