@@ -944,6 +944,10 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Smarter Today's Quiz recommendations** (commit `01ec7f7`). The Play
+  home's Today's Quiz carousel now excludes already-played packs, features the user's club +
+  its rivals first (new `src/lib/clubRivals.ts`), and leans on the featured/trending set as
+  popular picks. Played ids (quiz_attempts) + club (/api/clubs/me) fetched client-side.
 - **2026-08-08** — **Leagues/home polish** (commits `d58eade` wave 1, `0471234` wave 2).
   Wave 1: the bubble "+" dropdown no longer clips behind content (pinned outside the scroll
   strip + lifted z-index); the **Competition bubble opens IN PLACE** beneath the strip (no
