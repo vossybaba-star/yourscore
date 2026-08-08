@@ -50655,23 +50655,23 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/leagues/loading.tsx": {
-    "mtime": 1786120277.8806665,
-    "ast_hash": "625ea2074e2bd10a392be60a20dfc331",
+    "mtime": 1786209728.1078343,
+    "ast_hash": "170b5f397afaf1c679c5006656a5e11e",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/leagues/page.tsx": {
-    "mtime": 1786176754.2637932,
-    "ast_hash": "7c62409eb1efc1df00e6337598d82dcd",
+    "mtime": 1786209700.8743749,
+    "ast_hash": "3b88fb802f8723e2712a1cc9b919f2a4",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/loading.tsx": {
-    "mtime": 1786120277.8811285,
-    "ast_hash": "d60ffd2bdc5f99c9a716de2b56f96f73",
+    "mtime": 1786209625.3820026,
+    "ast_hash": "74d6ece02febb156078a0dccd4879e25",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/news/loading.tsx": {
-    "mtime": 1786120277.8812761,
-    "ast_hash": "625ea2074e2bd10a392be60a20dfc331",
+    "mtime": 1786209625.3822858,
+    "ast_hash": "74d6ece02febb156078a0dccd4879e25",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/news/page.tsx": {
@@ -50775,8 +50775,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/social/loading.tsx": {
-    "mtime": 1786120277.8862379,
-    "ast_hash": "625ea2074e2bd10a392be60a20dfc331",
+    "mtime": 1786210001.2061563,
+    "ast_hash": "74d6ece02febb156078a0dccd4879e25",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/social/page.tsx": {
@@ -50800,8 +50800,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/squad/loading.tsx": {
-    "mtime": 1786120277.8872766,
-    "ast_hash": "625ea2074e2bd10a392be60a20dfc331",
+    "mtime": 1786209625.3821747,
+    "ast_hash": "74d6ece02febb156078a0dccd4879e25",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/fantasy/squad/page.tsx": {
@@ -51050,8 +51050,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/play/page.tsx": {
-    "mtime": 1786183377.1247964,
-    "ast_hash": "332e615dd65431bdc00ddaa0a2eaa09d",
+    "mtime": 1786209454.7751343,
+    "ast_hash": "21ab8ef8b15df47dbe363ef1bb26ad51",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/app/play/today/page.tsx": {
@@ -51440,8 +51440,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/components/fantasy/FantasyHeader.tsx": {
-    "mtime": 1786195251.5205097,
-    "ast_hash": "ad23e68a758113f86352c545f2e9b2c9",
+    "mtime": 1786209610.1201506,
+    "ast_hash": "c654fff3e88056fbaf3397689ebbc4e4",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/components/fantasy/FantasyHome.tsx": {
@@ -51705,8 +51705,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/components/fantasy/SocialHome.tsx": {
-    "mtime": 1786120277.9473062,
-    "ast_hash": "a5fe3c9b24d36d7f5e8ea00e91d78bec",
+    "mtime": 1786209551.867464,
+    "ast_hash": "de86e80b1840c8daa140593445095135",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/src/components/fantasy/SquadBoard.tsx": {
@@ -54590,8 +54590,8 @@
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/YOURSCORE.md": {
-    "mtime": 1786195477.9161584,
-    "ast_hash": "9fd0ae487af3588461bdb46042b87dda",
+    "mtime": 1786210035.5700767,
+    "ast_hash": "1a5dae0714a0e95088cecf7094e191bb",
     "semantic_hash": ""
   },
   "/Users/zchukwumah/ys-wildcard/content/blog/50-premier-league-quiz-questions.mdx": {
@@ -56992,6 +56992,11 @@
   "/Users/zchukwumah/ys-wildcard/supabase/migrations/267_content_feed_interactions.sql": {
     "mtime": 1786192627.0487123,
     "ast_hash": "97a4da9610c2c79e5d5e8e3dae2a5d2c",
+    "semantic_hash": ""
+  },
+  "/Users/zchukwumah/ys-wildcard/src/components/fantasy/FantasyTabSkeleton.tsx": {
+    "mtime": 1786209618.7791734,
+    "ast_hash": "01d7da02fbccd35e6040b73abd37f7d1",
     "semantic_hash": ""
   }
 }

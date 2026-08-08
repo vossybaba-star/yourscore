@@ -6,8 +6,10 @@
 > the old `~/Downloads/*build-doc.md` files are historical/subordinate — read them only
 > for detail this file points to, never as current scope.
 >
-> **Confirmed:** 2026-08-08 (**Fantasy first tab is now the players' FEED** (SocialHome, not a
-> squad dashboard; tab Home → Feed; commit `f720411`). Prior: **Content feed made interactive**
+> **Confirmed:** 2026-08-08 (**Fantasy feed = For You only + seamless tab transitions +
+> latest-first quizzes** (commit `4798d3c`; see top of Recently shipped). Prior: **Fantasy
+> first tab is now the players' FEED** (SocialHome, not a squad dashboard; tab Home → Feed;
+> commit `f720411`). Earlier: **Content feed made interactive**
 > — react/comment/share on every news + video card, mig 267, commit `69c7ac8`; see top of
 > Recently shipped. Earlier:
 > **Scout tab filled in** (commit `1a50986`). Two changes on the Scout
@@ -948,6 +950,20 @@
 Scan-list so any session gets current in one glance — newest first. Full detail is in the
 Confirmed preamble above and the referenced section.
 
+- **2026-08-08** — **Fantasy feed simplified + tab/quiz polish** (commit `4798d3c`). (1)
+  Fantasy Feed tab is now ONE feed — the open "For You" stream from ALL players; the
+  Following/Discover sub-tabs are gone (`SocialHome` gutted to a single feed + composer +
+  search button, no segment bar). (2) "YourScore Fantasy PL" heading shrunk (17px). (3)
+  **Seamless Feed/Squad/Scout transitions** — the three tabs' `loading.tsx` now render the real
+  `FantasyHeader` (`FantasyTabSkeleton`), so the header is identical before/during/after a
+  switch (the URL is already the destination, so the right pill lights) instead of a generic
+  block-header flashing. (4) **Leagues tab no longer flashes a "LEAGUES" heading** before
+  redirecting into your league — the in-between + its `loading.tsx` are chrome-less. (5) Play
+  **Today's Quiz** carousel dropped per-user personalization (it reshuffled after async load) —
+  now a fixed deterministic order (doing-well neutrals + most recent, newest-first); the arrow
+  is a **"More Quizzes"** label. (6) **Quiz menu ordered by LATEST** (was featured_order = the
+  12 biggest clubs by fanbase); latest pack is the featured hero. DB curation: `Arsenal Are
+  Champions` + `The Race for Europe` set featured; `Premier League 26/27: 2 Weeks Out` leads.
 - **2026-08-08** — **Fantasy first tab is the players' FEED** (commit `f720411`). The first
   Fantasy tab (`/fantasy`) now renders the fantasy social feed (`SocialHome`) instead of the
   squad dashboard — For You / Following / Discover + a "What's happening?" composer, a stream
