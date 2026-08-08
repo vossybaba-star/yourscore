@@ -9,7 +9,7 @@ import {
 } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { BottomNav } from "@/components/ui/BottomNav";
-import type { LeagueDetail as BaseLeagueDetail } from "@/components/fantasy/league/types";
+import type { LeagueDetail as BaseLeagueDetail, VenueMeta } from "@/components/fantasy/league/types";
 import { nameOf } from "@/components/fantasy/league/types";
 
 /** league.bio / league.links (migration 263) — not yet on the shared
@@ -20,6 +20,10 @@ interface LeagueLinks {
 }
 type LeagueDetail = BaseLeagueDetail & { league: BaseLeagueDetail["league"] & { bio: string | null; links: LeagueLinks } };
 const BIO_MAX = 200;
+const venueInput: React.CSSProperties = {
+  width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: 9, fontSize: 13.5,
+  background: PANEL, color: INK, border: `1px solid ${LINE}`, outline: "none",
+};
 const LINK_FIELDS: { key: keyof LeagueLinks; label: string; placeholder: string }[] = [
   { key: "discord", label: "Discord", placeholder: "https://discord.gg/your-invite" },
   { key: "x", label: "X", placeholder: "https://x.com/yourleague" },
@@ -73,6 +77,10 @@ export default function LeagueSettingsPage() {
   const [linksDraft, setLinksDraft] = useState<LeagueLinks>({});
   const [savingProfile, setSavingProfile] = useState(false);
   const seededProfileRef = useRef(false);
+  // Venue content (migration 266) — venue leagues only. Same seed-once idiom.
+  const [venueDraft, setVenueDraft] = useState<VenueMeta>({});
+  const [savingVenue, setSavingVenue] = useState(false);
+  const seededVenueRef = useRef(false);
 
   const load = useCallback(async () => {
     try { setDetail(await apiRaw<LeagueDetail>(`leagues/${code}`)); }
@@ -90,6 +98,17 @@ export default function LeagueSettingsPage() {
     try { await apiRaw(`leagues/${code}`, json({ bio: bioDraft, links: linksDraft })); await load(); }
     catch (e) { setErr((e as Error).message); }
     setSavingProfile(false);
+  };
+  useEffect(() => {
+    if (!detail || seededVenueRef.current) return;
+    setVenueDraft(detail.league.venueMeta ?? {});
+    seededVenueRef.current = true;
+  }, [detail]);
+  const saveVenue = async () => {
+    setSavingVenue(true); setErr(null);
+    try { await apiRaw(`leagues/${code}`, json({ venueMeta: venueDraft })); await load(); }
+    catch (e) { setErr((e as Error).message); }
+    setSavingVenue(false);
   };
 
   const patch = async (body: unknown) => {
@@ -245,6 +264,63 @@ export default function LeagueSettingsPage() {
             </p>
 
             <Btn small gold disabled={savingProfile} onClick={saveProfile}>{savingProfile ? "Saving…" : "Save"}</Btn>
+          </Card>
+        </Section>
+      )}
+
+      {/* VENUE — venue leagues only (migration 266). Owner edits the info, the
+          offers shown on the hub, and who to contact / a help email. */}
+      {isOwner && league.kind === "venue" && (
+        <Section title="VENUE">
+          <Card>
+            <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 6 }}>About this venue</label>
+            <textarea
+              value={venueDraft.info ?? ""}
+              onChange={(e) => setVenueDraft((d) => ({ ...d, info: e.target.value.slice(0, 800) }))}
+              rows={3}
+              placeholder="Where you are, what's on, how YourScore runs here."
+              style={{ width: "100%", boxSizing: "border-box", padding: "9px 11px", borderRadius: 9, fontSize: 13.5, background: PANEL, color: INK, border: `1px solid ${LINE}`, outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.45, marginBottom: 16 }}
+            />
+
+            {/* Offers */}
+            <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 6 }}>Offers (shown on the hub)</label>
+            {(venueDraft.offers ?? []).map((o, i) => (
+              <div key={i} style={{ marginBottom: 8, padding: 10, borderRadius: 9, background: PANEL, border: `1px solid ${LINE}` }}>
+                <input value={o.title} onChange={(e) => setVenueDraft((d) => ({ ...d, offers: (d.offers ?? []).map((x, j) => j === i ? { ...x, title: e.target.value.slice(0, 120) } : x) }))}
+                  placeholder="Offer title (e.g. Winner's pint)" style={venueInput} />
+                <input value={o.detail} onChange={(e) => setVenueDraft((d) => ({ ...d, offers: (d.offers ?? []).map((x, j) => j === i ? { ...x, detail: e.target.value.slice(0, 300) } : x) }))}
+                  placeholder="Detail (optional)" style={{ ...venueInput, marginTop: 6 }} />
+                <button onClick={() => setVenueDraft((d) => ({ ...d, offers: (d.offers ?? []).filter((_, j) => j !== i) }))}
+                  style={{ marginTop: 6, background: "none", border: "none", color: MUTED, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}>Remove</button>
+              </div>
+            ))}
+            {(venueDraft.offers ?? []).length < 8 && (
+              <button onClick={() => setVenueDraft((d) => ({ ...d, offers: [...(d.offers ?? []), { title: "", detail: "" }] }))}
+                style={{ background: "none", border: "none", color: TEAL, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0, marginBottom: 16 }}>+ Add offer</button>
+            )}
+
+            {/* Contact people */}
+            <label style={{ fontSize: 12, color: MUTED, display: "block", margin: "16px 0 6px" }}>Who to reach</label>
+            {(venueDraft.contact?.people ?? []).map((p, i) => (
+              <div key={i} style={{ marginBottom: 8, padding: 10, borderRadius: 9, background: PANEL, border: `1px solid ${LINE}` }}>
+                <input value={p.name} onChange={(e) => setVenueDraft((d) => ({ ...d, contact: { ...d.contact, people: (d.contact?.people ?? []).map((x, j) => j === i ? { ...x, name: e.target.value.slice(0, 120) } : x) } }))}
+                  placeholder="Name" style={venueInput} />
+                <input value={p.role ?? ""} onChange={(e) => setVenueDraft((d) => ({ ...d, contact: { ...d.contact, people: (d.contact?.people ?? []).map((x, j) => j === i ? { ...x, role: e.target.value.slice(0, 120) } : x) } }))}
+                  placeholder="Role (e.g. Manager)" style={{ ...venueInput, marginTop: 6 }} />
+                <button onClick={() => setVenueDraft((d) => ({ ...d, contact: { ...d.contact, people: (d.contact?.people ?? []).filter((_, j) => j !== i) } }))}
+                  style={{ marginTop: 6, background: "none", border: "none", color: MUTED, fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0 }}>Remove</button>
+              </div>
+            ))}
+            {(venueDraft.contact?.people ?? []).length < 6 && (
+              <button onClick={() => setVenueDraft((d) => ({ ...d, contact: { ...d.contact, people: [...(d.contact?.people ?? []), { name: "" }] } }))}
+                style={{ background: "none", border: "none", color: TEAL, fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0, marginBottom: 16 }}>+ Add contact</button>
+            )}
+
+            <label style={{ fontSize: 12, color: MUTED, display: "block", margin: "16px 0 6px" }}>Help email</label>
+            <input value={venueDraft.contact?.helpEmail ?? ""} onChange={(e) => setVenueDraft((d) => ({ ...d, contact: { ...d.contact, helpEmail: e.target.value.slice(0, 120) } }))}
+              placeholder="help@yourvenue.com" style={{ ...venueInput, marginBottom: 16 }} />
+
+            <Btn small gold disabled={savingVenue} onClick={saveVenue}>{savingVenue ? "Saving…" : "Save venue"}</Btn>
           </Card>
         </Section>
       )}

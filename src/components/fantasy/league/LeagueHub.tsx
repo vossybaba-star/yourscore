@@ -11,7 +11,7 @@
  *  is the social pulse. A light recent-chat + members preview stays underneath.
  */
 import { useEffect, useState } from "react";
-import { Btn, Card, INK, LINE, MUTED, PANEL, TEAL } from "@/components/fantasy/shared";
+import { Btn, Card, GOLD, INK, LINE, MUTED, PANEL, TEAL, tint } from "@/components/fantasy/shared";
 import { PlayerAvatar } from "@/components/ui/PlayerAvatar";
 import { UpcomingQuizzes } from "@/components/matchweek/UpcomingQuizzes";
 import { LeagueMembersView } from "./LeagueMembersView";
@@ -125,9 +125,33 @@ export function LeagueHub({ detail, chat, onTab, onOpenGamesChallenge }: {
   const recent = (overview?.recentResults ?? []).slice(0, 3);
   const pending = [...(overview?.actionRequired ?? []), ...(overview?.open ?? [])].slice(0, 3);
   const preview = (chat?.messages ?? []).filter((m) => m.kind !== "system").slice(-2);
+  const isVenue = detail.league.kind === "venue";
+  const offers = (detail.league.venueMeta?.offers ?? []).filter((o) => o.title);
 
   return (
     <div>
+      {/* OFFERS — venue leagues only (founder 8 Aug): what the venue's putting on,
+          top of the hub. */}
+      {isVenue && offers.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <SectionLabel>OFFERS</SectionLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {offers.map((o, i) => (
+              <div key={i} style={{
+                background: `linear-gradient(150deg, ${tint(GOLD, "14")}, ${PANEL})`, border: `1px solid ${tint(GOLD, "3a")}`,
+                borderRadius: 12, padding: "11px 13px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" /></svg>
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>{o.title}</span>
+                </div>
+                {o.detail && <p style={{ fontSize: 12.5, color: MUTED, margin: "5px 0 0", lineHeight: 1.45 }}>{o.detail}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* RECENT RESULTS — games members have finished. */}
       {isMember && (
         <div style={{ marginBottom: 16 }}>

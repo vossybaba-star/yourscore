@@ -12,11 +12,23 @@ export interface LeagueRow {
   isMe: boolean; movement: number | null;
 }
 
+/** Venue content (migration 266) — client mirror of the server VenueMeta in
+ *  lib/fantasy/leagues.ts (can't import a server-only file into a component). */
+export interface VenueOffer { title: string; detail: string; expiresAt?: string | null }
+export interface VenueContactPerson { name: string; role?: string | null; handle?: string | null }
+export interface VenueMeta {
+  info?: string | null;
+  offers?: VenueOffer[];
+  contact?: { people?: VenueContactPerson[]; helpEmail?: string | null };
+}
+
 export interface LeagueDetail {
   league: {
     id: string; name: string; code: string; memberCount: number;
     isPublic: boolean; isMember: boolean; isOwner: boolean; stakes: string | null; imageUrl: string | null;
     kind: string; club: string | null; official: boolean; canContribute: boolean;
+    /** Venue content (migration 266) — only meaningful when kind='venue'. */
+    venueMeta?: VenueMeta;
   };
   gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
   season: LeagueRow[];

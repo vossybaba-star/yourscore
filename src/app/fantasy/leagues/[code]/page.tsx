@@ -11,6 +11,56 @@ import {
 import { BottomNav } from "@/components/ui/BottomNav";
 import { VerifiedTick } from "@/components/ui/Seal";
 import { trackFantasyInvite } from "@/lib/analytics/trackGame";
+import type { VenueMeta } from "@/components/fantasy/league/types";
+
+/** Venue Info tab (migration 266) — who to reach + a help email + an about line.
+ *  Public (a venue's info is for everyone), so it renders whatever the owner set,
+ *  with a clean empty state when they've set nothing yet. */
+function VenueInfoView({ venueMeta }: { venueMeta?: VenueMeta }) {
+  const info = venueMeta?.info?.trim();
+  const people = (venueMeta?.contact?.people ?? []).filter((p) => p.name);
+  const helpEmail = venueMeta?.contact?.helpEmail;
+  if (!info && !people.length && !helpEmail) {
+    return <Card style={{ marginTop: 4 }}><p style={{ fontSize: 13, color: MUTED, margin: 0 }}>No venue info yet.</p></Card>;
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 4 }}>
+      {info && (
+        <Card>
+          <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 6 }}>ABOUT</div>
+          <p style={{ fontSize: 13, color: INK, margin: 0, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{info}</p>
+        </Card>
+      )}
+      {people.length > 0 && (
+        <Card>
+          <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: MUTED, marginBottom: 10 }}>WHO TO REACH</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {people.map((p, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>{p.name}</span>
+                {p.role && <span style={{ fontSize: 12, color: MUTED }}>{p.role}</span>}
+                {p.handle && <span style={{ marginLeft: "auto", fontSize: 12, color: TEAL, fontWeight: 600 }}>{p.handle}</span>}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+      {helpEmail && (
+        <a href={`mailto:${helpEmail}`} style={{ textDecoration: "none" }}>
+          <Card style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ width: 34, height: 34, flexShrink: 0, borderRadius: 9, background: tint(TEAL, "1e"), border: `1px solid ${tint(TEAL, "44")}`, color: TEAL, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><rect x={3} y={5} width={18} height={14} rx={2} /><path d="M3 7l9 6 9-6" /></svg>
+            </span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 10.5, letterSpacing: "0.1em", color: MUTED }}>HELP</span>
+              <span style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: INK, overflow: "hidden", textOverflow: "ellipsis" }}>{helpEmail}</span>
+            </span>
+          </Card>
+        </a>
+      )}
+    </div>
+  );
+}
 
 /** One channel in the invite sheet — an icon in its brand colour, a label, a hint. */
 function InviteRow({ onClick, accent, label, sub, icon }: { onClick: () => void; accent: string; label: string; sub: string; icon: React.ReactNode }) {
@@ -85,11 +135,12 @@ function SocialChips({ links, size = 24 }: { links?: LeagueLinks | null; size?: 
   );
 }
 
-type Tab = "hub" | "chat" | "table" | "games" | "history";
+type Tab = "hub" | "chat" | "table" | "games" | "history" | "info";
 // History lost its pill (product model 2026-08-07: four permanent tabs max).
 // The view itself stays — reached from the Hub's "Season history" row and via
 // ?tab=history deep links, which still resolve above.
-const TABS: [Tab, string][] = [["hub", "Hub"], ["chat", "Chat"], ["table", "Table"], ["games", "Games"]];
+// "Info" is venue-only (migration 266): who to reach + a help email.
+const BASE_TABS: [Tab, string][] = [["hub", "Hub"], ["chat", "Chat"], ["table", "Table"], ["games", "Games"]];
 
 async function apiRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/fantasy/${path}`, init);
@@ -155,7 +206,7 @@ export default function LeaguePage() {
     // link carrying both never anchors on the stale one — `t` always wins —
     // and the legacy param is stripped so it can't linger across taps.
     const resolved = t ?? legacyTab;
-    if (resolved === "chat" || resolved === "table" || resolved === "games" || resolved === "history") setTab(resolved);
+    if (resolved === "chat" || resolved === "table" || resolved === "games" || resolved === "history" || resolved === "info") setTab(resolved);
     const gw = sp.get("gw");
     if (gw && /^\d+$/.test(gw)) setChatGw(Number(gw));
     const c = sp.get("c");
@@ -372,7 +423,7 @@ export default function LeaguePage() {
               {league.official && <VerifiedTick size={16} />}
             </div>
             <div style={{ fontSize: 12, color: MUTED, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {league.kind === "club" ? `${league.club ?? "Club"} fans` : league.kind === "founder" ? "Founder League" : league.isPublic ? "Public league" : "Private league"} · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
+              {league.kind === "venue" ? "Venue" : league.kind === "club" ? `${league.club ?? "Club"} fans` : league.kind === "founder" ? "Founder League" : league.isPublic ? "Public league" : "Private league"} · {league.memberCount} member{league.memberCount === 1 ? "" : "s"}
               {league.stakes && <span style={{ color: "#ffc233", fontWeight: 600 }}> · 🏆 {league.stakes}</span>}
             </div>
           </div>
@@ -424,7 +475,7 @@ export default function LeaguePage() {
           so "History" still fits at 375px without wrapping or truncating
           (house rule: no scrolling tab bar, no icon-only tabs). */}
       <div style={{ display: "flex", gap: 3, margin: "10px 0 12px", background: PANEL, border: `1px solid ${LINE}`, borderRadius: 10, padding: 3 }}>
-        {TABS.map(([k, label]) => {
+        {(league.kind === "venue" ? [...BASE_TABS, ["info", "Info"] as [Tab, string]] : BASE_TABS).map(([k, label]) => {
           const active = tab === k;
           // Chat opens to anyone for a club/Founder league or any PUBLIC league
           // (browse what they talk about, signed out included); History and
@@ -487,6 +538,7 @@ export default function LeaguePage() {
         )}
       </div>
       {tab === "history" && league.isMember && <LeagueHistoryView code={code} onOpenChat={openGwChat} />}
+      {tab === "info" && league.kind === "venue" && <VenueInfoView venueMeta={league.venueMeta} />}
       </>)}
 
       {inviteOpen && (

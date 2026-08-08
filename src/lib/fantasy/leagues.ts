@@ -46,6 +46,22 @@ export interface LeagueLinks {
 const LINK_KEYS = ["discord", "x", "instagram", "tiktok", "website"] as const;
 const MAX_LINK_KEYS = 5;
 
+/** Venue leagues (migration 266) — a pub/bar/club running YourScore. All venue
+ *  content lives in one jsonb blob (venue_meta), the same pattern as bio/links.
+ *  Edited by the venue's owner; created/assigned by an admin. */
+export interface VenueOffer { title: string; detail: string; expiresAt?: string | null }
+export interface VenueContactPerson { name: string; role?: string | null; handle?: string | null }
+export interface VenueMeta {
+  info?: string | null;
+  offers?: VenueOffer[];
+  contact?: { people?: VenueContactPerson[]; helpEmail?: string | null };
+}
+const VENUE_INFO_MAX = 800;
+const MAX_OFFERS = 8;
+const MAX_CONTACT_PEOPLE = 6;
+const VENUE_STR_MAX = 120;
+const VENUE_DETAIL_MAX = 300;
+
 /** A short "what's happening" line for a My Leagues tile, so the list feels alive
  *  instead of a row of names. Priority: latest chat > a recent joiner > a quiet
  *  nudge > an invite prompt. `at` drives the relative timestamp; null = static. */
@@ -128,21 +144,21 @@ async function requireOwnerLeague(svc: Db, code: string, userId: string): Promis
  *  PostgREST fails the entire select when an unknown column is named, so this
  *  can't be folded into the main `fantasy_leagues` select those callers already
  *  run — same probe/fallback discipline as chat.ts's pinned_message_id. */
-async function leagueProfiles(svc: Db, leagueIds: string[]): Promise<Map<string, { bio: string | null; links: LeagueLinks }>> {
-  const out = new Map<string, { bio: string | null; links: LeagueLinks }>();
+async function leagueProfiles(svc: Db, leagueIds: string[]): Promise<Map<string, { bio: string | null; links: LeagueLinks; venueMeta: VenueMeta }>> {
+  const out = new Map<string, { bio: string | null; links: LeagueLinks; venueMeta: VenueMeta }>();
   if (!leagueIds.length) return out;
   try {
-    const { data, error } = await svc.from("fantasy_leagues").select("id, bio, links").in("id", leagueIds);
+    const { data, error } = await svc.from("fantasy_leagues").select("id, bio, links, venue_meta").in("id", leagueIds);
     if (error) throw error;
-    for (const r of (data ?? []) as { id: string; bio: string | null; links: unknown }[]) {
-      out.set(r.id, { bio: r.bio ?? null, links: sanitizeStoredLinks(r.links) });
+    for (const r of (data ?? []) as { id: string; bio: string | null; links: unknown; venue_meta: unknown }[]) {
+      out.set(r.id, { bio: r.bio ?? null, links: sanitizeStoredLinks(r.links), venueMeta: sanitizeVenueMeta(r.venue_meta) });
     }
   } catch (e) {
-    console.error("[fantasy:leagues] bio/links probe failed (migration 263 not applied yet?) — degrading to empty:", e);
+    console.error("[fantasy:leagues] bio/links/venue probe failed (migration 263/266 not applied yet?) — degrading to empty:", e);
   }
   return out;
 }
-const emptyProfile = { bio: null as string | null, links: {} as LeagueLinks };
+const emptyProfile = { bio: null as string | null, links: {} as LeagueLinks, venueMeta: {} as VenueMeta };
 
 /** Defensive pass over a stored `links` jsonb value on the way OUT — never
  *  trust it's still shaped like LeagueLinks (a future migration, a hand-edit,
@@ -155,6 +171,95 @@ function sanitizeStoredLinks(raw: unknown): LeagueLinks {
   for (const key of LINK_KEYS) {
     const v = input[key];
     if (typeof v === "string" && v) out[key] = v;
+  }
+  return out;
+}
+
+/** Defensive read of a stored venue_meta blob — clamp to known shape + lengths,
+ *  never trust it beyond that (mirrors sanitizeStoredLinks). */
+function sanitizeVenueMeta(raw: unknown): VenueMeta {
+  if (!raw || typeof raw !== "object") return {};
+  const v = raw as Record<string, unknown>;
+  const out: VenueMeta = {};
+  if (typeof v.info === "string" && v.info.trim()) out.info = v.info.trim().slice(0, VENUE_INFO_MAX);
+  if (Array.isArray(v.offers)) {
+    out.offers = v.offers.slice(0, MAX_OFFERS).map((o) => {
+      const oo = (o ?? {}) as Record<string, unknown>;
+      return {
+        title: typeof oo.title === "string" ? oo.title.slice(0, VENUE_STR_MAX) : "",
+        detail: typeof oo.detail === "string" ? oo.detail.slice(0, VENUE_DETAIL_MAX) : "",
+        expiresAt: typeof oo.expiresAt === "string" ? oo.expiresAt : null,
+      };
+    }).filter((o) => o.title);
+  }
+  const c = v.contact as Record<string, unknown> | undefined;
+  if (c && typeof c === "object") {
+    const contact: NonNullable<VenueMeta["contact"]> = {};
+    if (Array.isArray(c.people)) {
+      contact.people = c.people.slice(0, MAX_CONTACT_PEOPLE).map((p) => {
+        const pp = (p ?? {}) as Record<string, unknown>;
+        return {
+          name: typeof pp.name === "string" ? pp.name.slice(0, VENUE_STR_MAX) : "",
+          role: typeof pp.role === "string" ? pp.role.slice(0, VENUE_STR_MAX) : null,
+          handle: typeof pp.handle === "string" ? pp.handle.slice(0, VENUE_STR_MAX) : null,
+        };
+      }).filter((p) => p.name);
+    }
+    if (typeof c.helpEmail === "string" && c.helpEmail.trim()) contact.helpEmail = c.helpEmail.trim().slice(0, VENUE_STR_MAX);
+    if (contact.people?.length || contact.helpEmail) out.contact = contact;
+  }
+  return out;
+}
+
+/** Owner-set venue content (offers / contact / info). Clamps lengths + counts,
+ *  requires a title on each offer and a name on each contact person, and checks
+ *  the help email looks like one. Runs the same profanity gate as bio. */
+function validateVenueMeta(raw: unknown): VenueMeta {
+  if (raw == null || typeof raw !== "object") return {};
+  const v = raw as Record<string, unknown>;
+  const out: VenueMeta = {};
+  if (typeof v.info === "string") {
+    const info = v.info.trim().slice(0, VENUE_INFO_MAX);
+    if (info) { const why = commentRejection(info); if (why) throw new HttpError(400, why); out.info = info; }
+  }
+  if (Array.isArray(v.offers)) {
+    if (v.offers.length > MAX_OFFERS) throw new HttpError(400, `Up to ${MAX_OFFERS} offers`);
+    const offers: VenueOffer[] = [];
+    for (const o of v.offers) {
+      const oo = (o ?? {}) as Record<string, unknown>;
+      const title = typeof oo.title === "string" ? oo.title.trim().slice(0, VENUE_STR_MAX) : "";
+      if (!title) continue; // drop blank rows
+      const detail = typeof oo.detail === "string" ? oo.detail.trim().slice(0, VENUE_DETAIL_MAX) : "";
+      const why = commentRejection(`${title} ${detail}`);
+      if (why) throw new HttpError(400, why);
+      offers.push({ title, detail, expiresAt: typeof oo.expiresAt === "string" && oo.expiresAt ? oo.expiresAt : null });
+    }
+    out.offers = offers;
+  }
+  if (v.contact && typeof v.contact === "object") {
+    const c = v.contact as Record<string, unknown>;
+    const contact: NonNullable<VenueMeta["contact"]> = {};
+    if (Array.isArray(c.people)) {
+      if (c.people.length > MAX_CONTACT_PEOPLE) throw new HttpError(400, `Up to ${MAX_CONTACT_PEOPLE} contacts`);
+      const people: VenueContactPerson[] = [];
+      for (const p of c.people) {
+        const pp = (p ?? {}) as Record<string, unknown>;
+        const name = typeof pp.name === "string" ? pp.name.trim().slice(0, VENUE_STR_MAX) : "";
+        if (!name) continue;
+        people.push({
+          name,
+          role: typeof pp.role === "string" && pp.role.trim() ? pp.role.trim().slice(0, VENUE_STR_MAX) : null,
+          handle: typeof pp.handle === "string" && pp.handle.trim() ? pp.handle.trim().slice(0, VENUE_STR_MAX) : null,
+        });
+      }
+      contact.people = people;
+    }
+    if (typeof c.helpEmail === "string" && c.helpEmail.trim()) {
+      const email = c.helpEmail.trim().slice(0, VENUE_STR_MAX);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, "That help email isn't a valid email");
+      contact.helpEmail = email;
+    }
+    out.contact = contact;
   }
   return out;
 }
@@ -212,6 +317,10 @@ async function memberCounts(svc: Db, leagueIds: string[]): Promise<Map<string, n
 export async function createLeague(
   userId: string,
   body: { name?: unknown; isPublic?: unknown },
+  /** Optional non-default kind (e.g. 'venue'). The API route decides who's
+   *  allowed to pass this — createLeague trusts the caller here, same as it
+   *  trusts userId. Undefined → the DB default ('private'). */
+  kind?: "venue",
 ): Promise<{ id: string; name: string; code: string; isPublic: boolean }> {
   const svc = db();
   const name = validateName(body.name);
@@ -227,7 +336,7 @@ export async function createLeague(
   for (let attempt = 0; attempt < 5 && !created; attempt++) {
     const { data, error } = await svc
       .from("fantasy_leagues")
-      .insert({ owner_id: userId, name, join_code: genJoinCode(), is_public: isPublic })
+      .insert({ owner_id: userId, name, join_code: genJoinCode(), is_public: isPublic, ...(kind ? { kind } : {}) })
       .select("id, name, join_code")
       .single();
     if (!error && data) created = data as { id: string; name: string; join_code: string };
@@ -742,6 +851,9 @@ export interface LeagueDetail {
      *  chips. bio null / links {} until the owner sets any. */
     bio: string | null;
     links: LeagueLinks;
+    /** Venue content (migration 266) — only meaningful when kind='venue'; {}
+     *  otherwise. Info + offers + contact, edited by the venue owner. */
+    venueMeta: VenueMeta;
   };
   /** The current gameweek and its phase, for the Hub's summary card. */
   gw: { number: number; phase: "pre" | "live" | "final"; deadline: string | null };
@@ -922,7 +1034,7 @@ export async function leagueDetail(code: string, viewerId: string | null): Promi
       memberCount: ids.length, isPublic: league.is_public, isMember, isOwner,
       stakes: league.stakes, imageUrl: league.image_url ?? null,
       kind, club: league.club ?? null, official: league.official ?? false, canContribute,
-      bio: profile.bio, links: profile.links,
+      bio: profile.bio, links: profile.links, venueMeta: profile.venueMeta,
     },
     gw: { number: currentGw.gw, phase, deadline: currentGw.deadline },
     season, month, lastMonth, readiness, gwRecap,
@@ -1086,6 +1198,21 @@ export async function setLeagueProfile(
     bio: "bio" in body ? (update.bio as string | null) : current.bio,
     links: "links" in body ? (update.links as LeagueLinks) : current.links,
   };
+}
+
+/** Owner-only: set the venue content (info / offers / contact) for a venue
+ *  league (migration 266). Same requireOwnerLeague gate as the profile setter.
+ *  Whole-blob replace — the settings form always sends the full venue_meta. */
+export async function setVenueMeta(
+  userId: string, code: string, raw: unknown,
+): Promise<VenueMeta> {
+  const svc = db();
+  const league = await requireOwnerLeague(svc, code, userId);
+  if (league.kind !== "venue") throw new HttpError(400, "Not a venue league");
+  const venueMeta = validateVenueMeta(raw);
+  const { error } = await svc.from("fantasy_leagues").update({ venue_meta: venueMeta }).eq("id", league.id);
+  if (error) throw new HttpError(500, "Could not save");
+  return venueMeta;
 }
 
 export async function leaveLeague(userId: string, code: string): Promise<void> {
